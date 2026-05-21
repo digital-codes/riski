@@ -1,3 +1,8 @@
+# custom project stuff
+private.py
+src/private.py
+docs/*pdf
+
 # ---> Python
 # Byte-compiled / optimized / DLL files
 __pycache__/
