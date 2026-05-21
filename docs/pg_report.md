@@ -48,3 +48,55 @@ The script never drops tables (`DROP_ALL` is forced to `False`). A safety check 
 
 ---
 *Generated as part of the `postgres-migration` OpenSpec change.*
+
+## Appendix A – Creating the PostgreSQL database & user
+
+### 1️⃣ Switch to the PostgreSQL system account
+```bash
+sudo -i -u postgres
+```
+
+### 2️⃣ Start psql
+```bash
+psql
+```
+
+### 3️⃣ Create a role (user)
+```sql
+CREATE ROLE riski_user WITH
+    LOGIN
+    PASSWORD 'StrongPassword!123'
+    CREATEDB;
+```
+
+### 4️⃣ Create the database
+```sql
+CREATE DATABASE riski
+    OWNER riski_user
+    ENCODING 'UTF8'
+    LC_COLLATE 'en_US.UTF-8'
+    LC_CTYPE   'en_US.UTF-8'
+    TEMPLATE   template0;
+```
+
+### 5️⃣ Grant privileges
+```sql
+GRANT ALL PRIVILEGES ON DATABASE riski TO riski_user;
+\c riski
+GRANT ALL PRIVILEGES ON SCHEMA public TO riski_user;
+```
+
+### 6️⃣ Verify the connection
+```bash
+psql postgresql://riski_user:StrongPassword!123@localhost/riski
+```
+
+### 7️⃣ Use in RISKI
+Add to `private.py`:
+```python
+DB_USER = 'riski_user'
+DB_PWD  = 'StrongPassword!123'
+DB_NAME = 'riski'
+```
+
+*These steps are safe for local development and give the user just enough rights to let `src/dbPgGen.py` create tables and upsert data while preserving any custom tables (e.g., `entity_vectors`).*
