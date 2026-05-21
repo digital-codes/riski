@@ -18,10 +18,10 @@ from sqlalchemy import (
     Boolean,
     Float,
     create_engine,
-    inspect,
+    inspect
 )
 from sqlalchemy.dialects.postgresql import JSONB as PGJSON, insert
-from sqlalchemy.dialects.postgresql import excluded
+#from sqlalchemy.dialects.postgresql import excluded
 from sqlalchemy.orm import sessionmaker
 
 # Read JSON files whose filename starts with an uppercase letter AND ends with .json
@@ -95,12 +95,19 @@ def iter_json_files(directory: str) -> Iterable[str]:
 
 # --- NEW: column name sanitizing (keeps original keys where possible) ---
 _RESERVED = {
-    'order', 'group', 'user', 'select', 'from', 'where', 'table', 'key', 'index', 'constraint'
+    'order', 'group', 'user', 'select', 'from', 'where', 'table', 'key', 'index', 'constraint', 'start', 'end'
+}
+
+_RENAME_MAP = {
+    'start': 'start_date',
+    'end': 'end_date',
+    'order': 'order_col',
 }
 
 def safe_col_name(key: str) -> Tuple[str, bool]:
     """Return (column_name, quote_flag). Quote if reserved or altered."""
-    name = re.sub(r'[^A-Za-z0-9_]', '_', key)
+    name = _RENAME_MAP.get(key, key).lower()
+    name = re.sub(r'[^A-Za-z0-9_]', '_', name)
     if not name:
         name = 'k'
     if name[0].isdigit():
@@ -117,14 +124,14 @@ def infer_scalar_type(values: List[Any]):
     non_null = [v for v in values if v is not None]
     if not non_null:
         return String(STRING_SIZE)
-    if all(parse_datetime_maybe(v) is not None for v in non_null if isinstance(v, str)):
-        return DateTime
-    if all(isinstance(v, bool) for v in non_null):
-        return Boolean
     if all(isinstance(v, int) and not isinstance(v, bool) for v in non_null):
         return BigInteger
     if all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in non_null):
         return Float
+    if all(isinstance(v, bool) for v in non_null):
+        return Boolean
+    if all(parse_datetime_maybe(v) is not None for v in non_null if isinstance(v, str)):
+        return DateTime
     return String(STRING_SIZE)
 
 
@@ -385,6 +392,7 @@ def insert_all(
         if idx % PROGRESS_EVERY == 0 or idx == total:
             print(f"  Base upsert {idx}/{total} ...")
         t = main_tables[ent.key.table]
+        print(f"Processing entity {idx}/{total}: table={ent.key.table} oparlId={ent.key.oparl_id}")
         row = build_base_row(ent, scalar_types, scalar_colnames)
         stmt = insert(t).values(**row)
         # On conflict on oparlId, update when incoming modified is newer
@@ -476,8 +484,12 @@ def add_missing_scalar_columns(engine, metadata, scalar_colnames, scalar_types, 
     insp = inspect(engine)
     for table_name, table in metadata.tables.items():
         existing_cols = {col['name'] for col in insp.get_columns(table_name)}
+        print(f"Checking table '{table_name}' for missing scalar columns ...")
+        print(f"  Existing columns: {existing_cols}")
+        print(f"  Expected scalar columns: {set(scalar_colnames.get(table_name, {}).values())}")
         for orig_key, colname in scalar_colnames.get(table_name, {}).items():
             if colname not in existing_cols:
+                print(f"  Adding missing column '{colname}' (original key: '{orig_key}') to table '{table_name}'")
                 sa_type = scalar_types[table_name][orig_key]
                 quote = scalar_quote[table_name][orig_key]
                 ddl = f'ALTER TABLE "{table_name}" ADD COLUMN "{colname}" {sa_type.compile(dialect=engine.dialect)}'
@@ -503,8 +515,9 @@ def main(directory: str) -> None:
     print('PASS 2: Detecting relationships ...')
     single_fk_fields, many_fields = detect_relationships(entities, url_to_key)
     print('  -> Relationships detected')
+    
     scalar_types, scalar_colnames, scalar_quote = detect_scalar_columns(entities, single_fk_fields, many_fields)
-    print('  -> Scalar columns detected')
+    print('  -> Scalar columns detected',scalar_colnames)
     print('Building schema ...')
     main_tables = make_main_tables(metadata, all_tables, single_fk_fields, scalar_types, scalar_colnames, scalar_quote)
     assoc_tables = make_assoc_tables(metadata, many_fields)
