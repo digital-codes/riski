@@ -328,10 +328,10 @@ def crawl_oparl(root_url: str, start_from: str):
         # PDF handling – unchanged from original script
         if current_url.lower().endswith('.pdf'):
             logging.info("Saving PDF URL: %s", current_url)
-            pdf_path = os.path.join(OUTPUT_PDF_FOLDER, sanitize_filename(current_url.split('/')[-1]))
-            if os.path.exists(pdf_path):
-                logging.info("Skipping existing PDF: %s", pdf_path)
-                continue
+    pdf_path = os.path.join(OUTPUT_PDF_FOLDER, sanitize_filename(current_url.split('/')[-1]))
+    if os.path.exists(pdf_path):
+        logging.info("Skipping existing PDF: %s", pdf_path)
+        continue
             pdf_data = fetch_pdf(current_url)
             if pdf_data:
                 if not os.path.exists(OUTPUT_PDF_FOLDER):
