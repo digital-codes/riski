@@ -392,7 +392,7 @@ def insert_all(
         if idx % PROGRESS_EVERY == 0 or idx == total:
             print(f"  Base upsert {idx}/{total} ...")
         t = main_tables[ent.key.table]
-        print(f"Processing entity {idx}/{total}: table={ent.key.table} oparlId={ent.key.oparl_id}")
+        # print(f"Processing entity {idx}/{total}: table={ent.key.table} oparlId={ent.key.oparl_id}")
         row = build_base_row(ent, scalar_types, scalar_colnames)
         stmt = insert(t).values(**row)
         # On conflict on oparlId, update when incoming modified is newer
@@ -421,7 +421,8 @@ def insert_all(
     print('  Building oparlId->sid map ...')
     oparlid_to_sid: Dict[str, int] = {}
     for table_name, t in main_tables.items():
-        rows = session.execute(t.select().with_only_columns([t.c.oparlId, t.c.sid])).all()
+        print(f"    Scanning table '{table_name}' ...")
+        rows = session.execute(t.select().with_only_columns(t.c.oparlId, t.c.sid)).all()
         for oparlId, sid in rows:
             if oparlId and sid:
                 oparlid_to_sid[oparlId] = int(sid)
@@ -454,11 +455,11 @@ def insert_all(
         src_table = ent.key.table
         for field, tgt_table in many_fields.get(src_table, {}).items():
             value = ent.raw.get(field)
-            if not value:
+            if value is None or value is False:
                 continue
             assoc_name = assoc_table_name(src_table, field, tgt_table)
             at = assoc_tables.get(assoc_name)
-            if not at:
+            if at is None or at is False:
                 continue
             pairs: List[Tuple[int, int]] = []
             if isinstance(value, list) and all(isinstance(x, str) for x in value):
@@ -474,7 +475,7 @@ def insert_all(
                         if tgt_sid:
                             pairs.append((src_sid, tgt_sid))
             for s, tg in pairs:
-                session.execute(at.insert().on_conflict_do_nothing(), {'srcSid': s, 'tgtSid': tg})
+                session.execute(insert(at).on_conflict_do_nothing(), {'srcSid': s, 'tgtSid': tg})
     session.commit()
 
 # ----------------------------
