@@ -86,6 +86,11 @@ GRANT ALL PRIVILEGES ON DATABASE riski TO riski_user;
 GRANT ALL PRIVILEGES ON SCHEMA public TO riski_user;
 ```
 
+### Create vector extension
+
+create extension vector;
+
+
 ### 6️⃣ Verify the connection
 ```bash
 psql postgresql://riski_user:StrongPassword!123@localhost/riski
@@ -147,6 +152,24 @@ Structure only:
 > pg_dump -U <user> -W -d <db> -s -f <db>_struct.sql -h localhost
 
 Leave out *-s* to dump data as well.
+
+### Import 
+
+sudo -u postgres psql  -d <created dabase>  -f sql_from_export.sql
+
+### Add read only user
+-- 1. Connect to DB
+GRANT CONNECT ON DATABASE target_db TO readonly_user;
+
+-- 2. Schema access
+GRANT USAGE ON SCHEMA public TO readonly_user;
+
+-- 3. Existing tables
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO readonly_user;
+
+-- 4. Future tables (run as the owner of the tables!!!)
+ALTER DEFAULT PRIVILEGES IN SCHEMA public 
+GRANT SELECT ON TABLES TO readonly_user;
 
 
 
