@@ -47,6 +47,9 @@ print("DF Q98:", df_q98.describe())
 df_large = df_q98[df_q98.length > 10000]
 print("DF large:", df_large.describe())
 
+df_small = df_q98[df_q98.length <= 10000]
+print("DF small:", df_small.describe())
+
 
 
 prompt = """
@@ -116,10 +119,25 @@ def requestSummary(report: str) -> str:
     return response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
 
 
-validNames = df_large.file.values
 
 os.makedirs(dstDir, exist_ok=True)
 
+# write small files directly, no need to summarize
+smallNames = df_small.file.values
+print("Small files:", len(smallNames))
+for d in smallNames:
+    content = mdContents[d].strip()
+    print("Processing file:", d)
+    out_path = os.path.join(dstDir, d)
+    if os.path.exists(out_path):
+        print("Skipping existing file:", d)
+        continue
+    with open(os.path.join(dstDir, d), "w") as f:
+        f.write(content)
+
+# summarize large files with mistral
+validNames = df_large.file.values
+print("Large files:", len(validNames))
 for d in validNames:
     content = mdContents[d]
     print("Processing file:", d)
