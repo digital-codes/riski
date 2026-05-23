@@ -100,3 +100,53 @@ DB_NAME = 'riski'
 ```
 
 *These steps are safe for local development and give the user just enough rights to let `src/dbPgGen.py` create tables and upsert data while preserving any custom tables (e.g., `entity_vectors`).*
+
+
+## Appendix B - Interactive commands 
+
+### start psql
+> psql postgresql://<usr>:<pwd>@localhost/<db>
+
+### connect
+> \c <db>
+
+### list schemas
+> \d
+
+=> normally tables are in schema "public"
+
+### Table naming
+
+double quotes seem to be required here like:
+
+> select * from "Consultation" limit 10;
+
+Why is that?
+
+``` 
+    PostgreSQL folds unquoted identifiers to lower‑case.
+    If a table was created like
+
+    CREATE TABLE "Body" ( … );
+    the name is stored exactly as Body (capital B).
+    When you later write
+
+    SELECT * FROM Body;
+    PostgreSQL rewrites it to body (all lower‑case), which does not match the real object, so you get
+
+    ERROR:  relation "body" does not exist
+    The only way to refer to that exact mixed‑case name is with double quotes:
+
+    SELECT * FROM public."Body";
+
+``` 
+
+### Export
+
+Structure only:
+> pg_dump -U <user> -W -d <db> -s -f <db>_struct.sql -h localhost
+
+Leave out *-s* to dump data as well.
+
+
+
