@@ -14,10 +14,39 @@ PostgreSQL dialect.
 import argparse
 import os
 from pathlib import Path
+from unittest.mock import Base
 
 from sqlalchemy import MetaData, Table, select, update
 from sqlalchemy.engine import Engine
 from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+
+from sqlalchemy import Column, Integer, String, func, text, desc, inspect, UniqueConstraint
+from sqlalchemy.orm import declarative_base
+
+import numpy as np
+from pgvector.sqlalchemy import Vector
+
+
+import requests
+import json
+import time
+from typing import List, Dict, Any, Optional
+
+
+EMBED_URL: Optional[str] = None
+EMBED_MDL: Optional[str] = None
+EMBED_API_KEY: Optional[str] = None
+
+# Define the embedding table
+Base = declarative_base()
+class Embedding(Base):
+    __tablename__ = "contentEmbeddings"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    value = Column(Vector(1024))  # 1024-dimensional vector
+    __table_args__ = (UniqueConstraint('name', name='uq_embedding_name'),)
+
 
 
 def make_engine(db_url: str) -> Engine:
@@ -31,7 +60,12 @@ def make_engine(db_url: str) -> Engine:
 
 def iter_md_files(sums_dir: Path, full_dir: Path) -> dict[str, Path]:
     """Recursively find markdown files and map their stems to the best match.
+    Args:
+        sums_dir: Directory containing summary markdown files.
+        full_dir: Directory containing original/full files to compare against.
 
+    Returns:
+        A dictionary mapping file stems to their optimal Path objects.
     If a matching file exists in ``full_dir`` and is smaller than the one in
     ``sums_dir`` (but still under 3000 bytes and less than twice the size), it
     is preferred. Otherwise the file from ``sums_dir`` is used.
@@ -61,13 +95,44 @@ def normalize_file_basename(file_name: str | None) -> str | None:
     return stem or None
 
 
-def run(conn, file_tbl, md_map, dry_run: bool) -> None:
-    stmt_files = select(file_tbl.c.sid, file_tbl.c.filename)
+# ###############
+def embed(text: str) -> List[List[float]]:
+    url = EMBED_URL
+    embed_model = EMBED_MDL
+    payload = {"model": embed_model, "input": [text]}
+    headers = {"Content-Type": "application/json"}
+    if EMBED_API_KEY:
+        headers["Authorization"] = f"Bearer {EMBED_API_KEY}"
+    timeout = 30
+    max_retries = 3
+    retry_count = 0
+    while retry_count < max_retries:
+        r = requests.post(url, headers=headers, data=json.dumps(payload), timeout=timeout)
+        
+        if r.status_code == 429:
+            retry_count += 1
+            if retry_count < max_retries:
+                delay = int(r.headers.get("Retry-After", 2 ** retry_count))
+                print(f"Rate limited (429). Retrying in {delay} seconds... (attempt {retry_count}/{max_retries})")
+                time.sleep(delay)
+                continue
+            else:
+                r.raise_for_status()
+        
+        r.raise_for_status()
+        data = r.json()
+        # if self.DEBUG: print("Embedding: ",data)
+        return [item["embedding"] for item in data["data"]]
+
+
+
+def run(conn, file_tbl, md_map, embeddings: bool = False, dry_run: bool = False) -> None:
+    stmt_files = select(file_tbl.c.sid, file_tbl.c.oparlKey, file_tbl.c.filename)
 
     matched = updated = 0
     skipped_no_md = skipped_no_filename = 0
 
-    for file_sid, file_name in conn.execute(stmt_files):
+    for file_sid, oparlKey, file_name in conn.execute(stmt_files):
         if matched % 1000 == 0 and matched > 0:
             print(f"Progress: {matched} items processed...", flush=True)
 
@@ -85,6 +150,7 @@ def run(conn, file_tbl, md_map, dry_run: bool) -> None:
         print(f"Reading from file: {md_path} for File.sid={file_sid}, fileName={file_name}")
         text = md_path.read_text(encoding="utf-8", errors="replace")
 
+
         if not dry_run:
             conn.execute(
                 update(file_tbl)
@@ -92,6 +158,19 @@ def run(conn, file_tbl, md_map, dry_run: bool) -> None:
                 .values(content=text)
             )
             updated += 1
+
+            if embeddings:
+                try:
+                    vec = embed(text)[0]
+                    embedding = Embedding(name=oparlKey, value=vec)
+                    conn.execute(
+                        pg_insert(Embedding).values(name=embedding.name, value=embedding.value).on_conflict_do_update(index_elements=['name'], set_={'value': embedding.value})
+                    )
+                except Exception as e:
+                    print(f"Error embedding content for {oparlKey}: {e}")
+                    raise
+                    #continue
+
 
     print("\nSummary")
     print(f"  matched md/files   : {matched}")
@@ -101,9 +180,11 @@ def run(conn, file_tbl, md_map, dry_run: bool) -> None:
 
 
 def main() -> None:
+    global EMBED_URL, EMBED_MDL, EMBED_API_KEY
     ap = argparse.ArgumentParser(description="Fill File.content from markdown files.")
     ap.add_argument("-s", "--sums_dir", required=True, help='Directory containing markdown files like "00123456.md"')
-    ap.add_argument("-f", "--full_dir", help='Directory containing original files like "00123456.md"')
+    ap.add_argument("-f", "--full_dir", required=True, help='Directory containing original files like "00123456.md"')
+    ap.add_argument("-e", "--embeddings", action="store_true", help='Add embedding vectors')
     ap.add_argument("--dry-run", action="store_true", help="Do not write to DB; just report actions.")
     args = ap.parse_args()
 
@@ -119,6 +200,13 @@ def main() -> None:
     # PostgreSQL connection – mirrors the pattern used in dbPgGen.py
     db_url = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@localhost/{pr.DB_NAME}"
     engine = make_engine(db_url)
+    
+    if args.embeddings:
+        # Ensure the embedding table exists if we're adding embeddings
+        Base.metadata.create_all(engine)
+        EMBED_URL = pr.EMB_URL
+        EMBED_MDL = pr.EMB_MODEL
+        EMBED_API_KEY = pr.EMB_KEY
 
     md_map = iter_md_files(sums_dir, full_dir)
     print(f"Found {len(md_map)} markdown files under: {sums_dir}")
@@ -128,10 +216,11 @@ def main() -> None:
 
     if args.dry_run:
         with engine.connect() as conn:
-            run(conn, file_tbl, md_map, dry_run=True)
+            run(conn, file_tbl, md_map, embeddings=False, dry_run=True)
     else:
         with engine.begin() as conn:
-            run(conn, file_tbl, md_map, dry_run=False)
+
+            run(conn, file_tbl, md_map, embeddings=args.embeddings, dry_run=False)
 
 
 if __name__ == "__main__":
