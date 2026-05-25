@@ -111,7 +111,7 @@ def embed(text: str) -> List[List[float]]:
     """
     url = EMBED_URL
     embed_model = EMBED_MDL
-    payload = {"model": embed_model, "input": [text]}
+    payload = {"model": embed_model, "input": [text[:8100]]}
     headers = {"Content-Type": "application/json"}
     if EMBED_API_KEY != None:
         headers["Authorization"] = f"Bearer {EMBED_API_KEY}"
