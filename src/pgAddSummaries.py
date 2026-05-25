@@ -16,10 +16,12 @@ import os
 from pathlib import Path
 from unittest.mock import Base
 
+from requests.sessions import session
 from sqlalchemy import MetaData, Table, select, update
 from sqlalchemy.engine import Engine
 from sqlalchemy import create_engine
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Session, sessionmaker
 
 from sqlalchemy import Column, Integer, String, func, text, desc, inspect, UniqueConstraint
 from sqlalchemy.orm import declarative_base
@@ -40,12 +42,13 @@ EMBED_API_KEY: Optional[str] = None
 
 # Define the embedding table
 Base = declarative_base()
+
 class Embedding(Base):
     __tablename__ = "contentEmbeddings"
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    oparlKey = Column(String)
     value = Column(Vector(1024))  # 1024-dimensional vector
-    __table_args__ = (UniqueConstraint('name', name='uq_embedding_name'),)
+    __table_args__ = (UniqueConstraint('oparlKey', name='uq_embedding_oparlKey'),)
 
 
 
@@ -97,18 +100,30 @@ def normalize_file_basename(file_name: str | None) -> str | None:
 
 # ###############
 def embed(text: str) -> List[List[float]]:
+    """Generate embeddings for the given text using the configured embedding model.
+        With local llamacp call like so to get context and batch size large enough for long documents: 
+            llama-server -m /opt/llama/models/bge-m3-Q4_K_M.gguf --embeddings --port 8085 -c 8192 -ub 8192
+    Args:
+        text (str): The input text to be embedded.
+
+    Returns:
+        List[List[float]]: A list of embeddings, each represented as a list of floats.
+    """
     url = EMBED_URL
     embed_model = EMBED_MDL
     payload = {"model": embed_model, "input": [text]}
     headers = {"Content-Type": "application/json"}
-    if EMBED_API_KEY:
+    if EMBED_API_KEY != None:
         headers["Authorization"] = f"Bearer {EMBED_API_KEY}"
     timeout = 30
     max_retries = 3
     retry_count = 0
     while retry_count < max_retries:
-        r = requests.post(url, headers=headers, data=json.dumps(payload), timeout=timeout)
-        
+        #print(f"Requesting embedding at {url},{headers},{payload}")
+        r = requests.post(url, headers=headers, json=payload, timeout=timeout)
+
+        #print(f"Received response with status code {r.status_code}")
+
         if r.status_code == 429:
             retry_count += 1
             if retry_count < max_retries:
@@ -120,9 +135,15 @@ def embed(text: str) -> List[List[float]]:
                 r.raise_for_status()
         
         r.raise_for_status()
-        data = r.json()
+        result = r.json()
+        embedding =  result["data"][0]["embedding"] if "data" in result and len(result["data"]) > 0 and "embedding" in result["data"][0] else None
+        if embedding is None:
+            raise ValueError(f"Unexpected response format: {result}")
+        norm = np.linalg.norm(embedding, keepdims=True) + 1e-9
+        vector = embedding / norm
+
         # if self.DEBUG: print("Embedding: ",data)
-        return [item["embedding"] for item in data["data"]]
+        return vector
 
 
 
@@ -161,16 +182,18 @@ def run(conn, file_tbl, md_map, embeddings: bool = False, dry_run: bool = False)
 
             if embeddings:
                 try:
-                    vec = embed(text)[0]
-                    embedding = Embedding(name=oparlKey, value=vec)
+                    vec = embed(text)
+                    embedding = Embedding(oparlKey=oparlKey, value=vec)
+                    print(f"Generated embedding for {oparlKey}, vector length: {len(vec)}")
                     conn.execute(
-                        pg_insert(Embedding).values(name=embedding.name, value=embedding.value).on_conflict_do_update(index_elements=['name'], set_={'value': embedding.value})
+                        pg_insert(Embedding).values(oparlKey=embedding.oparlKey, value=embedding.value).on_conflict_do_update(index_elements=['oparlKey'], set_={'value': embedding.value})
                     )
                 except Exception as e:
                     print(f"Error embedding content for {oparlKey}: {e}")
-                    raise
-                    #continue
+                    continue
 
+        #if matched >= 10:
+        #    break
 
     print("\nSummary")
     print(f"  matched md/files   : {matched}")
@@ -205,10 +228,10 @@ def main() -> None:
         # Ensure the embedding table exists if we're adding embeddings
         Base.metadata.create_all(engine)
         EMBED_URL = pr.EMB_URL
-        EMBED_MDL = pr.EMB_MODEL
+        EMBED_MDL = pr.EMB_MDL
         EMBED_API_KEY = pr.EMB_KEY
 
-    md_map = iter_md_files(sums_dir, full_dir)
+    md_map = iter_md_files(sums_dir, full_dir)  # Limit to first 10 for testing; remove slice for full run
     print(f"Found {len(md_map)} markdown files under: {sums_dir}")
 
     metadata = MetaData()
@@ -219,8 +242,8 @@ def main() -> None:
             run(conn, file_tbl, md_map, embeddings=False, dry_run=True)
     else:
         with engine.begin() as conn:
-
             run(conn, file_tbl, md_map, embeddings=args.embeddings, dry_run=False)
+
 
 
 if __name__ == "__main__":
