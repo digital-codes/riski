@@ -13,6 +13,7 @@ PostgreSQL dialect.
 
 import argparse
 import os
+import signal
 from pathlib import Path
 from unittest.mock import Base
 
@@ -152,6 +153,16 @@ def run(conn, file_tbl, md_map, embeddings: bool = False, dry_run: bool = False)
 
     matched = updated = 0
     skipped_no_md = skipped_no_filename = 0
+    
+    def signal_handler(signum, frame):
+        print(f"\n\nInterrupt received. Committing progress to database...")
+        print(f"Current progress: {matched} matched, {updated} updated")
+        if not dry_run:
+            conn.commit()
+            print("Progress saved to database.")
+        raise KeyboardInterrupt("Graceful shutdown")
+    
+    signal.signal(signal.SIGINT, signal_handler)
 
     for file_sid, oparlKey, file_name in conn.execute(stmt_files):
         if matched % 1000 == 0 and matched > 0:
