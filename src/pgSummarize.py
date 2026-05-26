@@ -61,7 +61,7 @@ Wenn dir der Bericht vorgelegt wird, beantworte folgende Fragen dazu, sofern mö
  2) was ist das datum des berichts
  3) bei welchem gremium war die sitzung oder bei welchem gremium wurde die vorlage behandelt
  4) was ist das thema des berichts
- 5) was ist der titel des bericht. Leite einen passenden title vom thema ba, wenn keiner explizit angegeben wird
+ 5) was ist der titel des bericht. Leite einen passenden title vom thema ab, wenn keiner explizit angegeben wird
  6) Welches sind die wichtigstens Argumente im bericht
  7) Gibt es ein Ergebnis oder einen Beschluss? Wenn ja, welches.
 
@@ -72,6 +72,8 @@ Antworte nur auf Deutsch, auch wenn der Bericht englishcen Text enthält.
 Verwende die Informationen im Bericht, um die Fragen zu beantworten, 
 und füge keine Informationen hinzu, die nicht im Bericht enthalten sind. 
 Wenn eine Information nicht im Bericht enthalten ist, lasse sie einfach weg.
+
+Stelle sicher, dass Dein Bericht insgesamt nicht länger ist als 8000 Zeichen.
 
 {report}
 
