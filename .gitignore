@@ -3,6 +3,7 @@ private.py
 src/private.py
 docs/*pdf
 generated
+output
 
 # ---> Python
 # Byte-compiled / optimized / DLL files
