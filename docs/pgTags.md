@@ -2,7 +2,7 @@
 
 ## Overview
 
-`TagManager` provides a lightweight, table‑agnostic tagging system for any
+`pgTagMgr` provides a lightweight, table‑agnostic tagging system for any
 PostgreSQL table that has an `oparlKey` column. The tag data lives in two
 dynamically created tables:
 
@@ -100,6 +100,12 @@ DATABASE_URL=postgresql://user:pass@localhost/db pytest test_tag_manager.py -v
 **Database user must have** `CREATE TABLE` / `DROP TABLE` privileges.
 
 ## Test coverage
+
+
+use like:
+
+> DATABASE_URL="postgresql://user:pwd@localhost/database" python -m pytest test/test_pgTagMgr.py
+
 
 All 20 tests pass against PostgreSQL.  The test suite (`test_tag_manager.py`) covers the following scenarios:
 
