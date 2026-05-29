@@ -29,9 +29,14 @@ from pgTagMgr import TagManager
 # Fixtures
 # ---------------------------------------------------------------------------
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL", "postgresql://localhost/octest"
-)
+try:
+    import private as pr
+    DATABASE_URL = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
+except (ImportError, KeyError):
+    DATABASE_URL = os.environ.get(
+        "DATABASE_URL", "postgresql://localhost/octest"
+    )   
+
 
 
 @pytest.fixture(scope="session")

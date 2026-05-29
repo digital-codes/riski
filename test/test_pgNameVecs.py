@@ -26,7 +26,15 @@ from sqlalchemy.orm import sessionmaker
 
 from pgNameVecs import NameVecs
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "postgresql://localhost/octest")
+try:
+    import private as pr
+    DATABASE_URL = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
+except (ImportError, KeyError):
+    DATABASE_URL = os.environ.get(
+        "DATABASE_URL", "postgresql://localhost/octest"
+    )   
+
+
 EMBEDDING_URL = os.environ.get("EMBEDDING_URL", "http://localhost:8085/v1")
 EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "bge-m3-Q4_K_M")
 EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY", "")
