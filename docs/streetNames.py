@@ -41,5 +41,5 @@ def getTxt(x):
         return x.strip()
 df["year"] = df.text.apply(getYr)
 df["name"] = df.text.apply(getTxt)
-df.to_json("names.json",orient="records",indent=2)
-df.to_csv("names.csv",index=False)
+df.to_json("streetNames.json",orient="records",indent=2)
+df.to_csv("streetNames.csv",index=False)
