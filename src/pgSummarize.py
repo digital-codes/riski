@@ -68,7 +68,7 @@ Wenn dir der Bericht vorgelegt wird, beantworte folgende Fragen dazu, sofern mö
 Anschließend kombiniere alle Informationen und verfasse einen Zusammenfassung  im Markdown‑Format. Verwende keine
 ```markdown ... ``` code fence, sondern schreibe die Zusammenfassung direkt als Fließtext.
 
-Antworte nur auf Deutsch, auch wenn der Bericht englishcen Text enthält. 
+Antworte nur auf Deutsch, auch wenn der Bericht englischen Text enthält. 
 Verwende die Informationen im Bericht, um die Fragen zu beantworten, 
 und füge keine Informationen hinzu, die nicht im Bericht enthalten sind. 
 Wenn eine Information nicht im Bericht enthalten ist, lasse sie einfach weg.

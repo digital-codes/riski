@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(opsx-propose)",
+      "Skill(openspec-propose)"
+    ]
+  },
+  "$version": 4
+}
