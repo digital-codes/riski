@@ -52,8 +52,13 @@ def call_embedding_model(text: str, api_url: str, api_key: str, model: str) -> t
     result = response.json()
     # print(f"API response: {result}")  # Debug print to check response structure
     # Adjust based on actual API response structure
-    vector = result["data"][0]['embedding'] if isinstance(result, dict) else []
-    
+    if result[0].get("data") and isinstance(result[0]["data"], list) and len(result[0]["data"]) > 0:
+        vector = result[0]["data"][0].get('embedding', [])[0]
+    elif isinstance(result[0], dict) and 'embedding' in result[0]:
+        vector = result[0]['embedding'][0]
+    else:
+        vector = []
+    print(f"Received vector of length {len(vector)}")  # Debug print to check vector length
     return vector
 
 
