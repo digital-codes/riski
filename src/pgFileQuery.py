@@ -40,7 +40,7 @@ def openDb():
     return create_engine(db_url, future=True, pool_pre_ping=True)
 
 
-def get_related_ids(
+def get_related_ids_for_file(
     oparl_key: str,
 ) -> List[Tuple[int, Optional[int], Optional[datetime]]]:
     """Return agenda item IDs and related meeting info for a file.
@@ -232,6 +232,169 @@ def get_related_ids(
     return result
 
 
+def get_related_ids_for_agenda_item(
+    oparl_key: str,
+) -> List:
+    """Return files and related meeting info for an agenda item.
+
+    Args:
+        oparl_key: The `oparlKey` value of the target `AgendaItem` record.
+
+    Returns:
+        A list containing a dictionary with agenda item details, related files,
+        meetings, papers, and consultations.
+    """
+    engine = openDb()
+    metadata = MetaData()
+
+    # Core tables
+    agenda_tbl = Table("AgendaItem", metadata, autoload_with=engine)
+    file_tbl = Table("File", metadata, autoload_with=engine)
+    paper_tbl = Table("Paper", metadata, autoload_with=engine)
+    meeting_tbl = Table("Meeting", metadata, autoload_with=engine)
+    consultation_tbl = Table("Consultation", metadata, autoload_with=engine)
+    # Association table linking AgendaItem <-> File
+    af_assoc_tbl = Table(
+        "AgendaItem__auxiliaryFile__File", metadata, autoload_with=engine
+    )
+    # Association table linking Paper <-> Consultation
+    pc_assoc_tbl = Table(
+        "Paper__consultation__Consultation", metadata, autoload_with=engine
+    )
+    # Association table linking File <-> Paper
+    fp_assoc_tbl = Table("File__paper__Paper", metadata, autoload_with=engine)
+    # Association table linking Paper <-> File (reverse direction)
+    pf_assoc_tbl = Table("Paper__auxiliaryFile__File", metadata, autoload_with=engine)
+
+    # Resolve the agenda item's internal SID
+    stmt_agenda = select(agenda_tbl.c.sid, agenda_tbl.c.name, agenda_tbl.c.result, agenda_tbl.c.meetingSid).where(
+        agenda_tbl.c.oparlKey == oparl_key
+    )
+    with engine.connect() as conn:
+        agenda_row = conn.execute(stmt_agenda).first()
+    if not agenda_row:
+        return []
+    agenda_sid = agenda_row[0]
+    agenda_name = agenda_row[1]
+    agenda_result = agenda_row[2]
+    meeting_sid = agenda_row[3]
+
+    result = [
+        {
+            "agenda_item": {
+                "agenda_sid": agenda_sid,
+                "agenda_name": agenda_name,
+                "agenda_result": agenda_result,
+            },
+            "files": [],
+            "meetings": [],
+            "papers": [],
+            "consultations": [],
+        }
+    ]
+
+    # Get the meeting directly linked to this agenda item, if it exists
+    if meeting_sid is not None:
+        stmt_meeting = select(
+            meeting_tbl.c.sid.label("meeting_id"),
+            meeting_tbl.c.name.label("meeting_name"),
+            meeting_tbl.c.start_date.label("meeting_start"),
+        ).where(meeting_tbl.c.sid == meeting_sid)
+        with engine.connect() as conn:
+            meeting_row = conn.execute(stmt_meeting).first()
+        if meeting_row:
+            result[0]["meetings"] = [
+                {
+                    "meeting_id": meeting_row.meeting_id,
+                    "meeting_name": meeting_row.meeting_name,
+                    "meeting_start": meeting_row.meeting_start,
+                }
+            ]
+
+    # Find files via agenda item <-> file association
+    stmt_files = (
+        select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
+        .select_from(
+            af_assoc_tbl.join(file_tbl, af_assoc_tbl.c.tgtSid == file_tbl.c.sid)
+        )
+        .where(af_assoc_tbl.c.srcSid == agenda_sid)
+    )
+    with engine.connect() as conn:
+        file_rows = conn.execute(stmt_files).fetchall()
+    result[0]["files"] = [
+        {"file_id": row.file_id, "file_name": row.file_name} for row in file_rows
+    ]
+
+    # Find consultations linked to this agenda item
+    stmt_consultations = (
+        select(
+            consultation_tbl.c.sid.label("consultation_id"),
+            consultation_tbl.c.meetingSid.label("consultation_meeting_id"),
+        )
+        .select_from(consultation_tbl)
+        .where(consultation_tbl.c.agendaItemSid == agenda_sid)
+    )
+    with engine.connect() as conn:
+        consultation_rows = conn.execute(stmt_consultations).fetchall()
+    result[0]["consultations"] = [
+        {"consultation_id": row.consultation_id, "meeting_id": row.consultation_meeting_id}
+        for row in consultation_rows
+    ]
+
+    # Find papers via consultations
+    for consultation in result[0]["consultations"]:
+        stmt_papers = (
+            select(paper_tbl.c.sid.label("paper_id"), paper_tbl.c.name.label("paper_name"))
+            .select_from(
+                pc_assoc_tbl.join(paper_tbl, pc_assoc_tbl.c.srcSid == paper_tbl.c.sid)
+            )
+            .where(pc_assoc_tbl.c.tgtSid == consultation["consultation_id"])
+        )
+        with engine.connect() as conn:
+            paper_rows = conn.execute(stmt_papers).fetchall()
+        for row in paper_rows:
+            if not any(p["paper_id"] == row.paper_id for p in result[0]["papers"]):
+                result[0]["papers"].append(
+                    {"paper_id": row.paper_id, "paper_name": row.paper_name}
+                )
+
+    # Find files via papers (forward and reverse associations)
+    for paper in result[0]["papers"]:
+        # Forward: paper -> file
+        stmt_files_via_paper = (
+            select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
+            .select_from(
+                fp_assoc_tbl.join(file_tbl, fp_assoc_tbl.c.tgtSid == file_tbl.c.sid)
+            )
+            .where(fp_assoc_tbl.c.srcSid == paper["paper_id"])
+        )
+        with engine.connect() as conn:
+            file_rows = conn.execute(stmt_files_via_paper).fetchall()
+        for row in file_rows:
+            if not any(f["file_id"] == row.file_id for f in result[0]["files"]):
+                result[0]["files"].append(
+                    {"file_id": row.file_id, "file_name": row.file_name}
+                )
+
+        # Reverse: file -> paper (to find files)
+        stmt_files_via_paper_rev = (
+            select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
+            .select_from(
+                pf_assoc_tbl.join(file_tbl, pf_assoc_tbl.c.srcSid == file_tbl.c.sid)
+            )
+            .where(pf_assoc_tbl.c.tgtSid == paper["paper_id"])
+        )
+        with engine.connect() as conn:
+            file_rows = conn.execute(stmt_files_via_paper_rev).fetchall()
+        for row in file_rows:
+            if not any(f["file_id"] == row.file_id for f in result[0]["files"]):
+                result[0]["files"].append(
+                    {"file_id": row.file_id, "file_name": row.file_name}
+                )
+
+    return result
+
+
 if __name__ == "__main__":
     import random
     import json
@@ -249,7 +412,7 @@ if __name__ == "__main__":
     random_keys[0] = "602806"
     print(f"Testing {len(random_keys)} random file keys...")
     for test_key in random_keys:
-        output = get_related_ids(test_key)
+        output = get_related_ids_for_file(test_key)
         for item in output:
             for agenda in item["agenda_items"]:
                 items_seen.add("agenda")
@@ -267,3 +430,42 @@ if __name__ == "__main__":
         print(
             f"Total unique agenda items, meetings, and papers seen: {len(items_seen)}"
         )
+
+    # Test for agenda items
+    print("\n" + "="*80)
+    print("Testing agenda items...")
+    print("="*80 + "\n")
+    
+    items_seen_agenda = set()
+    engine = openDb()
+    with engine.connect() as conn:
+        agenda_keys = conn.execute(
+            select(Table("AgendaItem", MetaData(), autoload_with=engine).c.oparlKey)
+        ).fetchall()
+    agenda_keys = [row[0] for row in agenda_keys]
+    
+    random_agenda_keys = random.sample(agenda_keys, min(testing, len(agenda_keys)))
+    print(f"Testing {len(random_agenda_keys)} random agenda item keys...")
+    for test_key in random_agenda_keys:
+        output = get_related_ids_for_agenda_item(test_key)
+        for item in output:
+            for file in item["files"]:
+                items_seen_agenda.add("file")
+            for paper in item["papers"]:
+                items_seen_agenda.add("paper")
+            for consultation in item["consultations"]:
+                items_seen_agenda.add("consultation")
+            for meeting in item["meetings"]:
+                items_seen_agenda.add("meeting")
+            if item["agenda_item"]["agenda_result"] is not None:
+                items_seen_agenda.add("result")
+        print(f"Results for agenda item key: {test_key}")
+        print(json.dumps(output, default=str, indent=2))
+        if len(items_seen_agenda) >= 5:
+            print("All items have been seen at least once.")
+            break
+        print(
+            f"Total unique files, papers, consultations, results, and meetings seen: {len(items_seen_agenda)}"
+        )
+    
+    
