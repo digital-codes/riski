@@ -153,11 +153,14 @@ def get_related_ids(
                 consultation_tbl.c.agendaItemSid.label("agenda_item_id"),
                 meeting_tbl.c.name.label("meeting_name"),
                 meeting_tbl.c.start_date.label("meeting_start"),
+                agenda_tbl.c.name.label("agenda_item_name"),
+                agenda_tbl.c.result.label("agenda_item_result"),
             )
             .select_from(
                 pc_assoc_tbl.join(
                     consultation_tbl, pc_assoc_tbl.c.tgtSid == consultation_tbl.c.sid
                 ).join(meeting_tbl, consultation_tbl.c.meetingSid == meeting_tbl.c.sid)
+                .join(agenda_tbl, consultation_tbl.c.agendaItemSid == agenda_tbl.c.sid)
             )
             .where(pc_assoc_tbl.c.srcSid == paper["paper_id"])
         )
@@ -175,6 +178,8 @@ def get_related_ids(
                         "meeting_name": row.meeting_name,
                         "meeting_start": row.meeting_start,
                         "agenda_item_id": row.agenda_item_id,
+                        "agenda_item_name": row.agenda_item_name,
+                        "agenda_item_result": row.agenda_item_result,
                     }
                 )
 
