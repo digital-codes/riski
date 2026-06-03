@@ -55,6 +55,7 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
     paper_tbl = Table("Paper", metadata, autoload_with=engine)
     agenda_tbl = Table("AgendaItem", metadata, autoload_with=engine)
     meeting_tbl = Table("Meeting", metadata, autoload_with=engine)
+    consultation_tbl = Table("Consultation", metadata, autoload_with=engine)
     # Association table linking File <-> Meeting
     fm_assoc_tbl = Table("File__meeting__Meeting", metadata, autoload_with=engine)
     # Association table linking File <-> Paper
@@ -63,6 +64,8 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
     pf_assoc_tbl = Table("Paper__auxiliaryFile__File", metadata, autoload_with=engine)
     # Association table linking AgendaItem <-> File
     af_assoc_tbl = Table("AgendaItem__auxiliaryFile__File", metadata, autoload_with=engine)
+    # Assiocation paper -> consultation (used in some cases instead of paper -> meeting)
+    pc_assoc_tbl = Table("Paper__consultation__Consultation", metadata, autoload_with=engine)
 
     # Resolve the file's internal SID
     stmt_file = select(file_tbl.c.sid,file_tbl.c.name).where(file_tbl.c.oparlKey == oparl_key)
@@ -121,6 +124,27 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
         if row.paper_id not in existing_paper_ids:
             result[0]["papers"].append({"paper_id": row.paper_id})
             existing_paper_ids.add(row.paper_id)    
+
+    # we might need to look up consultations from papers and get meetingSid form the consultation. 
+    # add meetings this way, if possible, to capture meetings linked via consultations instead of directly from agenda items
+    for paper in result[0]["papers"]:
+        stmt_consultations = (
+            select(consultation_tbl.c.sid.label("consultation_id"), consultation_tbl.c.meetingSid.label("meeting_id"),
+                   meeting_tbl.c.name.label("meeting_name"), meeting_tbl.c.start_date.label("meeting_start"))
+            .select_from(
+                pc_assoc_tbl
+                .join(consultation_tbl, pc_assoc_tbl.c.tgtSid == consultation_tbl.c.sid)
+                .join(meeting_tbl, consultation_tbl.c.meetingSid == meeting_tbl.c.sid)
+            )
+            .where(pc_assoc_tbl.c.srcSid == paper["paper_id"])
+        )
+        with engine.connect() as conn:
+            consultation_rows = conn.execute(stmt_consultations).fetchall()
+        for row in consultation_rows:
+            if row.meeting_id is not None and all(m["meeting_id"] != row.meeting_id for m in result[0]["meetings"]):
+                # Add meeting from consultation if not already in the list
+                result[0]["meetings"].append({"consultation_id": row.consultation_id, "meeting_id": row.meeting_id, "meeting_name": row.meeting_name, "meeting_start": row.meeting_start})
+
     
     # Join through the association to agenda items and optionally to meetings
     stmt = (
