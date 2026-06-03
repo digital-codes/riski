@@ -28,15 +28,21 @@ def openDb():
     """
     try:
         import private as pr
-        db_url = f"postgresql+psycopg2://{pr.RO_USER}:{pr.RO_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
+
+        db_url = (
+            f"postgresql+psycopg2://{pr.RO_USER}:{pr.RO_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
+        )
     except ImportError as exc:
-        raise ImportError("Could not import private for DB connection settings") from exc
+        raise ImportError(
+            "Could not import private for DB connection settings"
+        ) from exc
 
     return create_engine(db_url, future=True, pool_pre_ping=True)
 
 
-
-def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[datetime]]]:
+def get_related_ids(
+    oparl_key: str,
+) -> List[Tuple[int, Optional[int], Optional[datetime]]]:
     """Return agenda item IDs and related meeting info for a file.
 
     Args:
@@ -63,12 +69,18 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
     # Association table linking Paper <-> File (reverse direction, should be the same as above but included for clarity)
     pf_assoc_tbl = Table("Paper__auxiliaryFile__File", metadata, autoload_with=engine)
     # Association table linking AgendaItem <-> File
-    af_assoc_tbl = Table("AgendaItem__auxiliaryFile__File", metadata, autoload_with=engine)
+    af_assoc_tbl = Table(
+        "AgendaItem__auxiliaryFile__File", metadata, autoload_with=engine
+    )
     # Assiocation paper -> consultation (used in some cases instead of paper -> meeting)
-    pc_assoc_tbl = Table("Paper__consultation__Consultation", metadata, autoload_with=engine)
+    pc_assoc_tbl = Table(
+        "Paper__consultation__Consultation", metadata, autoload_with=engine
+    )
 
     # Resolve the file's internal SID
-    stmt_file = select(file_tbl.c.sid,file_tbl.c.name).where(file_tbl.c.oparlKey == oparl_key)
+    stmt_file = select(file_tbl.c.sid, file_tbl.c.name).where(
+        file_tbl.c.oparlKey == oparl_key
+    )
     with engine.connect() as conn:
         file_row = conn.execute(stmt_file).first()
     if not file_row:
@@ -76,8 +88,14 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
     file_sid = file_row[0]
     file_name = file_row[1]
 
-    result = [{"file": {"file_sid": file_sid, "file_name": file_name}, "agenda_items": [], "meetings": [], "papers": []}]
-
+    result = [
+        {
+            "file": {"file_sid": file_sid, "file_name": file_name},
+            "agenda_items": [],
+            "meetings": [],
+            "papers": [],
+        }
+    ]
 
     # First find meetings via fm_assoc_tbl
     stmt_meetings = (
@@ -86,34 +104,34 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
             meeting_tbl.c.start_date.label("meeting_start"),
         )
         .select_from(
-            fm_assoc_tbl
-            .join(meeting_tbl, fm_assoc_tbl.c.tgtSid == meeting_tbl.c.sid)
+            fm_assoc_tbl.join(meeting_tbl, fm_assoc_tbl.c.tgtSid == meeting_tbl.c.sid)
         )
         .where(fm_assoc_tbl.c.srcSid == file_sid)
     )
     with engine.connect() as conn:
         meeting_rows = conn.execute(stmt_meetings).fetchall()
-    result[0]["meetings"] = [{"meeting_id": row.meeting_id, "meeting_start": row.meeting_start} for row in meeting_rows]        
-    
+    result[0]["meetings"] = [
+        {"meeting_id": row.meeting_id, "meeting_start": row.meeting_start}
+        for row in meeting_rows
+    ]
+
     # Find papers via file => paper association, which may be linked to agenda items and meetings
     stmt_papers = (
         select(paper_tbl.c.sid.label("paper_id"))
         .select_from(
-            fp_assoc_tbl
-            .join(paper_tbl, fp_assoc_tbl.c.tgtSid == paper_tbl.c.sid)
+            fp_assoc_tbl.join(paper_tbl, fp_assoc_tbl.c.tgtSid == paper_tbl.c.sid)
         )
         .where(fp_assoc_tbl.c.srcSid == file_sid)
     )
     with engine.connect() as conn:
         paper_rows = conn.execute(stmt_papers).fetchall()
-    result[0]["papers"] = [{"paper_id": row.paper_id} for row in paper_rows]    
-    
+    result[0]["papers"] = [{"paper_id": row.paper_id} for row in paper_rows]
+
     # Find papers via reverse search from paper => file association, which may be linked to agenda items and meetings
     stmt_papers = (
         select(paper_tbl.c.sid.label("paper_id"))
         .select_from(
-            pf_assoc_tbl
-            .join(paper_tbl, pf_assoc_tbl.c.srcSid == paper_tbl.c.sid)
+            pf_assoc_tbl.join(paper_tbl, pf_assoc_tbl.c.srcSid == paper_tbl.c.sid)
         )
         .where(pf_assoc_tbl.c.tgtSid == file_sid)
     )
@@ -123,29 +141,43 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
     for row in paper_rows:
         if row.paper_id not in existing_paper_ids:
             result[0]["papers"].append({"paper_id": row.paper_id})
-            existing_paper_ids.add(row.paper_id)    
+            existing_paper_ids.add(row.paper_id)
 
-    # we might need to look up consultations from papers and get meetingSid form the consultation. 
+    # we might need to look up consultations from papers and get meetingSid form the consultation.
     # add meetings this way, if possible, to capture meetings linked via consultations instead of directly from agenda items
     for paper in result[0]["papers"]:
         stmt_consultations = (
-            select(consultation_tbl.c.sid.label("consultation_id"), consultation_tbl.c.meetingSid.label("meeting_id"),
-                   meeting_tbl.c.name.label("meeting_name"), meeting_tbl.c.start_date.label("meeting_start"))
+            select(
+                consultation_tbl.c.sid.label("consultation_id"),
+                consultation_tbl.c.meetingSid.label("meeting_id"),
+                consultation_tbl.c.agendaItemSid.label("agenda_item_id"),
+                meeting_tbl.c.name.label("meeting_name"),
+                meeting_tbl.c.start_date.label("meeting_start"),
+            )
             .select_from(
-                pc_assoc_tbl
-                .join(consultation_tbl, pc_assoc_tbl.c.tgtSid == consultation_tbl.c.sid)
-                .join(meeting_tbl, consultation_tbl.c.meetingSid == meeting_tbl.c.sid)
+                pc_assoc_tbl.join(
+                    consultation_tbl, pc_assoc_tbl.c.tgtSid == consultation_tbl.c.sid
+                ).join(meeting_tbl, consultation_tbl.c.meetingSid == meeting_tbl.c.sid)
             )
             .where(pc_assoc_tbl.c.srcSid == paper["paper_id"])
         )
         with engine.connect() as conn:
             consultation_rows = conn.execute(stmt_consultations).fetchall()
         for row in consultation_rows:
-            if row.meeting_id is not None and all(m["meeting_id"] != row.meeting_id for m in result[0]["meetings"]):
+            if row.meeting_id is not None and all(
+                m["meeting_id"] != row.meeting_id for m in result[0]["meetings"]
+            ):
                 # Add meeting from consultation if not already in the list
-                result[0]["meetings"].append({"consultation_id": row.consultation_id, "meeting_id": row.meeting_id, "meeting_name": row.meeting_name, "meeting_start": row.meeting_start})
+                result[0]["meetings"].append(
+                    {
+                        "consultation_id": row.consultation_id,
+                        "meeting_id": row.meeting_id,
+                        "meeting_name": row.meeting_name,
+                        "meeting_start": row.meeting_start,
+                        "agenda_item_id": row.agenda_item_id,
+                    }
+                )
 
-    
     # Join through the association to agenda items and optionally to meetings
     stmt = (
         select(
@@ -157,22 +189,39 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
             meeting_tbl.c.start_date.label("meeting_start"),
         )
         .select_from(
-            af_assoc_tbl
-            .join(agenda_tbl, af_assoc_tbl.c.srcSid == agenda_tbl.c.sid)
-            .join(meeting_tbl, agenda_tbl.c.meetingSid == meeting_tbl.c.sid)
+            af_assoc_tbl.join(
+                agenda_tbl, af_assoc_tbl.c.srcSid == agenda_tbl.c.sid
+            ).join(meeting_tbl, agenda_tbl.c.meetingSid == meeting_tbl.c.sid)
         )
         .where(af_assoc_tbl.c.tgtSid == file_sid)
     )
     with engine.connect() as conn:
         rows = conn.execute(stmt).fetchall()
 
-    result[0]["agenda_items"] = [{"agenda_id": row.agenda_id, "agenda_name": row.agenda_name, "agenda_result": row.agenda_result, "meeting_id": row.meeting_id, "meeting_name": row.meeting_name, "meeting_start": row.meeting_start} for row in rows if row.agenda_id is not None]
+    result[0]["agenda_items"] = [
+        {
+            "agenda_id": row.agenda_id,
+            "agenda_name": row.agenda_name,
+            "agenda_result": row.agenda_result,
+            "meeting_id": row.meeting_id,
+            "meeting_name": row.meeting_name,
+            "meeting_start": row.meeting_start,
+        }
+        for row in rows
+        if row.agenda_id is not None
+    ]
 
     # Add meetings from agenda items if not already in the list
     existing_meeting_ids = {m["meeting_id"] for m in result[0]["meetings"]}
     for row in rows:
         if row.meeting_id is not None and row.meeting_id not in existing_meeting_ids:
-            result[0]["meetings"].append({"meeting_id": row.meeting_id, "meeting_name": row.meeting_name, "meeting_start": row.meeting_start})
+            result[0]["meetings"].append(
+                {
+                    "meeting_id": row.meeting_id,
+                    "meeting_name": row.meeting_name,
+                    "meeting_start": row.meeting_start,
+                }
+            )
             existing_meeting_ids.add(row.meeting_id)
 
     return result
@@ -181,11 +230,14 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
 if __name__ == "__main__":
     import random
     import json
-    testing = 100 # number of random keys to test
+
+    testing = 100  # number of random keys to test
     items_seen = set()
     engine = openDb()
     with engine.connect() as conn:
-        file_keys = conn.execute(select(Table("File", MetaData(), autoload_with=engine).c.oparlKey)).fetchall()
+        file_keys = conn.execute(
+            select(Table("File", MetaData(), autoload_with=engine).c.oparlKey)
+        ).fetchall()
     file_keys = [row[0] for row in file_keys]
 
     random_keys = random.sample(file_keys, min(testing, len(file_keys)))
@@ -207,4 +259,6 @@ if __name__ == "__main__":
         if len(items_seen) >= 4:
             print("All items have been seen at least once.")
             break
-        print(f"Total unique agenda items, meetings, and papers seen: {len(items_seen)}")
+        print(
+            f"Total unique agenda items, meetings, and papers seen: {len(items_seen)}"
+        )
