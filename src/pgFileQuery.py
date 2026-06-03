@@ -360,13 +360,14 @@ def get_related_ids_for_agenda_item(
 
     # Find files via papers (forward and reverse associations)
     for paper in result[0]["papers"]:
-        # Forward: paper -> file
+        print(f"Finding files for paper {paper['paper_id']} linked to agenda item {agenda_sid}...")
+        # Forward: paper -> file (pf_assoc: srcSid=Paper, tgtSid=File)
         stmt_files_via_paper = (
             select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
             .select_from(
-                fp_assoc_tbl.join(file_tbl, fp_assoc_tbl.c.tgtSid == file_tbl.c.sid)
+                pf_assoc_tbl.join(file_tbl, pf_assoc_tbl.c.tgtSid == file_tbl.c.sid)
             )
-            .where(fp_assoc_tbl.c.srcSid == paper["paper_id"])
+            .where(pf_assoc_tbl.c.srcSid == paper["paper_id"])
         )
         with engine.connect() as conn:
             file_rows = conn.execute(stmt_files_via_paper).fetchall()
@@ -376,13 +377,13 @@ def get_related_ids_for_agenda_item(
                     {"file_id": row.file_id, "file_name": row.file_name}
                 )
 
-        # Reverse: file -> paper (to find files)
+        # Reverse: file -> paper (fp_assoc: srcSid=File, tgtSid=Paper)
         stmt_files_via_paper_rev = (
             select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
             .select_from(
-                pf_assoc_tbl.join(file_tbl, pf_assoc_tbl.c.srcSid == file_tbl.c.sid)
+                fp_assoc_tbl.join(file_tbl, fp_assoc_tbl.c.srcSid == file_tbl.c.sid)
             )
-            .where(pf_assoc_tbl.c.tgtSid == paper["paper_id"])
+            .where(fp_assoc_tbl.c.tgtSid == paper["paper_id"])
         )
         with engine.connect() as conn:
             file_rows = conn.execute(stmt_files_via_paper_rev).fetchall()
@@ -445,6 +446,7 @@ if __name__ == "__main__":
     agenda_keys = [row[0] for row in agenda_keys]
     
     random_agenda_keys = random.sample(agenda_keys, min(testing, len(agenda_keys)))
+    random_agenda_keys[0] = "18953"
     print(f"Testing {len(random_agenda_keys)} random agenda item keys...")
     for test_key in random_agenda_keys:
         output = get_related_ids_for_agenda_item(test_key)
@@ -467,5 +469,4 @@ if __name__ == "__main__":
         print(
             f"Total unique files, papers, consultations, results, and meetings seen: {len(items_seen_agenda)}"
         )
-    
     
