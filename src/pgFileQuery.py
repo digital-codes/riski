@@ -59,6 +59,8 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
     fm_assoc_tbl = Table("File__meeting__Meeting", metadata, autoload_with=engine)
     # Association table linking File <-> Paper
     fp_assoc_tbl = Table("File__paper__Paper", metadata, autoload_with=engine)
+    # Association table linking Paper <-> File (reverse direction, should be the same as above but included for clarity)
+    pf_assoc_tbl = Table("Paper__auxiliaryFile__File", metadata, autoload_with=engine)
     # Association table linking AgendaItem <-> File
     af_assoc_tbl = Table("AgendaItem__auxiliaryFile__File", metadata, autoload_with=engine)
 
@@ -90,7 +92,7 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
         meeting_rows = conn.execute(stmt_meetings).fetchall()
     result[0]["meetings"] = [{"meeting_id": row.meeting_id, "meeting_start": row.meeting_start} for row in meeting_rows]        
     
-    # Find papers
+    # Find papers via file => paper association, which may be linked to agenda items and meetings
     stmt_papers = (
         select(paper_tbl.c.sid.label("paper_id"))
         .select_from(
@@ -102,6 +104,23 @@ def get_related_ids(oparl_key: str) -> List[Tuple[int, Optional[int], Optional[d
     with engine.connect() as conn:
         paper_rows = conn.execute(stmt_papers).fetchall()
     result[0]["papers"] = [{"paper_id": row.paper_id} for row in paper_rows]    
+    
+    # Find papers via reverse search from paper => file association, which may be linked to agenda items and meetings
+    stmt_papers = (
+        select(paper_tbl.c.sid.label("paper_id"))
+        .select_from(
+            pf_assoc_tbl
+            .join(paper_tbl, pf_assoc_tbl.c.srcSid == paper_tbl.c.sid)
+        )
+        .where(pf_assoc_tbl.c.tgtSid == file_sid)
+    )
+    with engine.connect() as conn:
+        paper_rows = conn.execute(stmt_papers).fetchall()
+    existing_paper_ids = {p["paper_id"] for p in result[0]["papers"]}
+    for row in paper_rows:
+        if row.paper_id not in existing_paper_ids:
+            result[0]["papers"].append({"paper_id": row.paper_id})
+            existing_paper_ids.add(row.paper_id)    
     
     # Join through the association to agenda items and optionally to meetings
     stmt = (
@@ -146,6 +165,7 @@ if __name__ == "__main__":
     file_keys = [row[0] for row in file_keys]
 
     random_keys = random.sample(file_keys, min(testing, len(file_keys)))
+    random_keys[0] = "602806"
     print(f"Testing {len(random_keys)} random file keys...")
     for test_key in random_keys:
         output = get_related_ids(test_key)
