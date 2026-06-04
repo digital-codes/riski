@@ -83,7 +83,7 @@ def add_district_agendaitem_refs(district_table, agendaitem_table):
     Returns:
         Number of new references inserted
     """
-    engine = district_table.bind or openDb()
+    engine = openDb()
     metadata = MetaData()
 
     # Ensure we have the correct table reference

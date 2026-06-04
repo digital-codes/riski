@@ -267,7 +267,7 @@ def get_related_ids_for_agenda_item(
     pf_assoc_tbl = Table("Paper__auxiliaryFile__File", metadata, autoload_with=engine)
 
     # Resolve the agenda item's internal SID
-    stmt_agenda = select(agenda_tbl.c.sid, agenda_tbl.c.name, agenda_tbl.c.result, agenda_tbl.c.meetingSid).where(
+    stmt_agenda = select(agenda_tbl.c.sid, agenda_tbl.c.name, agenda_tbl.c.result, agenda_tbl.c.meetingSid, agenda_tbl.c.consultationSid).where(
         agenda_tbl.c.oparlKey == oparl_key
     )
     with engine.connect() as conn:
@@ -278,6 +278,7 @@ def get_related_ids_for_agenda_item(
     agenda_name = agenda_row[1]
     agenda_result = agenda_row[2]
     meeting_sid = agenda_row[3]
+    consultation_sid = agenda_row[4]
 
     result = [
         {
@@ -311,6 +312,24 @@ def get_related_ids_for_agenda_item(
                 }
             ]
 
+    # Get the consultation directly linked to this agenda item, if it exists
+    if consultation_sid is not None:
+        stmt_consultation = select(
+            consultation_tbl.c.sid.label("consultation_id"),
+            consultation_tbl.c.meetingSid.label("consultation_meeting_id"),
+            consultation_tbl.c.role.label("consultation_role"),
+        ).where(consultation_tbl.c.sid == consultation_sid)
+        with engine.connect() as conn:
+            consultation_row = conn.execute(stmt_consultation).first()
+        if consultation_row:
+            result[0]["consultations"] = [
+                {
+                    "consultation_id": consultation_row.consultation_id,
+                    "consultation_meeting_id": consultation_row.consultation_meeting_id,
+                    "consultation_role": consultation_row.consultation_role,
+                }
+            ]
+
     # Find files via agenda item <-> file association
     stmt_files = (
         select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
@@ -326,20 +345,22 @@ def get_related_ids_for_agenda_item(
     ]
 
     # Find consultations linked to this agenda item
-    stmt_consultations = (
-        select(
-            consultation_tbl.c.sid.label("consultation_id"),
-            consultation_tbl.c.meetingSid.label("consultation_meeting_id"),
+    # Get the meeting directly linked to this agenda item, if it exists
+    if consultation_sid is None:
+        stmt_consultations = (
+            select(
+                consultation_tbl.c.sid.label("consultation_id"),
+                consultation_tbl.c.meetingSid.label("consultation_meeting_id"),
+            )
+            .select_from(consultation_tbl)
+            .where(consultation_tbl.c.agendaItemSid == agenda_sid)
         )
-        .select_from(consultation_tbl)
-        .where(consultation_tbl.c.agendaItemSid == agenda_sid)
-    )
-    with engine.connect() as conn:
-        consultation_rows = conn.execute(stmt_consultations).fetchall()
-    result[0]["consultations"] = [
-        {"consultation_id": row.consultation_id, "meeting_id": row.consultation_meeting_id}
-        for row in consultation_rows
-    ]
+        with engine.connect() as conn:
+            consultation_rows = conn.execute(stmt_consultations).fetchall()
+        result[0]["consultations"] = [
+            {"consultation_id": row.consultation_id, "consultation_meeting_id": row.consultation_meeting_id}
+            for row in consultation_rows
+        ]
 
     # Find papers via consultations
     for consultation in result[0]["consultations"]:

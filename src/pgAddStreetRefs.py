@@ -84,7 +84,7 @@ def add_street_agendaitem_refs(street_table, agendaitem_table):
     Returns:
         Number of new references inserted
     """
-    engine = street_table.bind or openDb()
+    engine = openDb()
     metadata = MetaData()
 
     # Ensure we have the correct table reference
