@@ -78,7 +78,7 @@ def get_related_ids_for_file(
     )
 
     # Resolve the file's internal SID
-    stmt_file = select(file_tbl.c.sid, file_tbl.c.name).where(
+    stmt_file = select(file_tbl.c.sid, file_tbl.c.name, file_tbl.c.oparlId).where(
         file_tbl.c.oparlKey == oparl_key
     )
     with engine.connect() as conn:
@@ -87,10 +87,11 @@ def get_related_ids_for_file(
         return []
     file_sid = file_row[0]
     file_name = file_row[1]
+    file_oparl_id = file_row[2]
 
     result = [
         {
-            "file": {"file_sid": file_sid, "file_name": file_name},
+            "file": {"file_sid": file_sid, "file_name": file_name, "file_oparlId": file_oparl_id},
             "agenda_items": [],
             "meetings": [],
             "papers": [],
@@ -102,6 +103,7 @@ def get_related_ids_for_file(
         select(
             meeting_tbl.c.sid.label("meeting_id"),
             meeting_tbl.c.start_date.label("meeting_start"),
+            meeting_tbl.c.oparlId.label("meeting_oparlId"),
         )
         .select_from(
             fm_assoc_tbl.join(meeting_tbl, fm_assoc_tbl.c.tgtSid == meeting_tbl.c.sid)
@@ -111,13 +113,13 @@ def get_related_ids_for_file(
     with engine.connect() as conn:
         meeting_rows = conn.execute(stmt_meetings).fetchall()
     result[0]["meetings"] = [
-        {"meeting_id": row.meeting_id, "meeting_start": row.meeting_start}
+        {"meeting_id": row.meeting_id, "meeting_start": row.meeting_start, "meeting_oparlId": row.meeting_oparlId}
         for row in meeting_rows
     ]
 
     # Find papers via file => paper association, which may be linked to agenda items and meetings
     stmt_papers = (
-        select(paper_tbl.c.sid.label("paper_id"))
+        select(paper_tbl.c.sid.label("paper_id"), paper_tbl.c.oparlId.label("paper_oparlId"))
         .select_from(
             fp_assoc_tbl.join(paper_tbl, fp_assoc_tbl.c.tgtSid == paper_tbl.c.sid)
         )
@@ -125,11 +127,11 @@ def get_related_ids_for_file(
     )
     with engine.connect() as conn:
         paper_rows = conn.execute(stmt_papers).fetchall()
-    result[0]["papers"] = [{"paper_id": row.paper_id} for row in paper_rows]
+    result[0]["papers"] = [{"paper_id": row.paper_id, "paper_oparlId": row.paper_oparlId} for row in paper_rows]
 
     # Find papers via reverse search from paper => file association, which may be linked to agenda items and meetings
     stmt_papers = (
-        select(paper_tbl.c.sid.label("paper_id"))
+        select(paper_tbl.c.sid.label("paper_id"), paper_tbl.c.oparlId.label("paper_oparlId"))
         .select_from(
             pf_assoc_tbl.join(paper_tbl, pf_assoc_tbl.c.srcSid == paper_tbl.c.sid)
         )
@@ -140,7 +142,7 @@ def get_related_ids_for_file(
     existing_paper_ids = {p["paper_id"] for p in result[0]["papers"]}
     for row in paper_rows:
         if row.paper_id not in existing_paper_ids:
-            result[0]["papers"].append({"paper_id": row.paper_id})
+            result[0]["papers"].append({"paper_id": row.paper_id, "paper_oparlId": row.paper_oparlId})
             existing_paper_ids.add(row.paper_id)
 
     # we might need to look up consultations from papers and get meetingSid form the consultation.
@@ -149,12 +151,15 @@ def get_related_ids_for_file(
         stmt_consultations = (
             select(
                 consultation_tbl.c.sid.label("consultation_id"),
+                consultation_tbl.c.oparlId.label("consultation_oparlId"),
                 consultation_tbl.c.meetingSid.label("meeting_id"),
                 consultation_tbl.c.agendaItemSid.label("agenda_item_id"),
                 meeting_tbl.c.name.label("meeting_name"),
                 meeting_tbl.c.start_date.label("meeting_start"),
+                meeting_tbl.c.oparlId.label("meeting_oparlId"),
                 agenda_tbl.c.name.label("agenda_item_name"),
                 agenda_tbl.c.result.label("agenda_item_result"),
+                agenda_tbl.c.oparlId.label("agenda_item_oparlId"),
             )
             .select_from(
                 pc_assoc_tbl.join(
@@ -174,12 +179,15 @@ def get_related_ids_for_file(
                 result[0]["meetings"].append(
                     {
                         "consultation_id": row.consultation_id,
+                        "consultation_oparlId": row.consultation_oparlId,
                         "meeting_id": row.meeting_id,
                         "meeting_name": row.meeting_name,
                         "meeting_start": row.meeting_start,
+                        "meeting_oparlId": row.meeting_oparlId,
                         "agenda_item_id": row.agenda_item_id,
                         "agenda_item_name": row.agenda_item_name,
                         "agenda_item_result": row.agenda_item_result,
+                        "agenda_item_oparlId": row.agenda_item_oparlId,
                     }
                 )
 
@@ -189,9 +197,11 @@ def get_related_ids_for_file(
             agenda_tbl.c.sid.label("agenda_id"),
             agenda_tbl.c.name.label("agenda_name"),
             agenda_tbl.c.result.label("agenda_result"),
+            agenda_tbl.c.oparlId.label("agenda_oparlId"),
             meeting_tbl.c.sid.label("meeting_id"),
             meeting_tbl.c.name.label("meeting_name"),
             meeting_tbl.c.start_date.label("meeting_start"),
+            meeting_tbl.c.oparlId.label("meeting_oparlId"),
         )
         .select_from(
             af_assoc_tbl.join(
@@ -208,9 +218,11 @@ def get_related_ids_for_file(
             "agenda_id": row.agenda_id,
             "agenda_name": row.agenda_name,
             "agenda_result": row.agenda_result,
+            "agenda_oparlId": row.agenda_oparlId,
             "meeting_id": row.meeting_id,
             "meeting_name": row.meeting_name,
             "meeting_start": row.meeting_start,
+            "meeting_oparlId": row.meeting_oparlId,
         }
         for row in rows
         if row.agenda_id is not None
@@ -225,6 +237,7 @@ def get_related_ids_for_file(
                     "meeting_id": row.meeting_id,
                     "meeting_name": row.meeting_name,
                     "meeting_start": row.meeting_start,
+                    "meeting_oparlId": row.meeting_oparlId,
                 }
             )
             existing_meeting_ids.add(row.meeting_id)
@@ -267,7 +280,7 @@ def get_related_ids_for_agenda_item(
     pf_assoc_tbl = Table("Paper__auxiliaryFile__File", metadata, autoload_with=engine)
 
     # Resolve the agenda item's internal SID
-    stmt_agenda = select(agenda_tbl.c.sid, agenda_tbl.c.name, agenda_tbl.c.result, agenda_tbl.c.meetingSid, agenda_tbl.c.consultationSid).where(
+    stmt_agenda = select(agenda_tbl.c.sid, agenda_tbl.c.name, agenda_tbl.c.result, agenda_tbl.c.meetingSid, agenda_tbl.c.consultationSid, agenda_tbl.c.oparlId).where(
         agenda_tbl.c.oparlKey == oparl_key
     )
     with engine.connect() as conn:
@@ -279,6 +292,7 @@ def get_related_ids_for_agenda_item(
     agenda_result = agenda_row[2]
     meeting_sid = agenda_row[3]
     consultation_sid = agenda_row[4]
+    agenda_oparl_id = agenda_row[5]
 
     result = [
         {
@@ -286,6 +300,7 @@ def get_related_ids_for_agenda_item(
                 "agenda_sid": agenda_sid,
                 "agenda_name": agenda_name,
                 "agenda_result": agenda_result,
+                "agenda_oparlId": agenda_oparl_id,
             },
             "files": [],
             "meetings": [],
@@ -300,6 +315,7 @@ def get_related_ids_for_agenda_item(
             meeting_tbl.c.sid.label("meeting_id"),
             meeting_tbl.c.name.label("meeting_name"),
             meeting_tbl.c.start_date.label("meeting_start"),
+            meeting_tbl.c.oparlId.label("meeting_oparlId"),
         ).where(meeting_tbl.c.sid == meeting_sid)
         with engine.connect() as conn:
             meeting_row = conn.execute(stmt_meeting).first()
@@ -309,6 +325,7 @@ def get_related_ids_for_agenda_item(
                     "meeting_id": meeting_row.meeting_id,
                     "meeting_name": meeting_row.meeting_name,
                     "meeting_start": meeting_row.meeting_start,
+                    "meeting_oparlId": meeting_row.meeting_oparlId,
                 }
             ]
 
@@ -316,6 +333,7 @@ def get_related_ids_for_agenda_item(
     if consultation_sid is not None:
         stmt_consultation = select(
             consultation_tbl.c.sid.label("consultation_id"),
+            consultation_tbl.c.oparlId.label("consultation_oparlId"),
             consultation_tbl.c.meetingSid.label("consultation_meeting_id"),
             consultation_tbl.c.role.label("consultation_role"),
         ).where(consultation_tbl.c.sid == consultation_sid)
@@ -325,6 +343,7 @@ def get_related_ids_for_agenda_item(
             result[0]["consultations"] = [
                 {
                     "consultation_id": consultation_row.consultation_id,
+                    "consultation_oparlId": consultation_row.consultation_oparlId,
                     "consultation_meeting_id": consultation_row.consultation_meeting_id,
                     "consultation_role": consultation_row.consultation_role,
                 }
@@ -332,7 +351,7 @@ def get_related_ids_for_agenda_item(
 
     # Find files via agenda item <-> file association
     stmt_files = (
-        select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
+        select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"), file_tbl.c.oparlId.label("file_oparlId"))
         .select_from(
             af_assoc_tbl.join(file_tbl, af_assoc_tbl.c.tgtSid == file_tbl.c.sid)
         )
@@ -341,7 +360,7 @@ def get_related_ids_for_agenda_item(
     with engine.connect() as conn:
         file_rows = conn.execute(stmt_files).fetchall()
     result[0]["files"] = [
-        {"file_id": row.file_id, "file_name": row.file_name} for row in file_rows
+        {"file_id": row.file_id, "file_name": row.file_name, "file_oparlId": row.file_oparlId} for row in file_rows
     ]
 
     # Find consultations linked to this agenda item
@@ -350,6 +369,7 @@ def get_related_ids_for_agenda_item(
         stmt_consultations = (
             select(
                 consultation_tbl.c.sid.label("consultation_id"),
+                consultation_tbl.c.oparlId.label("consultation_oparlId"),
                 consultation_tbl.c.meetingSid.label("consultation_meeting_id"),
             )
             .select_from(consultation_tbl)
@@ -358,14 +378,14 @@ def get_related_ids_for_agenda_item(
         with engine.connect() as conn:
             consultation_rows = conn.execute(stmt_consultations).fetchall()
         result[0]["consultations"] = [
-            {"consultation_id": row.consultation_id, "consultation_meeting_id": row.consultation_meeting_id}
+            {"consultation_id": row.consultation_id, "consultation_oparlId": row.consultation_oparlId, "consultation_meeting_id": row.consultation_meeting_id}
             for row in consultation_rows
         ]
 
     # Find papers via consultations
     for consultation in result[0]["consultations"]:
         stmt_papers = (
-            select(paper_tbl.c.sid.label("paper_id"), paper_tbl.c.name.label("paper_name"))
+            select(paper_tbl.c.sid.label("paper_id"), paper_tbl.c.name.label("paper_name"), paper_tbl.c.oparlId.label("paper_oparlId"))
             .select_from(
                 pc_assoc_tbl.join(paper_tbl, pc_assoc_tbl.c.srcSid == paper_tbl.c.sid)
             )
@@ -376,7 +396,7 @@ def get_related_ids_for_agenda_item(
         for row in paper_rows:
             if not any(p["paper_id"] == row.paper_id for p in result[0]["papers"]):
                 result[0]["papers"].append(
-                    {"paper_id": row.paper_id, "paper_name": row.paper_name}
+                    {"paper_id": row.paper_id, "paper_name": row.paper_name, "paper_oparlId": row.paper_oparlId}
                 )
 
     # Find files via papers (forward and reverse associations)
@@ -384,7 +404,7 @@ def get_related_ids_for_agenda_item(
         print(f"Finding files for paper {paper['paper_id']} linked to agenda item {agenda_sid}...")
         # Forward: paper -> file (pf_assoc: srcSid=Paper, tgtSid=File)
         stmt_files_via_paper = (
-            select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
+            select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"), file_tbl.c.oparlId.label("file_oparlId"))
             .select_from(
                 pf_assoc_tbl.join(file_tbl, pf_assoc_tbl.c.tgtSid == file_tbl.c.sid)
             )
@@ -395,12 +415,12 @@ def get_related_ids_for_agenda_item(
         for row in file_rows:
             if not any(f["file_id"] == row.file_id for f in result[0]["files"]):
                 result[0]["files"].append(
-                    {"file_id": row.file_id, "file_name": row.file_name}
+                    {"file_id": row.file_id, "file_name": row.file_name, "file_oparlId": row.file_oparlId}
                 )
 
         # Reverse: file -> paper (fp_assoc: srcSid=File, tgtSid=Paper)
         stmt_files_via_paper_rev = (
-            select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"))
+            select(file_tbl.c.sid.label("file_id"), file_tbl.c.name.label("file_name"), file_tbl.c.oparlId.label("file_oparlId"))
             .select_from(
                 fp_assoc_tbl.join(file_tbl, fp_assoc_tbl.c.srcSid == file_tbl.c.sid)
             )
@@ -411,7 +431,7 @@ def get_related_ids_for_agenda_item(
         for row in file_rows:
             if not any(f["file_id"] == row.file_id for f in result[0]["files"]):
                 result[0]["files"].append(
-                    {"file_id": row.file_id, "file_name": row.file_name}
+                    {"file_id": row.file_id, "file_name": row.file_name, "file_oparlId": row.file_oparlId}
                 )
 
     return result
