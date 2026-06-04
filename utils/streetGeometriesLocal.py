@@ -194,9 +194,10 @@ def process_streets_from_pbf(pbf_file, target_streets, output_dir):
             with open(out_file, 'w', encoding='utf-8') as f:
                 json.dump(collection, f, indent=2)
             
-            print(f"  -> Saved {len(feats)} segments for '{name}' to {out_file.name}")
+            # print(f"  -> Saved {len(feats)} segments for '{name}' to {out_file.name}")
     else:
-        print(json.dumps({"type": "FeatureCollection", "features": handler.features}, indent=2))
+        pass
+        # print(json.dumps({"type": "FeatureCollection", "features": handler.features}, indent=2))
 
 def main():
     parser = argparse.ArgumentParser(description="Fetch street GeoJSON from local OSM PBF file (Karlsruhe City Filter).")
