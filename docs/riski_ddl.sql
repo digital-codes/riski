@@ -70,6 +70,15 @@ CREATE SEQUENCE public."Consultation_sid_seq"
 	START 1
 	CACHE 1
 	NO CYCLE;
+-- DROP SEQUENCE public."District_id_seq";
+
+CREATE SEQUENCE public."District_id_seq"
+	INCREMENT BY 1
+	MINVALUE 1
+	MAXVALUE 2147483647
+	START 1
+	CACHE 1
+	NO CYCLE;
 -- DROP SEQUENCE public."File_sid_seq";
 
 CREATE SEQUENCE public."File_sid_seq"
@@ -142,6 +151,15 @@ CREATE SEQUENCE public."Person_sid_seq"
 	START 1
 	CACHE 1
 	NO CYCLE;
+-- DROP SEQUENCE public."Street_id_seq";
+
+CREATE SEQUENCE public."Street_id_seq"
+	INCREMENT BY 1
+	MINVALUE 1
+	MAXVALUE 2147483647
+	START 1
+	CACHE 1
+	NO CYCLE;
 -- DROP SEQUENCE public."System_sid_seq";
 
 CREATE SEQUENCE public."System_sid_seq"
@@ -177,7 +195,16 @@ CREATE SEQUENCE public.semantic_triples_id_seq
 	MAXVALUE 9223372036854775807
 	START 1
 	CACHE 1
-	NO CYCLE;-- public."File" definition
+	NO CYCLE;-- public."District" definition
+
+-- Drop table
+
+-- DROP TABLE public."District";
+
+CREATE TABLE public."District" ( id serial4 NOT NULL, "name" varchar(255) NOT NULL, "number" int4 NULL, "timestamp" timestamp NULL, geo bytea NULL, CONSTRAINT "District_name_key" UNIQUE (name), CONSTRAINT "District_pkey" PRIMARY KEY (id));
+
+
+-- public."File" definition
 
 -- Drop table
 
@@ -211,6 +238,15 @@ CREATE TABLE public."Meeting" ( sid bigserial NOT NULL, id int8 NULL, "oparlKey"
 CREATE INDEX "ix_Meeting_id" ON public."Meeting" USING btree (id);
 CREATE UNIQUE INDEX "ix_Meeting_oparlId" ON public."Meeting" USING btree ("oparlId");
 CREATE INDEX "ix_Meeting_oparlKey" ON public."Meeting" USING btree ("oparlKey");
+
+
+-- public."Street" definition
+
+-- Drop table
+
+-- DROP TABLE public."Street";
+
+CREATE TABLE public."Street" ( id serial4 NOT NULL, "name" varchar(255) NOT NULL, "text" varchar(255) NOT NULL, "year" int4 NULL, description varchar(4096) NULL, "timestamp" timestamp NULL, "districtName" varchar(255) NULL, geo bytea NULL, CONSTRAINT "Street_name_key" UNIQUE (name), CONSTRAINT "Street_pkey" PRIMARY KEY (id), CONSTRAINT "Street_text_key" UNIQUE (text));
 
 
 -- public."System" definition

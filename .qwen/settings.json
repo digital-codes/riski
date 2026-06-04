@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "Skill(opsx-propose)",
-      "Skill(openspec-propose)"
+      "Skill(openspec-propose)",
+      "Bash(python3 *)"
     ]
   },
   "$version": 4
