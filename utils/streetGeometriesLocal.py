@@ -10,109 +10,33 @@ import requests
 import osmium
 
 try:
-    from shapely.geometry import Point, shape
+    from shapely.geometry import Point, shape, MultiPoint
     from shapely.prepared import prep
     from shapely.ops import polygonize, unary_union
     HAS_SHAPLEY = True
 except ImportError:
     HAS_SHAPLEY = False
-    print("WARNING: 'shapely' not found. Install with: pip install shapely")
+    print("CRITICAL: 'shapely' not found. Install with: pip install shapely")
+    sys.exit(1)
 
 # Configuration
 PBF_URL = "https://download.geofabrik.de/europe/germany/baden-wuerttemberg/karlsruhe-regbez-latest.osm.pbf"
 PBF_FILENAME = "karlsruhe.osm.pbf"
-USER_AGENT = "StreetGeoJSONFetcher/1.0 (your-email@example.com)"
+USER_AGENT = "Riski-Geo/1.0 (info@ok-lab-karlsruhe.de)"
 
-# Boundary Configuration
-BOUNDARY_OVERPASS_QUERY = """
-[out:json][timeout:60];
-relation(62518);
-out geom;
-"""
-BOUNDARY_URL = "https://overpass-api.de/api/interpreter"
-BOUNDARY_FILE = "karlsruhe_boundary.geojson"
-
-def fetch_and_save_boundary():
-    """Fetch boundary from Overpass and save to local file."""
-    print(f"Fetching Karlsruhe boundary from Overpass API...")
-    try:
-        response = requests.post(BOUNDARY_URL, data=BOUNDARY_OVERPASS_QUERY.encode('utf-8'), timeout=60)
-        response.raise_for_status()
-        data = response.json()
-        
-        ways = []
-        for elem in data.get('elements', []):
-            if elem['type'] == 'way':
-                coords = [(n['lon'], n['lat']) for n in elem.get('geometry', [])]
-                if len(coords) > 1:
-                    ways.append(coords)
-        
-        if not ways:
-            print("ERROR: Could not fetch boundary geometry.", file=sys.stderr)
-            return None
-
-        # Construct GeoJSON FeatureCollection for saving
-        # We save the raw ways as LineStrings to allow reconstruction later
-        features = []
-        for i, w in enumerate(ways):
-            features.append({
-                "type": "Feature",
-                "properties": {"osm_id": data['elements'][i].get('id') if i < len(data['elements']) else 0},
-                "geometry": {"type": "LineString", "coordinates": w}
-            })
-        
-        geojson_data = {
-            "type": "FeatureCollection",
-            "features": features
-        }
-
-        with open(BOUNDARY_FILE, 'w', encoding='utf-8') as f:
-            json.dump(geojson_data, f)
-        
-        print(f"Boundary saved to {BOUNDARY_FILE}")
-        return geojson_data
-
-    except Exception as e:
-        print(f"ERROR fetching boundary: {e}", file=sys.stderr)
-        return None
-
-def load_or_fetch_boundary():
-    """Load boundary from file if exists, otherwise fetch and save."""
-    if os.path.exists(BOUNDARY_FILE):
-        print(f"Loading boundary from local file: {BOUNDARY_FILE}")
-        try:
-            with open(BOUNDARY_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except Exception as e:
-            print(f"Error loading boundary file: {e}. Fetching fresh...", file=sys.stderr)
-            os.remove(BOUNDARY_FILE)
-            return fetch_and_save_boundary()
-    else:
-        return fetch_and_save_boundary()
+BOUNDARY_URL = "https://nominatim.openstreetmap.org/search?format=geojson&polygon_geojson=1&q=Karlsruhe%20Germany"
+TARGET_RELATION_ID = 62518  # Karlsruhe City Boundary
 
 def build_polygon_from_geojson(geojson_data):
-    """Convert GeoJSON LineStrings to a prepared Shapely polygon."""
+    """Convert GeoJSON to prepared Shapely geometry."""
     if not HAS_SHAPLEY:
         return None
-    
     try:
-        lines = [shape(f['geometry']) for f in geojson_data.get('features', [])]
-        if not lines:
+        # The saved file has a single feature with the polygon geometry
+        if not geojson_data.get('features'):
             return None
-        
-        union_lines = unary_union(lines)
-        polygons = list(polygonize(union_lines))
-        
-        if not polygons:
-            # Fallback to Convex Hull if polygonization fails
-            print("WARNING: Could not form exact polygon. Using Convex Hull.", file=sys.stderr)
-            all_coords = [coord for f in geojson_data['features'] for coord in f['geometry']['coordinates']]
-            from shapely.geometry import MultiPoint
-            poly = MultiPoint(all_coords).convex_hull
-            return prep(poly)
-        
-        combined_poly = unary_union(polygons)
-        return prep(combined_poly)
+        geom = shape(geojson_data['features'][0]['geometry'])
+        return prep(geom)
     except Exception as e:
         print(f"Error building polygon: {e}", file=sys.stderr)
         return None
@@ -131,7 +55,6 @@ class StreetGeoJSONHandler(osmium.SimpleHandler):
         super().__init__()
         self.target_streets = {normalize_name(s) for s in target_streets}
         self.target_map = {normalize_name(s): s for s in target_streets}
-        
         self.found_streets = set()
         self.features = []
         self.all_city_features = []
@@ -168,10 +91,8 @@ class StreetGeoJSONHandler(osmium.SimpleHandler):
             if not self.boundary_poly.contains(point):
                 return
         else:
-            # Fallback to bbox
-            min_lat, min_lon, max_lat, max_lon = (48.90, 8.25, 49.08, 8.55)
-            if not (min_lat <= center_lat <= max_lat and min_lon <= center_lon <= max_lon):
-                return
+            print("CRITICAL: No boundary polygon available. Aborting.", file=sys.stderr)
+            sys.exit(1)
 
         if self.save_all:
             coords = [self.nodes[nr.ref] for nr in w.nodes if nr.ref in self.nodes]
@@ -197,7 +118,7 @@ class StreetGeoJSONHandler(osmium.SimpleHandler):
                     "normalized_name": norm_name,
                     "highway": w.tags.get('highway', 'unknown'),
                     "osm_id": w.id,
-                    "source": "Local PBF (Precise Boundary)"
+                    "source": "Local PBF (Extracted Boundary)"
                 },
                 "geometry": {
                     "type": "LineString",
@@ -228,16 +149,27 @@ def process_streets_from_pbf(pbf_file, target_streets, output_dir, save_all=Fals
         print(f"Error: PBF file '{pbf_file}' not found.", file=sys.stderr)
         return
 
-    # Load or Fetch Boundary
-    boundary_geojson = load_or_fetch_boundary()
-    boundary_poly = build_polygon_from_geojson(boundary_geojson) if boundary_geojson else None
+    # Load or Extract Boundary
+    try:
+        boundary_request = requests.get(BOUNDARY_URL, headers={'User-Agent': USER_AGENT})
+        print("Boundary GeoJSON fetched from Nominatim.")
+        boundary_geojson = boundary_request.json()
+    except Exception as e:
+        print(f"Error loading boundary: {e}", file=sys.stderr)
+        sys.exit(1)
     
-    if boundary_poly:
-        print("Karlsruhe boundary loaded and prepared.")
-    else:
-        print("WARNING: Failed to load boundary. Using fallback bounding box.", file=sys.stderr)
+    if not boundary_geojson:
+        print("CRITICAL: Failed to extract or load boundary. Cannot proceed.", file=sys.stderr)
+        sys.exit(1)
 
-    print(f"Processing {len(target_streets)} streets with Precise Boundary Filter...")
+    boundary_poly = build_polygon_from_geojson(boundary_geojson)
+    if not boundary_poly:
+        print("CRITICAL: Failed to build polygon.", file=sys.stderr)
+        sys.exit(1)
+        
+    print("Karlsruhe boundary loaded and prepared.")
+
+    print(f"Processing {len(target_streets)} streets...")
     
     handler = StreetGeoJSONHandler(target_streets, output_dir, save_all, boundary_poly)
     
@@ -302,7 +234,7 @@ def process_streets_from_pbf(pbf_file, target_streets, output_dir, save_all=Fals
         print(json.dumps({"type": "FeatureCollection", "features": handler.features}, indent=2))
 
 def main():
-    parser = argparse.ArgumentParser(description="Fetch street GeoJSON with precise boundary filter (cached).")
+    parser = argparse.ArgumentParser(description="Fetch street GeoJSON with local PBF boundary extraction.")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--street', '-s', type=str)
     group.add_argument('--file', '-f', type=str)
