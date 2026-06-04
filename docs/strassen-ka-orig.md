@@ -1620,8 +1620,6 @@ Siehe Elsässer Straße
 
 ## Elsässer Straße 1935
 
-## Belfortstraße
-
 Elsaß, Landschaft links des Oberrheins, Frankreich.
 
 ## Elsternweg 1937
@@ -2285,8 +2283,6 @@ Gablonz an der Neiße, heute Jablonec nad Nisou, Stadt in der Tschechoslowakei.
 Gaistal, Tal in und Ortsteil von Bad Herrenalb.
 
 ## Gänsbergstraße 1972
-
-## Schulstraße
 
 Flurname. Das Gelände wurde als Gänseweide genutzt.
 
@@ -3433,10 +3429,6 @@ Herbert Clark Hoover, * 10.8.1874 West Branch/USA, † 20.10.1964 New York/USA; 
 
 ## Hopfenacker 1972
 
-## Hopfenstraße
-
-Flurname, der auf ehemaligen Hopfenanbau hinweist.
-
 ## Hopfenstraße 1908
 
 Hopfen, Schlingpflanze, wird zum Würzen und Haltbarmachen des Biers verwendet.
@@ -3446,8 +3438,6 @@ Hopfen, Schlingpflanze, wird zum Würzen und Haltbarmachen des Biers verwendet.
 Flurname.
 
 ## Hördtstraße 1910
-
-## Südendstraße
 
 Der Hördtwald, Teil der früheren Gemarkung Daxlanden, lag im Gebiet des heutigen Rheinhafens.
 
@@ -4116,8 +4106,6 @@ Kärnten, Bundesland Österreichs.
 Karoline Luise, Markgräfin von Baden, * 11.7.1723 Darmstadt, † 8.04.1783 Paris; Die Markgräfin genoss eine ausgezeichnete Erziehung und Ausbildung, war vielsprachig. Sie heiratete 1751 den Markgrafen Karl Friedrich von Baden-Durlach. Sie entwickelte ein breit gefächertes Interesse an den Natur-, Geistes- und Wirtschaftswissenschaften und der Kunst. Im Rahmen ihrer intensiven Beschäftigung mit diesen Themen entstanden umfangreiche private Sammlungen. Diese bildeten den Grundstock für die heutige Staatliche Kunsthalle Karlsruhe und das Naturkundemuseum Karlsruhe.
 
 ## Karolinenstraße 1907
-
-## Augustastraße
 
 Friederike Wilhelmine Karoline, Markgräfin von Baden-Durlach, Königin von Bayern, * 13.7.1776 Karlsruhe, † 13.11.1841 München; Karoline, die Tochter des Erbprinzen Karl Ludwig von Baden-Durlach, wurde 1797 die zweite Gemahlin des Pfalzgrafen Maximilian Josef von Zweibrücken und Birkenfeld. Im Jahr 1799 gelangte die Pfalz-Zweibrücker Linie auf den bayrischen Thron. Maximilian wurde zunächst
 
@@ -4960,8 +4948,6 @@ Luise Riegger besuchte die Höhere Mädchenschule und später das Lehrerinnensem
 Lußweg, Lußstraße, 1933 Richthofenstraße Flurname; Siehe Lissenstraße.
 
 ## Lützowplatz Lützowstraße 1907
-
-## Lammstraße
 
 Ludwig Adolf Freiherr von Lützow, * 18.5.1782 Berlin, † 6.12.1834 Berlin; Preußischer Generalmajor, bildete 1813 im Krieg gegen Napoleon das Lützowsche Freikorps.
 
@@ -6229,7 +6215,7 @@ Benannt nach dem Gasthaus Zum Rappen in Durlach.
 
 ## Rappenwörtstraße 1910
 
-## Leopoldstraße
+Leopoldstraße
 
 Insel im Altrheingelände bei Daxlanden. Wört ist eine Weiterentwicklung von Werd, eine Bezeichnung für Insel, erhöhtes, wasserfreies Land zwischen Sümpfen. Bei Rappen handelt es sich wahrscheinlich um einen Familiennamen.
 
@@ -6687,7 +6673,7 @@ Benannt nach den Saumseen im Naturschutzgebiet Fritschlach.
 
 ## Schäferstraße 1938
 
-## Ostendstraße
+Ostendstraße
 
 Diese Straße soll zu den Hagsfelder Schafweiden geführt haben.
 
@@ -6807,8 +6793,6 @@ Schliffkopf, Berg an der Schwarzwaldhochstraße.
 
 ## Schlossbergstraße 1916
 
-## Grünwettersbacher Straße
-
 Die Straße führt in Richtung der Burgruine (Schloß) Wolfartsweier, zuletzt Besitz der Ritter Bleich von Waldeck, im 15.Jahrhundert Vasallen der Markgrafen von Baden.
 
 ## Schlossbezirk 1857
@@ -6893,8 +6877,6 @@ Hermann Schück, * 16.3.1848 Heidelberg, † 9.3.1911 Karlsruhe;
 
 ## Schulstraße 1935
 
-## Friedrichstraße
-
 Gemeint ist die Viktor-von-Scheffel-Schule in Knielingen.
 
 ## Schultheiß-Kiefer-Straße 1974
@@ -6966,8 +6948,6 @@ Sebastian Kneipp, * 17.5.1821 Stefansried, † 17.6.1897 Bad Wörishofen; Pfarre
 Johann Georg Sebold, * 17.9.1822 Zell bei Würzburg, † 1.5.1892 Karlsruhe; Sebold, gelernter Modellschreiner, entwickelte Apparate für die Zündholzfabrikation und gründete um 1856 in Durlach eine Maschinenfabrik. Dort konstruierte er wenig später die erste Gießerei-Preßformmaschine. Unter seiner Leitung entwickelte sich das Werk - heute Badische Maschinenfabrik Durlach - zum Spezialisten für Gerbereimaschinen, Filterpressen und Furnierschälmaschinen.
 
 ## Sedanstraße 1886
-
-## Schillerstraße
 
 In der Schlacht bei Sedan am 2.9.1870 geriet der französische Kaiser Napoleon III. in deutsche Gefangenschaft.
 
@@ -7138,8 +7118,6 @@ Speyer, Stadt in Rheinland-Pfalz.
 Spielberg, ehemals selbständige Gemeinde, heute Teil von Karlsbad, Landkreis Karlsruhe.
 
 ## Spitalhof 1972
-
-## Spitalstraße
 
 Die Bezeichnung geht auf ehemaligen Besitz des Spitals Ettlingen in Hohenwettersbach zurück.
 
@@ -7590,10 +7568,6 @@ Nach seiner Ausbildung zum Geometer erwarb sich Tulla mit tatkräftiger Unterst�
 ## Tulpenstraße 1907
 
 Die Legende, der Stadtgründer Markgraf Karl Wilhelm von Baden-Durlach, habe sich in seinem Schloss mit einer Vielzahl von Tulpenmädchen umgeben, ist nach neueren Forschungen nicht mehr haltbar. Bei den so genannten Tulpenmädchen handelte es sich um bei Hofe fest angestellte Sängerinnen.
-
-## Turmbergstraße 1934
-
-Siehe Auf dem Turmberg
 
 ## Turmbergstraße 1905
 
@@ -8106,8 +8080,6 @@ Wilhelm Baur, * 6.2.1895 Schwäbisch Gmünd, † 18.5.1973 Bad Ragaz;
 Nach dem Ersten Weltkrieg gab Baur in Karlsruhe die Pressekorrespondenz der Zentrumspartei heraus. Die Tatsache, dass er als Demokrat unter den Nationalsozialisten leiden musste, war den Amerikanern 1946 Anlass, ihm die Lizenz für eine Tageszeitung, die Badischen Neuesten Nachrichten, zu erteilen, für die er bis zu seinem Tode als Chefredakteur verantwortlich war. Sein Engagement für die Stadt Karlsruhe, deren Gemeinderat er von 1946 bis 1971 angehörte, wurde durch die Verleihung der Ehrenbürgerwürde anerkannt.
 
 ## Wilhelm-Hausenstein-Allee 1982
-
-## Knielinger Allee
 
 Wilhelm Hausenstein, * 17.6.1882 Hornberg/Schwarzwald, † 3.6.1957 München; Hausenstein verbrachte seine Jugend in Karlsruhe, studierte danach Geschichte, Philosophie, Soziologie und Kunstgeschichte und verfasste zahlreiche Kunst- und Reisebücher. Vom NSRegime als entarteter Kritiker geächtet, gehörte Hausenstein dann 1945 zu den Gründern der Süddeutschen Zeitung. Als deutscher Botschafter in Paris (1953-55) hat er wesentlich zur deutsch-französischen Verständigung beigetragen.
 
