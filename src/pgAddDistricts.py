@@ -9,7 +9,7 @@ from sqlalchemy import func
 # Import helper to create DB engine
 from sqlalchemy import create_engine  # needed for openDb
 
-import json
+import geopandas as gp
 
 # Copied from refs
 def openDb():
@@ -36,44 +36,41 @@ def openDb():
 def main():
     import argparse
     parser = argparse.ArgumentParser(description="Query the database for recent entries.")
-    parser.add_argument("-i","--input_file", help="Path to street names input file", default=None)
+    parser.add_argument("-i","--input_file", help="Path to districts geojson file", default=None)
     args = parser.parse_args()
 
     if not args.input_file:
-        print("Please provide an input file with street names using -i or --input_file")
+        print("Please provide an input file with districts geojson using -i or --input_file")
         return
 
     engine = openDb()
     metadata = MetaData()
 
-    # Check if Street table exists, create if not
+    # Check if District table exists, create if not
     inspector = inspect(engine)
-    if "Street" not in inspector.get_table_names():
-        street_table = Table(
-            "Street",
+    if "District" not in inspector.get_table_names():
+        district_table = Table(
+            "District",
             metadata,
             Column("id", Integer, primary_key=True),
             Column("name", String(255), nullable=False, unique=True),
-            Column("text", String(255), nullable=False, unique=True),
-            Column("year", Integer, nullable=True),
-            Column("description", String(4096), nullable=True),
+            Column("number", Integer, nullable=True),
             Column("timestamp", DateTime, default=lambda: datetime.now(timezone.utc)),
-            Column("districtName", String(255), nullable=True),
             Column("geo", LargeBinary, nullable=True),
         )
         metadata.create_all(engine)
     else:
-        street_table = Table("Street", metadata, autoload_with=engine)
+        district_table = Table("District", metadata, autoload_with=engine)
 
-    with open(args.input_file, "r") as f:
-        streets = json.load(f)
+    df = gp.read_file(args.input_file)
 
     with engine.connect() as conn:
-        for street in streets:
-            stmt = street_table.insert().values(
-                name=street.get("name"),
-                text=street.get("text"),
-                year=street.get("year"),
+        for n in list(df.NAME.values):
+            g = df[df.NAME == n]
+            stmt = district_table.insert().values(
+                name=n,
+                number=g.NUMMER.iloc[0],
+                geo=g.to_json().encode("utf-8"),
                 timestamp=datetime.now(timezone.utc)
             )
             conn.execute(stmt)
