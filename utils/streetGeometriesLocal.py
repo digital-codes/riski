@@ -4,6 +4,7 @@ import json
 import sys
 import os
 import time
+import re
 from pathlib import Path
 import requests
 import osmium
@@ -13,29 +14,42 @@ PBF_URL = "https://download.geofabrik.de/europe/germany/baden-wuerttemberg/karls
 PBF_FILENAME = "karlsruhe.osm.pbf"
 USER_AGENT = "StreetGeoJSONFetcher/1.0 (your-email@example.com)"
 
-# Bounding Box for Karlsruhe City (Approximate)
-# Format: (min_lat, min_lon, max_lat, max_lon)
-# You can refine these coordinates using a tool like https://bboxfinder.com/
-# Current values cover the main urban area of Karlsruhe
-KARLSRUHE_CITY_BBOX = (
-    48.980,  # min_lat (South)
-    8.360,   # min_lon (West)
-    49.030,  # max_lat (North)
-    8.450    # max_lon (East)
-)
+# Bounding Box for Karlsruhe City
+KARLSRUHE_CITY_BBOX = (48.980, 8.360, 49.030, 8.450)
 
 def is_in_karlsruhe(lat, lon):
-    """Check if a coordinate is inside the Karlsruhe city bounding box."""
     min_lat, min_lon, max_lat, max_lon = KARLSRUHE_CITY_BBOX
     return (min_lat <= lat <= max_lat) and (min_lon <= lon <= max_lon)
 
+def normalize_name(name):
+    """Normalize street names for better matching."""
+    if not name:
+        return ""
+    # Lowercase
+    name = name.lower()
+    # Remove common suffixes/prefixes variations
+    # "straße" -> "strasse" (German eszett normalization)
+    name = name.replace("ß", "ss")
+    # Remove "straße", "str.", "str" from end to match base name? 
+    # No, better to keep full name but normalize spelling.
+    # Remove punctuation
+    name = re.sub(r'[^\w\s]', '', name)
+    # Collapse spaces
+    name = re.sub(r'\s+', ' ', name).strip()
+    return name
+
 class StreetGeoJSONHandler(osmium.SimpleHandler):
-    def __init__(self, target_streets, output_dir=None):
+    def __init__(self, target_streets, output_dir=None, save_all=False):
         super().__init__()
-        self.target_streets = {s.lower().strip() for s in target_streets}
-        self.found_streets = set()
+        # Normalize target streets
+        self.target_streets = {normalize_name(s) for s in target_streets}
+        self.target_map = {normalize_name(s): s for s in target_streets} # Map normalized -> original
+        
+        self.found_streets = set() # Will store NORMALIZED names
         self.features = []
+        self.all_city_features = [] # For the "all streets" file
         self.output_dir = output_dir
+        self.save_all = save_all
         self.nodes = {}
 
     def node(self, n):
@@ -48,97 +62,90 @@ class StreetGeoJSONHandler(osmium.SimpleHandler):
         if not name_tag:
             return
 
-        street_name_lower = name_tag.lower()
+        norm_name = normalize_name(name_tag)
         
-        # 1. Check if name matches
-        if street_name_lower not in self.target_streets:
-            return
-
-        # 2. Calculate center point of the way to check location
-        # We need at least one node to calculate a center
+        # 1. Check location first (optimization)
         if not w.nodes:
             return
-
-        # Sum coordinates to find average
-        sum_lat = 0.0
-        sum_lon = 0.0
-        count = 0
-        
+        sum_lat, sum_lon, count = 0.0, 0.0, 0
         for node_ref in w.nodes:
             if node_ref.ref in self.nodes:
                 lon, lat = self.nodes[node_ref.ref]
                 sum_lat += lat
                 sum_lon += lon
                 count += 1
+        if count == 0: return
+        center_lat, center_lon = sum_lat/count, sum_lon/count
         
-        if count == 0:
-            return
-
-        center_lat = sum_lat / count
-        center_lon = sum_lon / count
-
-        # 3. Filter by City BBox
         if not is_in_karlsruhe(center_lat, center_lon):
-            # Optional: Uncomment to see skipped segments
-            # print(f"  [SKIP] Way {w.id} '{name_tag}' is outside Karlsruhe city limits.")
             return
 
-        # If we passed the filter, add the feature
-        self.found_streets.add(name_tag)
-        
-        coords = []
-        for node_ref in w.nodes:
-            if node_ref.ref in self.nodes:
-                coords.append(self.nodes[node_ref.ref])
-        
-        if len(coords) < 2:
-            return
+        # If we want to save ALL streets in the city
+        if self.save_all:
+            coords = [self.nodes[nr.ref] for nr in w.nodes if nr.ref in self.nodes]
+            if len(coords) >= 2:
+                self.all_city_features.append({
+                    "type": "Feature",
+                    "properties": {"name": name_tag, "osm_id": w.id, "source": "All Karlsruhe"},
+                    "geometry": {"type": "LineString", "coordinates": coords}
+                })
 
-        feature = {
-            "type": "Feature",
-            "properties": {
-                "name": name_tag,
-                "highway": w.tags.get('highway', 'unknown'),
-                "osm_id": w.id,
-                "center_lat": center_lat,
-                "center_lon": center_lon,
-                "source": "Local PBF (Geofabrik) - Filtered by Karlsruhe City"
-            },
-            "geometry": {
-                "type": "LineString",
-                "coordinates": coords
+        # 2. Check if name matches target
+        if norm_name in self.target_streets:
+            self.found_streets.add(norm_name)
+            
+            coords = []
+            for node_ref in w.nodes:
+                if node_ref.ref in self.nodes:
+                    coords.append(self.nodes[node_ref.ref])
+            
+            if len(coords) < 2:
+                return
+
+            # Get original name from map if possible, else use tag
+            original_name = self.target_map.get(norm_name, name_tag)
+            
+            feature = {
+                "type": "Feature",
+                "properties": {
+                    "name": name_tag, # Keep original OSM name
+                    "normalized_name": norm_name,
+                    "highway": w.tags.get('highway', 'unknown'),
+                    "osm_id": w.id,
+                    "source": "Local PBF (Filtered)"
+                },
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": coords
+                }
             }
-        }
-        self.features.append(feature)
+            self.features.append(feature)
 
 def download_pbf(url, filename):
     if os.path.exists(filename):
         print(f"PBF file '{filename}' already exists. Skipping download.")
         return True
-
-    print(f"Downloading {filename} (~100MB)... This may take a minute.")
+    print(f"Downloading {filename}...")
     try:
         response = requests.get(url, stream=True, headers={'User-Agent': USER_AGENT})
         response.raise_for_status()
-        
         with open(filename, 'wb') as f:
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
-        
         print(f"Download complete: {filename}")
         return True
     except Exception as e:
         print(f"Error downloading PBF: {e}", file=sys.stderr)
         return False
 
-def process_streets_from_pbf(pbf_file, target_streets, output_dir):
+def process_streets_from_pbf(pbf_file, target_streets, output_dir, save_all=False):
     if not os.path.exists(pbf_file):
         print(f"Error: PBF file '{pbf_file}' not found.", file=sys.stderr)
         return
 
-    print(f"Processing {len(target_streets)} streets from local PBF (filtered to Karlsruhe City)...")
+    print(f"Processing {len(target_streets)} streets (with normalization)...")
     
-    handler = StreetGeoJSONHandler(target_streets, output_dir)
+    handler = StreetGeoJSONHandler(target_streets, output_dir, save_all)
     
     start_time = time.time()
     try:
@@ -151,63 +158,59 @@ def process_streets_from_pbf(pbf_file, target_streets, output_dir):
 
     elapsed = time.time() - start_time
     print(f"Processing complete in {elapsed:.2f}s.")
-    print(f"Total segments found (within city limits): {len(handler.features)}")
-    print(f"Unique street names found: {len(handler.found_streets)}")
+    print(f"Total segments found: {len(handler.features)}")
+    print(f"Unique normalized names found: {len(handler.found_streets)}")
 
-    # Identify Missing Streets
+    # --- FIX: Correct Missing Streets Report ---
     missing_streets = []
     for original_name in target_streets:
-        if original_name.lower() not in handler.found_streets:
+        norm = normalize_name(original_name)
+        if norm not in handler.found_streets:
             missing_streets.append(original_name)
 
     if missing_streets:
-        print("\n--- STREETS NOT FOUND IN KARLSRUHE CITY ---")
-        print(f"The following {len(missing_streets)} street(s) were not found within the city limits:")
+        print(f"\n--- {len(missing_streets)} STREETS NOT FOUND ---")
         for street in missing_streets:
             print(f"  - {street}")
-        print("Possible reasons: Spelling error, name variation, or street is outside the defined city box.\n")
+        print()
     else:
-        print("\nAll requested streets were found within Karlsruhe city limits.")
+        print("\nAll requested streets found!")
 
-    if not handler.features:
-        print("No matching street segments found.")
-        return
-
-    # Group and Save
-    grouped_features = {}
-    for feat in handler.features:
-        name = feat['properties']['name']
-        if name not in grouped_features:
-            grouped_features[name] = []
-        grouped_features[name].append(feat)
-
+    # Save Individual Files
     if output_dir:
-        for name, feats in grouped_features.items():
+        grouped = {}
+        for feat in handler.features:
+            name = feat['properties']['name']
+            if name not in grouped: grouped[name] = []
+            grouped[name].append(feat)
+        
+        for name, feats in grouped.items():
             safe_name = "".join(c if c.isalnum() or c in ('-', '_') else '_' for c in name)
             out_file = Path(output_dir) / f"{safe_name}.geojson"
-            
-            collection = {
-                "type": "FeatureCollection",
-                "features": feats
-            }
-            
             with open(out_file, 'w', encoding='utf-8') as f:
-                json.dump(collection, f, indent=2)
-            
-            # print(f"  -> Saved {len(feats)} segments for '{name}' to {out_file.name}")
+                json.dump({"type": "FeatureCollection", "features": feats}, f, indent=2)
+            # print(f"  -> Saved {len(feats)} segments for '{name}'")
+
+        # Save ALL Streets in City
+        if save_all and handler.all_city_features:
+            all_file = Path(output_dir) / "all_karlsruhe_streets.geojson"
+            with open(all_file, 'w', encoding='utf-8') as f:
+                json.dump({"type": "FeatureCollection", "features": handler.all_city_features}, f, indent=2)
+            # print(f"\n-> Saved ALL {len(handler.all_city_features)} streets in city to {all_file.name}")
+
     else:
         pass
         # print(json.dumps({"type": "FeatureCollection", "features": handler.features}, indent=2))
 
 def main():
-    parser = argparse.ArgumentParser(description="Fetch street GeoJSON from local OSM PBF file (Karlsruhe City Filter).")
-    
+    parser = argparse.ArgumentParser(description="Fetch street GeoJSON with normalization and city filter.")
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--street', '-s', type=str, help="Single street name")
-    group.add_argument('--file', '-f', type=str, help="File with street names (one per line)")
+    group.add_argument('--file', '-f', type=str, help="File with street names")
     
-    parser.add_argument('--output-dir', '-d', type=str, help="Output directory for GeoJSON files")
-    parser.add_argument('--pbf', type=str, default=PBF_FILENAME, help=f"PBF filename (default: {PBF_FILENAME})")
+    parser.add_argument('--output-dir', '-d', type=str, help="Output directory")
+    parser.add_argument('--pbf', type=str, default=PBF_FILENAME)
+    parser.add_argument('--all', action='store_true', help="Also save a file with ALL streets in the city")
     
     args = parser.parse_args()
 
@@ -231,7 +234,7 @@ def main():
     if not download_pbf(PBF_URL, args.pbf):
         sys.exit(1)
 
-    process_streets_from_pbf(args.pbf, target_streets, args.output_dir)
+    process_streets_from_pbf(args.pbf, target_streets, args.output_dir, save_all=args.all)
 
 if __name__ == "__main__":
     main()
