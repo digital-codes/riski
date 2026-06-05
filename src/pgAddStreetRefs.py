@@ -129,7 +129,8 @@ def add_street_agendaitem_refs(street_table, agendaitem_table):
                         insert_stmt = ref_table.insert().values(
                             street_id=street_id,
                             agendaitem_id=agendaitem_id,
-                            name_match=agendaitem_name
+                            name_match=agendaitem_name,
+                            created_at=datetime.now(timezone.utc)
                         )
                         conn.execute(insert_stmt)
                         inserted_count += 1

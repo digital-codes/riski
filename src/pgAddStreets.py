@@ -87,7 +87,7 @@ def main():
                 name=street.get("name"),
                 text=street.get("text"),
                 year=street.get("year"),
-                geo=bytearray(street.get("geo", "").encode()) if street.get("geo") else None,
+                geo=bytearray(street.get("geo", "").encode("utf-8")) if street.get("geo") else None,
                 timestamp=datetime.now(timezone.utc)
             )
             conn.execute(stmt)
