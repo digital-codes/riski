@@ -1,17 +1,17 @@
+!!NOTE: Adjusting Karlsruhe boundary to enforce upper latitude limit of 49.088...
 Karlsruhe boundary loaded and prepared.
-Processing 1774 streets...
-Processing complete in 38.56s.
-Total segments found: 10388
-Unique normalized names found: 1692
+Processing 1768 streets...
+Processing complete in 39.50s.
+Total segments found: 10418
+Unique normalized names found: 1697
 
---- 82 STREETS NOT FOUND ---
+--- 71 STREETS NOT FOUND ---
   - Am Badenwerk
   - An der Klamm
   - Auf der Lug
   - Badenwerkstraße
   - Bei dem Fasanenhaus
   - Bei der Werren
-  - Bergwaldstraße vor
   - Berliner Platz
   - Berhard-Metz-Straße
   - Bertholdstraße
@@ -23,7 +23,6 @@ Unique normalized names found: 1692
   - Douglashof
   - Durlacher Tor
   - Engländerplatz
-  - "Erbprinzenstraße, ca."
   - Fanny - Hensel - Anlage
   - Schotterstraße
   - Fliederplatz
@@ -35,7 +34,6 @@ Unique normalized names found: 1692
   - Gerda-Krüger-Nieland
   - Gotthart-Franz-Straße
   - Hagsfelder Straße
-  - Herrenstraße 19.Jahrhundert
   - Josef-Groß-Platz
   - Leopoldplatz
   - Lindeneck
@@ -46,7 +44,6 @@ Unique normalized names found: 1692
   - Massachusetts Street
   - Mendelssohnplatz
   - Mensaplatz
-  - Mittelstraße vor
   - Projektstraße
   - Kirchgasse
   - Neureuter Platz
@@ -57,7 +54,6 @@ Unique normalized names found: 1692
   - Ohio Street
   - Otto-Amman-Platz
   - Otto-Dullenkopf-Park
-  - Allmendweg
   - Paulckeplatz
   - Pfinzuferweg
   - Platz am Wasserturm
@@ -67,23 +63,20 @@ Unique normalized names found: 1692
   - Sankt-Barbara-Weg
   - Sankt-Georg-Straße
   - Sankt-Valentin-Platz
-  - Großer oder Äußerer Zirkel
   - Schmetterlingsweg
   - Schönenbergstraße
   - Schubis
   - Schüsselestraße
-  - Pflasterweg
-  - Seegäßle
   - Seele
-  - Wettersbachstraße
   - Stephanstraße
   - Stieglitzstraße
   - Immelmannstraße
   - Tiefentaler Straße
   - Toni-Menzinger-Weg
-  - Unterer Lichtenbergweg in den
   - Wachhaustraße
   - Wilhelm-Lauter-Weg
   - Wiltraut-Rupp-von-Brünneck-Anlage
   - Zehntscheuergäßlein
-  - Zum Allmend
+
+Saved combined file: all_found_streets.geojson (10418 segments)
+

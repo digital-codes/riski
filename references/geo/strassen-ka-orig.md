@@ -706,7 +706,7 @@ Die Straße läuft auf den Auer Hausberg (Bergwald) zu.
 
 Anger: zentraler, im Gemeindebesitz befindlicher Platz innerhalb eines Dorfes.
 
-## Bergwaldstraße vor 1905
+## Bergwaldstraße 1905
 
 Bergwald, Durlacher Stadtwald, Fläche: 96 ha.
 
@@ -1698,7 +1698,7 @@ Erasmus von Rotterdam, * 1466 oder 1469 Rotterdam, † 12.7.1536 Basel; Theologe
 
 Siehe Erbprinzenstraße
 
-## Erbprinzenstraße, ca. 1800
+## Erbprinzenstraße 1800
 
 Gemeint ist Erbprinz Karl Ludwig, * 14.2.1755 Karlsruhe, † 16.12.1801 Arboga, Schweden; Karl Ludwig war der älteste Sohn des Markgrafen und späteren Großherzogs Karl Friedrich und der Markgräfin Karoline Luise. Auf der Rückfahrt von einer Reise nach Russland und Schweden im Jahr 1801, bei der er seine Töchter Luise, Kaiserin von Russland (1779 - 1826) und Friederike, Königin von Schweden (1781 - 1826) besucht hatte, verunglückte Karl Friedrich bei Arboga in Schweden mit seiner Kutsche.
 
@@ -3269,7 +3269,7 @@ Mit 13 Jahren kam Hermine Villinger nach Offenburg ins Kloster. Mit 21 Jahren be
 
 Bad Herrenalb, Kurort im Albtal.
 
-## Herrenstraße 19.Jahrhundert
+## Herrenstraße 1900
 
 18. Jahrhundert Löwencranzische Gasse, Jung-Dresen-Gasse, Herrengasse Der Name erinnert an die Ritterherren des Hausordens der Treue (Fidelitasorden), der von Markgraf Karl Wilhelm anläßlich der Gründung der Stadt Karlsruhe 1715 gestiftet wurde.
 
@@ -5319,7 +5319,7 @@ Flurname. Der Namensteil bruch bedeutet Sumpf, feuchte Wiese.
 
 Flurname. Mittel = Bezeichnung der Gestalt oder Lage einer Flur. Schmallen = Bezeichnung für das Bulacher Schmalholz.
 
-## Mittelstraße vor 1906
+## Mittelstraße 1906
 
 1482 Mittel-Gaß Die Straße führt mitten durch den Stadtkern von Durlach.
 
@@ -5874,8 +5874,6 @@ Nikolaus Otto, * 14.6.1832 Holzhausen a. d. Heide (Nassau), † 26.1.1891 Köln;
 P
 
 ## Palmaienstraße 1905
-
-## Allmendweg
 
 Der Name geht zurück auf die sogenannte Baille maille, im Mittelalter eine Spielanlage vor dem Basler Tor in Durlach. Es handelte sich dabei eine Bahn, auf der Ball-Kugel- und Wurfspiele vorgenommen wurden. Die dafür verwendete Straße nannte man pall-mall, woraus Palmaien entstanden ist.
 
@@ -6789,7 +6787,7 @@ Siehe Auf dem Schlössle.
 
 ## Schlossplatz
 
-## Großer oder Äußerer Zirkel
+Großer oder Äußerer Zirkel
 
 Nach dem Bau des Karlsruher Schlosses, für das am 17.6.1715 der Grundstein gelegt worden war, entstanden nach und nach an der Südseite des Schloßplatzes die Wohnhäuser von privilegierten Bürgern, Beamten und Offizieren, später auch die Gebäude der badischen Ministerien.
 
@@ -6927,7 +6925,7 @@ Sebastian Kneipp, * 17.5.1821 Stefansried, † 17.6.1897 Bad Wörishofen; Pfarre
 
 ## Seboldstraße 1905
 
-## Pflasterweg
+Pflasterweg
 
 Johann Georg Sebold, * 17.9.1822 Zell bei Würzburg, † 1.5.1892 Karlsruhe; Sebold, gelernter Modellschreiner, entwickelte Apparate für die Zündholzfabrikation und gründete 1856 in Durlach eine Maschinenfabrik. Dort konstruierte er wenig später die erste Gießerei-Preßformmaschine. Unter seiner Leitung entwickelte sich das Werk - heute Badische Maschinenfabrik Durlach - zum Spezialisten für Gerbereimaschinen, Filterpressen und Furnierschälmaschinen.
 
@@ -6937,7 +6935,7 @@ In der Schlacht bei Sedan am 2.9.1870 geriet der französische Kaiser Napoleon I
 
 ## Seegasse 1973
 
-## Seegäßle
+Seegäßle
 
 Weg hinunter zum Bachweiher.
 
@@ -7159,7 +7157,7 @@ Stefan Zweig, * 28.11.1881 Wien, † 23.2.1942 Petrópolis/Brasilien; Dichter, S
 
 ## Stegwiesenstraße 1974
 
-## Wettersbachstraße
+Wettersbachstraße
 
 Flurname, der Wiesen in der Nähe eines Bachübergangs bezeichnet. 1598 vff der Stegwisen.
 
@@ -7587,7 +7585,7 @@ Mit diesem Straßennamen verbindet man gedanklich zunächst die Untere Hardt, da
 
 Flurname Unterer Damm, bezeichnet das Mitte des 18.Jahrhunderts angelegte Kleine Dammfeld im Nordwesten von Neureut. 1767 Errichtung ihres neuen Dammfelds.
 
-## Unterer Lichtenbergweg in den 1970
+## Unterer Lichtenbergweg 1970
 
 1532 wingartenn am liechtenperg
 
@@ -8336,10 +8334,6 @@ Erschließungshof zwischen Zirkel, Karl-Friedrich-, Kaiser- und Kreuzstraße.
 ## Zollstraße 1911
 
 Weist auf eine ehemalige Zollgrenze zwischen Daxlanden und Mühlburg hin. Ein zwischen beiden Orten gelegenes Fischwasser hieß Zoll.
-
-## Zum Allmend 2001
-
-Siehe Allmendstraße
 
 ## Zum Bergle 1972
 

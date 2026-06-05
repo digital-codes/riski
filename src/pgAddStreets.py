@@ -35,8 +35,10 @@ def openDb():
 
 def main():
     import argparse
+    import geopandas as gpd
     parser = argparse.ArgumentParser(description="Query the database for recent entries.")
     parser.add_argument("-i","--input_file", help="Path to street names input file", default=None)
+    parser.add_argument("-s","--street_file", help="Path to geojson for streets names", default=None)
     args = parser.parse_args()
 
     if not args.input_file:
@@ -68,12 +70,24 @@ def main():
     with open(args.input_file, "r") as f:
         streets = json.load(f)
 
+    if args.street_file:
+        gdf = gpd.read_file(args.street_file)
+        gdf = gdf.to_crs(epsg=4326)  # Ensure it's in WGS84
+
     with engine.connect() as conn:
         for street in streets:
+            name = street.get("name")
+            street_geo = gdf[gdf["name"] == name]
+            if street_geo.empty:
+                street["geo"] = None
+            else:
+                street["geo"] = street_geo.to_json()
+
             stmt = street_table.insert().values(
                 name=street.get("name"),
                 text=street.get("text"),
                 year=street.get("year"),
+                geo=bytearray(street.get("geo", "").encode()) if street.get("geo") else None,
                 timestamp=datetime.now(timezone.utc)
             )
             conn.execute(stmt)
