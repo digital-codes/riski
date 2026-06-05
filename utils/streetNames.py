@@ -1,6 +1,6 @@
 #
 import pandas as pd
-with open("./docs/strassen-ka-orig.md") as f:
+with open("./references/geo/strassen-ka-orig.md") as f:
     s = f.read()
 s = s.strip().split("\n")
 s1 = [x.strip() for x in s if len(x)>0]

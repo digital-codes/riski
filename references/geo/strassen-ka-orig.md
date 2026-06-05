@@ -26,9 +26,9 @@ Adalbert Stifter, * 23.10.1805 Oberplan/Böhmen, † 28.1.1868 Linz; Dichter, Be
 
 Konrad Adenauer, * 5.1.1876 Köln, † 19.4.1967 Rhöndorf; von 1949 bis 1963 erster Bundeskanzler der Bundesrepublik Deutschland.
 
-## Adlerstraße um 1818
+## Adlerstraße 1818
 
-1718 Löwencranzische Gasse, um 1725 Rotbergische Gasse, um 1732 Adlergasse Die ursprünglich nach einem Mitglied des 1715 gegründeten Ordens der Treue benannte Straße erhielt ihren heutigen Namen nach dem um 1725 entstandenen Gasthaus Zum Adler.
+1718 Löwencranzische Gasse 1725 Rotbergische Gasse 1732 Adlergasse Die ursprünglich nach einem Mitglied des 1715 gegründeten Ordens der Treue benannte Straße erhielt ihren heutigen Namen nach dem 1725 entstandenen Gasthaus Zum Adler.
 
 ## Agathenstraße 1913
 
@@ -86,7 +86,7 @@ Benannt nach dem dortigen Naturfreundehaus Albhäusle.
 
 ## Albrecht-Altdorfer-Weg 1980
 
-Albrecht Altdorfer, * um 1480 Regensburg, † 12.2.1538 Regensburg;
+Albrecht Altdorfer, * 1480 Regensburg, † 12.2.1538 Regensburg;
 
 Maler, Kupferstecher, Zeichner, Stadtbaumeister und Ratsherr in Regensburg, Donaulandschaft.
 
@@ -120,7 +120,7 @@ Alfred Delp, * 15.09.1907 Mannheim, hingerichtet 02.02.1945 Berlin-Plötzensee; 
 
 Allenstein, jetzt Olsztyn, Stadt in Polen.
 
-## Allmendstraße um 1906
+## Allmendstraße 1906
 
 Allmend(e), der Teil der Gemarkung, der von den Bürgerfamilien eines Dorfes oder einer Stadt gemeinsam genutzt wurde, vorrangig Wiesen- und Weideflächen.
 
@@ -248,7 +248,7 @@ Flurname, benannt nach der von den Grafen von Hohenberg noch vor 1100 angelegten
 
 ## Am Dechantsberg 1972
 
-Flurname, weist auf geistlichen Besitz bzw. Nutznießung hin. 1555 am Dechinsberg. Am dm-Platz 2017 dm-drogerie markt GmbH &amp; Co.KG, Karlsruher Unternehmen. Am Eichelgarten 1960 Flurname, war Teil des Rüppurrer Gemeindewaldes Rißnert, 1784 Eichelgarthen. Am Entenfang 1954 1927 Erzbergerstraße, 1933 Dietrich -Eckart - Straße, 1945 Entenfang Flurname, weist auf den Wildentenfang beim ehemaligen Mühlburger Schloss hin, der bereits 1475 erwähnt ist. Am Fächerbad 2000 Benannt nach dem dortigen Fächerbad. Das auf Vereinsbasis betriebene öffentliche Bad wurde 1982 in Betrieb genommen. Die Namensgebung ist auf die Ähnlichkeit des Badgrundrisses mit dem des Karlsruher Schlosses zurückzuführen. Am Fasanengarten 1927 Der Fasanengarten lag östlich des Karlsruher Schlosses, wo bereits 1715 Gebäude zur Fasanenzucht sowie ein Wildententeich und ein Feldhühnerhaus angelegt wurden. Am Floßgraben 1982 Benannt nach einem Kanal in Grötzingen, der im 18. Jahrhundert vorwiegend zum Transport von Steinen nach Karlsruhe verwendet und 1940 im Zuge der Pfinz-SaalbachKorrektion eingeebnet wurde. Am Friedhof 1950 um 1906 Friedhofstraße Gemeint ist der Durlacher Friedhof. Am Gartenberg 1993 Volkstümliche Bezeichnung für die an der Bruchkante (Berg) zwischen Hoch- und Tiefgestade der Rheinebene gelegenen Hausgärten. Am Gießbach 1982 Benannt nach dem von der Pfinz in Richtung Norden abzweigenden Bach in Grötzingen. Am Gräfelsberg 1939 Flurname, bezeichnet den Besitzer, Berg des Gräf. 1619 Gräfensberg. Am Grafenacker 1982 Flurname; Am growen Acker, verweist auf herrschaftlichen Besitz. Am Grollenberg 1975 Flurname; Groll, also Geröll, das von der Pfinz mitgeführt wurde.
+Flurname, weist auf geistlichen Besitz bzw. Nutznießung hin. 1555 am Dechinsberg. Am dm-Platz 2017 dm-drogerie markt GmbH &amp; Co.KG, Karlsruher Unternehmen. Am Eichelgarten 1960 Flurname, war Teil des Rüppurrer Gemeindewaldes Rißnert, 1784 Eichelgarthen. Am Entenfang 1954 1927 Erzbergerstraße, 1933 Dietrich -Eckart - Straße, 1945 Entenfang Flurname, weist auf den Wildentenfang beim ehemaligen Mühlburger Schloss hin, der bereits 1475 erwähnt ist. Am Fächerbad 2000 Benannt nach dem dortigen Fächerbad. Das auf Vereinsbasis betriebene öffentliche Bad wurde 1982 in Betrieb genommen. Die Namensgebung ist auf die Ähnlichkeit des Badgrundrisses mit dem des Karlsruher Schlosses zurückzuführen. Am Fasanengarten 1927 Der Fasanengarten lag östlich des Karlsruher Schlosses, wo bereits 1715 Gebäude zur Fasanenzucht sowie ein Wildententeich und ein Feldhühnerhaus angelegt wurden. Am Floßgraben 1982 Benannt nach einem Kanal in Grötzingen, der im 18. Jahrhundert vorwiegend zum Transport von Steinen nach Karlsruhe verwendet und 1940 im Zuge der Pfinz-SaalbachKorrektion eingeebnet wurde. Am Friedhof 1950 1906 Friedhofstraße Gemeint ist der Durlacher Friedhof. Am Gartenberg 1993 Volkstümliche Bezeichnung für die an der Bruchkante (Berg) zwischen Hoch- und Tiefgestade der Rheinebene gelegenen Hausgärten. Am Gießbach 1982 Benannt nach dem von der Pfinz in Richtung Norden abzweigenden Bach in Grötzingen. Am Gräfelsberg 1939 Flurname, bezeichnet den Besitzer, Berg des Gräf. 1619 Gräfensberg. Am Grafenacker 1982 Flurname; Am growen Acker, verweist auf herrschaftlichen Besitz. Am Grollenberg 1975 Flurname; Groll, also Geröll, das von der Pfinz mitgeführt wurde.
 
 ## Am Großmarkt 2019
 
@@ -266,13 +266,11 @@ Flurname; Weg am alten Welschneureuter Rathaus, das zugleich Schulhaus war.
 
 ## Am Schwalbenloch 1959
 
-Flurname; Schwalbenlochhohl bezeichnet einen Hohlweg, in dessen Lößwänden Erdschwalben nisteten. Am Storchennest 2016 Storchennest, Nistplatz der Störche. Amselweg 1963 Amsel, Vogelart. Am Sixenrain 1955 Flurname; durch Kombination mit einem Familiennamen gebildet, 1594 'Avfm Sixten rhein', siehe auch Am Rainle. Am Sonnenbad 2010 2000 Am Rheinhafenbad Zufahrt zum ehemaligen Rheinhafenbad, welches in Sonnenbad umbenannt wurde. Am Sportpark 1978 Führt zum 1979 eingeweihten Traugott-Bender-Sportpark in Hagsfeld. Am Stadtgarten 1912 Führt am Stadtgarten entlang. Am Stadtgraben 1985 1532 Stat grabenn Der Stadtgraben gehörte zur Durlacher Stadtbefestigung, die aus Stadtmauer, Zwinger, Stadtgraben und den vier Stadttoren bestand. Der Stadtgraben war außerhalb des Zwingers rings um die Stadt angelegt. Am Steinbruch 1945 1532 am Reyn beim steinbruch, 1933 Walter-Köhler-Straße Flurname; ehemaliger Steinbruch. Am Steinhäusle 1974 Kirchstraße Nach einem aus Stein gebauten Haus benannt. Am Storrenacker 1968 1532 am storren acker Flurname. Storren ist der Stumpf oder Strunk eines Baumes. Aus dem Durlacher Flurnamen
+Flurname; Schwalbenlochhohl bezeichnet einen Hohlweg, in dessen Lößwänden Erdschwalben nisteten. Am Storchennest 2016 Storchennest, Nistplatz der Störche. Amselweg 1963 Amsel, Vogelart. Am Sixenrain 1955 Flurname; durch Kombination mit einem Familiennamen gebildet, 1594 'Avfm Sixten rhein', siehe auch Am Rainle. Am Sonnenbad 2010 2000 Am Rheinhafenbad Zufahrt zum ehemaligen Rheinhafenbad, welches in Sonnenbad umbenannt wurde. Am Sportpark 1978 Führt zum 1979 eingeweihten Traugott-Bender-Sportpark in Hagsfeld. Am Stadtgarten 1912 Führt am Stadtgarten entlang. Am Stadtgraben 1985 1532 Stat grabenn Der Stadtgraben gehörte zur Durlacher Stadtbefestigung, die aus Stadtmauer, Zwinger, Stadtgraben und den vier Stadttoren bestand. Der Stadtgraben war außerhalb des Zwingers rings die Stadt angelegt. Am Steinbruch 1945 1532 am Reyn beim steinbruch, 1933 Walter-Köhler-Straße Flurname; ehemaliger Steinbruch. Am Steinhäusle 1974 Kirchstraße Nach einem aus Stein gebauten Haus benannt. Am Storrenacker 1968 1532 am storren acker Flurname. Storren ist der Stumpf oder Strunk eines Baumes. Aus dem Durlacher Flurnamen
 
 Storrenacker kann geschlossen werden, dass das damit bezeichnete Gebiet ursprünglich mit Wald bedeckt war und später in Ackerland umgewandelt wurde. Im 18. Jahrhundert war hier zum Teil wieder Wald angelegt und im 19. Jahrhundert erneut Ackerland.
 
 ## Amthausstraße 1938
-
-## Herrengasse, Herrenstraße
 
 Durlach war spätestens seit dem 17. Jahrhundert bis 1924 Amtsstadt. Das Durlacher Amthaus wurde 1786 Sitz des Oberamts Durlach. Später nutzte der großherzogliche bzw. badische Landesfiskus das Gebäude. Heute befindet sich dort das Polizeirevier KarlsruheDurlach.
 
@@ -360,7 +358,7 @@ Gewanname
 
 ## An der Mole 2001
 
-Mole, Hafenschutzdamm gegen Versandung und Wellenschlag aus Sand oder Stein. An der Pfinz 1974 Pfinzstraße Siehe Pfinzstraße An der Rainmühle 1974 Mühlstraße Rain = Abhang zwischen Hoch- und Tiefgestade. An der RaumFabrik 2008 Die RaumFabrik Vermietungsgesellschaft mbH &amp; Co. KG ist ein Existenzgründerzentrum in Durlach im Bereich des früheren Areals der Nähmaschinenfabrik Pfaff. An der Rossweid 1976 Flurname, Pferdeweide. An der Sandgrube 1976 Flurname, der auf die wirtschaftliche Gewinnung und Verarbeitung von Sand und Kies in Teutschneureut zurückgeht. Andersenstraße 1966 Hans Christian Andersen, * 2.4.1805 Odense/Dänemark, † 4.8.1875 Kopenhagen; Märchendichter, Die kleine Seejungfrau. An der Silbergrub 1962 Flurname, der auf Bergbau am Turmberg zurückgeht. Bei dem abgebauten Material handelte es sich vermutlich um Bleiglanz, ein meist silberhaltiges Bleierz. An der Stadtmauer 1938 1555 Mauerloch, 1906 Schlachthausstraße Die erste Stadtmauer Durlachs entstand im 13. Jahrhundert. Die hier angrenzenden Teile der Stadtmauer sind rund 200 Jahre jünger. An der Tagweide 1962 Flurname, der auf die Nutzung von Weideflächen während des Tages zurückgeht. Die Hagsfelder Tagweide wurde 1760 auch zur Nachtweide. An der Trift 1950 Viehtriebweg, Viehtrift Hier befand sich früher ein Viehtriebweg (Trift). 1755 'an der Vieh Drifft'. An der Vogelhardt 1992
+Mole, Hafenschutzdamm gegen Versandung und Wellenschlag aus Sand oder Stein. An der Pfinz 1974 Pfinzstraße Siehe Pfinzstraße An der Rainmühle 1974 Mühlstraße Rain = Abhang zwischen Hoch- und Tiefgestade. An der RaumFabrik 2008 Die RaumFabrik Vermietungsgesellschaft mbH &amp; Co. KG ist ein Existenzgründerzentrum in Durlach im Bereich des früheren Areals der Nähmaschinenfabrik Pfaff. An der Rossweid 1976 Flurname, Pferdeweide. An der Sandgrube 1976 Flurname, der auf die wirtschaftliche Gewinnung und Verarbeitung von Sand und Kies in Teutschneureut zurückgeht. Andersenstraße 1966 Hans Christian Andersen, * 2.4.1805 Odense/Dänemark, † 4.8.1875 Kopenhagen; Märchendichter, Die kleine Seejungfrau. An der Silbergrub 1962 Flurname, der auf Bergbau am Turmberg zurückgeht. Bei dem abgebauten Material handelte es sich vermutlich Bleiglanz, ein meist silberhaltiges Bleierz. An der Stadtmauer 1938 1555 Mauerloch, 1906 Schlachthausstraße Die erste Stadtmauer Durlachs entstand im 13. Jahrhundert. Die hier angrenzenden Teile der Stadtmauer sind rund 200 Jahre jünger. An der Tagweide 1962 Flurname, der auf die Nutzung von Weideflächen während des Tages zurückgeht. Die Hagsfelder Tagweide wurde 1760 auch zur Nachtweide. An der Trift 1950 Viehtriebweg, Viehtrift Hier befand sich früher ein Viehtriebweg (Trift). 1755 'an der Vieh Drifft'. An der Vogelhardt 1992
 
 Flurname. Möglicherweise ist Vogelhardt eine Ableitung von Vogelherd. Vogelherde waren mit Klappnetzen versehene Fangplätze, die im 18. und 19. Jahrhundert bevorzugt in Waldlichtungen angelegt wurden.
 
@@ -472,7 +470,7 @@ Der Durlacher Hofbaumeister Thomas Lefèbvre errichtete 1689 auf dem heutigen Gr
 
 Flurname, der fruchtbares Ackerland bezeichnet, das sich in die Breite ausdehnt und meistens einen größeren zusammenhängenden Geländekomplex darstellt.
 
-## Auf der Lug, um 1974
+## Auf der Lug 1974
 
 Flurname.
 
@@ -560,7 +558,7 @@ Badenia, Bausparkasse.
 
 Am Festplatz - 1964/1967 Lammstraße Badenwerk, ehemaliges Energieversorgungsunternehmen.
 
-## Bäderstraße, um 1906
+## Bäderstraße 1906
 
 Erinnert an ein städtisches Badhaus, das sich von 1709 bis gegen Ende des 18. Jahrhunderts in dieser Straße befand.
 
@@ -620,7 +618,7 @@ Verbindung zwischen Hohenwettersbach und dem Gut Batzenhof, das als Zehnthof und
 
 Flurname. Baumgarten ist ein mit Bäumen bestandenes und eingefriedetes Gelände. Solche Baumgüter oder -wiesen wurden oft in Waldstücke umgewandelt. 1594 Bomgartten Walldt.
 
-## Baumgasse um 1850
+## Baumgasse 1850
 
 Nach der Gastwirtschaft Zum Baum.
 
@@ -650,7 +648,7 @@ Im 18. Jahrhundert befand sich nördlich von Durlach ein Fasanengarten mit einem
 
 Siehe Werrabronner Straße
 
-## Beiertheimer Allee um 1871
+## Beiertheimer Allee 1871
 
 um 1858 Beiertheimer Straße
 
@@ -736,7 +734,7 @@ Bernhard Metz * 1517; † 8. Februar 1581; Knielinger Bürgermeister von 1554 - 
 
 Bernhard I., * 1364, † 3.5.1431;
 
-Markgraf von Baden. Bernhard wurde während seiner langen Regierungszeit in viele Fehden verwickelt. So trug er einen Streit mit König Wenzel wegen der Erhebung von Rheinzöllen aus und führte einen Krieg gegen Herzog Friedrich von Österreich, der erst im Jahre 1410 beendet wurde. Bernhard verfasste einen Erbvertrag, wonach nie mehr als zwei regierende Linien bestehen und mit dem Ableben der einen die andere das Nachfolgerrecht haben sollte. Bernhard II., * 1428 Baden-Baden, † 15.7.1458 Moncalieri bei Turin (Italien); Markgraf von Baden. Bernhard kümmerte sich verstärkt um die Armen und Notleidenden; er trug ein Büßerhemd unter seinen Kleidern und lehnte die Heirat ab, da er sich nur Gott widmen wollte. 1453 trat Bernhard die Regierung an Karl VII. von Frankreich für 10 Jahre ab. 1457 ging er als dessen Gesandter an den kaiserlichen Hof. Auf einer seiner Reisen starb er an der Pest. Bernhard soll einige Wunder bewirkt haben, weshalb er durch Papst Pius IV. 1769 selig gesprochen wurde.
+Markgraf von Baden. Bernhard wurde während seiner langen Regierungszeit in viele Fehden verwickelt. So trug er einen Streit mit König Wenzel wegen der Erhebung von Rheinzöllen aus und führte einen Krieg gegen Herzog Friedrich von Österreich, der erst im Jahre 1410 beendet wurde. Bernhard verfasste einen Erbvertrag, wonach nie mehr als zwei regierende Linien bestehen und mit dem Ableben der einen die andere das Nachfolgerrecht haben sollte. Bernhard II., * 1428 Baden-Baden, † 15.7.1458 Moncalieri bei Turin (Italien); Markgraf von Baden. Bernhard kümmerte sich verstärkt die Armen und Notleidenden; er trug ein Büßerhemd unter seinen Kleidern und lehnte die Heirat ab, da er sich nur Gott widmen wollte. 1453 trat Bernhard die Regierung an Karl VII. von Frankreich für 10 Jahre ab. 1457 ging er als dessen Gesandter an den kaiserlichen Hof. Auf einer seiner Reisen starb er an der Pest. Bernhard soll einige Wunder bewirkt haben, weshalb er durch Papst Pius IV. 1769 selig gesprochen wurde.
 
 ## Bernhardusplatz 1897
 
@@ -758,7 +756,7 @@ Berthold I., † 1078, Berthold II., † 1111, Berthold III., † 1122, Berthold
 
 1912 Brunnengässchen
 
-Christoph Besold; Besold lebte vermutlich im 16. Jahrhundert als Verwalter des Markgrafen Ernst von Baden-Durlach in Knielingen. Er ist Gestalt einer bis heute in Knielingen sehr populär gebliebenen Ortsage über die Vier Steinkreuze: Im Jahre 1566 geschah im Dorf ein Mord an vier jungen Männern, den ein reicher Bauer namens Maier Heinri mit einem Messer verübt hatte. Er schob diese Untat seinem Rivalen um die Gunst der schönen Bauerstochter Salme, Christoph Besold, in die Schuhe, um ihn an den Galgen zu bringen. Der Betrug klärte sich aber auf. Maier Heinri wurde hingerichtet und Besold und Salme konnten heiraten. Die Steinkreuze sollen für die vier Ermordeten errichtet worden sein.
+Christoph Besold; Besold lebte vermutlich im 16. Jahrhundert als Verwalter des Markgrafen Ernst von Baden-Durlach in Knielingen. Er ist Gestalt einer bis heute in Knielingen sehr populär gebliebenen Ortsage über die Vier Steinkreuze: Im Jahre 1566 geschah im Dorf ein Mord an vier jungen Männern, den ein reicher Bauer namens Maier Heinri mit einem Messer verübt hatte. Er schob diese Untat seinem Rivalen die Gunst der schönen Bauerstochter Salme, Christoph Besold, in die Schuhe ihn an den Galgen zu bringen. Der Betrug klärte sich aber auf. Maier Heinri wurde hingerichtet und Besold und Salme konnten heiraten. Die Steinkreuze sollen für die vier Ermordeten errichtet worden sein.
 
 ## Besselstraße 1987
 
@@ -802,7 +800,7 @@ Bienwald, größeres zusammenhängendes Waldgebiet in der Südpfalz.
 
 Karl Biese, * 19.9.1863 Hamburg, † 19.11.1926 Tübingen;
 
-Biese erlernte zunächst das Malerhandwerk. Erst durch ein Stipendium war es ihm möglich, an der Karlsruher Kunstschule zu studieren, wo er Gustav Schönlebers Meisterschüler wurde. Seinen Wohnsitz hatte er in der Augustenburg in Grötzingen. 1907 siedelte er nach St. Märgen über, um seinem Lieblingsmotiv, dem verschneiten Schwarzwald, näher zu sein. Bekannt wurde er durch seine Schneegraphiken, daher auch der Beiname Schnee-Biese; Schlösschen im Schnee.
+Biese erlernte zunächst das Malerhandwerk. Erst durch ein Stipendium war es ihm möglich, an der Karlsruher Kunstschule zu studieren, wo er Gustav Schönlebers Meisterschüler wurde. Seinen Wohnsitz hatte er in der Augustenburg in Grötzingen. 1907 siedelte er nach St. Märgen über seinem Lieblingsmotiv, dem verschneiten Schwarzwald, näher zu sein. Bekannt wurde er durch seine Schneegraphiken, daher auch der Beiname Schnee-Biese; Schlösschen im Schnee.
 
 ## Bilfinger Straße 1960
 
@@ -850,7 +848,7 @@ siehe Blankenlocher Weg
 
 Blankenloch, ehemals selbständige Gemeinde, heute Teil von Stutensee, Landkreis Karlsruhe.
 
-## Blattwiesenstraße um 1924
+## Blattwiesenstraße 1924
 
 Flurname, der auf ebenes Gelände verweist; blatt = platt, flach.
 
@@ -864,7 +862,7 @@ Blauen, mehrere Berge im Schwarzwald.
 
 Bleichenhof, ehemaliger Hof in Wolfartsweier, der im Besitz der Herren Bleich von Waldeck war.
 
-## Bleichstraße, um 1937
+## Bleichstraße 1937
 
 Benannt nach einer früheren Wasch- und Bleichanstalt.
 
@@ -872,7 +870,7 @@ Benannt nach einer früheren Wasch- und Bleichanstalt.
 
 Johann Ludwig Blenker, * 1812 Worms, † 31.10.1863 New York;
 
-Blenker war 1849 Obrist bei der revolutionären Militärkommission in der Pfalz. Im Mai 1849 rückte er mit einem Kontingent hessischer und pfälzischer Bürgerwehrtruppen und regulärer Infanterie vor die Stadt Worms, um die Stadt und den Rheinübergang zu schützen. Nach dem Scheitern der Revolution floh er über die Schweiz in die USA.
+Blenker war 1849 Obrist bei der revolutionären Militärkommission in der Pfalz. Im Mai 1849 rückte er mit einem Kontingent hessischer und pfälzischer Bürgerwehrtruppen und regulärer Infanterie vor die Stadt Worms die Stadt und den Rheinübergang zu schützen. Nach dem Scheitern der Revolution floh er über die Schweiz in die USA.
 
 ## Blindstraße 1960
 
@@ -898,9 +896,9 @@ Gebhard Leberecht Fürst Blücher von Wahlstatt, * 16.12.1742 Rostock, † 12.9.
 
 preußischer Generalfeldmarschall, Feldherr der Freiheitskriege von 1813/15.
 
-## Blumenstraße, um 1818
+## Blumenstraße 1818
 
-1805 kleine Querstraße, um 1810 Blumengasse.
+1805 kleine Querstraße 1810 Blumengasse.
 
 ## Blumentorstraße 1938
 
@@ -1002,7 +1000,7 @@ Braunsberg, jetzt Braniewo, Stadt in Polen.
 
 Breisgau, südbadische Landschaft zwischen Oberrhein und Schwarzwald.
 
-## Breite Gass um 1750
+## Breite Gass 1750
 
 Seit 1758 belegte Bezeichnung: In denen Bildtgärten vornen auf den graben an der Breiten Gaß.
 
@@ -1043,8 +1041,6 @@ Flurname, der auf die mit Buchen bewachsene Augustenbergterrasse zurückgeht.
 Büchig, ehemals selbständige Gemeinde, heute Teil von Stutensee.
 
 ## Bulacher Straße 1907
-
-## Albstraße
 
 Bulach, ehemals selbständige Gemeinde, erstmals 1193 als Bulande erwähnt, seit 1929 Stadtteil von Karlsruhe.
 
@@ -1232,7 +1228,7 @@ Siehe Daxlander Straße
 
 ## Daxlander Straße 1903
 
-Benannt nach Daxlanden, erstmals unter der Bezeichnung Daherslar urkundlich erwähnt. Lar bedeutet Flur, Weideplatz. Bei der ursprünglichen Besiedlung des heutigen Daxlanden handelt es sich also um eine Flur bzw. einen Weideplatz einer Person namens Daho. Seit 1910 ist Daxlanden Stadtteil von Karlsruhe.
+Benannt nach Daxlanden, erstmals unter der Bezeichnung Daherslar urkundlich erwähnt. Lar bedeutet Flur, Weideplatz. Bei der ursprünglichen Besiedlung des heutigen Daxlanden handelt es sich also eine Flur bzw. einen Weideplatz einer Person namens Daho. Seit 1910 ist Daxlanden Stadtteil von Karlsruhe.
 
 ## De-Coster-Straße 1966
 
@@ -1418,7 +1414,7 @@ Dürrbach, schwach fließender Bach, 1532 Acker vff der durrenbech
 
 Karlsruher Weg, Karlsruher Straße
 
-Dürrenwettersbach, erstmals erwähnt um 1250 als Weddirsbach, 1281 als Durrenweiterspach, ist der frühere Ortsname von Hohenwettersbach. 1706 erwarb der damalige Erbprinz und spätere Stadtgründer von Karlsruhe Markgraf Karl Wilhelm von Baden-Durlach den Ort und nannte ihn Hohenwettersbach.
+Dürrenwettersbach, erstmals erwähnt 1250 als Weddirsbach, 1281 als Durrenweiterspach, ist der frühere Ortsname von Hohenwettersbach. 1706 erwarb der damalige Erbprinz und spätere Stadtgründer von Karlsruhe Markgraf Karl Wilhelm von Baden-Durlach den Ort und nannte ihn Hohenwettersbach.
 
 ## Liegenschaftsamt Straßennamen in Karlsruhe
 
@@ -1428,7 +1424,7 @@ E
 
 Steinstraße
 
-Stammvater der Grafen von Eberstein war Berthold I. Berthold III. stiftete 1148/49 die Abtei Herrenalb. Eberhard III. gründete um 1180 die Abtei Frauenalb.
+Stammvater der Grafen von Eberstein war Berthold I. Berthold III. stiftete 1148/49 die Abtei Herrenalb. Eberhard III. gründete 1180 die Abtei Frauenalb.
 
 ## Ebertstraße 1946
 
@@ -1556,7 +1552,7 @@ Gewannname.
 
 ## Eichrodtweg 1927
 
-Eichrodt, badische Beamtenfamilie. Johann Andreas Eichrodt, * um 1690, † 14.11.1737 Karlsruhe; Leibarzt. Karl Friedrich Eichrodt, * 10.3.1754 Karlsruhe, † 13.4.1813 Rastatt; Generalmajor Ludwig Friedrich Eichrodt, * 9.4.1798 Karlsruhe, † 27.12.1844 Karlsruhe; Präsident des badischen Ministeriums des Innern. Julius Eichrodt, * 1.1.1826 Durlach, † 22.11.1894 Bruchsal; Zuchthausdirektor. Ludwig Eichrodt, * 2.2.1827 Durlach, † 2.2.1892 in Lahr; Oberamtsrichter, wurde als volkstümlicher Dichter bekannt: Lyrische Karikaturen und Kehraus, Biedermeier; Redakteur des Lahrer Kommersbuchs. Helmuth Eichrodt, * 27.2.1872 Bruchsal, † 31.7.1943 Karlsruhe; Maler, Meisterschüler von Hans Thoma, Mitarbeiter des Simplicissimus. In Karlsruhe schuf er die Wandbilder im Konfirmanden-saal der Christuskirche sowie Gemälde im Schlosshotel, im Tiergarten- und im Stadtgartenrestaurant. Otto Eichrodt, * 25.6.1867 Freiburg, † 1944 Karlsruhe; Maler, Musiker, Dichter und Karikaturist. Der Kopf des lebensfrohen Otto Eichrodt wurde von dem Bildhauer Binz als Wasserspeier in einer Faunsmaske am Stephanienbrunnen verewigt.
+Eichrodt, badische Beamtenfamilie. Johann Andreas Eichrodt, * 1690, † 14.11.1737 Karlsruhe; Leibarzt. Karl Friedrich Eichrodt, * 10.3.1754 Karlsruhe, † 13.4.1813 Rastatt; Generalmajor Ludwig Friedrich Eichrodt, * 9.4.1798 Karlsruhe, † 27.12.1844 Karlsruhe; Präsident des badischen Ministeriums des Innern. Julius Eichrodt, * 1.1.1826 Durlach, † 22.11.1894 Bruchsal; Zuchthausdirektor. Ludwig Eichrodt, * 2.2.1827 Durlach, † 2.2.1892 in Lahr; Oberamtsrichter, wurde als volkstümlicher Dichter bekannt: Lyrische Karikaturen und Kehraus, Biedermeier; Redakteur des Lahrer Kommersbuchs. Helmuth Eichrodt, * 27.2.1872 Bruchsal, † 31.7.1943 Karlsruhe; Maler, Meisterschüler von Hans Thoma, Mitarbeiter des Simplicissimus. In Karlsruhe schuf er die Wandbilder im Konfirmanden-saal der Christuskirche sowie Gemälde im Schlosshotel, im Tiergarten- und im Stadtgartenrestaurant. Otto Eichrodt, * 25.6.1867 Freiburg, † 1944 Karlsruhe; Maler, Musiker, Dichter und Karikaturist. Der Kopf des lebensfrohen Otto Eichrodt wurde von dem Bildhauer Binz als Wasserspeier in einer Faunsmaske am Stephanienbrunnen verewigt.
 
 ## Eichwaldstraße, nach 1954
 
@@ -1670,7 +1666,7 @@ Engesser studierte in Karlsruhe Bauingenieurwesen, wirkte beim Bau der Höllenta
 
 1913 Engländerplatz, 1933 Skagerrakplatz
 
-Mitte des 19. Jahrhunderts entstanden in englischen Schulen die Anfänge des modernen Fußballspiels, das um 1890 auch in Karlsruhe (Englisches Spiel) bekannt wurde. Da dieses Spiel vorwiegend auf dem damals noch unbenannten Platz gespielt wurde, hieß er im Volksmund Engländerplatz, bis der Name auch offiziell angenommen wurde.
+Mitte des 19. Jahrhunderts entstanden in englischen Schulen die Anfänge des modernen Fußballspiels, das 1890 auch in Karlsruhe (Englisches Spiel) bekannt wurde. Da dieses Spiel vorwiegend auf dem damals noch unbenannten Platz gespielt wurde, hieß er im Volksmund Engländerplatz, bis der Name auch offiziell angenommen wurde.
 
 ## Engler-Bunte-Ring 1993
 
@@ -1750,7 +1746,7 @@ Ernst Frey, * 1867 Zwingenberg/Neckar, † 4.7. 1932 Karlsruhe; Der evangelische
 
 um 1906 Friedrichstraße Ernst Friedrich, Markgraf von Baden-Durlach, * 17.10.1560 Mühlburg, † 14.4.1604 Remchingen;
 
-Als ältester Sohn Markgraf Karls II. regierte Ernst Friedrich zunächst nur den Pforzheimischen Anteil des Landes. Im Streit um den Baden-Badener Landesteil unterhielt er ein stehendes Heer. Um den Aufwand dafür zu decken, musste er später größere Teile seines Landes veräußern. Ernst Friedrich gründete in Durlach das erste Gymnasium Badens. Seinen Übertritt zum Calvinismus wollten seine Untertanen nicht nachvollziehen. Er starb, bevor er dies mit Waffengewalt durchsetzen konnte.
+Als ältester Sohn Markgraf Karls II. regierte Ernst Friedrich zunächst nur den Pforzheimischen Anteil des Landes. Im Streit den Baden-Badener Landesteil unterhielt er ein stehendes Heer. den Aufwand dafür zu decken, musste er später größere Teile seines Landes veräußern. Ernst Friedrich gründete in Durlach das erste Gymnasium Badens. Seinen Übertritt zum Calvinismus wollten seine Untertanen nicht nachvollziehen. Er starb, bevor er dies mit Waffengewalt durchsetzen konnte.
 
 ## Ernst-Gaber-Straße 1993
 
@@ -1894,7 +1890,7 @@ Farn, Waldpflanze.
 
 ## Fasanenplatz 1974
 
-Fasanenstraße um 1840
+Fasanenstraße 1840
 
 Fasan, Vogelart.
 
@@ -2068,7 +2064,7 @@ Frankenthal (Pfalz), Stadt in Rheinland-Pfalz.
 
 ## Frans-Hals-Weg 1980
 
-Frans Hals, * um 1583 Antwerpen, † 26.8.1666 Haarlem; niederländischer Maler, Rommelpott-Spieler.
+Frans Hals, * 1583 Antwerpen, † 26.8.1666 Haarlem; niederländischer Maler, Rommelpott-Spieler.
 
 ## Franz-Abt-Straße 1925
 
@@ -2106,7 +2102,7 @@ Franz Xaver Honold, * 26.08.1881, Riedböhringen / Baarkreis, † 28.01.1939, Ka
 
 Frauenalb, Ortschaft und ehemaliges Kloster im Albtal.
 
-## Frauenhäusleweg, um 1950
+## Frauenhäusleweg 1950
 
 Der Flurname Frauenhäusle geht vermutlich auf einen Bildstock mit der Figur der hl. Maria zurück. Bereits im 18. Jahrhundert gab es einen Feldweg dieses Namens. 1660 Auf das Frauen heißel.
 
@@ -2190,7 +2186,7 @@ Friedrich I., Großherzog von Baden, * 9.9.1826 Karlsruhe, † 28.9.1907 Insel M
 
 Friedrichstal, ehemals selbständige Gemeinde, heute Teil von Stutensee, Landkreis Karlsruhe.
 
-## Friedrichstraße, um 1900
+## Friedrichstraße 1900
 
 Friedrich II., Großherzog von Baden, * 9.7.1857 Karlsruhe, † 9.8.1928 Badenweiler; Friedrich war der älteste Sohn Großherzog Friedrichs I. und der Großherzogin Luise. Er und sein Bruder Ludwig waren die ersten Fürstensöhne, die ein öffentliches Gymnasium besuchten und eine abschließende Prüfung ablegten. Als Großherzog, von 1907 bis 1918, führte Friedrich die liberale Politik seines Vaters fort. Trotz seiner großen Beliebtheit musste er infolge der Novemberrevolution von 1918 auf den Thron verzichten.
 
@@ -2314,7 +2310,7 @@ Mathematiker, Astronom, Physiker und Geodät.
 
 ## Gebhardstraße 1907
 
-Friedrichstraße Gebhard III. von Zähringen, * um 1050, † 12.11.1110 Konstanz; Seine geistliche Laufbahn begann Gebhard als Propst in Xanten, zog sich aber dann in den Konvent Abt Wilhelms von Hirsau zurück. Auf Wilhelms Betreiben wurde Gebhard 1084 Bischof von Konstanz. Hier wurde er einige Jahre später vom Gegenbischof Arnold von Heiligenberg verdrängt. Durch politische Aktivitäten - im Auftrag von Papst Paschalis II. - geriet er in Widerstreit mit der Kurie, so dass Gebhard schließlich 1107 von seinem Amt suspendiert wurde.
+Friedrichstraße Gebhard III. von Zähringen, * 1050, † 12.11.1110 Konstanz; Seine geistliche Laufbahn begann Gebhard als Propst in Xanten, zog sich aber dann in den Konvent Abt Wilhelms von Hirsau zurück. Auf Wilhelms Betreiben wurde Gebhard 1084 Bischof von Konstanz. Hier wurde er einige Jahre später vom Gegenbischof Arnold von Heiligenberg verdrängt. Durch politische Aktivitäten - im Auftrag von Papst Paschalis II. - geriet er in Widerstreit mit der Kurie, so dass Gebhard schließlich 1107 von seinem Amt suspendiert wurde.
 
 ## Gebhard-Leibholz-Straße 2006
 
@@ -2408,7 +2404,7 @@ Deutsche Juristin und erste Senatspräsidentin am Bundesgerichtshof.
 
 ## Gerhardtstraße 1946
 
-1945 Willi-Dreyer-Straße Friedrich Gerhardt, * 1864 Hagsfeld, † 1934 Hagsfeld; Gerhardt war Schriftsetzer bei der SPD-Tageszeitung Der Volksfreund und als Sozialist Gegner des Nationalsozialismus. Um den Verfolgungen zu entgehen, beging er 1934 Selbstmord.
+1945 Willi-Dreyer-Straße Friedrich Gerhardt, * 1864 Hagsfeld, † 1934 Hagsfeld; Gerhardt war Schriftsetzer bei der SPD-Tageszeitung Der Volksfreund und als Sozialist Gegner des Nationalsozialismus. den Verfolgungen zu entgehen, beging er 1934 Selbstmord.
 
 ## Gerhart-Hauptmann-Straße 1968
 
@@ -2682,7 +2678,7 @@ Alter seit dem 19. Jahrhundert belegter Weg.
 
 1974 Hornisgrindestraße
 
-Mathias Grünewald, * um 1480 Würzburg, † 1.9.1528 Halle/Saale;
+Mathias Grünewald, * 1480 Würzburg, † 1.9.1528 Halle/Saale;
 
 Maler, Baumeister, Wasserbautechniker; Isenheimer Altar.
 
@@ -2696,7 +2692,7 @@ Hauptstraße, 1933 Adolf-Hitler-Straße
 
 Grünwettersbach, 1278 als Weddirsbach erstmals urkundlich erwähnt, 1972 mit Palmbach zu Wettersbach vereinigt, wurde 1975 Stadtteil von Karlsruhe.
 
-## Grünwinkler Straße, vor 1929
+## Grünwinkler Straße 1929
 
 Grünwinkel, als Kreenwinkel 1597 erstmals urkundlich erwähnt, wurde 1909 Stadtteil von Karlsruhe.
 
@@ -2758,7 +2754,7 @@ Schwarzwald, dem Bodensee und vor allen Dingen von Grötzingen und seiner Umgebu
 
 Gustav Adolf Meerwein, * 8.11.1860 Pforzheim, † 27.5.1935 Wertheim;
 
-Meerwein war von 1897 bis 1911 evangelischer Pfarrer der Gemeinden Palmbach und Untermutschelbach. Pfarrer Meerwein war bis über die Gemeindegrenzen hinaus bekannt. Er hat sich besonders um die Wiederbelebung des Waldensertums in Baden und um die Ortsgeschichte von Palmbach und Untermutschelbach verdient gemacht. Den Höhepunkt seiner Tätigkeit bildete die 200-Jahr-Gedenkfeier der Waldensergemeinde Palmbach im Jahre 1901, die er organisiert hatte. Er schrieb die erste Palmbacher Ortschronik, die er im Jahre 1901 veröffentlichte.
+Meerwein war von 1897 bis 1911 evangelischer Pfarrer der Gemeinden Palmbach und Untermutschelbach. Pfarrer Meerwein war bis über die Gemeindegrenzen hinaus bekannt. Er hat sich besonders die Wiederbelebung des Waldensertums in Baden und die Ortsgeschichte von Palmbach und Untermutschelbach verdient gemacht. Den Höhepunkt seiner Tätigkeit bildete die 200-Jahr-Gedenkfeier der Waldensergemeinde Palmbach im Jahre 1901, die er organisiert hatte. Er schrieb die erste Palmbacher Ortschronik, die er im Jahre 1901 veröffentlichte.
 
 ## Gustav-Schönleber-Straße 1964
 
@@ -2790,7 +2786,7 @@ Siehe Gutenbergstraße
 
 ## Gutenbergstraße 1900
 
-Johannes Gensfleisch gen. Gutenberg, * um 1397 Mainz, † 3.2.1468 Mainz; Goldschmied, Erfinder des Buchdrucks; Gutenbergbibel.
+Johannes Gensfleisch gen. Gutenberg, * 1397 Mainz, † 3.2.1468 Mainz; Goldschmied, Erfinder des Buchdrucks; Gutenbergbibel.
 
 ## Güterbahnstraße 1915
 
@@ -2847,7 +2843,7 @@ Samuel Hahnemann, * 10.4.1755 Meißen, † 2.7.1843 Paris;
 
 Hygieniker, Psychiater, Pharmazeut, Begründer der Homöopathie.
 
-## Hahnenstraße, um 1910
+## Hahnenstraße 1910
 
 Vor der Eingemeindung von Daxlanden Teil der Mittelstraße.
 
@@ -2855,7 +2851,7 @@ Vor der Eingemeindung von Daxlanden Teil der Mittelstraße.
 
 Karl-Wilhelm-Straße Georg Haid, * 12.6.1825 Karlsruhe, † 22.6.1895 Karlsruhe; Carl Wilhelm Neu, * 23.10.1831 Karlsruhe, † 21.12.1909 Karlsruhe; Die beiden Mechaniker Haid und Neu gründeten am 14.4.1860 eine Reparaturwerkstatt für
 
-Nähmaschinen. Zwei Jahre später stellten sie bereits die ersten Nähmaschinen her. Um die Jahrhundertwende verließen bereits mehr als vier Millionen Nähmaschinen das Werk.
+Nähmaschinen. Zwei Jahre später stellten sie bereits die ersten Nähmaschinen her. die Jahrhundertwende verließen bereits mehr als vier Millionen Nähmaschinen das Werk.
 
 ## Hainbuchenweg 2011
 
@@ -3299,7 +3295,7 @@ Emma Siegmund beherrschte mehrere Sprachen, war eine ausgezeichnete Klavierspiel
 
 Georg Herwegh, * 31.5.1817 Stuttgart, † 7.4.1875 Lichtenthal/Baden-Baden;
 
-Nach abgebrochenem Studium und kurzer Tätigkeit als Journalist floh Herwegh 1839 in die Schweiz, um der Einberufung zum Militärdienst zu entgehen. Dort veröffentlichte er die revolutionären Gedichte eines Lebendigen. 1848 eilte er von Paris aus an der Spitze der Deutschen Legion den badischen Aufständischen zu Hilfe, wurde aber von württembergischen Truppen geschlagen. Herwegh dichtete das Lied des Allgemeinen Deutschen Arbeitervereins mit der Zeile 'Alle Räder stehen still, wenn dein starker Arm es will'.
+Nach abgebrochenem Studium und kurzer Tätigkeit als Journalist floh Herwegh 1839 in die Schweiz der Einberufung zum Militärdienst zu entgehen. Dort veröffentlichte er die revolutionären Gedichte eines Lebendigen. 1848 eilte er von Paris aus an der Spitze der Deutschen Legion den badischen Aufständischen zu Hilfe, wurde aber von württembergischen Truppen geschlagen. Herwegh dichtete das Lied des Allgemeinen Deutschen Arbeitervereins mit der Zeile 'Alle Räder stehen still, wenn dein starker Arm es will'.
 
 ## Herzogstraße 1938
 
@@ -3315,13 +3311,13 @@ Herzog war Jurist und wurde 1790 zum Hofrat und Kammerprokurator, 1792 zum Gehei
 
 Der Name erinnert an die frühere Nutzung dieses Gebiets.
 
-## Hildastraße, um 1900
+## Hildastraße 1900
 
 Hilda von Nassau, Großherzogin von Baden, * 5.11.1864 Biebrich/Wiesbaden, † 8.2.1952 Badenweiler;
 
 Hilda, die Tochter des Herzogs Adolf von Nassau, heiratete den Großherzog Friedrich II. von Baden. Die Ehe blieb kinderlos. Als Großherzogin engagierte sie sich sehr stark im sozialen Bereich. Ihr besonderes Interesse galt der Tätigkeit des Roten Kreuzes. Sie führte damit die Arbeit der Großherzogin Luise fort.
 
-Hildebrandstraße 1938 um 1912 Lindenstraße Hildebrand, Sagengestalt. Hinter dem Stephanienbad 1984 Das Stephanienbad, ein beliebtes Ausflugsziel der Karlsruher, war von 1807 bis 1905 in Betrieb. Das zugehörige Gesellschaftshaus ist seit 1957 die Paul-Gerhardt-Kirche. Hinter den Scheunen 1996 Lagebezeichnung. Hinter der Kirche 1911 Gemeint ist die Daxlander Heilig-Geist-Kirche. Hinterm Dorf 1955 1788 Gewand hinter dem Dorf Flurname, der auf die Lage des Gewanns hinter dem Dorf Rüppurr hinweist. Hinterm Hauptbahnhof 1974 Eisenbahnstraße Lagebezeichnung. Hirsauer Straße 1974 Hangstraße Hirsau, Stadtteil von Calw, Württemberg. Hinterm Zaun 1974 Flurname, der die Lage des Gewanns hinter der Dorfeinfriedung althochdeutsch hinter den zuonen kennzeichnet. Hinterwiesenweg 1964 1517 Auff den hindern wießen Flurname, Wiese hinter dem Dorf Rintheim. Hirschäckerstraße 1954 1722 Aan denen Hirschäckern Der Flurname geht auf den Anbau von Hirse zurück. Hirschberger Straße 1961 Hirschberg im Riesengebirge, heute Jelenia Góra, Stadt in Polen. Hirschgrabenweg 1942 Der Hirschgraben wurde 1818 angelegt, heute Teil des Pfinz-Entlastungskanals. Hirschhof 1952 Siehe Hirschstraße Hirschgasse
+Hildebrandstraße 1938 1912 Lindenstraße Hildebrand, Sagengestalt. Hinter dem Stephanienbad 1984 Das Stephanienbad, ein beliebtes Ausflugsziel der Karlsruher, war von 1807 bis 1905 in Betrieb. Das zugehörige Gesellschaftshaus ist seit 1957 die Paul-Gerhardt-Kirche. Hinter den Scheunen 1996 Lagebezeichnung. Hinter der Kirche 1911 Gemeint ist die Daxlander Heilig-Geist-Kirche. Hinterm Dorf 1955 1788 Gewand hinter dem Dorf Flurname, der auf die Lage des Gewanns hinter dem Dorf Rüppurr hinweist. Hinterm Hauptbahnhof 1974 Eisenbahnstraße Lagebezeichnung. Hirsauer Straße 1974 Hangstraße Hirsau, Stadtteil von Calw, Württemberg. Hinterm Zaun 1974 Flurname, der die Lage des Gewanns hinter der Dorfeinfriedung althochdeutsch hinter den zuonen kennzeichnet. Hinterwiesenweg 1964 1517 Auff den hindern wießen Flurname, Wiese hinter dem Dorf Rintheim. Hirschäckerstraße 1954 1722 Aan denen Hirschäckern Der Flurname geht auf den Anbau von Hirse zurück. Hirschberger Straße 1961 Hirschberg im Riesengebirge, heute Jelenia Góra, Stadt in Polen. Hirschgrabenweg 1942 Der Hirschgraben wurde 1818 angelegt, heute Teil des Pfinz-Entlastungskanals. Hirschhof 1952 Siehe Hirschstraße Hirschgasse
 
 An dieser Straße befand sich früher ein Hirschpark.
 
@@ -3355,9 +3351,9 @@ Hochstetten, ehemals selbständige Gemeinde, heute Teil von Linkenheim-Hochstett
 
 Flurname; das Gewann gehörte zum Höchstenhof, einen Gülthof der Markgrafen von Baden. Die Gült war eine an den Gutsherrn zu entrichtende Abgabe.
 
-## Hofäckerweg, vor 1960
+## Hofäckerweg 1960
 
-Flurname, bezieht sich auf den Gottesauer Kloster- oder Abthof, der nach einem Erbbeständer (Erbpächter) auch Mallenhof genannt wurde. Kloster Gottesaue war um 1100 von den Hohenbergern mit diesem Hof ausgestattet worden.
+Flurname, bezieht sich auf den Gottesauer Kloster- oder Abthof, der nach einem Erbbeständer (Erbpächter) auch Mallenhof genannt wurde. Kloster Gottesaue war 1100 von den Hohenbergern mit diesem Hof ausgestattet worden.
 
 ## Hoffstraße 1896
 
@@ -3369,11 +3365,11 @@ Karl Heinrich Hoff, * 8.9.1838 Mannheim, † 13.5.1890 Karlsruhe; Nach dem Studi
 
 Soll an den anläßlich der Eingemeindung 1973 geänderten Namen Bergstraße erinnern. Höhenstraße. Unter Höhe ist der Stupfericher Gänsberg zu verstehen.
 
-## Hohenwettersbacher Straße, um 1900
+## Hohenwettersbacher Straße 1900
 
 Im Volksmund auch Hofweg, nach dem Gutshof in Hohenwettersbach genannt.
 
-## Hohenwettersbacher Weg, um 1950
+## Hohenwettersbacher Weg 1950
 
 Hohenwettersbach, als Durrenweiterspach 1281 erstmals urkundlich erwähnt, wurde 1972 Stadtteil von Karlsruhe.
 
@@ -3393,7 +3389,7 @@ Hohloh, Berg im Schwarzwald
 
 1974 Dobelstraße
 
-Hans Holbein der Ältere, * um 1465 Augsburg, † 1524 am Oberrhein (Basel oder Isenheim, Elsaß);
+Hans Holbein der Ältere, * 1465 Augsburg, † 1524 am Oberrhein (Basel oder Isenheim, Elsaß);
 
 Maler und Zeichner.
 
@@ -3461,13 +3457,13 @@ Hornisgrinde, höchster Berg des nördlichen Schwarzwaldes.
 
 ## Hubertusallee 1937
 
-Hubertus, * um 655 Toulouse, † 30.5.727 Tervueren bei Brüssel; Bischof von Tongern-Maastricht.
+Hubertus, * 655 Toulouse, † 30.5.727 Tervueren bei Brüssel; Bischof von Tongern-Maastricht.
 
 ## Hübschstraße 1897
 
 Heinrich Hübsch, * 9.2.1795 Weinheim/Bergstraße, † 3.4.1863 Karlsruhe; Als Schüler des Architekten Friedrich Weinbrenners wurde Hübsch nach dessen Tod 1827 Residenzbaumeister, später als Baudirektor oberster badischer Baubeamter. Von 1832 bis 1853 leitete er die damals neu errichtete Bauschule des Polytechnischen Instituts. Seine wichtigsten Werke in Karlsruhe sind das Regierungspräsidium (ehemalige Finanzkanzlei), die Bulacher Kirche, die Kunsthalle, sowie die Bauten des Botanischen Gartens.
 
-## Hubstraße, um 1937
+## Hubstraße 1937
 
 um 1905 Hubweg
 
@@ -3541,7 +3537,7 @@ Flurname. Die Bedeutung von Eisenhafen ist unklar. Grund bedeutet hier Einsenkun
 
 1535 wisen gen. Esch wynnckel
 
-Winkel bezeichnet Fluren, die auf ein Ende zulaufen. Der Eschwinkel gehörte ursprünglich zu Gottesaue und kam um 1800 an Beiertheim.
+Winkel bezeichnet Fluren, die auf ein Ende zulaufen. Der Eschwinkel gehörte ursprünglich zu Gottesaue und kam 1800 an Beiertheim.
 
 ## Im Fischerweg 1966
 
@@ -3693,12 +3689,6 @@ Flurname Setz bezeichnet Gelände, das mit Reben bebaut ist. 1532 wingartenn ob 
 
 Der Flurname bezeichnet eine flache Vertiefung im Gelände. 1532 acker inn der taschenn.
 
-## Indiana Lane 1953
-
-Straßenname wurde 1995 aufgehoben und in den Louisianaring integriert (siehe
-
-Indiana, Bundesstaat der USA. auch Louisianaring).
-
 ## Indianaring 2002
 
 1953 Indiana Lane
@@ -3741,7 +3731,7 @@ Ispringen, Gemeinde im Enzkreis.
 
 Johann Adam Itzstein, * 29.9.1775 Mainz, † 14.9.1855 Hallgarten/ Rheingau;
 
-Itzstein wurde 1822 als Vertreter der Stadt Mannheim in die 2. Kammer des Badischen Landtags gewählt. Als gewandter und schlagfertiger Redner wurde er bald zum Sprecher der liberalen Opposition. 1848 war Itzstein Vizepräsident des Vorparlamentes, aus dem dann die Nationalversammlung in Frankfurt hervorging. Seine politische Idee war das Bemühen um geschlossenes Handeln aller liberalen Kräfte Deutschlands mit dem Ziel der Errichtung einer Deutschen Republik auf demokratischer Basis.
+Itzstein wurde 1822 als Vertreter der Stadt Mannheim in die 2. Kammer des Badischen Landtags gewählt. Als gewandter und schlagfertiger Redner wurde er bald zum Sprecher der liberalen Opposition. 1848 war Itzstein Vizepräsident des Vorparlamentes, aus dem dann die Nationalversammlung in Frankfurt hervorging. Seine politische Idee war das Bemühen geschlossenes Handeln aller liberalen Kräfte Deutschlands mit dem Ziel der Errichtung einer Deutschen Republik auf demokratischer Basis.
 
 ## Liegenschaftsamt Straßennamen in Karlsruhe
 
@@ -3919,7 +3909,7 @@ Die Kaiserstraße wurde anlässlich der Goldenen Hochzeit von Kaiser Wilhelm I. 
 
 Johannes Wenzel Kalliwoda, * 21.2.1801 Prag, † 3.12.1866 Karlsruhe; Kalliwoda war Schüler am Prager Konservatorium. Von 1822 bis 1866 war er Kapellmeister des Fürsten von Fürstenberg zu Donaueschingen. Er komponierte 10 Messen, ein Requiem, mehrere Ouvertüren, Streichquartette und Lieder; Das deutsche Lied.
 
-## Kallmorgenstraße, um 1920
+## Kallmorgenstraße 1920
 
 Friedrich Kallmorgen, * 15.11.1856 Altona, † 2.6.1924 Grötzingen;
 
@@ -3933,9 +3923,9 @@ Die Kalmit, höchster Berg des Pfälzer Waldes.
 
 Flurname. Bezeichnet Güter, die einer herrschaftlichen Kammer (Hofkammer) unterstehen oder zur Wirtschaftsverwaltung eines Gutshofes gehören.
 
-## Kampmannstraße, um 1920
+## Kampmannstraße 1920
 
-Gustav Kampmann, * 30.9.1859 Boppard/Rhein, † 12.8.1917 Bad Godesberg; Kampmann studierte von 1878 bis 1884 an der Kunstschule in Karlsruhe. Er besuchte 1881 die Landschaftsklasse von Gustav Schönleber, von 1882 bis 1884 war er Schüler von Hermann Baisch. 1890 ließ er sich in Grötzingen nieder. Kampmann war zu seiner Zeit einer der erfolgreichsten Graphiker. Seine vereinfachende und abstrahierende Malweise war beispielgebend für die deutsche Malerei um 1900; Winterabend.
+Gustav Kampmann, * 30.9.1859 Boppard/Rhein, † 12.8.1917 Bad Godesberg; Kampmann studierte von 1878 bis 1884 an der Kunstschule in Karlsruhe. Er besuchte 1881 die Landschaftsklasse von Gustav Schönleber, von 1882 bis 1884 war er Schüler von Hermann Baisch. 1890 ließ er sich in Grötzingen nieder. Kampmann war zu seiner Zeit einer der erfolgreichsten Graphiker. Seine vereinfachende und abstrahierende Malweise war beispielgebend für die deutsche Malerei 1900; Winterabend.
 
 ## Kanalweg 1946
 
@@ -4007,15 +3997,15 @@ Karl Hubbuch, * 21.11.1891 Karlsruhe, † 26.12.1979 Karlsruhe; Hubbuch studiert
 
 Karl Jäck, * 4.11.1875 Arnbach/Enzkreis, † 13.9.1945 Grötzingen;
 
-Karl Jäck war von 1919 bis 1933 Grötzinger Bürgermeister. In seiner Amtszeit wurde das Dorf mit elektrischem Strom versorgt. Um die Wohungsnot zu beseitigen, erschloß man die Karl-Leopold- und die damalige Pfinzstraße (heute: An der Pfinz), die Edelmänne und den Feindhag. Außerdem wurde die Friedhofskapelle gebaut. Karl Jäck wurde nach der Machtübernahme der Nationalsozialisten seines Amtes enthoben und verhaftet.
+Karl Jäck war von 1919 bis 1933 Grötzinger Bürgermeister. In seiner Amtszeit wurde das Dorf mit elektrischem Strom versorgt. die Wohungsnot zu beseitigen, erschloß man die Karl-Leopold- und die damalige Pfinzstraße (heute: An der Pfinz), die Edelmänne und den Feindhag. Außerdem wurde die Friedhofskapelle gebaut. Karl Jäck wurde nach der Machtübernahme der Nationalsozialisten seines Amtes enthoben und verhaftet.
 
 ## Karl-Martin-Graff-Straße 1974
 
 Karl Martin Graff, * 16.9.1876 Dresden, † 19.6.1966 Grötzingen; Graff studierte Architektur. Nach dem 1. Weltkrieg ließ er sich in Grötzingen nieder und begann zu malen. Der Ort wurde ihm zur zweiten Heimat. Hier entstanden viele Porträts von Grötzinger Bürgern, Landschaften und Dorfansichten.
 
-## Karl-Leopold-Straße, vor 1914
+## Karl-Leopold-Straße 1914
 
-Der Name erinnert an den Gemeinderat Karl Leopold Heidt, der um 1900 als erster in der Straße ansiedelte.
+Der Name erinnert an den Gemeinderat Karl Leopold Heidt, der 1900 als erster in der Straße ansiedelte.
 
 ## Karl-Pfizer-Anlage 2006
 
@@ -4083,7 +4073,7 @@ Das Durlacher Gegenstück zur Durlacher Allee in Karlsruhe.
 
 Verbindung zwischen Hagsfeld und der Karlsruher Innenstadt.
 
-## Karlsruher Weg, um 1919
+## Karlsruher Weg 1919
 
 Historischer Weg von Knielingen zur Stadt.
 
@@ -4181,7 +4171,7 @@ Kesselberg, Berg im Pfälzer Wald.
 
 ## Kesslaustrasse 2008
 
-Albrecht Friedrich von Kesslau, * um 1728; † um 1788; Ein Architekt und Baudirektor der maßgeblich am Ausbau des Karlsruher Schlosses beteiligt war.
+Albrecht Friedrich von Kesslau, * 1728; † 1788; Ein Architekt und Baudirektor der maßgeblich am Ausbau des Karlsruher Schlosses beteiligt war.
 
 ## Keßlerstraße 1896
 
@@ -4203,7 +4193,7 @@ Kiefer, Nadelgehölz.
 
 Weist auf ehemalige Bodenbeschaffenheit hin.
 
-## Killisfeldstraße, um 1900
+## Killisfeldstraße 1900
 
 1714 Killelinsfeldt
 
@@ -4236,11 +4226,11 @@ Lindenplatz, Schulstraße
 
 Gemeint ist die evangelische Kirche in Hohenwettersbach.
 
-## Kirchstaig, vor 1900
+## Kirchstaig 1900
 
 Bezeichnung für den recht steilen Zugang zur evangelischen Kirche in Grünwettersbach, mundartlich Kerren.
 
-## Kirchstraße, vor 1900
+## Kirchstraße 1900
 
 Straße auf der Westseite der evangelischen Kirche in Grötzingen.
 
@@ -4364,7 +4354,7 @@ Konstanz, Große Kreisstadt am Bodensee.
 
 1937 Lettow-Vorbeck-Straße Nikolaus Kopernikus, * 19.2.1473 Thorn, † 24.5.1543 Frauenburg;
 
-Astronom, entdeckte, dass sich die Erde um die Sonne dreht.
+Astronom, entdeckte, dass sich die Erde die Sonne dreht.
 
 ## Kornblumenstraße 1897
 
@@ -4423,7 +4413,7 @@ Kreuzelberg, Berg südlich von Ettlingen.
 
 Erbprinzische Gasse, Prinz-Friedrichgasse, Kreuzgasse Benannt nach dem ehemaligen Gasthaus Zum Weißen Kreuz.
 
-## Kriegsstraße, um 1800
+## Kriegsstraße 1800
 
 Die Kriegsstraße wurde von 1799 bis 1805 außerhalb der Stadttore als Umgehungsstraße für durchziehende Kriegstruppen angelegt. Sie diente dem Schutz der Karlsruher Bevölkerung.
 
@@ -4437,7 +4427,7 @@ Krokus, Blumenart.
 
 ## Kronenplatz 1974
 
-Kronenstraße, um 1820 1718 Plant(a)ische Gasse, 1725 und 1737 Löwencranzische Gasse, 1726 Uexküllsche Gasse, 1744 Kronengasse
+Kronenstraße 1820 1718 Plant(a)ische Gasse, 1725 und 1737 Löwencranzische Gasse, 1726 Uexküllsche Gasse, 1744 Kronengasse
 
 Benannt nach dem Gasthaus Zur Goldenen Krone.
 
@@ -4533,9 +4523,9 @@ August Lamey, * 27.7.1816 Karlsruhe, † 14.1.1896 Mannheim;
 
 Lamey war als Rechtsanwalt, später in Freiburg als Professor tätig. Er wurde wiederholt in den Landtag gewählt. Als badischer Innenminister (von 1860 bis 1866) leitete er eine liberale Ära ein, die eine Reorganisation der Verwaltung, die Gewerbefreiheit und die bürgerliche Gleichstellung der Juden, aber auch die Auseinandersetzung mit der katholischen Kirche im Kulturkampf u.a. wegen der Schulaufsicht mit sich brachte. Von 1871 bis 1875 und von 1879 bis 1883 gehörte er als Mitglied der Nationalliberalen Partei dem Deutschen Reichstag an. 1893 erhielt er die Ehrenbürgerschaft der Stadt Karlsruhe.
 
-## Lammstraße, um 1820
+## Lammstraße 1820
 
-1718 Güntzerische Gasse, 1725 und 1737 Markgraf-Christophs-Gasse, um 1750 Lammgasse Benannt nach dem Gasthaus Zum Lamm.
+1718 Güntzerische Gasse, 1725 und 1737 Markgraf-Christophs-Gasse 1750 Lammgasse Benannt nach dem Gasthaus Zum Lamm.
 
 ## Lamprechtstraße 1938
 
@@ -4551,7 +4541,7 @@ Landau in der Pfalz, Stadt in Rheinland-Pfalz.
 
 Landeck, Burgruine in der Pfalz.
 
-## Landgrabenstraße, vor 1929
+## Landgrabenstraße 1929
 
 Der Malscher Landgraben verläuft parallel zu dieser Straße.
 
@@ -4575,7 +4565,7 @@ Flurname, der auf die schmale, langgestreckte Form der Grundstücke zurückgeht.
 
 1472 Langbruch
 
-Das Gelände Langenbruch war ein langgestrecktes, ursprünglich mit Wald bestandenes Sumpfgelände, das im 16. Jahrhundert kultiviert wurde. Es gehörte ursprünglich zum Kammergut Gottesaue und kam um 1800 in Beiertheimer Besitz.
+Das Gelände Langenbruch war ein langgestrecktes, ursprünglich mit Wald bestandenes Sumpfgelände, das im 16. Jahrhundert kultiviert wurde. Es gehörte ursprünglich zum Kammergut Gottesaue und kam 1800 in Beiertheimer Besitz.
 
 ## Langensteinbacher Straße 2007
 
@@ -4754,7 +4744,7 @@ Marktplatz
 
 Neuhäuserstraße, Palmbacher Straße Linde, Laubgehölz.
 
-## Linkenheimer Allee, um 1800
+## Linkenheimer Allee 1800
 
 Siehe Linkenheimer Landstraße.
 
@@ -4825,7 +4815,7 @@ Wilhelm Lorenz, * 15.10.1842 Gesecke/Westfalen, † 29.8.1926 Karlsruhe; Lorenz,
 
 Schillerstraße
 
-Das Kloster Lorsch (Hessen) hatte um 800 in Knielingen Grundbesitz.
+Das Kloster Lorsch (Hessen) hatte 800 in Knielingen Grundbesitz.
 
 ## Lortzingstraße 1938
 
@@ -4909,7 +4899,7 @@ Schwalbenweg
 
 Ludwig Wilhelm, Prinz von Baden, * 12.6.1865 Schloß Baden, † 23.2.1888 Freiburg im Breisgau;
 
-Ludwig Wilhelm, Sohn des Großherzogs Friedrich und der Großherzogin Luise, besuchte ab 1874 die Friedrichschule in Karlsruhe und legte dort 1883 sein Abitur ab. 1886 ging Ludwig Wilhelm nach Heidelberg, später nach Freiburg, um Staatsund Rechtswissenschaften, Philosophie und Geschichte zu studieren. 1888 starb er an einer Lungenentzündung. Nach ihm wurde 1890 das Ludwig-Wilhelm-Krankenhaus benannt, die spätere Landesfrauenklinik und heutige Psychiatrische Klinik.
+Ludwig Wilhelm, Sohn des Großherzogs Friedrich und der Großherzogin Luise, besuchte ab 1874 die Friedrichschule in Karlsruhe und legte dort 1883 sein Abitur ab. 1886 ging Ludwig Wilhelm nach Heidelberg, später nach Freiburg Staatsund Rechtswissenschaften, Philosophie und Geschichte zu studieren. 1888 starb er an einer Lungenentzündung. Nach ihm wurde 1890 das Ludwig-Wilhelm-Krankenhaus benannt, die spätere Landesfrauenklinik und heutige Psychiatrische Klinik.
 
 ## Ludwig-Windthorst-Straße 1955
 
@@ -4925,7 +4915,7 @@ Ludwigshafen am Rhein, Stadt in Rheinland-Pfalz.
 
 ## Ludwigsplatz 1887
 
-Ludwig I., Großherzog von Baden, * 9.2.1763 Karlsruhe, † 30.3.1830 Karlsruhe; 1819 war Ludwigs erste Amtshandlung als Großherzog der Erlaß eines Wahlgesetzes für den ersten badischen Landtag. Während seiner weiteren Regierungszeit förderte Ludwig die Bautätigkeit in Karlsruhe, setzte sich für eine Verbesserung der Land- und der Wasserstraßen ein, erwirkte Erleichterungen im Zollwesen und kümmerte sich verstärkt um das Unterrichtswesen. Er gestaltete die Ausbildung des Militärs nach preußischem Muster.
+Ludwig I., Großherzog von Baden, * 9.2.1763 Karlsruhe, † 30.3.1830 Karlsruhe; 1819 war Ludwigs erste Amtshandlung als Großherzog der Erlaß eines Wahlgesetzes für den ersten badischen Landtag. Während seiner weiteren Regierungszeit förderte Ludwig die Bautätigkeit in Karlsruhe, setzte sich für eine Verbesserung der Land- und der Wasserstraßen ein, erwirkte Erleichterungen im Zollwesen und kümmerte sich verstärkt das Unterrichtswesen. Er gestaltete die Ausbildung des Militärs nach preußischem Muster.
 
 ## Luisenstraße 1874
 
@@ -5007,7 +4997,7 @@ Maine, Bundesstaat der USA. Die Straße liegt im ehemaligen Wohngebiet der früh
 
 Mainz, Hauptstadt von Rheinland-Pfalz.
 
-## Mallenweg, vor 1961
+## Mallenweg 1961
 
 Der Mallenhof, ein Gutshof in der Nähe des Grötzinger Marktplatzes, in der Kelterstraße, war im Besitz des Klosters Gottesaue. Er wurde nach einem Erbpächter namens Mall benannt, eine andere Bezeichnung war Abtshof.
 
@@ -5127,7 +5117,7 @@ Martin Luther, * 10.11.1483 Eisleben, † 18.2.1546 Eisleben; Reformator, schuf 
 
 ## Martin-Schongauer-Weg 1980
 
-Martin Schongauer, * um 1450 Colmar, † 1491 Breisach; Maler und Kupferstecher, Madonna im Rosenhag.
+Martin Schongauer, * 1450 Colmar, † 1491 Breisach; Maler und Kupferstecher, Madonna im Rosenhag.
 
 ## Martinstraße 1957
 
@@ -5187,7 +5177,7 @@ Max Dortu, * 29.6.1826 Potsdam, † 31.7.1849 Freiburg im Breisgau; Der Revoluti
 
 Max Habermann, * 21.3.1885 Hamburg-Altona, † 3.10.1944 Gifhorn;
 
-Habermann, von Beruf Buchhändler, war viele Jahre lang Vorstandsmitglied des Deutschen Gewerkschaftsbundes und des Internationalen Bundes Christlicher Gewerkschaften. Später schloss er sich der Widerstandsbewegung an. Nach dem 20. Juli 1944 fand er zunächst Zuflucht bei Freunden. Als er von der Gestapo festgenommen wurde, beendete er selbst sein Leben, um diejenigen nicht zu verraten, die ihm Hilfe und Obdach gegeben hatten.
+Habermann, von Beruf Buchhändler, war viele Jahre lang Vorstandsmitglied des Deutschen Gewerkschaftsbundes und des Internationalen Bundes Christlicher Gewerkschaften. Später schloss er sich der Widerstandsbewegung an. Nach dem 20. Juli 1944 fand er zunächst Zuflucht bei Freunden. Als er von der Gestapo festgenommen wurde, beendete er selbst sein Leben diejenigen nicht zu verraten, die ihm Hilfe und Obdach gegeben hatten.
 
 ## Max-Laeuger-Straße 2008
 
@@ -5215,7 +5205,7 @@ Maxburg, das Hambacher Schloss; Siehe Hambacher Straße.
 
 ## Maximilianstraße 1900
 
-Maximilian Prinz von Baden, * 10.7.1867 Baden-Baden, † 6.11.1929 Konstanz; Dem am 3.10.1918 zum letzten Reichskanzler des Kaiserreichs ernannten Max von Baden blieb es vorbehalten, die alliierten Kriegsgegner Deutschlands im Ersten Weltkrieg um Waffenstillstand zu bitten und unter dem Druck der Ereignisse die Abdankung Kaiser Wilhelms II. zu verkünden. In Karlsruhe erinnert das städtische Kulturzentrum Prinz-Max-Palais an ihn, ein ursprünglich bürgerliches Gebäude, das seit 1899 seinen Namen trägt und von 1951 bis 1969 das Bundesverfassungsgericht beherbergte.
+Maximilian Prinz von Baden, * 10.7.1867 Baden-Baden, † 6.11.1929 Konstanz; Dem am 3.10.1918 zum letzten Reichskanzler des Kaiserreichs ernannten Max von Baden blieb es vorbehalten, die alliierten Kriegsgegner Deutschlands im Ersten Weltkrieg Waffenstillstand zu bitten und unter dem Druck der Ereignisse die Abdankung Kaiser Wilhelms II. zu verkünden. In Karlsruhe erinnert das städtische Kulturzentrum Prinz-Max-Palais an ihn, ein ursprünglich bürgerliches Gebäude, das seit 1899 seinen Namen trägt und von 1951 bis 1969 das Bundesverfassungsgericht beherbergte.
 
 ## Maybachstraße 1968
 
@@ -5231,7 +5221,7 @@ Mecklenburg, historisches deutsches Land, heute Teil von Mecklenburg-Vorpommern.
 
 Waldstraße
 
-Flurname. Buckel = Hang. Ob es sich bei Meder um einen früheren Besitzer handelt, ist ungeklärt.
+Flurname. Buckel = Hang. Ob es sich bei Meder einen früheren Besitzer handelt, ist ungeklärt.
 
 ## Mehliskopfstraße 1977
 
@@ -5285,7 +5275,7 @@ Gemeint ist der Jahrmarkt die Messe, der ab 1911 hier stattfand.
 
 ## Michael-Pacher-Weg 1980
 
-Michael Pacher, * um 1435 Neustift bei Bruneck, † 1498 Salzburg; Bildschnitzer und Maler, Hochaltar in St. Wolfgang (Salzkammergut).
+Michael Pacher, * 1435 Neustift bei Bruneck, † 1498 Salzburg; Bildschnitzer und Maler, Hochaltar in St. Wolfgang (Salzkammergut).
 
 ## Michaelstraße 1970
 
@@ -5399,7 +5389,7 @@ Das Mühlburger Tor stand ursprünglich an der Einmündung der Waldstraße in di
 
 ## Mühlstraße 1898
 
-## um 1762 Kirchgasse
+## 1762 Kirchgasse
 
 Die bereits im 14. Jahrhundert urkundlich erwähnte, mehrfach umgebaute Mühle in Grötzingen brannte 1930 ab. An ihrer Stelle befindet sich heute eine chemische Fabrik.
 
@@ -5497,7 +5487,7 @@ um 1905 Werderstraße
 
 Karl Freiherr von Neuenstein, * 27.10.1767 Donaueschingen, † 15.2.1838 Durlach; Neuenstein führte 1809 ein Regiment im Feldzug gegen Österreich, in welchem er den Oberbefehl über die badische Feldbrigade erhielt. Von 1809 bis 1813 befehligte er das badische Kontingent in Spanien. 1817 wurde Neuenstein zum Generaladjutanten der Infanterie ernannt.
 
-## Neuer Weg um 1939
+## Neuer Weg 1939
 
 Ochsenstraße
 
@@ -5587,7 +5577,7 @@ Nikolaus Lenau, eigentlich Nikolaus Franz Niembsch Edler von Strehlenau, * 13.8.
 
 ## Nikolausstraße 1911
 
-Nikolaus, † um 350; Bischof von Myra (Kleinasien), Heiliger.
+Nikolaus, † 350; Bischof von Myra (Kleinasien), Heiliger.
 
 ## Nokkstraße 1906
 
@@ -5626,10 +5616,6 @@ Gemeint sind die Ufer des Rheinhafens und der Alb.
 ## Nordoststraße 1945
 
 1908 Nordoststraße, 1933 Hermann-Göring-Straße Diese Straße zieht von der Wettersteinstraße nach Nordosten.
-
-## North Carolina Street 1953
-
-North Carolina, Bundesstaat der USA. Straßenname wurde 1995 aufgehoben und in die Rhode-Island-Allee integriert.
 
 ## Nottingham-Anlage 1994
 
@@ -5701,7 +5687,7 @@ Friedrichstraße, 1929 Kirchfeldstraße Flurname, der auf ehemals kirchlichen Be
 
 ## Oberlinstraße 1970
 
-1930 Ebertstraße, um 1933 Reichsstraße, 1936 Scharnhorststraße, 1938 Maasstraße Johann Friedrich Oberlin, * 31.8.1740 Straßburg, † 1.6.1826 Waldersbach (Vogesen); Evangelischer Pfarrer, gründete 1779 in Waldersbach die erste Kinderbewahranstalt; beherbergte für einige Zeit den seelisch erkrankten Dichter Jakob Michael Reinhold Lenz.
+1930 Ebertstraße 1933 Reichsstraße, 1936 Scharnhorststraße, 1938 Maasstraße Johann Friedrich Oberlin, * 31.8.1740 Straßburg, † 1.6.1826 Waldersbach (Vogesen); Evangelischer Pfarrer, gründete 1779 in Waldersbach die erste Kinderbewahranstalt; beherbergte für einige Zeit den seelisch erkrankten Dichter Jakob Michael Reinhold Lenz.
 
 ## Obermühlweg 1975
 
@@ -5783,7 +5769,7 @@ Ortelsburg, heute Szczytno, Stadt in Polen.
 
 ## Ortenaustraße 1928
 
-Ortenau, Landschaft um Offenburg, seit 1806 badisch.
+Ortenau, Landschaft Offenburg, seit 1806 badisch.
 
 ## Ortenbergstraße 1974
 
@@ -5821,7 +5807,7 @@ Osterode in Ostpreußen, heute Ostróda, Stadt in Polen.
 
 Rheinbrückenstraße
 
-Ursprünglich war nur die Ostseite der Rheinbrückenstraße bebaut, so daß hier die Häuser fortlaufend numeriert wurden. Als 1970 auch auf der Westseite einige Gebäude errichtet wurden, mußte die Straße geteilt werden, um eine sinnvolle Nummerierung zu ermöglichen.
+Ursprünglich war nur die Ostseite der Rheinbrückenstraße bebaut, so daß hier die Häuser fortlaufend numeriert wurden. Als 1970 auch auf der Westseite einige Gebäude errichtet wurden, mußte die Straße geteilt werden eine sinnvolle Nummerierung zu ermöglichen.
 
 ## Ostmarkstraße 1938
 
@@ -5891,7 +5877,7 @@ P
 
 ## Allmendweg
 
-Der Name geht zurück auf die sogenannte Baille maille, im Mittelalter eine Spielanlage vor dem Basler Tor in Durlach. Es handelte sich dabei um eine Bahn, auf der Ball-Kugel- und Wurfspiele vorgenommen wurden. Die dafür verwendete Straße nannte man pall-mall, woraus Palmaien entstanden ist.
+Der Name geht zurück auf die sogenannte Baille maille, im Mittelalter eine Spielanlage vor dem Basler Tor in Durlach. Es handelte sich dabei eine Bahn, auf der Ball-Kugel- und Wurfspiele vorgenommen wurden. Die dafür verwendete Straße nannte man pall-mall, woraus Palmaien entstanden ist.
 
 ## Palmbacher Straße
 
@@ -5963,7 +5949,7 @@ Pennsylvania, Bundesstaat der USA. Die Straße liegt im ehemaligen Wohngebiet de
 
 ## Peter-und-Paul-Platz 1906
 
-Peter, lateinisch Petrus, Apostel. Paul, lateinisch Paulus, Apostel. Beide fielen um 64 n. Chr. unter dem römischen Kaiser Nero der Christenverfolgung zum Opfer.
+Peter, lateinisch Petrus, Apostel. Paul, lateinisch Paulus, Apostel. Beide fielen 64 n. Chr. unter dem römischen Kaiser Nero der Christenverfolgung zum Opfer.
 
 ## Petergraben 1929
 
@@ -5973,7 +5959,7 @@ Flurname Pfettergraben. Pfetter = Pfättere, Pfättele bedeutet Dachrinne, Känn
 
 ## Petrus-Waldus-Straße 1968
 
-Petrus Waldus war Kaufmann in Lyon und begründete die nach 1176 entstandene Waldenserbewegung, eine Laienbruderschaft innerhalb der katholischen Kirche Südfrankreichs. Petrus Waldus wurde 1184 exkommuniziert und, wie seine Anhänger, aus Frankreich vertrieben. Um 1700 wurden im heutigen Neureut Flüchtlinge aus Südfrankreich (= Welsche) angesiedelt.
+Petrus Waldus war Kaufmann in Lyon und begründete die nach 1176 entstandene Waldenserbewegung, eine Laienbruderschaft innerhalb der katholischen Kirche Südfrankreichs. Petrus Waldus wurde 1184 exkommuniziert und, wie seine Anhänger, aus Frankreich vertrieben. 1700 wurden im heutigen Neureut Flüchtlinge aus Südfrankreich (= Welsche) angesiedelt.
 
 ## Pfaffstraße 1964
 
@@ -6021,7 +6007,7 @@ Hanns Löw, * 8.6.1889 Harburg/ Schwaben, † 6.6.1967 Karlsruhe;
 
 Löw war 1914 Kriegsfreiwilliger, wurde später Divisionspfarrer und übernahm nach dem Ersten Weltkrieg seine erste Seelsorgerstelle in Riegel am Kaiserstuhl. Dort blieb er bis zu seiner Berufung an die Altstadtpfarrei in Karlsruhe im Jahre 1931. Löw hat sich für seine schwierige Gemeinde bis an die Grenze seiner Leistungsfähigkeit aufgeopfert.
 
-## Pfarrstraße, um 1910
+## Pfarrstraße 1910
 
 Gemeint ist die 1463 zur selbständigen Pfarrkirche erhobene Kirche St. Valentin in Daxlanden.
 
@@ -6217,7 +6203,7 @@ Benannt nach dem Gasthaus Zum Rappen in Durlach.
 
 Leopoldstraße
 
-Insel im Altrheingelände bei Daxlanden. Wört ist eine Weiterentwicklung von Werd, eine Bezeichnung für Insel, erhöhtes, wasserfreies Land zwischen Sümpfen. Bei Rappen handelt es sich wahrscheinlich um einen Familiennamen.
+Insel im Altrheingelände bei Daxlanden. Wört ist eine Weiterentwicklung von Werd, eine Bezeichnung für Insel, erhöhtes, wasserfreies Land zwischen Sümpfen. Bei Rappen handelt es sich wahrscheinlich einen Familiennamen.
 
 ## Rastatter Straße 1907
 
@@ -6225,7 +6211,7 @@ Ettlinger Straße
 
 Rastatt, Große Kreisstadt südlich von Karlsruhe.
 
-Rathausgasse, um 1900 Siehe Rathausplatz. Rathausplatz 1982 Niddaplatz (Teil) Beide beziehen sich auf das Grötzinger Rathaus. Rathausstraße 1973 1908 Friedenstraße Benannt nach dem Rathaus von Wolfartsweier. Rebbergweg 1975 Der Name weist auf den Weinbau in den benachbarten Gewannen hin. Rebenstraße 1938 1758 Schwanengasse Erinnert an den im Gasthaus Zum Schwanen ausgeschenkten Rebensaft. Rebgärtenstraße 1976 Steinstraße Flurname, der auf den früheren Weinanbau verweist. Rechts der Alb 1927 Siehe Albwinkel. Rechts der langen Richtstatt 1982 Flurname. Mit Richtstatt bezeichnete man gerade, durch Waldungen verlaufende Wege, wo gehauenes Holz verarbeitet (zugerichtet) wurde. Die lange Richtstatt zog durch den Hardtwald. 1840 an der langen Richtstatt links und rechts. Redtenbacherstraße 1888 Ferdinand Redtenbacher, * 25.7.1809 Steyr/Österreich, † 16.4.1863 Karlsruhe; Redtenbacher studierte am Polytechnikum Wien, war einige Jahre Mathematikprofessor in Zürich und wurde 1841 auf den neugeschaffenen Lehrstuhl für Mechanik und Maschinenlehre an der Polytechnischen Schule Karlsruhe berufen. Mit seinem Werk Die Prinzipien der Mechanik begründete er den wissenschaftlichen Maschinenbau in Deutschland. In seiner Arbeit über den Lokomotivbau berücksichtigte er als erster die Gesetze der Schwingungslehre. Als Direktor der Polytechnischen Schule änderte Redtenbacher rigoros Lehrpläne und Organisation, wechselte einen wesentlichen Teil der Lehrkräfte aus und schuf damit einen neuen Schultyp, der 1885 als Technische Hochschule den Universitäten gleichgestellt wurde. Rehbergweg 1952 1949 Am Binsenschlauch Rehberg, Berg bei Annweiler/Pfalz. Rehbuckel 1976 Flurname, der auf das Vorkommen von Rehen zurückgeht.
+Rathausgasse 1900 Siehe Rathausplatz. Rathausplatz 1982 Niddaplatz (Teil) Beide beziehen sich auf das Grötzinger Rathaus. Rathausstraße 1973 1908 Friedenstraße Benannt nach dem Rathaus von Wolfartsweier. Rebbergweg 1975 Der Name weist auf den Weinbau in den benachbarten Gewannen hin. Rebenstraße 1938 1758 Schwanengasse Erinnert an den im Gasthaus Zum Schwanen ausgeschenkten Rebensaft. Rebgärtenstraße 1976 Steinstraße Flurname, der auf den früheren Weinanbau verweist. Rechts der Alb 1927 Siehe Albwinkel. Rechts der langen Richtstatt 1982 Flurname. Mit Richtstatt bezeichnete man gerade, durch Waldungen verlaufende Wege, wo gehauenes Holz verarbeitet (zugerichtet) wurde. Die lange Richtstatt zog durch den Hardtwald. 1840 an der langen Richtstatt links und rechts. Redtenbacherstraße 1888 Ferdinand Redtenbacher, * 25.7.1809 Steyr/Österreich, † 16.4.1863 Karlsruhe; Redtenbacher studierte am Polytechnikum Wien, war einige Jahre Mathematikprofessor in Zürich und wurde 1841 auf den neugeschaffenen Lehrstuhl für Mechanik und Maschinenlehre an der Polytechnischen Schule Karlsruhe berufen. Mit seinem Werk Die Prinzipien der Mechanik begründete er den wissenschaftlichen Maschinenbau in Deutschland. In seiner Arbeit über den Lokomotivbau berücksichtigte er als erster die Gesetze der Schwingungslehre. Als Direktor der Polytechnischen Schule änderte Redtenbacher rigoros Lehrpläne und Organisation, wechselte einen wesentlichen Teil der Lehrkräfte aus und schuf damit einen neuen Schultyp, der 1885 als Technische Hochschule den Universitäten gleichgestellt wurde. Rehbergweg 1952 1949 Am Binsenschlauch Rehberg, Berg bei Annweiler/Pfalz. Rehbuckel 1976 Flurname, der auf das Vorkommen von Rehen zurückgeht.
 
 ## Reichardtstraße 1930
 
@@ -6239,7 +6225,7 @@ Bis 1896 war Reichardt großherzoglicher Notar, Amtsrichter und Bürgerausschuss
 
 Georg von Reichenbach, * 24.8.1771 Durlach, † 21.5.1826 München;
 
-Reichenbach war Mitbegründer eines mathematisch-mechanischen Instituts und schuf zusammen mit Joseph von Fraunhofer seit 1809 optische Instrumente, insbesondere Theodolite für Vermessungsingenieure. Verdient machte sich Reichenbach um den Bau der Soleleitungen Reichenhall - Rosenheim und Berchtesgaden - Reichenhall. Er lieferte auch Entwürfe für eine transportable Hochdruckmaschine und für die Gasbeleuchtung der Münchner Residenz.
+Reichenbach war Mitbegründer eines mathematisch-mechanischen Instituts und schuf zusammen mit Joseph von Fraunhofer seit 1809 optische Instrumente, insbesondere Theodolite für Vermessungsingenieure. Verdient machte sich Reichenbach den Bau der Soleleitungen Reichenhall - Rosenheim und Berchtesgaden - Reichenhall. Er lieferte auch Entwürfe für eine transportable Hochdruckmaschine und für die Gasbeleuchtung der Münchner Residenz.
 
 ## Reickertstraße 1964
 
@@ -6377,7 +6363,7 @@ Willstätter, der einer alteingesessenen jüdischen Familie entstammte, studiert
 
 Flurname, der ein mit Schilf und Sumpfgras bewachsenes Gelände bezeichnet. 1740 in denen Riethwiesen.
 
-## Ringelberghoh, um 1910
+## Ringelberghoh 1910
 
 ## Ringelbergstraße
 
@@ -6401,7 +6387,7 @@ Die Straße erschließt in einem halben Ring das Baugebiet Graben-Wingertäcker 
 
 Hauptstraße
 
-## Rintheimer Querallee, um 1800
+## Rintheimer Querallee 1800
 
 Siehe Rintheimer Straße
 
@@ -6461,7 +6447,7 @@ Der Name bezieht sich auf eine im 1. Jahrhundert n.Chr. durch das Rheintal verla
 
 Fritz Römhildt, * 22.3.1857 Karlsruhe, † 7.12.1933 Karlsruhe; Von Beruf Kaufmann, wurde Römhildt als Mundartdichter bekannt, der Karlsruher Eigenheiten und Geschehnisse unter dem Pseudonym Romeo glossierte. Dogder Diftler, Juckpulver.
 
-## Rommelstraße, um 1924
+## Rommelstraße 1924
 
 Albert Rommel, * 16.8.1861 Ludwigsburg, † 23.10.1910 Durlach; Als 1898 Rudolf und Julius Gritzner aus der Direktion der Gritznerwerke ausschieden, traten an ihre Stelle Albert Rommel als kaufmännischer und Oskar Hunger als technischer Leiter. 1902 ging die gesamte Leitung auf Rommel über. Unter seiner Führung fusionierte das Werk mit der pfälzischen Maschienenfabrik Kayser. Im Jahre 1902 erfolgte die Fertigstellung der millionsten, bereits Jahre später der zweimillionsten Gritzner-Nähmaschine.
 
@@ -6479,7 +6465,7 @@ Wilhelm Conrad Röntgen, * 27.3.1845 Lennep/Remscheid, † 10.2.1923 München; P
 
 Albrecht Graf von Roon, * 30.4.1803 Pleushagen bei Kolberg, † 23.2.1879 Berlin; Preußischer Minister und Generalfeldmarschall.
 
-## Rosalienberg, vor 1960
+## Rosalienberg 1960
 
 1913 Rosalienberg, 1914 Hindenburgstraße
 
@@ -6491,7 +6477,7 @@ Wiesenstraße, Steiermärkerstraße Rose, Pflanzengattung.
 
 ## Rosenhofweg 1873
 
-Sollte es sich hier um eine satirisch gemeinte Bezeichnung handeln? Der Platz wurde zur Leerung der Karlsruher Latrinen angelegt.
+Sollte es sich hier eine satirisch gemeinte Bezeichnung handeln? Der Platz wurde zur Leerung der Karlsruher Latrinen angelegt.
 
 ## Rosenweg 1913
 
@@ -6589,8 +6575,6 @@ Rüppurr, 1103 als Rietburg erstmals urkundlich erwähnt, wurde 1907 Stadtteil v
 
 ## Ruschgraben 1945
 
-## Schulstraße, 1938 Hans-Schemm-Straße
-
 Seitenbach der Alten Bach in Hagsfeld, der bei der Begradigung der Alten Bach in den 1960er Jahren eingeebnet wurde. Ruschen ist eine alte Bezeichnung für Ulmen.
 
 ## Rußheimer Straße 1974
@@ -6659,7 +6643,7 @@ Florian, † 304 in der römischen Provinz Noricum; Römischer Herresbeamter, He
 
 ## Sankt-Georg-Straße 1957
 
-Georg, * um 280? in Kappadokien, † ?; Römischer Offizier, Heiliger.
+Georg, * 280? in Kappadokien, † ?; Römischer Offizier, Heiliger.
 
 ## Sankt-Valentin-Platz 1988
 
@@ -6681,13 +6665,13 @@ Diese Straße soll zu den Hagsfelder Schafweiden geführt haben.
 
 An der Schafweide
 
-Vermutlich handelt es sich um eine frühere Schafweide.
+Vermutlich handelt es sich eine frühere Schafweide.
 
 ## Schänzle 1949
 
 Flurname, der vermutlich auf die Schanzen der Ettlinger Linie zurückgeht, eine im 18.Jahrhundert bestehende Verteidigungsanlage. Die Ettlinger Linie verlief über Daxlanden, Knielingen, Mühlburg, Grünwinkel und Bulach.
 
-## Schattenstraße, vor 1909
+## Schattenstraße 1909
 
 Naturbegriff, der Sonne abgewandte Seite.
 
@@ -6711,7 +6695,7 @@ Flurname; nach dem Familiennamen Schöll, der bereits seit dem 16. Jahrhundert b
 
 Josef Victor von Scheffel, * 16.2.1826 Karlsruhe, † 9.4.1886 Karlsruhe;
 
-Scheffel bestand am Karlsruher Bismarckgymnasium als Bester seiner Klasse das Abitur und studierte anschließend Jura. Später ging er in den Staatsdienst, zunächst nach Säckingen, danach nach Bruchsal. Sein Trompeter von Säckingen wurde die meistgelesene Verserzählung seines Jahrhunderts. 1853 gab Scheffel seinen Beruf auf, um sich ganz seinen Neigungen als Schriftsteller und Maler zu widmen. Scheffel war zwar oft auf Reisen, Mittelpunkt seines Lebens war aber stets seine Heimatstadt Karlsruhe. Sein Wirken wurde mit der Erhebung in den erblichen Adelsstand gewürdigt; Gaudeamus.
+Scheffel bestand am Karlsruher Bismarckgymnasium als Bester seiner Klasse das Abitur und studierte anschließend Jura. Später ging er in den Staatsdienst, zunächst nach Säckingen, danach nach Bruchsal. Sein Trompeter von Säckingen wurde die meistgelesene Verserzählung seines Jahrhunderts. 1853 gab Scheffel seinen Beruf auf sich ganz seinen Neigungen als Schriftsteller und Maler zu widmen. Scheffel war zwar oft auf Reisen, Mittelpunkt seines Lebens war aber stets seine Heimatstadt Karlsruhe. Sein Wirken wurde mit der Erhebung in den erblichen Adelsstand gewürdigt; Gaudeamus.
 
 ## Scheibenbergstraße 1961
 
@@ -6749,7 +6733,7 @@ Friedrich von Schiller, * 10.11.1759 Marbach, † 9.5.1805 Weimar; Dichter, Wilh
 
 ## Schilling-von-Canstatt-Straße 1990
 
-Die Freiherren Schilling von Canstatt bekleideten lange Zeit hohe Ämter im badischen Hofund Staatsdienst. Anlässlich ihrer Eheschließung mit Wilhelm Friedrich Schilling von Canstatt übertrug Markgraf Karl Wilhelm von Baden-Durlach seiner aus einer morganatischen Verbindung stammenden Tochter Karoline von Wangen das Hofgut Hohenwettersbach. Um 1760 beschäftigten die Gutsherren zum Schlossbau und für den landwirtschaftlichen Betrieb Arbeiter und Tagelöhner, die sich auf herrschaftlichem Boden ansiedeln durften, aber zeitlebens von ihrer Herrschaft abhängig waren und vielfach in bitterer Armut leben mußten. So kam es immer wieder zu Streitigkeiten zwischen beiden Seiten. Erst 1864 - lange Zeit nach Aufhebung der Leibeigenschaft - konnte eine selbständige Gemeinde Hohenwettersbach gegründet werden.
+Die Freiherren Schilling von Canstatt bekleideten lange Zeit hohe Ämter im badischen Hofund Staatsdienst. Anlässlich ihrer Eheschließung mit Wilhelm Friedrich Schilling von Canstatt übertrug Markgraf Karl Wilhelm von Baden-Durlach seiner aus einer morganatischen Verbindung stammenden Tochter Karoline von Wangen das Hofgut Hohenwettersbach. 1760 beschäftigten die Gutsherren zum Schlossbau und für den landwirtschaftlichen Betrieb Arbeiter und Tagelöhner, die sich auf herrschaftlichem Boden ansiedeln durften, aber zeitlebens von ihrer Herrschaft abhängig waren und vielfach in bitterer Armut leben mußten. So kam es immer wieder zu Streitigkeiten zwischen beiden Seiten. Erst 1864 - lange Zeit nach Aufhebung der Leibeigenschaft - konnte eine selbständige Gemeinde Hohenwettersbach gegründet werden.
 
 ## Schindweg 1951
 
@@ -6941,11 +6925,11 @@ Moritz von Schwind, * 21.1.1804 Wien, † 8.2.1871 München; Schwind war als Mal
 
 Sebastian Kneipp, * 17.5.1821 Stefansried, † 17.6.1897 Bad Wörishofen; Pfarrer, Pionier der Naturheilkunde.
 
-## Seboldstraße, um 1905
+## Seboldstraße 1905
 
 ## Pflasterweg
 
-Johann Georg Sebold, * 17.9.1822 Zell bei Würzburg, † 1.5.1892 Karlsruhe; Sebold, gelernter Modellschreiner, entwickelte Apparate für die Zündholzfabrikation und gründete um 1856 in Durlach eine Maschinenfabrik. Dort konstruierte er wenig später die erste Gießerei-Preßformmaschine. Unter seiner Leitung entwickelte sich das Werk - heute Badische Maschinenfabrik Durlach - zum Spezialisten für Gerbereimaschinen, Filterpressen und Furnierschälmaschinen.
+Johann Georg Sebold, * 17.9.1822 Zell bei Würzburg, † 1.5.1892 Karlsruhe; Sebold, gelernter Modellschreiner, entwickelte Apparate für die Zündholzfabrikation und gründete 1856 in Durlach eine Maschinenfabrik. Dort konstruierte er wenig später die erste Gießerei-Preßformmaschine. Unter seiner Leitung entwickelte sich das Werk - heute Badische Maschinenfabrik Durlach - zum Spezialisten für Gerbereimaschinen, Filterpressen und Furnierschälmaschinen.
 
 ## Sedanstraße 1886
 
@@ -7013,7 +6997,7 @@ Karlsruhe Generalbundesanwalt, von RAF-Terroristen erschossen
 
 ## Siegfried-Kühn-Straße 1978
 
-Siegfried Kühn, * 23.12.1895 Untergrombach/Bruchsal, † 26.6.1972 Karlsruhe; Kühn war von 1947 bis 1953 Vorsitzender der Landesversicherungsanstalt Baden, danach bis 1965 Präsident des Badischen Sparkassen- und Giroverbandes. Er zählte zum Widerstandskreis um Reinhold Frank in der Zeit des Nationalsozialismus. Er war 1945 einer der Gründer der Karlsruher CDU, für die er 20 Jahre lang dem Gemeinderat angehörte. 1965 verlieh ihm die Stadt Karlsruhe für seine Verdienste beim Wiederaufbau der Stadt und ihrer Institutionen die Ehrenbürgerwürde.
+Siegfried Kühn, * 23.12.1895 Untergrombach/Bruchsal, † 26.6.1972 Karlsruhe; Kühn war von 1947 bis 1953 Vorsitzender der Landesversicherungsanstalt Baden, danach bis 1965 Präsident des Badischen Sparkassen- und Giroverbandes. Er zählte zum Widerstandskreis Reinhold Frank in der Zeit des Nationalsozialismus. Er war 1945 einer der Gründer der Karlsruher CDU, für die er 20 Jahre lang dem Gemeinderat angehörte. 1965 verlieh ihm die Stadt Karlsruhe für seine Verdienste beim Wiederaufbau der Stadt und ihrer Institutionen die Ehrenbürgerwürde.
 
 ## Siegfriedstraße 1911
 
@@ -7085,10 +7069,6 @@ Karoline Sonntag stiftete 1871 zur Unterstützung bedürftiger Witwen und unverh
 
 Sophie, Großherzogin von Baden, * 21.5.1801 Stockholm, † 6.7.1865 Karlsruhe; Sophie, Tochter König Gustavs IV. Adolf von Schweden und der Prinzessin Friederike von Baden, heiratete 1819 den Erbprinzen Leopold von Baden. Sie gründete 1831 einen Frauenverein, der sich der Wohltätigkeit und Armenpflege in Karlsruhe widmete, und förderte Talente in Kunst und Wissenschaft.
 
-## South Carolina Street 1953
-
-South Carolina, Bundesstaat der USA. Straßenname wurde 1995 aufgehoben und in die Rhode-Island-Allee integriert.
-
 ## Sparkassenhof 2007
 
 Die Sparkasse wurde als Leihhaus am 12.12.1812 durch Großherzog Karl von Baden gegründet.
@@ -7139,7 +7119,7 @@ Von Stabel setzte sich 1860 als Justizminister und 1861 als Präsident des Staat
 
 ## Staigstraße
 
-Es handelt sich um einen 1532 erstmals erwähnten ansteigenden Weg, die frühere Durchgangsstraße durch Grötzingen, dessen Anlage auf die Markgräfin Augusta zurückgeht.
+Es handelt sich einen 1532 erstmals erwähnten ansteigenden Weg, die frühere Durchgangsstraße durch Grötzingen, dessen Anlage auf die Markgräfin Augusta zurückgeht.
 
 ## Ständehausstraße 1896
 
@@ -7237,7 +7217,7 @@ Unter dieser Straße verläuft der Landgraben, früher ein offenes Gewässer, au
 
 ## Stephan-Lochner-Weg 1980
 
-Stephan Lochner, * um 1400 Meersburg?, † 1451 Köln; Hauptmeister der Kölner Malerschule, Muttergottes in der Rosenlaube.
+Stephan Lochner, * 1400 Meersburg?, † 1451 Köln; Hauptmeister der Kölner Malerschule, Muttergottes in der Rosenlaube.
 
 ## Stephanienstraße 1814
 
@@ -7315,17 +7295,15 @@ Stumpf, zunächst Prior im Johanniterorden, wechselte zur reformierten Lehre und
 
 ## Stupfericher Weg 1972
 
-Stupferich, als Stutpferrich um 1100 erstmals erwähnt, wurde 1972 Stadtteil von Karlsruhe.
+Stupferich, als Stutpferrich 1100 erstmals erwähnt, wurde 1972 Stadtteil von Karlsruhe.
 
 ## Stutenpferchstraße 1976
 
-Stutenpferch ist eine Abwandlung des ursprünglichen Ortsnamens des um 1100 gegründeten Ortes Stupferich. Der Name weist auf eine Pferdezucht hin (Stutenpferch = Stuterei). ca. 1100 Stutpferrichen.
+Stutenpferch ist eine Abwandlung des ursprünglichen Ortsnamens des 1100 gegründeten Ortes Stupferich. Der Name weist auf eine Pferdezucht hin (Stutenpferch = Stuterei). ca. 1100 Stutpferrichen.
 
-## Stutenseer Allee 18. Jahrh
+## Stutenseer Allee 1800
 
-.
-
-An der Stelle eines alten Gutshofes baute Friedrich von Keßlau im Auftrag des Markgrafen Karl Friedrich um 1760 das Lustschloß Stutensee, dem ein landwirtschaftliches Mustergut angegliedert wurde
+An der Stelle eines alten Gutshofes baute Friedrich von Keßlau im Auftrag des Markgrafen Karl Friedrich 1760 das Lustschloß Stutensee, dem ein landwirtschaftliches Mustergut angegliedert wurde
 
 ## Stuttgarter Straße 1927
 
@@ -7339,7 +7317,7 @@ Das Becken III des Rheinhafens wird auch als Südbecken bezeichnet.
 
 ## Südendstraße 1885
 
-Diese Straße markierte bis um 1900 den südlichen Rand der Südweststadt.
+Diese Straße markierte bis 1900 den südlichen Rand der Südweststadt.
 
 ## Sudetenstraße 1938
 
@@ -7387,7 +7365,7 @@ Die Bezeichnung entstammt dem Volksmund. Die Straße verläuft im obersten Teil 
 
 1969 Wiesenstraße
 
-Der ursprüngliche Name erinnert an die Wiesen, die sich bis zur Bebauung des Areals hier befanden. Der Zusatz Tal- wurde notwendig, um Doppelbenennungen zu vermeiden.
+Der ursprüngliche Name erinnert an die Wiesen, die sich bis zur Bebauung des Areals hier befanden. Der Zusatz Tal- wurde notwendig Doppelbenennungen zu vermeiden.
 
 ## Tannenweg 1950
 
@@ -7395,7 +7373,7 @@ Tanne, Nadelgehölz.
 
 ## Tannhäuserstraße 1927
 
-Tannhäuser, * um 1205, † um 1270; Lyriker, Sagengestalt.
+Tannhäuser, * 1205, † 1270; Lyriker, Sagengestalt.
 
 ## Taubenstraße 1910
 
@@ -7443,7 +7421,7 @@ Theodor Rehbock, * 12.4.1864 Amsterdam, † 17.8.1950 Baden-Baden; Rehbock unter
 
 ## Theodor-Söhner-Weg 1984
 
-Theodor Söhner, * 19.8.1907 Waldmühlbach/Odenwald, † 25.10.1968 Ebersteinburg; Söhner empfing 1933 die Priesterweihe und kam 1942 als Pfarrkurat an die St.-Josefs-Kirche in Grünwinkel. In den Jahren nach dem Zweiten Weltkrieg engagierte er sich in besonderem Maße, um die Not der Armen und anderer sozialer Randgruppen in seiner Gemeinde zu lindern. Daneben widmete er sich dem Wiederaufbau des zerstörten Kirchengebäudes und dem Neubau des Gemeindezentrums.
+Theodor Söhner, * 19.8.1907 Waldmühlbach/Odenwald, † 25.10.1968 Ebersteinburg; Söhner empfing 1933 die Priesterweihe und kam 1942 als Pfarrkurat an die St.-Josefs-Kirche in Grünwinkel. In den Jahren nach dem Zweiten Weltkrieg engagierte er sich in besonderem Maße die Not der Armen und anderer sozialer Randgruppen in seiner Gemeinde zu lindern. Daneben widmete er sich dem Wiederaufbau des zerstörten Kirchengebäudes und dem Neubau des Gemeindezentrums.
 
 ## Thomas-Jefferson-Platz 2001
 
@@ -7567,11 +7545,11 @@ Nach seiner Ausbildung zum Geometer erwarb sich Tulla mit tatkräftiger Unterst�
 
 ## Tulpenstraße 1907
 
-Die Legende, der Stadtgründer Markgraf Karl Wilhelm von Baden-Durlach, habe sich in seinem Schloss mit einer Vielzahl von Tulpenmädchen umgeben, ist nach neueren Forschungen nicht mehr haltbar. Bei den so genannten Tulpenmädchen handelte es sich um bei Hofe fest angestellte Sängerinnen.
+Die Legende, der Stadtgründer Markgraf Karl Wilhelm von Baden-Durlach, habe sich in seinem Schloss mit einer Vielzahl von Tulpenmädchen umgeben, ist nach neueren Forschungen nicht mehr haltbar. Bei den so genannten Tulpenmädchen handelte es sich bei Hofe fest angestellte Sängerinnen.
 
 ## Turmbergstraße 1905
 
-Der Turmberg, eine Anhöhe bei Durlach, war bereits im 11. Jahrhundert Standort einer Burg. Erbauer waren die Grafen von Hohenberg, ein im Pfinzgau ansässiges Adelsgeschlecht. Um 1270 ging die Burg in markgräflich-badischen Besitz über. Seit dem 16. Jahrhundert war von ihr nur noch der Turm erhalten, der im Dreißigjährigen Krieg und im Pfälzischen Erbfolgekrieg teilweise zerstört wurde. 1880 wurde die Turmanlage als Aussichtsturm wiederaufgebaut.
+Der Turmberg, eine Anhöhe bei Durlach, war bereits im 11. Jahrhundert Standort einer Burg. Erbauer waren die Grafen von Hohenberg, ein im Pfinzgau ansässiges Adelsgeschlecht. 1270 ging die Burg in markgräflich-badischen Besitz über. Seit dem 16. Jahrhundert war von ihr nur noch der Turm erhalten, der im Dreißigjährigen Krieg und im Pfälzischen Erbfolgekrieg teilweise zerstört wurde. 1880 wurde die Turmanlage als Aussichtsturm wiederaufgebaut.
 
 ## Turnerstraße 1910
 
@@ -7615,7 +7593,7 @@ Flurname Unterer Damm, bezeichnet das Mitte des 18.Jahrhunderts angelegte Kleine
 
 Flurname, der eine lichte, kahle, früher mit Wald bedeckte Erhebung im Gelände bezeichnet.
 
-## Unterer Lußweg, vor 1900
+## Unterer Lußweg 1900
 
 1397 by der luße
 
@@ -7659,17 +7637,13 @@ Valentin, zwei Bischöfe aus der Frühzeit des Christentums; Patrone der Daxland
 
 Veilchen, Blumenart.
 
-## Vermont Avenue 1953
-
-Vermont, Bundesstaat der USA. Der Straßenname wurde 1995 aufgehoben und in die Kentuckyallee integriert.
-
 ## Vermontring 2000
 
 Vermont, Bundesstaat der USA Die Straße liegt auf dem Kasernengelände der früher hier stationierten amerikanischen Truppen.
 
 ## Victor-Gollancz-Straße 1954
 
-Victor Gollancz, * 9.4.1893 London, † 8.2.1967 London; Schriftsteller und Verleger, rief unmittelbar nach dem Zweiten Weltkrieg die Welt um Hilfe für Deutschland auf; In the darkest Germany.
+Victor Gollancz, * 9.4.1893 London, † 8.2.1967 London; Schriftsteller und Verleger, rief unmittelbar nach dem Zweiten Weltkrieg die Welt Hilfe für Deutschland auf; In the darkest Germany.
 
 ## Vierordtstraße 1974
 
@@ -7698,10 +7672,6 @@ Vincenz Prießnitz, * 5.10.1799 Gräfenberg bei Freiwaldau, † 28.11.1851 Gräf
 ## Virchowstraße 1898
 
 Rudolf Virchow, * 13.10.1821 Schivelbein/Pommern, † 5.9.1902 Berlin; Mediziner, Politiker.
-
-## Virginia Street 1953
-
-Der Straßenname wurde 1995 aufgehoben und in die Rhode-Island-Allee integriert. Virginia, Bundesstaat der USA.
 
 ## Vogelsang 1972
 
@@ -7959,7 +7929,7 @@ Staatsrechtslehrer und Politiker, Professor in Kiel, Heidelberg und Freiburg; al
 
 Welfen, deutsches Fürstengeschlecht.
 
-## Welschneureuter Allee 18. Jahrh.
+## Welschneureuter Allee 1800
 
 Siehe Welschneureuter Straße.
 
@@ -8343,7 +8313,7 @@ Zikaden, Insektenart.
 
 Hermann Zimmer, * 1.12.1814 Baden-Baden, † 14.11.1893 Karlsruhe;
 
-Durch Besuche im Ausland gewann Zimmer umfangreiche Kenntnisse in dem um 1830/1840 entstehenden Eisenbahnwesen. So wurde er 1842 Referent für dieses neue Verkehrssystem, das er in ganz Baden aufbaute und dem er ab 1872 als Generaldirektor der Badischen Eisenbahngesellschaft vorstand.
+Durch Besuche im Ausland gewann Zimmer umfangreiche Kenntnisse in dem 1830/1840 entstehenden Eisenbahnwesen. So wurde er 1842 Referent für dieses neue Verkehrssystem, das er in ganz Baden aufbaute und dem er ab 1872 als Generaldirektor der Badischen Eisenbahngesellschaft vorstand.
 
 ## Zipser Straße 1981
 

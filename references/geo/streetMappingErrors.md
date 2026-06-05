@@ -1,29 +1,21 @@
 Karlsruhe boundary loaded and prepared.
-Processing 1782 streets...
-Processing complete in 39.95s.
-Total segments found: 10286
-Unique normalized names found: 1683
+Processing 1774 streets...
+Processing complete in 38.56s.
+Total segments found: 10388
+Unique normalized names found: 1692
 
---- 99 STREETS NOT FOUND ---
-  - Adlerstraße um
-  - Allmendstraße um
+--- 82 STREETS NOT FOUND ---
   - Am Badenwerk
-  - "Herrengasse, Herrenstraße"
   - An der Klamm
   - Auf der Lug
   - Badenwerkstraße
-  - Baumgasse um
   - Bei dem Fasanenhaus
   - Bei der Werren
-  - Beiertheimer Allee um
   - Bergwaldstraße vor
   - Berliner Platz
   - Berhard-Metz-Straße
   - Bertholdstraße
   - Bruchsaler Landstraße
-  - Blattwiesenstraße um
-  - Breite Gass um
-  - Albstraße
   - Burgaustraße
   - Carl-Egler-Weg
   - Clara-Immerwahr-Haber-Platz
@@ -44,7 +36,6 @@ Unique normalized names found: 1683
   - Gotthart-Franz-Straße
   - Hagsfelder Straße
   - Herrenstraße 19.Jahrhundert
-  - Indiana Lane
   - Josef-Groß-Platz
   - Leopoldplatz
   - Lindeneck
@@ -57,12 +48,10 @@ Unique normalized names found: 1683
   - Mensaplatz
   - Mittelstraße vor
   - Projektstraße
-  - um 1762 Kirchgasse
-  - Neuer Weg um
+  - Kirchgasse
   - Neureuter Platz
   - New Hampshire Street
   - Nördlicher Ritterhof
-  - North Carolina Street
   - Oberrossweide
   - Ohio Straße
   - Ohio Street
@@ -75,7 +64,6 @@ Unique normalized names found: 1683
   - Reithaus Egon-von-Neindorff
   - Ringelberghoh
   - Ringelbergstraße
-  - "Schulstraße, 1938 Hans-Schemm-Straße"
   - Sankt-Barbara-Weg
   - Sankt-Georg-Straße
   - Sankt-Valentin-Platz
@@ -87,22 +75,15 @@ Unique normalized names found: 1683
   - Pflasterweg
   - Seegäßle
   - Seele
-  - South Carolina Street
   - Wettersbachstraße
   - Stephanstraße
   - Stieglitzstraße
   - Immelmannstraße
-  - Stutenseer Allee 18. Jahrh
   - Tiefentaler Straße
   - Toni-Menzinger-Weg
   - Unterer Lichtenbergweg in den
-  - Vermont Avenue
-  - Virginia Street
   - Wachhaustraße
-  - Welschneureuter Allee 18. Jahrh.
   - Wilhelm-Lauter-Weg
   - Wiltraut-Rupp-von-Brünneck-Anlage
   - Zehntscheuergäßlein
   - Zum Allmend
-
-

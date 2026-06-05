@@ -154,6 +154,16 @@ def process_streets_from_pbf(pbf_file, target_streets, output_dir, save_all=Fals
         boundary_request = requests.get(BOUNDARY_URL, headers={'User-Agent': USER_AGENT})
         print("Boundary GeoJSON fetched from Nominatim.")
         boundary_geojson = boundary_request.json()
+        
+        # for karlsruhe, we need to add an upper boundary so no coordinate can get larger than 49.088
+        boundary_top = 49.088
+        print(f"!!NOTE: Adjusting Karlsruhe boundary to enforce upper latitude limit of {boundary_top}...")
+        for feature in boundary_geojson.get('features', []):
+            if feature['geometry']['type'] == 'Polygon':
+                for i, coord in enumerate(feature['geometry']['coordinates'][0]):
+                    if coord[1] > boundary_top:
+                        feature['geometry']['coordinates'][0][i] = (coord[0], boundary_top)
+        
     except Exception as e:
         print(f"Error loading boundary: {e}", file=sys.stderr)
         sys.exit(1)
