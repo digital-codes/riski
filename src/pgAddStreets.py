@@ -83,10 +83,15 @@ def main():
             else:
                 street["geo"] = street_geo.to_json()
 
+            existing = conn.execute(select(street_table).where(street_table.c.name == name)).fetchone()
+            if existing:
+                print(f"Street '{name}' already exists in the database, skipping.")
+                continue
             stmt = street_table.insert().values(
                 name=street.get("name"),
                 text=street.get("text"),
                 year=street.get("year"),
+                description=street.get("description") if street.get("description") else None,
                 geo=bytearray(street.get("geo", "").encode("utf-8")) if street.get("geo") else None,
                 timestamp=datetime.now(timezone.utc)
             )
