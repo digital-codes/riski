@@ -71,12 +71,13 @@ def call_embedding_model(text: str, api_url: str, api_key: str, model: str) -> t
     result = response.json()
     # print(f"API response: {result}")  # Debug print to check response structure
     # Adjust based on actual API response structure
-    if result[0].get("data") and isinstance(result[0]["data"], list) and len(result[0]["data"]) > 0:
-        vector = result[0]["data"][0].get('embedding', [])
+    if isinstance(result, dict) and result.get("data") and isinstance(result["data"], list) and len(result["data"]) > 0:
+        vector = result["data"][0].get('embedding', [])
+        print(f"Raw vector from API: {vector[:5]}...")  # Debug print to check raw vector
         vector = np.array(vector)
         vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
         vector = vector.tolist()
-    elif isinstance(result[0], dict) and 'embedding' in result[0]:
+    elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict) and 'embedding' in result[0]:
         vector = result[0]['embedding'][0]
         vector = np.array(vector)
         vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
@@ -636,8 +637,8 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[s
 
 def main(directory: str) -> None:
     """Main entry point for the script."""
-    global API_KEY, EMBEDDING_API_URL, EMBEDDING_MODEL
-    API_KEY = pr.EMB_KEY
+    global EMBEDDING_API_KEY, EMBEDDING_API_URL, EMBEDDING_MODEL
+    EMBEDDING_API_KEY = pr.EMB_KEY
     EMBEDDING_API_URL = pr.EMB_URL
     EMBEDDING_MODEL = pr.EMB_MDL
 
