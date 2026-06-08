@@ -189,8 +189,9 @@ def pass1_collect(directory: str) -> Tuple[Dict[EntityKey, Entity], Dict[str, En
     url_to_key: Dict[str, EntityKey] = {}
     tables: Set[str] = set()
     files = list(iter_json_files(directory))
+    print(f"Found {len(files)} JSON files to process in '{directory}'")
     for i, path in enumerate(files, 1):
-        print(f"  Reading file {i}/{len(files)}: {os.path.basename(path)}")
+        # print(f"  Reading file {i}/{len(files)}: {os.path.basename(path)}")
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         collect_entities_from_obj(data, entities, url_to_key, source_file=os.path.basename(path), path='$')
@@ -224,6 +225,13 @@ def detect_relationships(
                 single_fk_fields[src_table][field] = tgt_table
                 continue
             # many references: list of URLs or embedded entities
+            if isinstance(value, dict):
+                if 'id' in value:
+                    if isinstance(value['id'], str):
+                        tgt_table = table_name_from_type(value['type'])
+                        single_fk_fields[src_table][field] = tgt_table
+                        #print(f"  Detected single FK from dict: {src_table}.{field} -> {tgt_table}")
+                        continue
             if isinstance(value, list) and value:
                 if all(isinstance(x, str) for x in value):
                     resolved = [url_to_key[x] for x in value if x in url_to_key]

@@ -39,6 +39,46 @@ def openDb():
 
     return create_engine(db_url, future=True, pool_pre_ping=True)
 
+def find_unreferenced_files() -> List[Tuple[int, str, str]]:
+    """Find files that are not linked to any agenda items or meetings or papers.
+    Files can reference Meetings, or Papers.
+    Files can be referenced by AgendaItems, Papers, or Meetings.
+    Check all possible associations to find files that are not linked to any of these entities.
+
+    Returns:
+        A list of tuples (file_sid, file_name, file_oparlId) for unreferenced files.
+    """
+    engine = openDb()
+    metadata = MetaData()
+
+    file_tbl = Table("File", metadata, autoload_with=engine)
+    fm_assoc_tbl = Table("File__meeting__Meeting", metadata, autoload_with=engine)
+    fp_assoc_tbl = Table("File__paper__Paper", metadata, autoload_with=engine)
+    af_assoc_tbl = Table(
+        "AgendaItem__auxiliaryFile__File", metadata, autoload_with=engine
+    )
+    mf_assoc_tbl = Table(
+        "Meeting__auxiliaryFile__File", metadata, autoload_with=engine
+    )
+    pf_assoc_tbl = Table(
+        "Paper__auxiliaryFile__File", metadata, autoload_with=engine
+    )
+
+    stmt = (
+        select(file_tbl.c.sid, file_tbl.c.name, file_tbl.c.oparlId)
+        .select_from(file_tbl.outerjoin(fm_assoc_tbl, file_tbl.c.sid == fm_assoc_tbl.c.srcSid)
+                     .outerjoin(fp_assoc_tbl, file_tbl.c.sid == fp_assoc_tbl.c.srcSid)
+                     .outerjoin(af_assoc_tbl, file_tbl.c.sid == af_assoc_tbl.c.tgtSid)
+                     .outerjoin(mf_assoc_tbl, file_tbl.c.sid == mf_assoc_tbl.c.tgtSid)
+                     .outerjoin(pf_assoc_tbl, file_tbl.c.sid == pf_assoc_tbl.c.tgtSid))
+        .where(fm_assoc_tbl.c.srcSid.is_(None), fp_assoc_tbl.c.srcSid.is_(None), af_assoc_tbl.c.tgtSid.is_(None),
+               mf_assoc_tbl.c.tgtSid.is_(None), pf_assoc_tbl.c.tgtSid.is_(None))
+    )
+    with engine.connect() as conn:
+        rows = conn.execute(stmt).fetchall()
+
+    return [(row.sid, row.name, row.oparlId) for row in rows]
+
 
 def get_related_ids_for_file(
     oparl_key: str,
@@ -511,3 +551,9 @@ if __name__ == "__main__":
             f"Total unique files, papers, consultations, results, and meetings seen: {len(items_seen_agenda)}"
         )
     
+    
+    unrefed_files = find_unreferenced_files()
+    print(f"\nFound {len(unrefed_files)} unreferenced files:")
+    for file_sid, file_name, file_oparlId in unrefed_files:
+        print(f"File SID: {file_sid}, Name: {file_name}, OParl ID: {file_oparlId}")
+        
