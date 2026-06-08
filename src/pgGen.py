@@ -335,11 +335,23 @@ def make_main_tables(
 def make_assoc_tables(
     metadata: MetaData,
     many_fields: Dict[str, Dict[str, str]],
+    single_fk_fields: Dict[str, Dict[str, str]],
 ) -> Dict[str, Table]:
     assoc: Dict[str, Table] = {}
     for src_table, fields in many_fields.items():
         for field, tgt_table in fields.items():
             name = assoc_table_name(src_table, field, tgt_table)
+            print(f"Creating association table for many FK: {name}")
+            assoc[name] = Table(
+                name,
+                metadata,
+                Column('srcSid', BigInteger, ForeignKey(f"{src_table}.sid"), primary_key=True),
+                Column('tgtSid', BigInteger, ForeignKey(f"{tgt_table}.sid"), primary_key=True),
+            )
+    for src_table, fields in single_fk_fields.items():
+        for field, tgt_table in fields.items():
+            name = assoc_table_name(src_table, field, tgt_table)
+            print(f"Creating association table for single FK: {name}")
             assoc[name] = Table(
                 name,
                 metadata,
@@ -524,12 +536,17 @@ def main(directory: str) -> None:
     print('PASS 2: Detecting relationships ...')
     single_fk_fields, many_fields = detect_relationships(entities, url_to_key)
     print('  -> Relationships detected')
+    #print(f"Single FKs: {sum(len(f) for f in single_fk_fields.values())} fields across {len(single_fk_fields)} tables")
+    #print("Sing values: ", {t: list(f.keys()) for t, f in single_fk_fields.items()})
+    #print(f"Many FKs: {sum(len(f) for f in many_fields.values())} fields across {len(many_fields)} tables")
+    #print("Many values: ", {t: list(f.keys()) for t, f in many_fields.items()})
     
     scalar_types, scalar_colnames, scalar_quote = detect_scalar_columns(entities, single_fk_fields, many_fields)
     print('  -> Scalar columns detected',scalar_colnames)
     print('Building schema ...')
     main_tables = make_main_tables(metadata, all_tables, single_fk_fields, scalar_types, scalar_colnames, scalar_quote)
-    assoc_tables = make_assoc_tables(metadata, many_fields)
+    # create also assoc tables for single FKs to allow later migration from single to many without downtime
+    assoc_tables = make_assoc_tables(metadata, many_fields, single_fk_fields)
     metadata.create_all(engine)  # creates only missing tables
     # Add any scalar columns that were not present at creation time
     add_missing_scalar_columns(engine, metadata, scalar_colnames, scalar_types, scalar_quote)
