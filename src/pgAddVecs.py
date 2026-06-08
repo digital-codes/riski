@@ -19,15 +19,15 @@ Base = declarative_base()
 
 # Define the table
 class Embedding(Base):
-    __tablename__ = "embeddings"
+    __tablename__ = "contentEmbeddings"
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    oparlKey = Column(String)
     value = Column(Vector(1024))  # 1024-dimensional vector
 
 
 # Drop the table if it exists
 inspector = inspect(engine)
-if inspector.has_table("embeddings"):
+if inspector.has_table("contentEmbeddings"):
     Embedding.__table__.drop(engine)
 
 
@@ -39,7 +39,7 @@ with np.load("/mnt_ai/data/odd26/ris/riski/riski-vec.npz", allow_pickle=True) as
     loaded_files = data["files"]
     print(f"Loaded {len(loaded_vectors)} vectors and {len(loaded_files)} files from output.")
 
-embs  = [Embedding(name=name, value=vec) for name, vec in zip(loaded_files, loaded_vectors)]
+embs  = [Embedding(oparlKey=str(int(name)), value=vec) for name, vec in zip(loaded_files, loaded_vectors)]
 
 # Insert sample data
 session = Session()

@@ -15,6 +15,11 @@ TIMELINE_WINDOW_DAYS = 30
 
 API_KEY = None
 
+# Global metadata object for table reflections
+metadata = MetaData()
+
+
+
 def get_embedding(text: str) -> np.ndarray:
     """Generate embedding using the OpenAI-compatible API."""
     headers = {"Content-Type": "application/json",
@@ -29,8 +34,15 @@ def get_embedding(text: str) -> np.ndarray:
     data = response.json()
 
     # Extract embedding from response (assuming first item in data)
-    if "data" in data and len(data["data"]) > 0:
-        return np.array(data["data"][0]["embedding"])
+    # print(f"Embedding API response: {data}")  # Debugging line
+    if isinstance(data, dict) and "data" in data and isinstance(data["data"], list) and len(data["data"]) > 0:
+        embedding = data["data"][0].get("embedding")
+        if embedding is not None:
+            return np.array(embedding)
+        else:
+            raise ValueError("Embedding field is missing in API response")
+    elif isinstance(data, list) and len(data) > 0 and "embedding" in data[0]:
+        return np.array(data[0]["embedding"])
     else:
         raise ValueError("No embedding returned from API")
 
@@ -42,25 +54,28 @@ def get_db_session(db_url: str):
 
 def get_files_with_embeddings(session) -> List[Dict]:
     """
-    Get all files that have embeddings, with their embedding vectors.
+    Get all files that have contentEmbeddings, with their embedding vectors.
     """
+    print("Fetching files with embeddings from the database...")  # Debugging line  
     result = session.execute(
         select(
-            Table('File').c.sid,
-            Table('File').c.id,
-            Table('File').c.oparlKey,
-            Table('File').c.oparlId,
-            Table('File').c.name,
-            Table('File').c.date,
-            Table('File').c.fileName,
-            Table('embeddings').c.value
+            Table('File', metadata).c.sid,
+            Table('File', metadata).c.id,
+            Table('File', metadata).c.oparlKey,
+            Table('File', metadata).c.oparlId,
+            Table('File', metadata).c.name,
+            Table('File', metadata).c.date,
+            Table('File', metadata).c.fileName,
+            Table('contentEmbeddings', metadata).c.value
         )
         .join(
-            Table('embeddings'),
-            Table('File').c.sid == Table('embeddings').c.id
+            Table('contentEmbeddings', metadata),
+            Table('File', metadata).c.sid == Table('contentEmbeddings', metadata).c.id
         )
     ).fetchall()
-
+    
+    print(f"Fetched {len(result)} files with embeddings")  # Debugging line
+    
     return [{
         "sid": row.sid,
         "id": row.id,
@@ -97,22 +112,22 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     # 1. Find AgendaItems connected to Files via AgendaItem__auxiliaryFile__File
     agenda_items = session.execute(
         select(
-            Table('AgendaItem').c.sid,
-            Table('AgendaItem').c.id,
-            Table('AgendaItem').c.oparlKey,
-            Table('AgendaItem').c.oparlId,
-            Table('AgendaItem').c.name,
-            Table('AgendaItem').c.start_date,
-            Table('AgendaItem').c.end_date,
-            Table('AgendaItem').c.meetingSid,
-            Table('AgendaItem').c.number,
-            Table('AgendaItem').c.result
+            Table('AgendaItem', metadata).c.sid,
+            Table('AgendaItem', metadata).c.id,
+            Table('AgendaItem', metadata).c.oparlKey,
+            Table('AgendaItem', metadata).c.oparlId,
+            Table('AgendaItem', metadata).c.name,
+            Table('AgendaItem', metadata).c.start_date,
+            Table('AgendaItem', metadata).c.end_date,
+            Table('AgendaItem', metadata).c.meetingSid,
+            Table('AgendaItem', metadata).c.number,
+            Table('AgendaItem', metadata).c.result
         )
         .join(
-            Table('AgendaItem__auxiliaryFile__File'),
-            Table('AgendaItem').c.sid == Table('AgendaItem__auxiliaryFile__File').c.srcSid
+            Table('AgendaItem__auxiliaryFile__File', metadata),
+            Table('AgendaItem', metadata).c.sid == Table('AgendaItem__auxiliaryFile__File', metadata).c.srcSid
         )
-        .where(Table('AgendaItem__auxiliaryFile__File').c.tgtSid.in_(file_sids))
+        .where(Table('AgendaItem__auxiliaryFile__File', metadata).c.tgtSid.in_(file_sids))
     ).fetchall()
 
     for row in agenda_items:
@@ -132,21 +147,21 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     # 2. Find Papers connected to Files via Paper__auxiliaryFile__File
     papers = session.execute(
         select(
-            Table('Paper').c.sid,
-            Table('Paper').c.id,
-            Table('Paper').c.oparlKey,
-            Table('Paper').c.oparlId,
-            Table('Paper').c.name,
-            Table('Paper').c.date,
-            Table('Paper').c.reference,
-            Table('Paper').c.paperType,
-            Table('Paper').c.bodySid
+            Table('Paper', metadata).c.sid,
+            Table('Paper', metadata).c.id,
+            Table('Paper', metadata).c.oparlKey,
+            Table('Paper', metadata).c.oparlId,
+            Table('Paper', metadata).c.name,
+            Table('Paper', metadata).c.date,
+            Table('Paper', metadata).c.reference,
+            Table('Paper', metadata).c.paperType,
+            Table('Paper', metadata).c.bodySid
         )
         .join(
-            Table('Paper__auxiliaryFile__File'),
-            Table('Paper').c.sid == Table('Paper__auxiliaryFile__File').c.srcSid
+            Table('Paper__auxiliaryFile__File', metadata),
+            Table('Paper', metadata).c.sid == Table('Paper__auxiliaryFile__File', metadata).c.srcSid
         )
-        .where(Table('Paper__auxiliaryFile__File').c.tgtSid.in_(file_sids))
+        .where(Table('Paper__auxiliaryFile__File', metadata).c.tgtSid.in_(file_sids))
     ).fetchall()
 
     for row in papers:
@@ -165,19 +180,19 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     # 3. Find Meetings connected to Files via Meeting__auxiliaryFile__File
     meetings = session.execute(
         select(
-            Table('Meeting').c.sid,
-            Table('Meeting').c.id,
-            Table('Meeting').c.oparlKey,
-            Table('Meeting').c.oparlId,
-            Table('Meeting').c.name,
-            Table('Meeting').c.start_date,
-            Table('Meeting').c.end_date
+            Table('Meeting', metadata).c.sid,
+            Table('Meeting', metadata).c.id,
+            Table('Meeting', metadata).c.oparlKey,
+            Table('Meeting', metadata).c.oparlId,
+            Table('Meeting', metadata).c.name,
+            Table('Meeting', metadata).c.start_date,
+            Table('Meeting', metadata).c.end_date
         )
         .join(
-            Table('Meeting__auxiliaryFile__File'),
-            Table('Meeting').c.sid == Table('Meeting__auxiliaryFile__File').c.srcSid
+            Table('Meeting__auxiliaryFile__File', metadata),
+            Table('Meeting', metadata).c.sid == Table('Meeting__auxiliaryFile__File', metadata).c.srcSid
         )
-        .where(Table('Meeting__auxiliaryFile__File').c.tgtSid.in_(file_sids))
+        .where(Table('Meeting__auxiliaryFile__File', metadata).c.tgtSid.in_(file_sids))
     ).fetchall()
 
     for row in meetings:
@@ -196,21 +211,21 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     if paper_sids:
         consultations = session.execute(
             select(
-                Table('Consultation').c.sid,
-                Table('Consultation').c.id,
-                Table('Consultation').c.oparlKey,
-                Table('Consultation').c.oparlId,
-                Table('Consultation').c.role,
-                Table('Consultation').c.authoritative,
-                Table('Consultation').c.agendaItemSid,
-                Table('Consultation').c.meetingSid,
-                Table('Consultation').c.paperSid
+                Table('Consultation', metadata).c.sid,
+                Table('Consultation', metadata).c.id,
+                Table('Consultation', metadata).c.oparlKey,
+                Table('Consultation', metadata).c.oparlId,
+                Table('Consultation', metadata).c.role,
+                Table('Consultation', metadata).c.authoritative,
+                Table('Consultation', metadata).c.agendaItemSid,
+                Table('Consultation', metadata).c.meetingSid,
+                Table('Consultation', metadata).c.paperSid
             )
             .join(
-                Table('Paper__consultation__Consultation'),
-                Table('Paper__consultation__Consultation').c.srcSid == Table('Consultation').c.sid
+                Table('Paper__consultation__Consultation', metadata),
+                Table('Paper__consultation__Consultation', metadata).c.srcSid == Table('Consultation', metadata).c.sid
             )
-            .where(Table('Paper__consultation__Consultation').c.srcSid.in_(paper_sids))
+            .where(Table('Paper__consultation__Consultation', metadata).c.srcSid.in_(paper_sids))
         ).fetchall()
 
         for row in consultations:
@@ -231,22 +246,22 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     if meeting_sids:
         meeting_agenda_items = session.execute(
             select(
-                Table('AgendaItem').c.sid,
-                Table('AgendaItem').c.id,
-                Table('AgendaItem').c.oparlKey,
-                Table('AgendaItem').c.oparlId,
-                Table('AgendaItem').c.name,
-                Table('AgendaItem').c.start_date,
-                Table('AgendaItem').c.end_date,
-                Table('AgendaItem').c.meetingSid,
-                Table('AgendaItem').c.number,
-                Table('AgendaItem').c.result
+                Table('AgendaItem', metadata).c.sid,
+                Table('AgendaItem', metadata).c.id,
+                Table('AgendaItem', metadata).c.oparlKey,
+                Table('AgendaItem', metadata).c.oparlId,
+                Table('AgendaItem', metadata).c.name,
+                Table('AgendaItem', metadata).c.start_date,
+                Table('AgendaItem', metadata).c.end_date,
+                Table('AgendaItem', metadata).c.meetingSid,
+                Table('AgendaItem', metadata).c.number,
+                Table('AgendaItem', metadata).c.result
             )
             .join(
-                Table('Meeting__agendaItem__AgendaItem'),
-                Table('Meeting__agendaItem__AgendaItem').c.tgtSid == Table('AgendaItem').c.sid
+                Table('Meeting__agendaItem__AgendaItem', metadata),
+                Table('Meeting__agendaItem__AgendaItem', metadata).c.tgtSid == Table('AgendaItem', metadata).c.sid
             )
-            .where(Table('Meeting__agendaItem__AgendaItem').c.srcSid.in_(meeting_sids))
+            .where(Table('Meeting__agendaItem__AgendaItem', metadata).c.srcSid.in_(meeting_sids))
         ).fetchall()
 
         for row in meeting_agenda_items:
@@ -270,17 +285,17 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     if agenda_item_sids:
         agenda_consultations = session.execute(
             select(
-                Table('Consultation').c.sid,
-                Table('Consultation').c.id,
-                Table('Consultation').c.oparlKey,
-                Table('Consultation').c.oparlId,
-                Table('Consultation').c.role,
-                Table('Consultation').c.authoritative,
-                Table('Consultation').c.agendaItemSid,
-                Table('Consultation').c.meetingSid,
-                Table('Consultation').c.paperSid
+                Table('Consultation', metadata).c.sid,
+                Table('Consultation', metadata).c.id,
+                Table('Consultation', metadata).c.oparlKey,
+                Table('Consultation', metadata).c.oparlId,
+                Table('Consultation', metadata).c.role,
+                Table('Consultation', metadata).c.authoritative,
+                Table('Consultation', metadata).c.agendaItemSid,
+                Table('Consultation', metadata).c.meetingSid,
+                Table('Consultation', metadata).c.paperSid
             )
-            .where(Table('Consultation').c.agendaItemSid.in_(agenda_item_sids))
+            .where(Table('Consultation', metadata).c.agendaItemSid.in_(agenda_item_sids))
         ).fetchall()
 
         for row in agenda_consultations:
@@ -303,19 +318,19 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     if consultation_sids:
         consultation_orgs = session.execute(
             select(
-                Table('Organization').c.sid,
-                Table('Organization').c.id,
-                Table('Organization').c.oparlKey,
-                Table('Organization').c.oparlId,
-                Table('Organization').c.name,
-                Table('Organization').c.classification,
-                Table('Organization').c.shortName
+                Table('Organization', metadata).c.sid,
+                Table('Organization', metadata).c.id,
+                Table('Organization', metadata).c.oparlKey,
+                Table('Organization', metadata).c.oparlId,
+                Table('Organization', metadata).c.name,
+                Table('Organization', metadata).c.classification,
+                Table('Organization', metadata).c.shortName
             )
             .join(
-                Table('Consultation__organization__Organization'),
-                Table('Consultation__organization__Organization').c.tgtSid == Table('Organization').c.sid
+                Table('Consultation__organization__Organization', metadata),
+                Table('Consultation__organization__Organization', metadata).c.tgtSid == Table('Organization', metadata).c.sid
             )
-            .where(Table('Consultation__organization__Organization').c.srcSid.in_(consultation_sids))
+            .where(Table('Consultation__organization__Organization', metadata).c.srcSid.in_(consultation_sids))
         ).fetchall()
 
         for row in consultation_orgs:
@@ -333,19 +348,19 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     if paper_sids:
         paper_orgs = session.execute(
             select(
-                Table('Organization').c.sid,
-                Table('Organization').c.id,
-                Table('Organization').c.oparlKey,
-                Table('Organization').c.oparlId,
-                Table('Organization').c.name,
-                Table('Organization').c.classification,
-                Table('Organization').c.shortName
+                Table('Organization', metadata).c.sid,
+                Table('Organization', metadata).c.id,
+                Table('Organization', metadata).c.oparlKey,
+                Table('Organization', metadata).c.oparlId,
+                Table('Organization', metadata).c.name,
+                Table('Organization', metadata).c.classification,
+                Table('Organization', metadata).c.shortName
             )
             .join(
-                Table('Paper__underDirectionOf__Organization'),
-                Table('Paper__underDirectionOf__Organization').c.tgtSid == Table('Organization').c.sid
+                Table('Paper__underDirectionOf__Organization', metadata),
+                Table('Paper__underDirectionOf__Organization', metadata).c.tgtSid == Table('Organization', metadata).c.sid
             )
-            .where(Table('Paper__underDirectionOf__Organization').c.srcSid.in_(paper_sids))
+            .where(Table('Paper__underDirectionOf__Organization', metadata).c.srcSid.in_(paper_sids))
         ).fetchall()
 
         for row in paper_orgs:
@@ -464,10 +479,11 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[s
     """
     # Generate embedding for the query
     query_embedding = get_embedding(query)
+    print(f"Generated embedding for query: {query_embedding[:5]}...")  # Debugging line
 
     # Get all files with their embeddings
     files_with_embeddings = get_files_with_embeddings(session)
-
+    print(f"Total files with embeddings: {len(files_with_embeddings)}")  # Debugging line
     if not files_with_embeddings:
         return {"query": query, "results": [], "timeline": [], "message": "No files with embeddings found"}
 
@@ -517,10 +533,13 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[s
 
 def main(directory: str) -> None:
     """Main entry point for the script."""
-    global API_KEY
+    global API_KEY, EMBEDDING_API_URL, EMBEDDING_MODEL
     import private as pr
-    API_KEY = pr.API_KEY
-    db_url = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@localhost/{pr.DB_NAME}"
+    API_KEY = pr.EMB_KEY
+    EMBEDDING_API_URL = pr.EMB_URL
+    EMBEDDING_MODEL = pr.EMB_MDL
+
+    db_url = f"postgresql+psycopg2://{pr.RO_USER}:{pr.RO_PWD}@localhost/{pr.DB_NAME}"
 
     # Create database session
     session = get_db_session(db_url)

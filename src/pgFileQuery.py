@@ -60,6 +60,15 @@ def find_unreferenced_files() -> List[Tuple[int, str, str]]:
     mf_assoc_tbl = Table(
         "Meeting__auxiliaryFile__File", metadata, autoload_with=engine
     )
+    mi_assoc_tbl = Table(
+        "Meeting__invitation__File", metadata, autoload_with=engine
+    )
+    mr_assoc_tbl = Table(
+        "Meeting__resultsProtocol__File", metadata, autoload_with=engine
+    )
+    mv_assoc_tbl = Table(
+        "Meeting__verbatimProtocol__File", metadata, autoload_with=engine
+    )
     pf_assoc_tbl = Table(
         "Paper__auxiliaryFile__File", metadata, autoload_with=engine
     )
@@ -70,9 +79,13 @@ def find_unreferenced_files() -> List[Tuple[int, str, str]]:
                      .outerjoin(fp_assoc_tbl, file_tbl.c.sid == fp_assoc_tbl.c.srcSid)
                      .outerjoin(af_assoc_tbl, file_tbl.c.sid == af_assoc_tbl.c.tgtSid)
                      .outerjoin(mf_assoc_tbl, file_tbl.c.sid == mf_assoc_tbl.c.tgtSid)
+                     .outerjoin(mi_assoc_tbl, file_tbl.c.sid == mi_assoc_tbl.c.tgtSid)
+                     .outerjoin(mr_assoc_tbl, file_tbl.c.sid == mr_assoc_tbl.c.tgtSid)
+                     .outerjoin(mv_assoc_tbl, file_tbl.c.sid == mv_assoc_tbl.c.tgtSid)
                      .outerjoin(pf_assoc_tbl, file_tbl.c.sid == pf_assoc_tbl.c.tgtSid))
         .where(fm_assoc_tbl.c.srcSid.is_(None), fp_assoc_tbl.c.srcSid.is_(None), af_assoc_tbl.c.tgtSid.is_(None),
-               mf_assoc_tbl.c.tgtSid.is_(None), pf_assoc_tbl.c.tgtSid.is_(None))
+               mf_assoc_tbl.c.tgtSid.is_(None), mi_assoc_tbl.c.tgtSid.is_(None), mr_assoc_tbl.c.tgtSid.is_(None),
+               mv_assoc_tbl.c.tgtSid.is_(None), pf_assoc_tbl.c.tgtSid.is_(None))
     )
     with engine.connect() as conn:
         rows = conn.execute(stmt).fetchall()
@@ -481,7 +494,7 @@ if __name__ == "__main__":
     import random
     import json
 
-    testing = 100  # number of random keys to test
+    testing = 1000  # number of random keys to test
     items_seen = set()
     engine = openDb()
     with engine.connect() as conn:
@@ -504,10 +517,10 @@ if __name__ == "__main__":
                 items_seen.add("meeting")
             for paper in item["papers"]:
                 items_seen.add("paper")
-        print(f"Results for file key: {test_key}")
-        print(json.dumps(output, default=str, indent=2))
+        # print(f"Results for file key: {test_key}")
+        # print(json.dumps(output, default=str, indent=2))
         if len(items_seen) >= 4:
-            print("All items have been seen at least once.")
+            print("All items have been seen at least once.", flush=True)
             break
         print(
             f"Total unique agenda items, meetings, and papers seen: {len(items_seen)}"
@@ -542,10 +555,10 @@ if __name__ == "__main__":
                 items_seen_agenda.add("meeting")
             if item["agenda_item"]["agenda_result"] is not None:
                 items_seen_agenda.add("result")
-        print(f"Results for agenda item key: {test_key}")
-        print(json.dumps(output, default=str, indent=2))
+        #print(f"Results for agenda item key: {test_key}")
+        #print(json.dumps(output, default=str, indent=2))
         if len(items_seen_agenda) >= 5:
-            print("All items have been seen at least once.")
+            print("All items have been seen at least once.", flush=True)
             break
         print(
             f"Total unique files, papers, consultations, results, and meetings seen: {len(items_seen_agenda)}"

@@ -52,7 +52,7 @@ class AgendaEmbedding(Base):
     __table_args__ = (UniqueConstraint('oparlKey', name='uq_embedding_oparlKey'),)
 
 class FileEmbedding(Base):
-    __tablename__ = "fileEmbeddings"
+    __tablename__ = "contentEmbeddings"
     id = Column(Integer, primary_key=True)
     oparlKey = Column(String)
     value = Column(Vector(1024))  # 1024-dimensional vector

@@ -128,7 +128,8 @@ def add_district_agendaitem_refs(district_table, agendaitem_table):
                         insert_stmt = ref_table.insert().values(
                             district_id=district_id,
                             agendaitem_id=agendaitem_id,
-                            name_match=agendaitem_name
+                            name_match=agendaitem_name,
+                            created_at=datetime.now(timezone.utc)
                         )
                         conn.execute(insert_stmt)
                         inserted_count += 1

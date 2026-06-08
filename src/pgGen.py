@@ -496,6 +496,32 @@ def insert_all(
                             pairs.append((src_sid, tgt_sid))
             for s, tg in pairs:
                 session.execute(insert(at).on_conflict_do_nothing(), {'srcSid': s, 'tgtSid': tg})
+        # new 
+        for field, tgt_table in single_fk_fields.get(src_table, {}).items():
+            value = ent.raw.get(field)
+            if value is None or value is False:
+                continue
+            assoc_name = assoc_table_name(src_table, field, tgt_table)
+            at = assoc_tables.get(assoc_name)
+            if at is None or at is False:
+                continue
+            pairs: List[Tuple[int, int]] = []
+            # add dict object like invitation, location, verbatimProtocol, resultProtocol etc. as association if it has an id
+            if isinstance(value, dict):
+                url = value.get('id')
+                if isinstance(url, str):
+                    tgt_sid = oparlid_to_sid.get(url)
+                    if tgt_sid:
+                            pairs.append((src_sid, tgt_sid))
+                    else:
+                        print(f"  Warning: URL in single FK dict not found in oparlId->sid map: {url}")
+            else:
+                pass
+                # print(f"  Unexpected non-dict value for single FK association: {field} -> {tgt_table}, value: {value}")
+
+            for s, tg in pairs:
+                session.execute(insert(at).on_conflict_do_nothing(), {'srcSid': s, 'tgtSid': tg})
+
     session.commit()
 
 # ----------------------------
@@ -540,9 +566,9 @@ def main(directory: str) -> None:
     #print("Sing values: ", {t: list(f.keys()) for t, f in single_fk_fields.items()})
     #print(f"Many FKs: {sum(len(f) for f in many_fields.values())} fields across {len(many_fields)} tables")
     #print("Many values: ", {t: list(f.keys()) for t, f in many_fields.items()})
-    
     scalar_types, scalar_colnames, scalar_quote = detect_scalar_columns(entities, single_fk_fields, many_fields)
-    print('  -> Scalar columns detected',scalar_colnames)
+    #print('  -> Scalar columns detected',scalar_colnames)
+
     print('Building schema ...')
     main_tables = make_main_tables(metadata, all_tables, single_fk_fields, scalar_types, scalar_colnames, scalar_quote)
     # create also assoc tables for single FKs to allow later migration from single to many without downtime
