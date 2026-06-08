@@ -1,7 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, func, text, desc, inspect
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy.dialects.postgresql import ARRAY
 import numpy as np
 from pgvector.sqlalchemy import Vector
 
@@ -54,8 +53,14 @@ def call_embedding_model(text: str, api_url: str, api_key: str, model: str) -> t
     # Adjust based on actual API response structure
     if result[0].get("data") and isinstance(result[0]["data"], list) and len(result[0]["data"]) > 0:
         vector = result[0]["data"][0].get('embedding', [])[0]
+        vector = np.array(vector)
+        vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
+        vector = vector.tolist()
     elif isinstance(result[0], dict) and 'embedding' in result[0]:
         vector = result[0]['embedding'][0]
+        vector = np.array(vector)
+        vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
+        vector = vector.tolist()
     else:
         vector = []
     print(f"Received vector of length {len(vector)}")  # Debug print to check vector length

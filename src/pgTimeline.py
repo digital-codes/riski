@@ -4,47 +4,107 @@ import requests
 from typing import List, Dict, Any, Optional, Tuple
 from datetime import datetime
 import numpy as np
-from sqlalchemy import create_engine, MetaData, Table, select, and_, or_, func
+from sqlalchemy.orm import declarative_base
+from sqlalchemy import create_engine, MetaData, Table, select, and_, or_, func, Column, Integer, String
 from sqlalchemy.orm import sessionmaker
 
+import numpy as np
+from pgvector.sqlalchemy import Vector
+
+# Import helper to create DB engine
+from sqlalchemy import create_engine  # needed for openDb
+
+import requests
+import private as pr
+
+
 # Configuration
-EMBEDDING_API_URL = "https://openai.inference.de-txl.ionos.com/v1/embeddings"
-EMBEDDING_MODEL = "BAAI/bge-m3"
-TOP_K = 10
+EMBEDDING_API_URL = None
+EMBEDDING_MODEL = None
+EMBEDDING_API_KEY = None
+TOP_K = 100
 TIMELINE_WINDOW_DAYS = 30
 
-API_KEY = None
-
-# Global metadata object for table reflections
-metadata = MetaData()
 
 
+Base = declarative_base()
 
-def get_embedding(text: str) -> np.ndarray:
-    """Generate embedding using the OpenAI-compatible API."""
-    headers = {"Content-Type": "application/json",
-                "Authorization": f"Bearer {API_KEY}"}
-    payload = {
-        "model": EMBEDDING_MODEL,
-        "input": text
-    }
+# Vector Model
+class Embeddings(Base):
+    """Embeddings table with vector column (requires pgvector extension)"""
+    __tablename__ = 'contentEmbeddings'
+    
+    id = Column(Integer, primary_key=True)
+    oparlKey = Column(String)
+    value = Column(Vector(1024))  # 1024-dimensional vector
+    # Assuming you have a vector column named 'embedding'
+    # Adjust column name/type based on your schema
 
-    response = requests.post(EMBEDDING_API_URL, headers=headers, json=payload)
+# File Model
+class File(Base):
+    """File table for metadata and content"""
+    __tablename__ = 'File'
+    
+    id = Column(Integer, primary_key=True)
+    date = Column(String)
+    oparlKey = Column(String)
+    name = Column(String)
+    downloadurl = Column(String)
+    content = Column(String)
+
+
+
+def call_embedding_model(text: str, api_url: str, api_key: str, model: str) -> tuple[list[float], float]:
+    """
+    Call remote embedding model and return (vector, score)
+    Adjust based on your actual API endpoint
+    """
+    headers = {"Authorization": f"Bearer {api_key}"}
+    
+    response = requests.post(
+        api_url,
+        json={"input": text, "model": model},
+        headers=headers
+    )
     response.raise_for_status()
-    data = response.json()
-
-    # Extract embedding from response (assuming first item in data)
-    # print(f"Embedding API response: {data}")  # Debugging line
-    if isinstance(data, dict) and "data" in data and isinstance(data["data"], list) and len(data["data"]) > 0:
-        embedding = data["data"][0].get("embedding")
-        if embedding is not None:
-            return np.array(embedding)
-        else:
-            raise ValueError("Embedding field is missing in API response")
-    elif isinstance(data, list) and len(data) > 0 and "embedding" in data[0]:
-        return np.array(data[0]["embedding"])
+    
+    result = response.json()
+    # print(f"API response: {result}")  # Debug print to check response structure
+    # Adjust based on actual API response structure
+    if result[0].get("data") and isinstance(result[0]["data"], list) and len(result[0]["data"]) > 0:
+        vector = result[0]["data"][0].get('embedding', [])
+        vector = np.array(vector)
+        vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
+        vector = vector.tolist()
+    elif isinstance(result[0], dict) and 'embedding' in result[0]:
+        vector = result[0]['embedding'][0]
+        vector = np.array(vector)
+        vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
+        vector = vector.tolist()
     else:
-        raise ValueError("No embedding returned from API")
+        vector = []
+    print(f"Received vector of length {len(vector)}")  # Debug print to check vector length
+    return vector
+
+# here, threshold is a distance threshold, so we want to keep vectors with distance <= threshold (i.e. similarity above a certain level)
+def filter_by_threshold(vectors_with_scores: list[tuple], threshold: float) -> list[tuple]:
+    """Filter vectors above threshold"""
+    return [(vec, score) for vec, score in vectors_with_scores if score <= threshold]
+
+def query_vector_similarity(session, query_vector: list[float], top_k: int = 10) -> list[int]:
+    """
+    Query PostgreSQL for vector similarity using pgvector
+    Requires pgvector extension installed
+    """
+    # Using cosine similarity (<=> operator in pgvector)
+    # Adjust column name based on your schema
+    query = session.query(
+        Embeddings.oparlKey,
+        (Embeddings.value.cosine_distance(query_vector)).label("distance")
+    ).order_by("distance").limit(top_k)
+    return query.all()
+
+
 
 def get_db_session(db_url: str):
     """Create and return a new database session."""
@@ -52,52 +112,39 @@ def get_db_session(db_url: str):
     Session = sessionmaker(bind=engine)
     return Session()
 
-def get_files_with_embeddings(session) -> List[Dict]:
-    """
-    Get all files that have contentEmbeddings, with their embedding vectors.
-    """
-    print("Fetching files with embeddings from the database...")  # Debugging line  
-    result = session.execute(
-        select(
-            Table('File', metadata).c.sid,
-            Table('File', metadata).c.id,
-            Table('File', metadata).c.oparlKey,
-            Table('File', metadata).c.oparlId,
-            Table('File', metadata).c.name,
-            Table('File', metadata).c.date,
-            Table('File', metadata).c.fileName,
-            Table('contentEmbeddings', metadata).c.value
-        )
-        .join(
-            Table('contentEmbeddings', metadata),
-            Table('File', metadata).c.sid == Table('contentEmbeddings', metadata).c.id
-        )
-    ).fetchall()
-    
-    print(f"Fetched {len(result)} files with embeddings")  # Debugging line
-    
-    return [{
-        "sid": row.sid,
-        "id": row.id,
-        "oparlKey": row.oparlKey,
-        "oparlId": row.oparlId,
-        "name": row.name,
-        "date": row.date,
-        "fileName": row.fileName,
-        "embedding": row.value
-    } for row in result]
 
-def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]:
+
+def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]:
     """
-    Find all OParl objects related to the given file SIDs through junction tables.
+    Find all OParl objects related to the given file sids through junction tables.
 
     Args:
         session: SQLAlchemy session
-        file_sids: List of File SIDs to find related objects for
+        file_sids: List of File sids to find related objects for
 
     Returns:
         Dictionary with object types as keys and lists of related objects as values
     """
+    engine = session.get_bind()
+    metadata = MetaData()
+    
+    
+    # Load tables
+    agenda_tbl = Table('AgendaItem', metadata, autoload_with=engine)
+    paper_tbl = Table('Paper', metadata, autoload_with=engine)
+    meeting_tbl = Table('Meeting', metadata, autoload_with=engine)
+    consultation_tbl = Table('Consultation', metadata, autoload_with=engine)
+    organization_tbl = Table('Organization', metadata, autoload_with=engine)
+    
+    # Load association tables
+    af_assoc_tbl = Table('AgendaItem__auxiliaryFile__File', metadata, autoload_with=engine)
+    pf_assoc_tbl = Table('Paper__auxiliaryFile__File', metadata, autoload_with=engine)
+    mf_assoc_tbl = Table('Meeting__auxiliaryFile__File', metadata, autoload_with=engine)
+    pc_assoc_tbl = Table('Paper__consultation__Consultation', metadata, autoload_with=engine)
+    ma_assoc_tbl = Table('Meeting__agendaItem__AgendaItem', metadata, autoload_with=engine)
+    co_assoc_tbl = Table('Consultation__organization__Organization', metadata, autoload_with=engine)
+    po_assoc_tbl = Table('Paper__underDirectionOf__Organization', metadata, autoload_with=engine)
+    
     related_objects = {
         "AgendaItem": [],
         "Paper": [],
@@ -109,27 +156,30 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
         "Location": []
     }
 
-    # 1. Find AgendaItems connected to Files via AgendaItem__auxiliaryFile__File
-    agenda_items = session.execute(
+    # 1. Find AgendaItems connected to Files
+    stmt = (
         select(
-            Table('AgendaItem', metadata).c.sid,
-            Table('AgendaItem', metadata).c.id,
-            Table('AgendaItem', metadata).c.oparlKey,
-            Table('AgendaItem', metadata).c.oparlId,
-            Table('AgendaItem', metadata).c.name,
-            Table('AgendaItem', metadata).c.start_date,
-            Table('AgendaItem', metadata).c.end_date,
-            Table('AgendaItem', metadata).c.meetingSid,
-            Table('AgendaItem', metadata).c.number,
-            Table('AgendaItem', metadata).c.result
+            agenda_tbl.c.sid,
+            agenda_tbl.c.id,
+            agenda_tbl.c.oparlKey,
+            agenda_tbl.c.oparlId,
+            agenda_tbl.c.name,
+            agenda_tbl.c.start_date,
+            agenda_tbl.c.end_date,
+            agenda_tbl.c.meetingSid,
+            agenda_tbl.c.number,
+            agenda_tbl.c.result
         )
-        .join(
-            Table('AgendaItem__auxiliaryFile__File', metadata),
-            Table('AgendaItem', metadata).c.sid == Table('AgendaItem__auxiliaryFile__File', metadata).c.srcSid
+        .select_from(
+            af_assoc_tbl.join(
+                agenda_tbl, af_assoc_tbl.c.srcSid == agenda_tbl.c.sid
+            )
         )
-        .where(Table('AgendaItem__auxiliaryFile__File', metadata).c.tgtSid.in_(file_sids))
-    ).fetchall()
-
+        .where(af_assoc_tbl.c.tgtSid.in_(file_sids.values()))
+    )
+    with engine.connect() as conn:
+        agenda_items = conn.execute(stmt).fetchall()
+    
     for row in agenda_items:
         related_objects["AgendaItem"].append({
             "sid": row.sid,
@@ -144,26 +194,31 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
             "result": row.result
         })
 
-    # 2. Find Papers connected to Files via Paper__auxiliaryFile__File
-    papers = session.execute(
-        select(
-            Table('Paper', metadata).c.sid,
-            Table('Paper', metadata).c.id,
-            Table('Paper', metadata).c.oparlKey,
-            Table('Paper', metadata).c.oparlId,
-            Table('Paper', metadata).c.name,
-            Table('Paper', metadata).c.date,
-            Table('Paper', metadata).c.reference,
-            Table('Paper', metadata).c.paperType,
-            Table('Paper', metadata).c.bodySid
-        )
-        .join(
-            Table('Paper__auxiliaryFile__File', metadata),
-            Table('Paper', metadata).c.sid == Table('Paper__auxiliaryFile__File', metadata).c.srcSid
-        )
-        .where(Table('Paper__auxiliaryFile__File', metadata).c.tgtSid.in_(file_sids))
-    ).fetchall()
+    print(f"Found {len(related_objects['AgendaItem'])} agenda items related to files")  # Debugging line
 
+    # 2. Find Papers connected to Files
+    stmt = (
+        select(
+            paper_tbl.c.sid,
+            paper_tbl.c.id,
+            paper_tbl.c.oparlKey,
+            paper_tbl.c.oparlId,
+            paper_tbl.c.name,
+            paper_tbl.c.date,
+            paper_tbl.c.reference,
+            paper_tbl.c.papertype,
+            paper_tbl.c.bodySid
+        )
+        .select_from(
+            pf_assoc_tbl.join(
+                paper_tbl, pf_assoc_tbl.c.srcSid == paper_tbl.c.sid
+            )
+        )
+        .where(pf_assoc_tbl.c.tgtSid.in_(file_sids.values()))
+    )
+    with engine.connect() as conn:
+        papers = conn.execute(stmt).fetchall()
+    
     for row in papers:
         related_objects["Paper"].append({
             "sid": row.sid,
@@ -173,28 +228,32 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
             "name": row.name,
             "date": row.date,
             "reference": row.reference,
-            "paperType": row.paperType,
+            "paperType": row.papertype,
             "bodySid": row.bodySid
         })
-
-    # 3. Find Meetings connected to Files via Meeting__auxiliaryFile__File
-    meetings = session.execute(
+    print(f"Found {len(related_objects['Paper'])} papers related to files")  # Debugging line
+    
+    # 3. Find Meetings connected to Files
+    stmt = (
         select(
-            Table('Meeting', metadata).c.sid,
-            Table('Meeting', metadata).c.id,
-            Table('Meeting', metadata).c.oparlKey,
-            Table('Meeting', metadata).c.oparlId,
-            Table('Meeting', metadata).c.name,
-            Table('Meeting', metadata).c.start_date,
-            Table('Meeting', metadata).c.end_date
+            meeting_tbl.c.sid,
+            meeting_tbl.c.id,
+            meeting_tbl.c.oparlKey,
+            meeting_tbl.c.oparlId,
+            meeting_tbl.c.name,
+            meeting_tbl.c.start_date,
+            meeting_tbl.c.end_date
         )
-        .join(
-            Table('Meeting__auxiliaryFile__File', metadata),
-            Table('Meeting', metadata).c.sid == Table('Meeting__auxiliaryFile__File', metadata).c.srcSid
+        .select_from(
+            mf_assoc_tbl.join(
+                meeting_tbl, mf_assoc_tbl.c.srcSid == meeting_tbl.c.sid
+            )
         )
-        .where(Table('Meeting__auxiliaryFile__File', metadata).c.tgtSid.in_(file_sids))
-    ).fetchall()
-
+        .where(mf_assoc_tbl.c.tgtSid.in_(file_sids.values()))
+    )
+    with engine.connect() as conn:
+        meetings = conn.execute(stmt).fetchall()
+    
     for row in meetings:
         related_objects["Meeting"].append({
             "sid": row.sid,
@@ -209,25 +268,28 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     # 4. For Papers, find related Consultations
     paper_sids = [p["sid"] for p in related_objects["Paper"]]
     if paper_sids:
-        consultations = session.execute(
+        stmt = (
             select(
-                Table('Consultation', metadata).c.sid,
-                Table('Consultation', metadata).c.id,
-                Table('Consultation', metadata).c.oparlKey,
-                Table('Consultation', metadata).c.oparlId,
-                Table('Consultation', metadata).c.role,
-                Table('Consultation', metadata).c.authoritative,
-                Table('Consultation', metadata).c.agendaItemSid,
-                Table('Consultation', metadata).c.meetingSid,
-                Table('Consultation', metadata).c.paperSid
+                consultation_tbl.c.sid,
+                consultation_tbl.c.id,
+                consultation_tbl.c.oparlKey,
+                consultation_tbl.c.oparlId,
+                consultation_tbl.c.role,
+                consultation_tbl.c.authoritative,
+                consultation_tbl.c.agendaItemSid,
+                consultation_tbl.c.meetingSid,
+                consultation_tbl.c.paperSid
             )
-            .join(
-                Table('Paper__consultation__Consultation', metadata),
-                Table('Paper__consultation__Consultation', metadata).c.srcSid == Table('Consultation', metadata).c.sid
+            .select_from(
+                pc_assoc_tbl.join(
+                    consultation_tbl, pc_assoc_tbl.c.tgtSid == consultation_tbl.c.sid
+                )
             )
-            .where(Table('Paper__consultation__Consultation', metadata).c.srcSid.in_(paper_sids))
-        ).fetchall()
-
+            .where(pc_assoc_tbl.c.srcSid.in_(paper_sids))
+        )
+        with engine.connect() as conn:
+            consultations = conn.execute(stmt).fetchall()
+        
         for row in consultations:
             related_objects["Consultation"].append({
                 "sid": row.sid,
@@ -240,32 +302,35 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
                 "meetingSid": row.meetingSid,
                 "paperSid": row.paperSid
             })
+    print(f"Found {len(related_objects['Consultation'])} consultations related to papers")  # Debugging line
 
     # 5. For Meetings, find related AgendaItems
     meeting_sids = [m["sid"] for m in related_objects["Meeting"]]
     if meeting_sids:
-        meeting_agenda_items = session.execute(
+        stmt = (
             select(
-                Table('AgendaItem', metadata).c.sid,
-                Table('AgendaItem', metadata).c.id,
-                Table('AgendaItem', metadata).c.oparlKey,
-                Table('AgendaItem', metadata).c.oparlId,
-                Table('AgendaItem', metadata).c.name,
-                Table('AgendaItem', metadata).c.start_date,
-                Table('AgendaItem', metadata).c.end_date,
-                Table('AgendaItem', metadata).c.meetingSid,
-                Table('AgendaItem', metadata).c.number,
-                Table('AgendaItem', metadata).c.result
+                agenda_tbl.c.sid,
+                agenda_tbl.c.id,
+                agenda_tbl.c.oparlKey,
+                agenda_tbl.c.oparlId,
+                agenda_tbl.c.name,
+                agenda_tbl.c.start_date,
+                agenda_tbl.c.end_date,
+                agenda_tbl.c.meetingSid,
+                agenda_tbl.c.number,
+                agenda_tbl.c.result
             )
-            .join(
-                Table('Meeting__agendaItem__AgendaItem', metadata),
-                Table('Meeting__agendaItem__AgendaItem', metadata).c.tgtSid == Table('AgendaItem', metadata).c.sid
+            .select_from(
+                ma_assoc_tbl.join(
+                    agenda_tbl, ma_assoc_tbl.c.tgtSid == agenda_tbl.c.sid
+                )
             )
-            .where(Table('Meeting__agendaItem__AgendaItem', metadata).c.srcSid.in_(meeting_sids))
-        ).fetchall()
-
+            .where(ma_assoc_tbl.c.srcSid.in_(meeting_sids))
+        )
+        with engine.connect() as conn:
+            meeting_agenda_items = conn.execute(stmt).fetchall()
+        
         for row in meeting_agenda_items:
-            # Avoid duplicates
             if not any(ai["sid"] == row.sid for ai in related_objects["AgendaItem"]):
                 related_objects["AgendaItem"].append({
                     "sid": row.sid,
@@ -279,27 +344,27 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
                     "number": row.number,
                     "result": row.result
                 })
+    print(f"Found {len(related_objects['AgendaItem'])} agenda items related to meetings")  # Debugging line
 
     # 6. For AgendaItems, find related Consultations
     agenda_item_sids = [ai["sid"] for ai in related_objects["AgendaItem"]]
     if agenda_item_sids:
-        agenda_consultations = session.execute(
-            select(
-                Table('Consultation', metadata).c.sid,
-                Table('Consultation', metadata).c.id,
-                Table('Consultation', metadata).c.oparlKey,
-                Table('Consultation', metadata).c.oparlId,
-                Table('Consultation', metadata).c.role,
-                Table('Consultation', metadata).c.authoritative,
-                Table('Consultation', metadata).c.agendaItemSid,
-                Table('Consultation', metadata).c.meetingSid,
-                Table('Consultation', metadata).c.paperSid
-            )
-            .where(Table('Consultation', metadata).c.agendaItemSid.in_(agenda_item_sids))
-        ).fetchall()
-
+        stmt = select(
+            consultation_tbl.c.sid,
+            consultation_tbl.c.id,
+            consultation_tbl.c.oparlKey,
+            consultation_tbl.c.oparlId,
+            consultation_tbl.c.role,
+            consultation_tbl.c.authoritative,
+            consultation_tbl.c.agendaItemSid,
+            consultation_tbl.c.meetingSid,
+            consultation_tbl.c.paperSid
+        ).where(consultation_tbl.c.agendaItemSid.in_(agenda_item_sids))
+        
+        with engine.connect() as conn:
+            agenda_consultations = conn.execute(stmt).fetchall()
+        
         for row in agenda_consultations:
-            # Avoid duplicates
             if not any(c["sid"] == row.sid for c in related_objects["Consultation"]):
                 related_objects["Consultation"].append({
                     "sid": row.sid,
@@ -316,23 +381,26 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
     # 7. For Consultations, find related Organizations
     consultation_sids = [c["sid"] for c in related_objects["Consultation"]]
     if consultation_sids:
-        consultation_orgs = session.execute(
+        stmt = (
             select(
-                Table('Organization', metadata).c.sid,
-                Table('Organization', metadata).c.id,
-                Table('Organization', metadata).c.oparlKey,
-                Table('Organization', metadata).c.oparlId,
-                Table('Organization', metadata).c.name,
-                Table('Organization', metadata).c.classification,
-                Table('Organization', metadata).c.shortName
+                organization_tbl.c.sid,
+                organization_tbl.c.id,
+                organization_tbl.c.oparlKey,
+                organization_tbl.c.oparlId,
+                organization_tbl.c.name,
+                organization_tbl.c.classification,
+                organization_tbl.c.shortname
             )
-            .join(
-                Table('Consultation__organization__Organization', metadata),
-                Table('Consultation__organization__Organization', metadata).c.tgtSid == Table('Organization', metadata).c.sid
+            .select_from(
+                co_assoc_tbl.join(
+                    organization_tbl, co_assoc_tbl.c.tgtSid == organization_tbl.c.sid
+                )
             )
-            .where(Table('Consultation__organization__Organization', metadata).c.srcSid.in_(consultation_sids))
-        ).fetchall()
-
+            .where(co_assoc_tbl.c.srcSid.in_(consultation_sids))
+        )
+        with engine.connect() as conn:
+            consultation_orgs = conn.execute(stmt).fetchall()
+        
         for row in consultation_orgs:
             related_objects["Organization"].append({
                 "sid": row.sid,
@@ -341,30 +409,34 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
                 "oparlId": row.oparlId,
                 "name": row.name,
                 "classification": row.classification,
-                "shortName": row.shortName
+                "shortName": row.shortname
             })
+
+    print(f"Found {len(related_objects['Organization'])} organizations related to consultations")  # Debugging line
 
     # 8. For Papers, find related Organizations (underDirectionOf)
     if paper_sids:
-        paper_orgs = session.execute(
+        stmt = (
             select(
-                Table('Organization', metadata).c.sid,
-                Table('Organization', metadata).c.id,
-                Table('Organization', metadata).c.oparlKey,
-                Table('Organization', metadata).c.oparlId,
-                Table('Organization', metadata).c.name,
-                Table('Organization', metadata).c.classification,
-                Table('Organization', metadata).c.shortName
+                organization_tbl.c.sid,
+                organization_tbl.c.id,
+                organization_tbl.c.oparlKey,
+                organization_tbl.c.oparlId,
+                organization_tbl.c.name,
+                organization_tbl.c.classification,
+                organization_tbl.c.shortname
             )
-            .join(
-                Table('Paper__underDirectionOf__Organization', metadata),
-                Table('Paper__underDirectionOf__Organization', metadata).c.tgtSid == Table('Organization', metadata).c.sid
+            .select_from(
+                po_assoc_tbl.join(
+                    organization_tbl, po_assoc_tbl.c.tgtSid == organization_tbl.c.sid
+                )
             )
-            .where(Table('Paper__underDirectionOf__Organization', metadata).c.srcSid.in_(paper_sids))
-        ).fetchall()
-
+            .where(po_assoc_tbl.c.srcSid.in_(paper_sids))
+        )
+        with engine.connect() as conn:
+            paper_orgs = conn.execute(stmt).fetchall()
+        
         for row in paper_orgs:
-            # Avoid duplicates
             if not any(o["sid"] == row.sid for o in related_objects["Organization"]):
                 related_objects["Organization"].append({
                     "sid": row.sid,
@@ -373,8 +445,10 @@ def find_related_objects(session, file_sids: List[int]) -> Dict[str, List[Dict]]
                     "oparlId": row.oparlId,
                     "name": row.name,
                     "classification": row.classification,
-                    "shortName": row.shortName
+                    "shortName": row.shortname
                 })
+
+        print(f"Found {len(related_objects['Organization'])} organizations related to papers")  # Debugging line
 
     return related_objects
 
@@ -383,8 +457,8 @@ def build_timeline(related_objects: Dict[str, List[Dict]]) -> List[Dict]:
     Build a timeline from related OParl objects, sorted by date.
     """
     timeline_events = []
-
     for obj_type, objects in related_objects.items():
+        print(f"Processing {len(objects)} objects of type {obj_type} for timeline")  # Debugging line
         for obj in objects:
             # Determine the best date field for this object type
             date_field = None
@@ -419,6 +493,7 @@ def build_timeline(related_objects: Dict[str, List[Dict]]) -> List[Dict]:
 
     # Sort by date
     timeline_events.sort(key=lambda x: x["date"] if x["date"] else datetime.max)
+    print(f"Built timeline with {len(timeline_events)} events after sorting")  # Debugging line
 
     return timeline_events
 
@@ -433,6 +508,8 @@ def group_timeline_events(timeline_events: List[Dict], window_days: int = TIMELI
     events_with_dates = [(e["date"], e) for e in timeline_events if e["date"]]
     if not events_with_dates:
         return []
+
+    print(f"Grouping {len(events_with_dates)} timeline events with window of {window_days} days")  # Debugging line
 
     grouped = []
     current_group = [events_with_dates[0][1]]
@@ -463,6 +540,7 @@ def group_timeline_events(timeline_events: List[Dict], window_days: int = TIMELI
             "events": current_group.copy()
         })
 
+    print(f"Grouped into {len(grouped)} event groups")  # Debugging line
     return grouped
 
 def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[str, Any]:
@@ -478,50 +556,75 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[s
         Dictionary containing search results and timeline
     """
     # Generate embedding for the query
-    query_embedding = get_embedding(query)
+    query_embedding = call_embedding_model(query, EMBEDDING_API_URL, EMBEDDING_API_KEY, EMBEDDING_MODEL)
     print(f"Generated embedding for query: {query_embedding[:5]}...")  # Debugging line
 
-    # Get all files with their embeddings
-    files_with_embeddings = get_files_with_embeddings(session)
-    print(f"Total files with embeddings: {len(files_with_embeddings)}")  # Debugging line
-    if not files_with_embeddings:
+
+    # find similarities and get top-k files
+    file_scores = query_vector_similarity(session, query_embedding, top_k)
+    print(f"Top files (before thresholding): {file_scores}")  # Debugging line
+    if not file_scores:
         return {"query": query, "results": [], "timeline": [], "message": "No files with embeddings found"}
 
-    # Calculate cosine similarities
-    file_embeddings = np.array([f["embedding"] for f in files_with_embeddings])
-    query_embedding_array = query_embedding.reshape(1, -1)
-    similarities = cosine_similarity(query_embedding_array, file_embeddings)[0]
+    # filter by threshold
+    top_scores = filter_by_threshold(file_scores, threshold = .4)
+    print(f"Top files (after thresholding): {top_scores}")  # Debugging line
+    if not top_scores:
+        return {"query": query, "results": [], "timeline": [], "message": "No files above similarity threshold"}
 
-    # Add similarity scores to files
-    for i, file in enumerate(files_with_embeddings):
-        file["similarity"] = float(similarities[i])
+    # Get Keys of top files
+    top_file_keys = [f[0] for f in top_scores]
+    print(f"Top file Keys: {top_file_keys}")  # Debugging line
 
-    # Sort by similarity and get top-k
-    files_with_embeddings.sort(key=lambda x: x["similarity"], reverse=True)
-    top_files = files_with_embeddings[:top_k]
+    # first, we need to get the sid for each file key, since the associations are based on sids, not keys
+    engine = session.get_bind()
+    metadata = MetaData()
+    file_tbl = Table('File', metadata, autoload_with=engine)
+    stmt = select(file_tbl.c.sid, file_tbl.c.oparlKey, file_tbl.c.name, file_tbl.c.filename,
+                  file_tbl.c.oparlId, file_tbl.c.downloadurl, file_tbl.c.date).where(file_tbl.c.oparlKey.in_(top_file_keys))
+    with engine.connect() as conn:
+        result = conn.execute(stmt).fetchall()
+    top_files = [{
+        "sid": row.sid,
+        "oparlKey": row.oparlKey,
+        "name": row.name,
+        "fileName": row.filename,
+        "downloadurl": row.downloadurl,
+        "oparlId": row.oparlId,
+        "date": row.date,
+        "distance": next((score for key, score in top_scores if key == row.oparlKey), None)
+    } for row in result]    
+    print(f"Top files details: {top_files}")  # Debugging line
+    
+    file_sids = {item["oparlKey"]: item["sid"] for item in top_files}
+    print(f"Resolved file keys to sids: {file_sids}")  # Debugging line
 
-    # Get SIDs of top files
-    top_file_sids = [f["sid"] for f in top_files]
-
+    
     # Find all related OParl objects
-    related_objects = find_related_objects(session, top_file_sids)
+    related_objects = find_related_objects(session, file_sids)
+    print(f"Related objects found: { {k: len(v) for k, v in related_objects.items()} }")  # Debugging line
 
     # Build timeline from all related objects
     timeline_events = build_timeline(related_objects)
+    print(f"Timeline events built: {len(timeline_events)}")  # Debugging line
 
     # Group timeline events
     grouped_timeline = group_timeline_events(timeline_events)
+    print(f"Grouped timeline events: {len(grouped_timeline)}")  # Debugging line
+    #print(f"Timeline groups: {[{'start_date': g['start_date'], 'end_date': g['end_date'], 'event_count': len(g['events'])} for g in grouped_timeline]}")  # Debugging line
+    #print(grouped_timeline)
 
     return {
         "query": query,
         "top_files": [{
             "sid": f["sid"],
-            "id": f["id"],
+            "oparlKey": f["oparlKey"],
             "name": f["name"],
             "fileName": f["fileName"],
+            "downloadurl": f["downloadurl"],
             "oparlId": f["oparlId"],
             "date": f["date"],
-            "similarity": f["similarity"]
+            "distance": f["distance"]
         } for f in top_files],
         "timeline": grouped_timeline,
         "stats": {
@@ -534,7 +637,6 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[s
 def main(directory: str) -> None:
     """Main entry point for the script."""
     global API_KEY, EMBEDDING_API_URL, EMBEDDING_MODEL
-    import private as pr
     API_KEY = pr.EMB_KEY
     EMBEDDING_API_URL = pr.EMB_URL
     EMBEDDING_MODEL = pr.EMB_MDL
@@ -565,8 +667,9 @@ def main(directory: str) -> None:
                     print("\nTop Files:")
                     for i, file in enumerate(results['top_files'][:5], 1):
                         print(f"{i}. {file['name']} ({file['fileName']})")
-                        print(f"   Similarity: {file['similarity']:.3f}")
+                        print(f"   Distance: {file['distance']:.3f}")
                         print(f"   OParl ID: {file['oparlId']}")
+                        print(f"   Download URL: {file['downloadurl']}")
                         print(f"   Date: {file['date']}")
 
                 if results['timeline']:
@@ -574,7 +677,7 @@ def main(directory: str) -> None:
                     for i, group in enumerate(results['timeline'], 1):
                         print(f"\nGroup {i}: {group['start_date']} to {group['end_date']}")
                         for event in group['events']:
-                            print(f"  - {event['date']}: [{event['type']}] {event['name']}")
+                            print(f"  - {event['date']}: [{event['type']}] {event['name']} {event['oparlId']}")
 
                 # Save results to file
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
