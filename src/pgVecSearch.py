@@ -51,12 +51,13 @@ def call_embedding_model(text: str, api_url: str, api_key: str, model: str) -> t
     result = response.json()
     # print(f"API response: {result}")  # Debug print to check response structure
     # Adjust based on actual API response structure
-    if result[0].get("data") and isinstance(result[0]["data"], list) and len(result[0]["data"]) > 0:
-        vector = result[0]["data"][0].get('embedding', [])[0]
+    if isinstance(result, dict) and result.get("data") and isinstance(result["data"], list) and len(result["data"]) > 0:
+        vector = result["data"][0].get('embedding', [])
+        print(f"Raw vector from API: {vector[:5]}...")  # Debug print to check raw vector
         vector = np.array(vector)
         vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
         vector = vector.tolist()
-    elif isinstance(result[0], dict) and 'embedding' in result[0]:
+    elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict) and 'embedding' in result[0]:
         vector = result[0]['embedding'][0]
         vector = np.array(vector)
         vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
@@ -66,11 +67,10 @@ def call_embedding_model(text: str, api_url: str, api_key: str, model: str) -> t
     print(f"Received vector of length {len(vector)}")  # Debug print to check vector length
     return vector
 
-
+# here, threshold is a distance threshold, so we want to keep vectors with distance <= threshold (i.e. similarity above a certain level)
 def filter_by_threshold(vectors_with_scores: list[tuple], threshold: float) -> list[tuple]:
     """Filter vectors above threshold"""
-    return [(vec, score) for vec, score in vectors_with_scores if score >= threshold]
-
+    return [(vec, score) for vec, score in vectors_with_scores if score <= threshold]
 
 def query_vector_similarity(session, query_vector: list[float], top_k: int = 10) -> list[int]:
     """
