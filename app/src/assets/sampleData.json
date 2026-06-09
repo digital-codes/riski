@@ -1,0 +1,1396 @@
+{
+  "query": "\"neubau umbau sanierung badisches staatsthater theater\"",
+  "top_files": [
+    {
+      "sid": 337,
+      "oparlKey": "25207",
+      "name": "DHH 2011/2012: Antrag 036: GfK: Zuschüsse Badisches Staatstheater",
+      "fileName": "00025207.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00025207.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/25207",
+      "date": "2013-08-15 00:00:00",
+      "distance": 0.3926245804205276
+    },
+    {
+      "sid": 2504,
+      "oparlKey": "631078",
+      "name": "Protokoll GR 28.09.2021 TOP 30",
+      "fileName": "00631078.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00631078.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/631078",
+      "date": "2021-11-02 00:00:00",
+      "distance": 0.3870274655239253
+    },
+    {
+      "sid": 3039,
+      "oparlKey": "625451",
+      "name": "Badisches Staatstheater",
+      "fileName": "00625451.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00625451.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/625451",
+      "date": "2021-05-11 00:00:00",
+      "distance": 0.36926066875457764
+    },
+    {
+      "sid": 5462,
+      "oparlKey": "622429",
+      "name": "Antrag",
+      "fileName": "00622429.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00622429.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/622429",
+      "date": "2020-12-10 00:00:00",
+      "distance": 0.3619840145111084
+    },
+    {
+      "sid": 5463,
+      "oparlKey": "622624",
+      "name": "Stellungnahme Antrag",
+      "fileName": "00622624.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00622624.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/622624",
+      "date": "2021-01-05 00:00:00",
+      "distance": 0.35951892378813366
+    },
+    {
+      "sid": 5464,
+      "oparlKey": "623269",
+      "name": "Protokoll HA TOP 2",
+      "fileName": "00623269.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00623269.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/623269",
+      "date": "2021-02-05 00:00:00",
+      "distance": 0.3847792148590088
+    },
+    {
+      "sid": 5872,
+      "oparlKey": "604776",
+      "name": "Verwaltungsstatut Staatstheater",
+      "fileName": "00604776.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00604776.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/604776",
+      "date": "2018-08-31 00:00:00",
+      "distance": 0.3783433437347412
+    },
+    {
+      "sid": 6778,
+      "oparlKey": "625512",
+      "name": "Antrag",
+      "fileName": "00625512.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00625512.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/625512",
+      "date": "2021-05-18 00:00:00",
+      "distance": 0.35674301643711115
+    },
+    {
+      "sid": 8772,
+      "oparlKey": "145214",
+      "name": "Bad.Staatstheater",
+      "fileName": "00145214.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00145214.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/145214",
+      "date": "2014-01-03 00:00:00",
+      "distance": 0.3208234107739747
+    },
+    {
+      "sid": 10559,
+      "oparlKey": "620680",
+      "name": "StN FW-FUER Bad. Staatstheater",
+      "fileName": "00620680.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620680.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620680",
+      "date": "2020-11-06 00:00:00",
+      "distance": 0.37866733606658365
+    },
+    {
+      "sid": 10586,
+      "oparlKey": "606020",
+      "name": "Antrag 216 FÜR Ka Sanierung Badisches Staatstheater",
+      "fileName": "00606020.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00606020.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/606020",
+      "date": "2018-10-29 00:00:00",
+      "distance": 0.37760233879089355
+    },
+    {
+      "sid": 10597,
+      "oparlKey": "620167",
+      "name": "Anfrage",
+      "fileName": "00620167.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620167.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620167",
+      "date": "2020-10-12 00:00:00",
+      "distance": 0.3659506847247682
+    },
+    {
+      "sid": 10743,
+      "oparlKey": "599349",
+      "name": "GfK Einsparsumme Staatstheater",
+      "fileName": "00599349.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00599349.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/599349",
+      "date": "2017-09-15 00:00:00",
+      "distance": 0.37466615438461304
+    },
+    {
+      "sid": 10744,
+      "oparlKey": "599410",
+      "name": "Stellungnahme TOP 13.4",
+      "fileName": "00599410.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00599410.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/599410",
+      "date": "2017-09-15 00:00:00",
+      "distance": 0.35825593969154623
+    },
+    {
+      "sid": 10814,
+      "oparlKey": "625379",
+      "name": "Anlage 2 zur GR-Vorl_Bericht zum Energiekonzept BST",
+      "fileName": "00625379.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00625379.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/625379",
+      "date": "2021-05-06 00:00:00",
+      "distance": 0.38580862837459506
+    },
+    {
+      "sid": 11037,
+      "oparlKey": "626429",
+      "name": "Ergänzungsblatt zur Beschlussvorlage",
+      "fileName": "00626429.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00626429.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/626429",
+      "date": "2021-06-22 00:00:00",
+      "distance": 0.37928273554341296
+    },
+    {
+      "sid": 11686,
+      "oparlKey": "599698",
+      "name": "Protokoll GR TOP 13",
+      "fileName": "00599698.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00599698.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/599698",
+      "date": "2017-10-11 00:00:00",
+      "distance": 0.3614607859093182
+    },
+    {
+      "sid": 16123,
+      "oparlKey": "626256",
+      "name": "Änderungs-/Ergänzungsantrag",
+      "fileName": "00626256.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00626256.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/626256",
+      "date": "2021-06-16 00:00:00",
+      "distance": 0.3441319866219752
+    },
+    {
+      "sid": 16250,
+      "oparlKey": "625996",
+      "name": "Badisches Staatstheater",
+      "fileName": "00625996.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00625996.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/625996",
+      "date": "2021-06-08 00:00:00",
+      "distance": 0.3860689401626587
+    },
+    {
+      "sid": 22153,
+      "oparlKey": "655472",
+      "name": "Anlage Synopse",
+      "fileName": "00655472.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00655472.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/655472",
+      "date": "2024-01-22 00:00:00",
+      "distance": 0.3988434730926257
+    },
+    {
+      "sid": 24318,
+      "oparlKey": "669046",
+      "name": "Anfrage",
+      "fileName": "00669046.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00669046.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/669046",
+      "date": "2025-07-25 00:00:00",
+      "distance": 0.38791505170374696
+    },
+    {
+      "sid": 25013,
+      "oparlKey": "626346",
+      "name": "Änderungs-/Ergänzungsantrag",
+      "fileName": "00626346.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00626346.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/626346",
+      "date": "2021-06-21 00:00:00",
+      "distance": 0.36923881585829244
+    },
+    {
+      "sid": 27127,
+      "oparlKey": "594191",
+      "name": "Antrag 70 Die Linke Zuschuss Staatstheater",
+      "fileName": "00594191.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00594191.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594191",
+      "date": "2016-10-28 00:00:00",
+      "distance": 0.38272589445114136
+    },
+    {
+      "sid": 27753,
+      "oparlKey": "655470",
+      "name": "Beschlussvorlage",
+      "fileName": "00655470.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00655470.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/655470",
+      "date": "2024-01-22 00:00:00",
+      "distance": 0.38241803646087646
+    },
+    {
+      "sid": 30398,
+      "oparlKey": "626430",
+      "name": "Änderungs-/Ergänzungsantrag",
+      "fileName": "00626430.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00626430.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/626430",
+      "date": "2021-06-22 00:00:00",
+      "distance": 0.3862923613960948
+    },
+    {
+      "sid": 30399,
+      "oparlKey": "626441",
+      "name": "StN BST CDU-GRÜNE",
+      "fileName": "00626441.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00626441.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/626441",
+      "date": "2021-06-22 00:00:00",
+      "distance": 0.3853536661074656
+    },
+    {
+      "sid": 32120,
+      "oparlKey": "598276",
+      "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+      "fileName": "00598276.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00598276.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/598276",
+      "date": "2017-07-07 00:00:00",
+      "distance": 0.34025345266620644
+    },
+    {
+      "sid": 32121,
+      "oparlKey": "599284",
+      "name": "Anlage 1 Staatstheater",
+      "fileName": "00599284.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00599284.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/599284",
+      "date": "2017-09-13 00:00:00",
+      "distance": 0.3834192156791687
+    },
+    {
+      "sid": 32122,
+      "oparlKey": "599286",
+      "name": "Anlage 3 Staatstheater",
+      "fileName": "00599286.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00599286.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/599286",
+      "date": "2017-09-13 00:00:00",
+      "distance": 0.3714187741279602
+    },
+    {
+      "sid": 33596,
+      "oparlKey": "619172",
+      "name": "Antrag",
+      "fileName": "00619172.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619172.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619172",
+      "date": "2020-08-05 00:00:00",
+      "distance": 0.39472624032057657
+    },
+    {
+      "sid": 33967,
+      "oparlKey": "150362",
+      "name": "TOP 2 - Wettbewerb Staatstheater",
+      "fileName": "00150362.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00150362.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/150362",
+      "date": "2015-01-20 00:00:00",
+      "distance": 0.37424761056900024
+    },
+    {
+      "sid": 34313,
+      "oparlKey": "595467",
+      "name": "SPD Zufahrt Staatstheater",
+      "fileName": "00595467.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00595467.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/595467",
+      "date": "2017-01-03 00:00:00",
+      "distance": 0.3959255814552307
+    },
+    {
+      "sid": 34747,
+      "oparlKey": "626431",
+      "name": "Änderungs-/Ergänzungsantrag",
+      "fileName": "00626431.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00626431.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/626431",
+      "date": "2021-06-22 00:00:00",
+      "distance": 0.3502671718597412
+    },
+    {
+      "sid": 36155,
+      "oparlKey": "599347",
+      "name": "Stellungnahme TOP 13.3",
+      "fileName": "00599347.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00599347.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/599347",
+      "date": "2017-09-15 00:00:00",
+      "distance": 0.3417109251022339
+    },
+    {
+      "sid": 36156,
+      "oparlKey": "599348",
+      "name": "Gemeinsame Anfrage Bürgerbeteiligung Badisches Staatstheater",
+      "fileName": "00599348.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00599348.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/599348",
+      "date": "2017-09-15 00:00:00",
+      "distance": 0.34949173626254304
+    },
+    {
+      "sid": 37151,
+      "oparlKey": "626363",
+      "name": "StN FWFÜR-Fraktion BST Sanierung und Neubau",
+      "fileName": "00626363.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00626363.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/626363",
+      "date": "2021-06-21 00:00:00",
+      "distance": 0.36547370943270274
+    },
+    {
+      "sid": 37780,
+      "oparlKey": "595515",
+      "name": "Stellungnahme TOP 10",
+      "fileName": "00595515.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00595515.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/595515",
+      "date": "2017-01-05 00:00:00",
+      "distance": 0.34848445653915405
+    },
+    {
+      "sid": 38169,
+      "oparlKey": "585161",
+      "name": "OZ 56-57: Stellungnahme",
+      "fileName": "00585161.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00585161.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585161",
+      "date": "2015-02-13 00:00:00",
+      "distance": 0.39194953441619873
+    },
+    {
+      "sid": 39156,
+      "oparlKey": "599345",
+      "name": "FDP Gesamtausgaben Badisches Staatstheater",
+      "fileName": "00599345.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00599345.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/599345",
+      "date": "2017-09-15 00:00:00",
+      "distance": 0.3737959861755371
+    },
+    {
+      "sid": 40532,
+      "oparlKey": "19459",
+      "name": "Nancyhalle",
+      "fileName": "00019459.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00019459.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/19459",
+      "date": "2013-08-15 00:00:00",
+      "distance": 0.394992470741272
+    },
+    {
+      "sid": 43313,
+      "oparlKey": "626424",
+      "name": "Änderungs-/Ergänzungsantrag",
+      "fileName": "00626424.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00626424.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/626424",
+      "date": "2021-06-22 00:00:00",
+      "distance": 0.3744227699763405
+    },
+    {
+      "sid": 43945,
+      "oparlKey": "651798",
+      "name": "Antrag AfD_043",
+      "fileName": "00651798.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00651798.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/651798",
+      "date": "2023-10-17 00:00:00",
+      "distance": 0.3791131603189195
+    },
+    {
+      "sid": 45250,
+      "oparlKey": "612737",
+      "name": "Stellungnahme TOP 28",
+      "fileName": "00612737.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00612737.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/612737",
+      "date": "2019-11-29 00:00:00",
+      "distance": 0.3677944760200058
+    },
+    {
+      "sid": 45948,
+      "oparlKey": "641906",
+      "name": "Beschlussvorlage",
+      "fileName": "00641906.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00641906.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/641906",
+      "date": "2022-10-25 00:00:00",
+      "distance": 0.363931279299595
+    },
+    {
+      "sid": 46529,
+      "oparlKey": "585170",
+      "name": "OZ 66: KULT: Betriebswirtsch. Konzept Badisches Staatstheater",
+      "fileName": "00585170.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00585170.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585170",
+      "date": "2015-02-13 00:00:00",
+      "distance": 0.39484137296676636
+    },
+    {
+      "sid": 46911,
+      "oparlKey": "643279",
+      "name": "Protokoll GR TOP 12",
+      "fileName": "00643279.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00643279.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/643279",
+      "date": "2022-12-09 00:00:00",
+      "distance": 0.39688541870626215
+    }
+  ],
+  "timeline": [
+    {
+      "start_date": "2011-02-22 09:00:00",
+      "end_date": "2011-02-22 09:00:00",
+      "events": [
+        {
+          "type": "Meeting",
+          "id": 2625,
+          "oparlKey": "2625",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/2625",
+          "name": "Gemeinderat",
+          "date": "2011-02-22 09:00:00",
+          "details": {
+            "sid": 9,
+            "id": 2625,
+            "oparlKey": "2625",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/2625",
+            "name": "Gemeinderat"
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2011-12-05 00:00:00",
+      "end_date": "2011-12-05 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 28562,
+          "oparlKey": "28562",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/28562",
+          "name": "Umnutzung der Nancyhalle als Probebühnenzentrum für das Badische Staatstheater",
+          "date": "2011-12-05 00:00:00",
+          "details": {
+            "sid": 12195,
+            "id": 28562,
+            "oparlKey": "28562",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/28562",
+            "name": "Umnutzung der Nancyhalle als Probebühnenzentrum für das Badische Staatstheater",
+            "reference": "28562",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2013-12-18 00:00:00",
+      "end_date": "2013-12-18 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 33023,
+          "oparlKey": "33023",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/33023",
+          "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+          "date": "2013-12-18 00:00:00",
+          "details": {
+            "sid": 8333,
+            "id": 33023,
+            "oparlKey": "33023",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/33023",
+            "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+            "reference": "2013/0310",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2015-01-16 00:00:00",
+      "end_date": "2015-01-29 16:30:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 33867,
+          "oparlKey": "33867",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/33867",
+          "name": "THH 4100: Kultur",
+          "date": "2015-01-16 00:00:00",
+          "details": {
+            "sid": 12627,
+            "id": 33867,
+            "oparlKey": "33867",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/33867",
+            "name": "THH 4100: Kultur",
+            "reference": "2015/0059",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 33867,
+          "oparlKey": "33867",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/33867",
+          "name": "THH 4100: Kultur",
+          "date": "2015-01-16 00:00:00",
+          "details": {
+            "sid": 12627,
+            "id": 33867,
+            "oparlKey": "33867",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/33867",
+            "name": "THH 4100: Kultur",
+            "reference": "2015/0059",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Meeting",
+          "id": 3866,
+          "oparlKey": "3866",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/3866",
+          "name": "Planungsausschuss (öffentlich/nicht öffentlich)",
+          "date": "2015-01-29 16:30:00",
+          "details": {
+            "sid": 1167,
+            "id": 3866,
+            "oparlKey": "3866",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/3866",
+            "name": "Planungsausschuss (öffentlich/nicht öffentlich)"
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2016-10-26 00:00:00",
+      "end_date": "2016-10-26 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 35123,
+          "oparlKey": "35123",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35123",
+          "name": "THH 4100: Kultur",
+          "date": "2016-10-26 00:00:00",
+          "details": {
+            "sid": 5902,
+            "id": 35123,
+            "oparlKey": "35123",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35123",
+            "name": "THH 4100: Kultur",
+            "reference": "2016/0656",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2016-12-19 00:00:00",
+      "end_date": "2016-12-19 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 35263,
+          "oparlKey": "35263",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35263",
+          "name": "Beleuchtungskonzept Badisches Staatstheater",
+          "date": "2016-12-19 00:00:00",
+          "details": {
+            "sid": 7287,
+            "id": 35263,
+            "oparlKey": "35263",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35263",
+            "name": "Beleuchtungskonzept Badisches Staatstheater",
+            "reference": "2016/0802",
+            "paperType": "Antrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 35265,
+          "oparlKey": "35265",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35265",
+          "name": "Zufahrtsmöglichkeiten zum Staatstheater während der Bauarbeiten",
+          "date": "2016-12-19 00:00:00",
+          "details": {
+            "sid": 7451,
+            "id": 35265,
+            "oparlKey": "35265",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35265",
+            "name": "Zufahrtsmöglichkeiten zum Staatstheater während der Bauarbeiten",
+            "reference": "2016/0804",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2017-07-03 00:00:00",
+      "end_date": "2017-07-19 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 35716,
+          "oparlKey": "35716",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35716",
+          "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+          "date": "2017-07-03 00:00:00",
+          "details": {
+            "sid": 5752,
+            "id": 35716,
+            "oparlKey": "35716",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35716",
+            "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+            "reference": "2017/0476",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 35716,
+          "oparlKey": "35716",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35716",
+          "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+          "date": "2017-07-03 00:00:00",
+          "details": {
+            "sid": 5752,
+            "id": 35716,
+            "oparlKey": "35716",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35716",
+            "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+            "reference": "2017/0476",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 35716,
+          "oparlKey": "35716",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35716",
+          "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+          "date": "2017-07-03 00:00:00",
+          "details": {
+            "sid": 5752,
+            "id": 35716,
+            "oparlKey": "35716",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35716",
+            "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+            "reference": "2017/0476",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 35716,
+          "oparlKey": "35716",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35716",
+          "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+          "date": "2017-07-03 00:00:00",
+          "details": {
+            "sid": 5752,
+            "id": 35716,
+            "oparlKey": "35716",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35716",
+            "name": "Badisches Staatstheater - Sanierung und Erweiterung",
+            "reference": "2017/0476",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 35719,
+          "oparlKey": "35719",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35719",
+          "name": "Gesamtausgaben bzw. spätere Gesamteinsparung der Zusatzgebäude des Badischen Staatstheaters",
+          "date": "2017-07-05 00:00:00",
+          "details": {
+            "sid": 11734,
+            "id": 35719,
+            "oparlKey": "35719",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35719",
+            "name": "Gesamtausgaben bzw. spätere Gesamteinsparung der Zusatzgebäude des Badischen Staatstheaters",
+            "reference": "2017/0479",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 35737,
+          "oparlKey": "35737",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35737",
+          "name": "Bürgerbeteiligung bezüglich der Kosten Sanierung/Neubau des Badischen Staatstheaters Karlsruhe",
+          "date": "2017-07-19 00:00:00",
+          "details": {
+            "sid": 6799,
+            "id": 35737,
+            "oparlKey": "35737",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35737",
+            "name": "Bürgerbeteiligung bezüglich der Kosten Sanierung/Neubau des Badischen Staatstheaters Karlsruhe",
+            "reference": "2017/0499",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 35737,
+          "oparlKey": "35737",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35737",
+          "name": "Bürgerbeteiligung bezüglich der Kosten Sanierung/Neubau des Badischen Staatstheaters Karlsruhe",
+          "date": "2017-07-19 00:00:00",
+          "details": {
+            "sid": 6799,
+            "id": 35737,
+            "oparlKey": "35737",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35737",
+            "name": "Bürgerbeteiligung bezüglich der Kosten Sanierung/Neubau des Badischen Staatstheaters Karlsruhe",
+            "reference": "2017/0499",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2017-09-12 00:00:00",
+      "end_date": "2017-09-12 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 35803,
+          "oparlKey": "35803",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35803",
+          "name": "Einsparsumme und Gesamtkostenentwicklung im Badischen Staatstheater durch Sanierung und Neubau",
+          "date": "2017-09-12 00:00:00",
+          "details": {
+            "sid": 1678,
+            "id": 35803,
+            "oparlKey": "35803",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35803",
+            "name": "Einsparsumme und Gesamtkostenentwicklung im Badischen Staatstheater durch Sanierung und Neubau",
+            "reference": "2017/0574",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 35803,
+          "oparlKey": "35803",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35803",
+          "name": "Einsparsumme und Gesamtkostenentwicklung im Badischen Staatstheater durch Sanierung und Neubau",
+          "date": "2017-09-12 00:00:00",
+          "details": {
+            "sid": 1678,
+            "id": 35803,
+            "oparlKey": "35803",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35803",
+            "name": "Einsparsumme und Gesamtkostenentwicklung im Badischen Staatstheater durch Sanierung und Neubau",
+            "reference": "2017/0574",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2018-07-03 00:00:00",
+      "end_date": "2018-07-03 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 36513,
+          "oparlKey": "36513",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36513",
+          "name": "Ergänzung des Verwaltungsstatuts des Badischen Staatstheaters (Vertrag Land/Stadt)",
+          "date": "2018-07-03 00:00:00",
+          "details": {
+            "sid": 1057,
+            "id": 36513,
+            "oparlKey": "36513",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36513",
+            "name": "Ergänzung des Verwaltungsstatuts des Badischen Staatstheaters (Vertrag Land/Stadt)",
+            "reference": "2018/0486",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2018-10-23 00:00:00",
+      "end_date": "2018-10-23 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 36729,
+          "oparlKey": "36729",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36729",
+          "name": "THH 4100: Kultur",
+          "date": "2018-10-23 00:00:00",
+          "details": {
+            "sid": 5314,
+            "id": 36729,
+            "oparlKey": "36729",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36729",
+            "name": "THH 4100: Kultur",
+            "reference": "2018/0716",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2019-10-25 00:00:00",
+      "end_date": "2019-10-25 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 37939,
+          "oparlKey": "37939",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/37939",
+          "name": "Kostendeckel von \"Worst Case\"-Fall mit 320 Mio. Euro bei Neu- und Umbau des Badischen Staatstheater einhalten",
+          "date": "2019-10-25 00:00:00",
+          "details": {
+            "sid": 10778,
+            "id": 37939,
+            "oparlKey": "37939",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/37939",
+            "name": "Kostendeckel von \"Worst Case\"-Fall mit 320 Mio. Euro bei Neu- und Umbau des Badischen Staatstheater einhalten",
+            "reference": "2019/1076",
+            "paperType": "Antrag",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2020-08-05 00:00:00",
+      "end_date": "2020-08-05 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 40163,
+          "oparlKey": "40163",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40163",
+          "name": "Reform der Leitungsstruktur am Badischen Staatstheater",
+          "date": "2020-08-05 00:00:00",
+          "details": {
+            "sid": 6118,
+            "id": 40163,
+            "oparlKey": "40163",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40163",
+            "name": "Reform der Leitungsstruktur am Badischen Staatstheater",
+            "reference": "2020/0953",
+            "paperType": "Antrag",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2020-10-12 00:00:00",
+      "end_date": "2020-10-12 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 40395,
+          "oparlKey": "40395",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40395",
+          "name": "Kosten der Sanierung des Badischen Staatstheaters",
+          "date": "2020-10-12 00:00:00",
+          "details": {
+            "sid": 1661,
+            "id": 40395,
+            "oparlKey": "40395",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40395",
+            "name": "Kosten der Sanierung des Badischen Staatstheaters",
+            "reference": "2020/1184",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 40395,
+          "oparlKey": "40395",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40395",
+          "name": "Kosten der Sanierung des Badischen Staatstheaters",
+          "date": "2020-10-12 00:00:00",
+          "details": {
+            "sid": 1661,
+            "id": 40395,
+            "oparlKey": "40395",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40395",
+            "name": "Kosten der Sanierung des Badischen Staatstheaters",
+            "reference": "2020/1184",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2020-11-17 00:00:00",
+      "end_date": "2020-11-17 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 40524,
+          "oparlKey": "40524",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40524",
+          "name": "Wirtschaftlichkeitsbetrachtung Neubau/Sanierung Badisches Staatstheater",
+          "date": "2020-11-17 00:00:00",
+          "details": {
+            "sid": 833,
+            "id": 40524,
+            "oparlKey": "40524",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40524",
+            "name": "Wirtschaftlichkeitsbetrachtung Neubau/Sanierung Badisches Staatstheater",
+            "reference": "2020/1313",
+            "paperType": "Antrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 40524,
+          "oparlKey": "40524",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40524",
+          "name": "Wirtschaftlichkeitsbetrachtung Neubau/Sanierung Badisches Staatstheater",
+          "date": "2020-11-17 00:00:00",
+          "details": {
+            "sid": 833,
+            "id": 40524,
+            "oparlKey": "40524",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40524",
+            "name": "Wirtschaftlichkeitsbetrachtung Neubau/Sanierung Badisches Staatstheater",
+            "reference": "2020/1313",
+            "paperType": "Antrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 40524,
+          "oparlKey": "40524",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40524",
+          "name": "Wirtschaftlichkeitsbetrachtung Neubau/Sanierung Badisches Staatstheater",
+          "date": "2020-11-17 00:00:00",
+          "details": {
+            "sid": 833,
+            "id": 40524,
+            "oparlKey": "40524",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40524",
+            "name": "Wirtschaftlichkeitsbetrachtung Neubau/Sanierung Badisches Staatstheater",
+            "reference": "2020/1313",
+            "paperType": "Antrag",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2021-04-16 00:00:00",
+      "end_date": "2021-06-22 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 41126,
+          "oparlKey": "41126",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41126",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+          "date": "2021-04-16 00:00:00",
+          "details": {
+            "sid": 2598,
+            "id": 41126,
+            "oparlKey": "41126",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41126",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+            "reference": "2021/0485",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41126,
+          "oparlKey": "41126",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41126",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+          "date": "2021-04-16 00:00:00",
+          "details": {
+            "sid": 2598,
+            "id": 41126,
+            "oparlKey": "41126",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41126",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+            "reference": "2021/0485",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41130,
+          "oparlKey": "41130",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41130",
+          "name": "Bebauungsplan \"Baumeister-, Finter-, Ettlinger, Kriegs- und Meidingerstraße\", Karlsruhe-Südstadt: Aufstellungs- und Auslegungsbeschluss",
+          "date": "2021-04-19 00:00:00",
+          "details": {
+            "sid": 11693,
+            "id": 41130,
+            "oparlKey": "41130",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41130",
+            "name": "Bebauungsplan \"Baumeister-, Finter-, Ettlinger, Kriegs- und Meidingerstraße\", Karlsruhe-Südstadt: Aufstellungs- und Auslegungsbeschluss",
+            "reference": "2021/0489",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41271,
+          "oparlKey": "41271",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41271",
+          "name": "Interne Struktur und Neuaufstellung der Leitungsebene des Badischen Staatstheaters",
+          "date": "2021-05-18 00:00:00",
+          "details": {
+            "sid": 1042,
+            "id": 41271,
+            "oparlKey": "41271",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41271",
+            "name": "Interne Struktur und Neuaufstellung der Leitungsebene des Badischen Staatstheaters",
+            "reference": "2021/0613",
+            "paperType": "Antrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41271,
+          "oparlKey": "41271",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41271",
+          "name": "Interne Struktur und Neuaufstellung der Leitungsebene des Badischen Staatstheaters",
+          "date": "2021-05-18 00:00:00",
+          "details": {
+            "sid": 1042,
+            "id": 41271,
+            "oparlKey": "41271",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41271",
+            "name": "Interne Struktur und Neuaufstellung der Leitungsebene des Badischen Staatstheaters",
+            "reference": "2021/0613",
+            "paperType": "Antrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41417,
+          "oparlKey": "41417",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41417",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+          "date": "2021-06-16 00:00:00",
+          "details": {
+            "sid": 12503,
+            "id": 41417,
+            "oparlKey": "41417",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41417",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+            "reference": "2021/0485/1",
+            "paperType": "Änderungs-/Ergänzungsantrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41417,
+          "oparlKey": "41417",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41417",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+          "date": "2021-06-16 00:00:00",
+          "details": {
+            "sid": 12503,
+            "id": 41417,
+            "oparlKey": "41417",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41417",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+            "reference": "2021/0485/1",
+            "paperType": "Änderungs-/Ergänzungsantrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41435,
+          "oparlKey": "41435",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41435",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+          "date": "2021-06-21 00:00:00",
+          "details": {
+            "sid": 9667,
+            "id": 41435,
+            "oparlKey": "41435",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41435",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+            "reference": "2021/0485/3",
+            "paperType": "Änderungs-/Ergänzungsantrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41443,
+          "oparlKey": "41443",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41443",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau: \"Begrenzung und Streckung des jährlich maximalen Mittelabflusses auch im Fall weiterer Kostensteigerungen",
+          "date": "2021-06-22 00:00:00",
+          "details": {
+            "sid": 5329,
+            "id": 41443,
+            "oparlKey": "41443",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41443",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau: \"Begrenzung und Streckung des jährlich maximalen Mittelabflusses auch im Fall weiterer Kostensteigerungen",
+            "reference": "2021/0485/5",
+            "paperType": "Änderungs-/Ergänzungsantrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41443,
+          "oparlKey": "41443",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41443",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau: \"Begrenzung und Streckung des jährlich maximalen Mittelabflusses auch im Fall weiterer Kostensteigerungen",
+          "date": "2021-06-22 00:00:00",
+          "details": {
+            "sid": 5329,
+            "id": 41443,
+            "oparlKey": "41443",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41443",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau: \"Begrenzung und Streckung des jährlich maximalen Mittelabflusses auch im Fall weiterer Kostensteigerungen",
+            "reference": "2021/0485/5",
+            "paperType": "Änderungs-/Ergänzungsantrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41444,
+          "oparlKey": "41444",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41444",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+          "date": "2021-06-22 00:00:00",
+          "details": {
+            "sid": 8781,
+            "id": 41444,
+            "oparlKey": "41444",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41444",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+            "reference": "2021/0485/6",
+            "paperType": "Änderungs-/Ergänzungsantrag",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 41442,
+          "oparlKey": "41442",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41442",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+          "date": "2021-06-22 00:00:00",
+          "details": {
+            "sid": 9336,
+            "id": 41442,
+            "oparlKey": "41442",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/41442",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Neubau",
+            "reference": "2021/0485/4",
+            "paperType": "Änderungs-/Ergänzungsantrag",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2022-10-25 00:00:00",
+      "end_date": "2022-10-25 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 47695,
+          "oparlKey": "47695",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/47695",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Erweiterung",
+          "date": "2022-10-25 00:00:00",
+          "details": {
+            "sid": 11712,
+            "id": 47695,
+            "oparlKey": "47695",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/47695",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Erweiterung",
+            "reference": "2022/2228",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 47695,
+          "oparlKey": "47695",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/47695",
+          "name": "Badisches Staatstheater Karlsruhe, Sanierung und Erweiterung",
+          "date": "2022-10-25 00:00:00",
+          "details": {
+            "sid": 11712,
+            "id": 47695,
+            "oparlKey": "47695",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/47695",
+            "name": "Badisches Staatstheater Karlsruhe, Sanierung und Erweiterung",
+            "reference": "2022/2228",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2023-10-17 00:00:00",
+      "end_date": "2023-10-17 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 49404,
+          "oparlKey": "49404",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/49404",
+          "name": "HHSM - Zuschüsse Badisches Staatstheater",
+          "date": "2023-10-17 00:00:00",
+          "details": {
+            "sid": 9643,
+            "id": 49404,
+            "oparlKey": "49404",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/49404",
+            "name": "HHSM - Zuschüsse Badisches Staatstheater",
+            "reference": "DHH/2023/4109",
+            "paperType": "Haushalt THH 4100",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2023-12-15 00:00:00",
+      "end_date": "2023-12-15 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 49817,
+          "oparlKey": "49817",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/49817",
+          "name": "Aktualisierung / Neufassung des Vertrags zwischen dem Land Baden-Württemberg und der Stadt Karlsruhe über die Verwaltung des Badischen Staatstheaters (Verwaltungsstatut)",
+          "date": "2023-12-15 00:00:00",
+          "details": {
+            "sid": 4711,
+            "id": 49817,
+            "oparlKey": "49817",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/49817",
+            "name": "Aktualisierung / Neufassung des Vertrags zwischen dem Land Baden-Württemberg und der Stadt Karlsruhe über die Verwaltung des Badischen Staatstheaters (Verwaltungsstatut)",
+            "reference": "2023/1397",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 49817,
+          "oparlKey": "49817",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/49817",
+          "name": "Aktualisierung / Neufassung des Vertrags zwischen dem Land Baden-Württemberg und der Stadt Karlsruhe über die Verwaltung des Badischen Staatstheaters (Verwaltungsstatut)",
+          "date": "2023-12-15 00:00:00",
+          "details": {
+            "sid": 4711,
+            "id": 49817,
+            "oparlKey": "49817",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/49817",
+            "name": "Aktualisierung / Neufassung des Vertrags zwischen dem Land Baden-Württemberg und der Stadt Karlsruhe über die Verwaltung des Badischen Staatstheaters (Verwaltungsstatut)",
+            "reference": "2023/1397",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        }
+      ]
+    },
+    {
+      "start_date": "2025-07-25 00:00:00",
+      "end_date": "2025-07-25 00:00:00",
+      "events": [
+        {
+          "type": "Paper",
+          "id": 52203,
+          "oparlKey": "52203",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/52203",
+          "name": "Entwicklung der Kosten und Zuschauerzahlen am Badischen Staatstheater Karlsruhe",
+          "date": "2025-07-25 00:00:00",
+          "details": {
+            "sid": 4084,
+            "id": 52203,
+            "oparlKey": "52203",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/52203",
+            "name": "Entwicklung der Kosten und Zuschauerzahlen am Badischen Staatstheater Karlsruhe",
+            "reference": "2025/0724",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "total_files": 46,
+    "total_events": 45,
+    "event_types": {
+      "AgendaItem": 6,
+      "Paper": 43,
+      "Meeting": 2,
+      "Consultation": 36,
+      "Organization": 45
+    }
+  }
+}
