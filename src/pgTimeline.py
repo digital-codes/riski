@@ -136,6 +136,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
     meeting_tbl = Table('Meeting', metadata, autoload_with=engine)
     consultation_tbl = Table('Consultation', metadata, autoload_with=engine)
     organization_tbl = Table('Organization', metadata, autoload_with=engine)
+    file_tbl = Table('File', metadata, autoload_with=engine)
     
     # Load association tables
     af_assoc_tbl = Table('AgendaItem__auxiliaryFile__File', metadata, autoload_with=engine)
@@ -154,7 +155,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
         "Organization": [],
         "Person": [],
         "Body": [],
-        "Location": []
+        "Location": [],
+        "AuxFile": []  
     }
 
     # 1. Find AgendaItems connected to Files
@@ -233,6 +235,42 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             "bodySid": row.bodySid
         })
     print(f"Found {len(related_objects['Paper'])} papers related to files")  # Debugging line
+
+    # 2.b when a paper is identified, we also want to get all associated files via pf_assoc_tbl, since the paper may have multiple files, and we want to include them in the timeline
+    paper_sids = [p["sid"] for p in related_objects["Paper"]]
+    if paper_sids:
+        stmt = (
+            select(
+                file_tbl.c.sid,
+                file_tbl.c.oparlKey,
+                file_tbl.c.name,
+                file_tbl.c.filename,
+                file_tbl.c.oparlId,
+                file_tbl.c.downloadurl,
+                file_tbl.c.date
+            )
+            .select_from(
+                pf_assoc_tbl.join(
+                    file_tbl, pf_assoc_tbl.c.tgtSid == file_tbl.c.sid
+                )
+            )
+            .where(pf_assoc_tbl.c.srcSid.in_(paper_sids))
+        )
+        with engine.connect() as conn:
+            paper_files = conn.execute(stmt).fetchall()
+        
+        for row in paper_files:
+            if not any(f["sid"] == row.sid for f in related_objects["AuxFile"]):
+                related_objects["AuxFile"].append({
+                    "sid": row.sid,
+                    "oparlKey": row.oparlKey,
+                    "name": row.name,
+                    "fileName": row.filename,
+                    "oparlId": row.oparlId,
+                    "downloadurl": row.downloadurl,
+                    "date": row.date
+                })
+        print(f"Found {len(related_objects['AuxFile'])} additional files related to papers")  # Debugging line
     
     # 3. Find Meetings connected to Files
     stmt = (
@@ -470,6 +508,8 @@ def build_timeline(related_objects: Dict[str, List[Dict]]) -> List[Dict]:
             elif obj_type == "Paper":
                 date_field = obj.get("date")
             elif obj_type == "File":
+                date_field = obj.get("date")
+            elif obj_type == "AuxFile":
                 date_field = obj.get("date")
             elif obj_type == "Consultation":
                 # Consultations don't have direct dates, use related object dates
