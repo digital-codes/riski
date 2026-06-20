@@ -544,7 +544,7 @@ def group_timeline_events(timeline_events: List[Dict], window_days: int = TIMELI
     print(f"Grouped into {len(grouped)} event groups")  # Debugging line
     return grouped
 
-def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[str, Any]:
+def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold: float = 0.40) -> Dict[str, Any]:
     """
     Main function to search files by embeddings and build a timeline of related OParl events.
 
@@ -552,6 +552,7 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[s
         session: SQLAlchemy session
         query: User search query
         top_k: Number of top results to return
+        threshold: Similarity threshold for filtering results
 
     Returns:
         Dictionary containing search results and timeline
@@ -568,8 +569,8 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[s
         return {"query": query, "results": [], "timeline": [], "message": "No files with embeddings found"}
 
     # filter by threshold
-    top_scores = filter_by_threshold(file_scores, threshold = .4)
-    print(f"Top files (after thresholding): {top_scores}")  # Debugging line
+    top_scores = filter_by_threshold(file_scores, threshold=threshold)
+    print(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
     if not top_scores:
         return {"query": query, "results": [], "timeline": [], "message": "No files above similarity threshold"}
 
@@ -635,7 +636,7 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K) -> Dict[s
         }
     }
 
-def main(directory: str) -> None:
+def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
     """Main entry point for the script."""
     global EMBEDDING_API_KEY, EMBEDDING_API_URL, EMBEDDING_MODEL
     EMBEDDING_API_KEY = pr.EMB_KEY
@@ -658,7 +659,7 @@ def main(directory: str) -> None:
                 continue
 
             try:
-                results = search_and_build_timeline(session, query)
+                results = search_and_build_timeline(session, query, top_k=top_k, threshold=threshold)
 
                 # Print results
                 print(f"\nQuery: {results['query']}")
@@ -694,9 +695,10 @@ def main(directory: str) -> None:
         session.close()
 
 if __name__ == "__main__":
-    from sklearn.metrics.pairwise import cosine_similarity
-    import sys
-    if len(sys.argv) > 1:
-        main(sys.argv[1])
-    else:
-        main(os.getcwd())
+    import argparse
+    parser = argparse.ArgumentParser(description="Search OParl files by embedding similarity and build a timeline of related events.")
+    parser.add_argument("-d", "--directory", default = os.getcwd(), help="Directory to save results (default: current directory)")
+    parser.add_argument("-t", "--threshold", type=float, default=0.40, help="Similarity threshold (default: 0.40)")
+    parser.add_argument("-k", "--top_k", type=int, default=TOP_K, help="Number of top results to return (default: TOP_K)")
+    args = parser.parse_args()
+    main(args.directory, args.threshold, args.top_k)
