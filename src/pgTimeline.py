@@ -25,6 +25,50 @@ EMBEDDING_API_KEY = None
 TOP_K = 100
 TIMELINE_WINDOW_DAYS = 30
 
+# test reranking with a small local model
+try:
+    RERANKING_API_URL = pr.RERANK_URL # "http://localhost:8080/v1/chat/completions"
+    RERANKING_MODEL = pr.RERANK_MDL # "ibm-granite.granite-4.0-350m.Q4_K_M"
+    RERANKING_API_KEY = pr.RERANK_KEY # None # pr.RERANK_KEY
+except AttributeError:
+    RERANKING_API_URL = None
+    RERANKING_MODEL = None
+    RERANKING_API_KEY = None
+
+def call_reranking_model(query: str, content: str) -> float:
+    """
+    Call local reranking model and return relevance score
+    Adjust based on your actual API endpoint
+    """
+    if RERANKING_API_URL == None:
+        print("Reranking API URL not configured, skipping reranking")
+        return 1.0  # If no reranking API is configured, return a default relevance score of 1.0 (keep all results)
+    lang = "German"  # Assuming the content and query are in German
+    headers = {"Authorization": f"Bearer {RERANKING_API_KEY}"} if RERANKING_API_KEY else {}
+    rerank_prompt = f"You are a helpful assistant that scores the relevance of a {lang} text to a user's query in {lang}. Return a score between 0 and 1, where 1 means highly relevant and 0 means not relevant at all. Be strict and focus on meaning, not on word similarity."
+    #rerank_query = f"Query: {query}\n\nFile content: {content}\n\nBased on the {lang} query and content, how relevant is this {lang} content to the query? Return only a single number between 0 and 1. Do not return any text other than the number."
+    rerank_query = f"Query: {query}\n\nContent: {content}\n\nReturn only a single number between 0 and 1. Do not return any text other than the number."
+    response = requests.post(
+        RERANKING_API_URL,
+        json={"model": RERANKING_MODEL, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
+        headers=headers
+    )
+    response.raise_for_status()
+    result = response.json()
+    # Adjust based on actual API response structure
+    if isinstance(result, dict) and result.get("choices") and isinstance(result["choices"], list) and len(result["choices"]) > 0:
+        score_str = result["choices"][0].get('message', {}).get('content', '0')
+        try:
+            score = float(score_str.strip())
+            return score
+        except ValueError:
+            print(f"Could not parse relevance score from model response: '{score_str}'")
+            return 0.0
+    else:
+        print(f"Unexpected response format from reranking model: {result}")
+        return 0.0 
+
+######### 
 
 
 Base = declarative_base()
@@ -604,6 +648,8 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
 
     # find similarities and get top-k files
     file_scores = query_vector_similarity(session, query_embedding, top_k)
+    print(f"Inital Top files: {file_scores}")  # Debugging line
+
     print(f"Top files (before thresholding): {file_scores}")  # Debugging line
     if not file_scores:
         return {"query": query, "results": [], "timeline": [], "message": "No files with embeddings found"}
@@ -612,10 +658,32 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
     top_scores = filter_by_threshold(file_scores, threshold=threshold)
     print(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
     if not top_scores:
-        return {"query": query, "results": [], "timeline": [], "message": "No files above similarity threshold"}
+        return {"query": query, "top_files": [], "results": [], "timeline": [], "message": "No files above similarity threshold"}
+
+    # run reranking on all files and append rerank score to file_score 
+    top_scores_with_rerank = []
+    print(f"Running reranking on top {len(top_scores)} files")  # Debugging line
+    for oparlKey, score in top_scores:
+        print(f"Processing file {oparlKey} with initial score {score:.4f}")  # Debugging line
+        # get file content for reranking
+        file_content = session.query(File.content).filter(File.oparlKey == oparlKey).first()
+        if file_content and file_content[0]:  # Check if content exists and is not None
+            rerank_score = call_reranking_model(query, file_content[0])
+            print(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
+            if rerank_score is not None and isinstance(rerank_score, (int, float)) and rerank_score >= .8:
+                top_scores_with_rerank.append((oparlKey, score))
+                print(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+            else:
+                print(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+        else:
+            print(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
+            top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
+            print(f"No content for file {oparlKey}, keeping original score {score:.4f}")  # Debugging line
+
+    print(f"Top files after reranking: {top_scores_with_rerank}")  # Debugging line
 
     # Get Keys of top files
-    top_file_keys = [f[0] for f in top_scores]
+    top_file_keys = [f[0] for f in top_scores_with_rerank]
     print(f"Top file Keys: {top_file_keys}")  # Debugging line
 
     # first, we need to get the sid for each file key, since the associations are based on sids, not keys
@@ -634,7 +702,7 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
         "downloadurl": row.downloadurl,
         "oparlId": row.oparlId,
         "date": row.date,
-        "distance": next((score for key, score in top_scores if key == row.oparlKey), None)
+        "distance": next((score for key, score in top_scores_with_rerank if key == row.oparlKey), None)
     } for row in result]    
     print(f"Top files details: {top_files}")  # Debugging line
     
