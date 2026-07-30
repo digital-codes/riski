@@ -21,20 +21,17 @@ except ImportError:
     print("Install psycopg2: pip install psycopg2-binary")
     sys.exit(1)
 
-try:
-    import urllib.request
-except ImportError:
-    import urllib.request
+import requests
 
 LLM_URL = os.environ.get('RISKI_LLM_URL', 'http://localhost:11434')
 LLM_MDL = os.environ.get('RISKI_LLM_MDL', 'granite4.1:3b')
 MAX_RETRIES = 3
 RETRY_DELAY = 2.0
 DEFAULT_MAX_LEN = 200
-TEXT_EXCERPT_MAXLEN = 2000
+TEXT_EXCERPT_MAXLEN = 16000
 SUMMARY_TEMP = 0.2
 SUMMARY_MAX_TOKENS = 500
-API_TIMEOUT = 90
+API_TIMEOUT = 300
 
 
 def parse_args():
@@ -45,7 +42,6 @@ def parse_args():
     p.add_argument("-l", "--lang", default="de", help="language for teaser (de=German, en=English)")
     p.add_argument("--ids", type=str, nargs='*', default=[], help="file ids")
     p.add_argument("--force", action="store_true", help="overwrite existing teaser")
-    p.add_argument("--no-fallback", action="store_true", help="no fallback for API failures")
     p.add_argument("--max-bar", type=int, default=50, help="progress bar width")
     return p.parse_args()
 
@@ -63,31 +59,39 @@ def make_request(text, lang="de", maxlen=DEFAULT_MAX_LEN):
     lang_setting = lang_map.get(lang.lower(), "German")
     
     prompt = f"""Summarize this document in 3-5 sentences. 
-Maximum {maxlen} words. Focus on main topic.
-Language must be: {lang_setting} (do not mix languages)
-
-Text excerpt:
-{text[:TEXT_EXCERPT_MAXLEN] if len(text) > TEXT_EXCERPT_MAXLEN else text}
-
-Summary:"""
+    Maximum {maxlen} words. Focus on main topic.
+    Language must be: {lang_setting} (do not mix languages)
+    """
 
     payload = {
         "model": LLM_MDL,
-        "messages": [{"role": "user", "content": prompt}],
+        "messages": [{"role": "system", "content": prompt},{"role": "user", "content": f"Document text: {text[:TEXT_EXCERPT_MAXLEN] if len(text) > TEXT_EXCERPT_MAXLEN else text}"}],
         "temperature": SUMMARY_TEMP,
         "max_tokens": SUMMARY_MAX_TOKENS
     }
     
     for attempt in range(MAX_RETRIES + 1):
         try:
-            result = json.loads(urllib.request.urlopen(
-                urllib.request.Request(LLM_URL + "/v1/chat/completions",
-                                       data=json.dumps(payload).encode(),
-                                       headers={"Content-Type": "application/json"},
-                                       method="POST"),
-                timeout=90).read())
+            response = requests.post(LLM_URL + "/v1/chat/completions",
+                                     json=payload,
+                                     headers={"Content-Type": "application/json"},
+                                     timeout=API_TIMEOUT)
+            result = response.json()
 
-            response = result.get('choices', [{}])[0].get('message', {}).get('content', '').strip()
+            # need to check which type of response we got, and extract the content accordingly
+            if 'choices' in result and len(result['choices']) > 0:
+                finish_reason = result.get('choices', [{}])[0].get('finish_reason', '')
+                if finish_reason == 'length':
+                    sys.stderr.write(f"  Warning: response truncated (finish_reason=length), retrying with increased max_tokens\n")
+                    if attempt < MAX_RETRIES:
+                        payload["max_tokens"] = int(SUMMARY_MAX_TOKENS * 2)
+                        time.sleep(RETRY_DELAY * (attempt + 1))
+                        continue
+                response = result.get('choices', [{}])[0].get('message', {}).get('content', '').strip()
+            else:
+                print(f"  Unexpected API response format: {result}")
+                response = ''
+                
             response = response.strip('"""') if response.strip().startswith('"') else response
 
             if response and len(response.split()) > maxlen:
@@ -95,15 +99,22 @@ Summary:"""
             
             return response.strip()
             
-        except urllib.error.HTTPError as e:
-            sys.stderr.write(f"  HTTP {e.code} on attempt {attempt+1}: {str(e)[:80]}\n")
+        except requests.exceptions.HTTPError as e:
+            sys.stderr.write(f"  HTTP {e.response.status_code} on attempt {attempt+1}: {str(e)[:80]}\n")
             if attempt < MAX_RETRIES:
                 time.sleep(RETRY_DELAY * (attempt + 1))
                 continue
             return None
-            
+
+        except requests.exceptions.RequestException as e:
+            error_type = "network"
+            error_msg = str(e) + (" on attempt " + str(attempt+1) if attempt < MAX_RETRIES else "")
+            sys.stderr.write(f"  {error_type} error: {str(e)[:80]}{error_msg}\n")
+            if attempt < MAX_RETRIES:
+                time.sleep(RETRY_DELAY * (attempt + 1))
+                continue
         except Exception as e:
-            error_type = "network" if isinstance(e, urllib.error.URLError) else "other"
+            error_type = "other"
             error_msg = str(e) + (" on attempt " + str(attempt+1) if attempt < MAX_RETRIES else "")
             sys.stderr.write(f"  {error_type} error: {str(e)[:80]}{error_msg}\n")
             if attempt < MAX_RETRIES:
@@ -151,14 +162,14 @@ def main():
                 cursor.execute("ALTER TABLE \"File\" ADD COLUMN IF NOT EXISTS teaser TEXT")
                 cursor.execute(f"GRANT UPDATE ON \"File\" TO {user}")
             except psycopg2.errors.UndefinedColumn:
-                print("  Creating File_with_teasers table...")
-                cursor.execute("""CREATE TABLE IF NOT EXISTS File_with_teasers (id BIGINT PRIMARY KEY, content TEXT, teaser TEXT)""")
-                schema = "File_with_teasers"
+                print("  Adding column failed...")
+                raise(Exception("Failed to add teaser column to File table"))
 
         conn.commit()
 
-        if schema == "File_with_teasers":
-            cursor.execute("""SELECT id, content, length(content) FROM File_with_teasers ORDER BY length(content) DESC""")
+        # Filter out files with existing teasers before processing if not forcing
+        if not args.force:
+            cursor.execute("""SELECT id, content, length(content) FROM "File" WHERE content IS NOT NULL AND (teaser IS NULL OR LENGTH(teaser) = 0) ORDER BY length(content) DESC""")
         else:
             cursor.execute("""SELECT id, content, length(content) FROM "File" WHERE content IS NOT NULL ORDER BY length(content) DESC""")
 
@@ -169,10 +180,6 @@ def main():
 
         limit = min(count, len(files)) if count else len(files)
         files = files[:limit]
-
-        # Filter out files with existing teasers before processing if not forcing
-        if not args.force:
-            files = [f for f in files if not has_existing_teaser(cursor, f[0])]
 
         print(f"\nProcessing {len(files)} documents... (language: {args.lang})")
         if not args.force:
@@ -202,35 +209,35 @@ def main():
                 print(f"[\n[{i+1:3d}] File #{file_id}: processing ({size} bytes) [l={args.lang}]...")
                 result = make_request(text, args.lang, DEFAULT_MAX_LEN)
                 if result is None:
-                    if args.no_fallback:
-                        print(f"  API failed permanently after {MAX_RETRIES} retries")
-                        skipped_api += 1
-                        continue
-                    else:
-                        print(f"  API failed, using fallback")
+                    print(f"  API failed permanently after {MAX_RETRIES} retries")
+                    skipped_api += 1
+                    continue
                 else:
                     print(f"  Success: {len(result)} chars, {len(result.split())} words")
+                    if len(result.split()) == 1:
+                        print(f"  API returned only one word, skipping")
+                        print("result:", result)
+                        result = None
                 
                 if result:
                     teaser = result
                     if len(teaser.split()) > DEFAULT_MAX_LEN:
                         teaser = ' '.join(teaser.split()[:DEFAULT_MAX_LEN])
                 else:
-                    teaser = text[:1500].replace('\n', ' ')
+                    teaser = text[:TEXT_EXCERPT_MAXLEN].replace('\n', ' ')
 
             print(f"  {len(teaser)} chars, {len(str(teaser).split())} words")
             preview = str(teaser)[:40] + "..." if len(str(teaser)) > 40 else (str(teaser) or "None")
             print(f"  Preview: {preview}")
 
-            if schema == "File_with_teasers":
-                cursor.execute("INSERT INTO File_with_teasers(id, content, teaser) VALUES (%s, %s, %s) ON CONFLICT(id) DO UPDATE SET teaser = excluded.teaser",
-                              (file_id, str(content)[:200000], teaser))
-            else:
+            try:
                 cursor.execute("UPDATE \"File\" SET teaser = %s WHERE id = %s", (teaser, file_id))
                 updated += 1
 
-            conn.commit()
-            processed += 1
+                conn.commit()
+                processed += 1
+            except Exception as e:
+                print(f"  Failed to update file #{file_id}: {e}")
 
             pct = int(100 * processed / total) if total > 0 else 0
             bar = '#' * int(50 * processed / total) if total > 0 else '#' * 50
