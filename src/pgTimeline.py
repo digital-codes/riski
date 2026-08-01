@@ -35,6 +35,16 @@ except AttributeError:
     RERANKING_MODEL = None
     RERANKING_API_KEY = None
 
+# try to get summary model configuration
+try:
+    SUMMARY_API_URL = pr.SUMMARY_URL # "http://localhost:8080/v1/chat/completions"
+    SUMMARY_MODEL = pr.SUMMARY_MDL # "ibm-granite.granite-4.0-350m.Q4_K_M"
+    SUMMARY_API_KEY = pr.SUMMARY_KEY # None # pr.SUMMARY_KEY
+except AttributeError:
+    SUMMARY_API_URL = None
+    SUMMARY_MODEL = None
+    SUMMARY_API_KEY = None
+
 def call_reranking_model(query: str, content: str) -> float:
     """
     Call local reranking model and return relevance score
@@ -48,6 +58,7 @@ def call_reranking_model(query: str, content: str) -> float:
     rerank_prompt = f"You are a helpful assistant that scores the relevance of a {lang} text to a user's query in {lang}. Return a score between 0 and 1, where 1 means highly relevant and 0 means not relevant at all. Be strict and focus on meaning, not on word similarity."
     #rerank_query = f"Query: {query}\n\nFile content: {content}\n\nBased on the {lang} query and content, how relevant is this {lang} content to the query? Return only a single number between 0 and 1. Do not return any text other than the number."
     rerank_query = f"Query: {query}\n\nContent: {content}\n\nReturn only a single number between 0 and 1. Do not return any text other than the number."
+    print(f"Calling reranking model with query: {query} and content length: {len(content)}")  # Debugging line
     response = requests.post(
         RERANKING_API_URL,
         json={"model": RERANKING_MODEL, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
@@ -782,6 +793,35 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
                         print(f"   Download URL: {file['downloadurl']}")
                         print(f"   Date: {file['date']}")
 
+                    # generate a summary of the top files if summary model configured
+                    if SUMMARY_API_URL and SUMMARY_MODEL:
+                        summary = "\nSummary of Top Files:\n"
+                        # get the content of the top files via their oparlKey.
+                        for i, file in enumerate(results['top_files'][:5], 1):
+                            file_content = session.query(File.content).filter(File.oparlKey == file['oparlKey']).first()
+                            if file_content and file_content[0]:
+                                summary += f"\nFile {i}: {file['name']} ({file['fileName']})\n"
+                                summary += f"Content: {file_content[0][:500]}...\n"  # Show first 500 chars
+                            else:
+                                summary += f"\nFile {i}: {file['name']} ({file['fileName']})\n"
+                                summary += "Content: Not available\n"
+                        # Call summary model
+                        headers = {"Authorization": f"Bearer {SUMMARY_API_KEY}"} if SUMMARY_API_KEY else {}
+                        response = requests.post(
+                            SUMMARY_API_URL,
+                            json={"model": SUMMARY_MODEL, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text."}, {"role": "user", "content": summary}]},
+                            headers=headers
+                        )
+                        response.raise_for_status()
+                        summary_result = response.json()
+                        if isinstance(summary_result, dict) and summary_result.get("choices") and isinstance(summary_result["choices"], list) and len(summary_result["choices"]) > 0:
+                            summary_text = summary_result["choices"][0].get('message', {}).get('content', '')
+                            print(f"\nSummary of Top Files:\n{summary_text}")
+                            # append summary to results for saving
+                            results['summary'] = summary_text
+                else:
+                    print("No top files found above the similarity threshold.")
+
                 if results['timeline']:
                     print("\nTimeline of Related Events:")
                     for i, group in enumerate(results['timeline'], 1):
@@ -795,6 +835,9 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
                 with open(save_path, 'w') as f:
                     json.dump(results, f, default=str, indent=2, ensure_ascii=False)
                 print(f"\nDetailed results saved to {save_path}")
+
+
+
 
             except Exception as e:
                 print(f"Error processing query: {str(e)}")
