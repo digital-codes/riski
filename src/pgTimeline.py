@@ -61,7 +61,7 @@ def call_reranking_model(query: str, content: str) -> float:
     print(f"Calling reranking model with query: {query} and content length: {len(content)}")  # Debugging line
     response = requests.post(
         RERANKING_API_URL,
-        json={"model": RERANKING_MODEL, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
+        json={"model": RERANKING_MODEL,  "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
         headers=headers
     )
     response.raise_for_status()
@@ -801,7 +801,7 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
                             file_content = session.query(File.content).filter(File.oparlKey == file['oparlKey']).first()
                             if file_content and file_content[0]:
                                 summary += f"\nFile {i}: {file['name']} ({file['fileName']})\n"
-                                summary += f"Content: {file_content[0][:500]}...\n"  # Show first 500 chars
+                                summary += f"Content: {file_content[0][:5000]}...\n"  # Show first 5000 chars
                             else:
                                 summary += f"\nFile {i}: {file['name']} ({file['fileName']})\n"
                                 summary += "Content: Not available\n"
@@ -809,7 +809,7 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
                         headers = {"Authorization": f"Bearer {SUMMARY_API_KEY}"} if SUMMARY_API_KEY else {}
                         response = requests.post(
                             SUMMARY_API_URL,
-                            json={"model": SUMMARY_MODEL, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text."}, {"role": "user", "content": summary}]},
+                            json={"model": SUMMARY_MODEL, "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text."}, {"role": "user", "content": summary}]},
                             headers=headers
                         )
                         response.raise_for_status()
