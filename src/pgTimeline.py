@@ -824,7 +824,7 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
                         headers = {"Authorization": f"Bearer {SUMMARY_API_KEY}"} if SUMMARY_API_KEY else {}
                         response = requests.post(
                             SUMMARY_API_URL,
-                            json={"model": SUMMARY_MODEL, "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text."}, {"role": "user", "content": summary}]},
+                            json={"model": SUMMARY_MODEL, "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text. Respond in German. stay below 500 words. no emojis."}, {"role": "user", "content": summary}]},
                             headers=headers
                         )
                         # retry up to 5 times if rate limit exceeded. get delay from response headers if available, otherwise default to 5 seconds
