@@ -17,6 +17,8 @@ from sqlalchemy import create_engine  # needed for openDb
 import requests
 import private as pr
 
+import time
+
 
 # Configuration
 EMBEDDING_API_URL = None
@@ -64,6 +66,19 @@ def call_reranking_model(query: str, content: str) -> float:
         json={"model": RERANKING_MODEL,  "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
         headers=headers
     )
+    # handle 429 too many requests error by retrying after a delay. get delay from response headers if available, otherwise default to 5 seconds
+    if response.status_code == 429:
+        for attempt in range(5):  # Retry up to 5 times
+            retry_after = int(response.headers.get("Retry-After", 5))
+            print(f"Reranking model rate limit exceeded. Retrying after {retry_after} seconds...")
+            time.sleep(retry_after)
+            response = requests.post(
+                RERANKING_API_URL,
+                json={"model": RERANKING_MODEL,  "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
+                headers=headers
+            )
+            if response.status_code != 429:
+                break
     response.raise_for_status()
     result = response.json()
     # Adjust based on actual API response structure
@@ -812,6 +827,19 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
                             json={"model": SUMMARY_MODEL, "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text."}, {"role": "user", "content": summary}]},
                             headers=headers
                         )
+                        # retry up to 5 times if rate limit exceeded. get delay from response headers if available, otherwise default to 5 seconds
+                        if response.status_code == 429:
+                            for attempt in range(5):  # Retry up to 5 times
+                                retry_after = int(response.headers.get("Retry-After", 5))
+                                print(f"Summary model rate limit exceeded. Retrying after {retry_after} seconds...")
+                                time.sleep(retry_after)
+                                response = requests.post(
+                                    SUMMARY_API_URL,
+                                    json={"model": SUMMARY_MODEL, "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text."}, {"role": "user", "content": summary}]},
+                                    headers=headers
+                                )
+                                if response.status_code != 429:
+                                    break
                         response.raise_for_status()
                         summary_result = response.json()
                         if isinstance(summary_result, dict) and summary_result.get("choices") and isinstance(summary_result["choices"], list) and len(summary_result["choices"]) > 0:
