@@ -1,0 +1,882 @@
+{
+  "ob_vote": {
+    "name": "Dr. Mentrup",
+    "vote": "JA",
+    "bbox": [
+      1367,
+      444,
+      269,
+      125
+    ],
+    "color": [
+      37,
+      210,
+      234
+    ]
+  },
+  "totals": {
+    "ja": 44,
+    "nein": 4,
+    "enthaltung": 0
+  },
+  "parties": [
+    {
+      "name": "FÜR",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Kalmbach",
+          "vote": "JA",
+          "bbox": [
+            2388,
+            1342,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            240,
+            242
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Die PARTEI",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Braun",
+          "vote": "JA",
+          "bbox": [
+            2094,
+            1340,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            245,
+            247
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "SPD",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Uysal",
+          "vote": "JA",
+          "bbox": [
+            1213,
+            1340,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            248
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Tröndle",
+          "vote": "JA",
+          "bbox": [
+            1213,
+            1209,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            245
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Schmid",
+          "vote": "JA",
+          "bbox": [
+            1213,
+            1078,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            245
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dr. Fechler",
+          "vote": "JA",
+          "bbox": [
+            1213,
+            947,
+            246,
+            100
+          ],
+          "color_hsv": [
+            29,
+            243,
+            243
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Ernemann",
+          "vote": "JA",
+          "bbox": [
+            1213,
+            815,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            243
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dr.Huber",
+          "vote": "JA",
+          "bbox": [
+            1213,
+            684,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            244
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dr. Mentrup",
+          "vote": "JA",
+          "bbox": [
+            1367,
+            444,
+            269,
+            125
+          ],
+          "color_hsv": [
+            37,
+            210,
+            234
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "GRÜNE",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Wolf",
+          "vote": "JA",
+          "bbox": [
+            350,
+            1340,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            245,
+            248
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dr. Cremer",
+          "vote": "JA",
+          "bbox": [
+            75,
+            1340,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            244
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Sardarabady",
+          "vote": "JA",
+          "bbox": [
+            350,
+            1209,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            239,
+            236
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Belschner",
+          "vote": "JA",
+          "bbox": [
+            75,
+            1209,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            242,
+            243
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Klinkhardt",
+          "vote": "JA",
+          "bbox": [
+            350,
+            1078,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            242,
+            242
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Anlauf",
+          "vote": "JA",
+          "bbox": [
+            75,
+            1078,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            247
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dr. Klingert",
+          "vote": "JA",
+          "bbox": [
+            350,
+            946,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            242,
+            242
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Akbaba",
+          "vote": "JA",
+          "bbox": [
+            75,
+            946,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            245,
+            245
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dr. Heynen",
+          "vote": "JA",
+          "bbox": [
+            350,
+            815,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            243
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Löffler",
+          "vote": "JA",
+          "bbox": [
+            75,
+            815,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            246
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dujmovic",
+          "vote": "JA",
+          "bbox": [
+            350,
+            684,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            244
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Fahringer",
+          "vote": "JA",
+          "bbox": [
+            75,
+            684,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            242,
+            243
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "CDU",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Schütz, N.",
+          "vote": "JA",
+          "bbox": [
+            919,
+            1209,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            244
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Augenstein",
+          "vote": "JA",
+          "bbox": [
+            644,
+            1209,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            238,
+            235
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Schütz, K.",
+          "vote": "JA",
+          "bbox": [
+            919,
+            1078,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            244
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Kehrle",
+          "vote": "JA",
+          "bbox": [
+            644,
+            1078,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            247
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Pfannkuch",
+          "vote": "JA",
+          "bbox": [
+            919,
+            946,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            242
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dr. Dogan",
+          "vote": "JA",
+          "bbox": [
+            644,
+            946,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            243
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Dr. Müller",
+          "vote": "JA",
+          "bbox": [
+            919,
+            815,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            244
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Bunk-Merkel",
+          "vote": "JA",
+          "bbox": [
+            644,
+            815,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            242,
+            240
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Müller",
+          "vote": "JA",
+          "bbox": [
+            919,
+            684,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            247
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Hofmann",
+          "vote": "JA",
+          "bbox": [
+            644,
+            684,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            244
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "FDP/FW",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Lorenz",
+          "vote": "JA",
+          "bbox": [
+            1800,
+            1078,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            247
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Hock",
+          "vote": "JA",
+          "bbox": [
+            1800,
+            946,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            246,
+            248
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Böringer",
+          "vote": "JA",
+          "bbox": [
+            1800,
+            815,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            244
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "KAL",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Haug",
+          "vote": "JA",
+          "bbox": [
+            2682,
+            948,
+            245,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            247
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Döring",
+          "vote": "JA",
+          "bbox": [
+            2682,
+            816,
+            246,
+            102
+          ],
+          "color_hsv": [
+            29,
+            241,
+            246
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Cramer",
+          "vote": "JA",
+          "bbox": [
+            2682,
+            685,
+            245,
+            102
+          ],
+          "color_hsv": [
+            29,
+            241,
+            247
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Die Linke",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Kaufmann",
+          "vote": "JA",
+          "bbox": [
+            2388,
+            947,
+            246,
+            100
+          ],
+          "color_hsv": [
+            29,
+            243,
+            243
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Duran",
+          "vote": "JA",
+          "bbox": [
+            2388,
+            815,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            247
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Berghoff",
+          "vote": "JA",
+          "bbox": [
+            2388,
+            684,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            242,
+            243
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "Volt",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Nguyen",
+          "vote": "JA",
+          "bbox": [
+            2094,
+            946,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            245
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Geißinger",
+          "vote": "JA",
+          "bbox": [
+            2094,
+            815,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            243,
+            242
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        },
+        {
+          "name": "Gaukel",
+          "vote": "JA",
+          "bbox": [
+            2094,
+            684,
+            246,
+            101
+          ],
+          "color_hsv": [
+            29,
+            244,
+            246
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    },
+    {
+      "name": "AfD",
+      "bbox": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "members": [
+        {
+          "name": "Dr. Schmidt",
+          "vote": "NEIN",
+          "bbox": [
+            1507,
+            686,
+            245,
+            100
+          ],
+          "color_hsv": [
+            16,
+            240,
+            245
+          ],
+          "shape": "rectangle",
+          "confidence": 1.0
+        }
+      ]
+    }
+  ]
+}
