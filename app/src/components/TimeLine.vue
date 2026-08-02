@@ -14,7 +14,6 @@
           v-for="(file, index) in files" 
           :key="file.oparlKey"
           class="file-item-wrapper"
-          :class="{ 'is-hidden': !isExpanded && index >= 3 }"
         >
           <a 
             :href="file.downloadurl"
@@ -31,14 +30,6 @@
           </a>
         </div>
 
-        <!-- Toggle Button -->
-        <button 
-          v-if="files.length > 3" 
-          @click="toggleExpand"
-          class="toggle-btn"
-        >
-          {{ isExpanded ? 'Weniger anzeigen' : `Mehr anzeigen (${files.length - 3})` }}
-        </button>
       </div>
     </section>
 
@@ -100,7 +91,6 @@ const props = defineProps({
 });
 
 // State
-const isExpanded = ref(false);
 const isMobile = ref(false);
 const timelineContainer = ref(null);
 const timelineTrack = ref(null);
@@ -115,14 +105,17 @@ const openLink = (url) => {
   window.open(url, '_blank');
 };
 
-const toggleExpand = () => {
-  isExpanded.value = !isExpanded.value;
-};
 
-const scrollTimeline = (amount) => {
-  if (timelineContainer.value) {
+const scrollTimeline = (direction) => {
+  if (timelineContainer.value && timelineTrack.value) {
+    const items = timelineTrack.value.querySelectorAll('.timeline-card-item');
+    if (items.length === 0) return;
+    
+    const itemWidth = items[0].offsetWidth + 16; // Including gap
+    const scrollAmount = itemWidth * Math.sign(direction);
+    
     timelineContainer.value.scrollBy({
-      left: amount,
+      left: scrollAmount,
       behavior: 'smooth'
     });
   }
@@ -232,6 +225,11 @@ onUnmounted(() => {
   padding: 24px;
   margin-bottom: 24px;
   border: 1px solid #e5e7eb;
+}
+
+.files-list, .timeline-wrapper {
+  max-height: 25vh;
+  overflow-x: scroll;
 }
 
 .card-title {

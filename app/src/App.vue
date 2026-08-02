@@ -4,24 +4,19 @@
   <div class="wrapper">
     <TimeLine :search-data="rawData" />
   </div>
-  <div v-if="summary && summary.length > 0" class="wrapper summary">
-    <h2>Summary</h2>
-    <div v-html="markdownSummary"></div>
+  <div class="wrapper">
+  <SummaryCard v-if="summary && summary.length > 0" :summary="summary"/>
   </div>
 </template>
 
 <script setup>
 // Inline Component Definition for minimal setup
 // Normally you would move this to ./components/SearchResults.vue
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import TimeLine from './components/TimeLine.vue'; // Assuming you have this component, or you can inline it similarly if needed.
-
-import markdownIt from 'markdown-it';
-
-const md = new markdownIt();
+import SummaryCard from './components/SummaryCard.vue';
 const rawData = ref(null);
 const summary = ref(null);
-const markdownSummary = computed(() => summary.value ? md.render(summary.value) : '');
 
 onMounted(async () => {
   console.log('App Component Mounted');
