@@ -99,11 +99,11 @@ class VoteExtractor:
             'nein_color': {'h_min': 0, 'h_max': 22, 's_min': 100, 'v_min': 100},
             'nein_color_alt': {'h_min': 165, 'h_max': 180, 's_min': 100, 'v_min': 100},
             'enthaltung_color': {'h_min': 90, 'h_max': 140, 's_min': 100, 'v_min': 100},
-            'gray_color': {'s_max': 60, 'v_min': 100, 'v_max': 200},
+            'gray_color': {'s_max': 50, 'v_min': 200, 'v_max': 250},
             
             # Size thresholds
-            'party_block_max_area': 2500,  # Smaller to avoid overlap
-            'member_block_min_area': 3500,  # Larger to avoid overlap
+            'party_block_max_area': 10000,  # Party name boxes are ~9000-9200
+            'member_block_min_area': 15000,  # Member boxes are ~24000-24500
             
             # Spatial
             'column_tolerance': 50,
@@ -122,14 +122,14 @@ class VoteExtractor:
         self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         print(f"Loaded image: {self.image.shape}")
         
-        # Store image info
+        # Populate image info
+        height, width = self.image.shape[:2]
         self.results.image_info = {
-            'width': self.image.shape[1],
-            'height': self.image.shape[0],
-            'bbox': [0, 0, self.image.shape[1], self.image.shape[0]],
+            'width': width,
+            'height': height,
+            'bbox': [0, 0, width, height],
             'origin': 'top-left'
         }
-        print(f"Image size: {self.image.shape[1]}x{self.image.shape[0]}, origin: top-left")
     
     def _detect_shape(self, contour) -> str:
         """Detect shape of contour"""
@@ -376,37 +376,53 @@ class VoteExtractor:
         return None
     
     def _detect_party_and_member_blocks(self, all_contours: List) -> Tuple[List, List, List]:
-        """Detect party name blocks and member vote blocks, return all boxes"""
+        """Detect party name blocks and member vote blocks"""
         party_blocks = []
         member_blocks = []
-        all_boxes = []  # Store all detected boxes
+        all_boxes = []
         
         height, width = self.image.shape[:2]
         
-        # First, detect all colored boxes from contours
+        # Detect party names using text detection (they are text, not colored boxes)
+        party_blocks = self._detect_party_names_by_text()
+        
+        # Add party blocks to all_boxes
+        for block in party_blocks:
+            all_boxes.append({
+                'bbox': block['bbox'],
+                'color': block['color'],
+                'vote': block['vote'],
+                'shape': block['shape'],
+                'area': block['area']
+            })
+        
+        # Detect member vote blocks from colored contours
         colored_boxes = []
         for contour in all_contours:
             x, y, w, h = cv2.boundingRect(contour)
             area = cv2.contourArea(contour)
             bbox = (x, y, w, h)
-            color = self._get_dominant_color(contour)
-            vote = self._classify_vote_by_color(color)
-            shape = self._detect_shape(contour)
             
             # Filter out full-width bars (likely headers)
             if w > width * 0.8:
                 continue
             
-            box_data = {
+            # Only consider boxes below party name row (y > 680)
+            if y < 680:
+                continue
+            
+            color = self._get_dominant_color(contour)
+            vote = self._classify_vote_by_color(color)
+            shape = self._detect_shape(contour)
+            
+            colored_boxes.append({
                 'bbox': bbox,
                 'color': color,
                 'vote': vote,
                 'shape': shape,
                 'area': area,
                 'contour': contour
-            }
-            colored_boxes.append(box_data)
-            all_boxes.append(box_data)
+            })
         
         # Now detect gray boxes (absent members)
         # Gray boxes have low saturation in HSV, but they blend with background
@@ -438,6 +454,10 @@ class VoteExtractor:
             
             # Filter out full-width bars
             if w > width * 0.8:
+                continue
+            
+            # Only consider boxes below party name row (y > 680)
+            if y < 680:
                 continue
             
             # Check aspect ratio for rectangular shape
@@ -476,27 +496,120 @@ class VoteExtractor:
                     'contour': contour
                 })
         
-        # Now separate into party and member blocks by size
+        # Add member blocks
         for box in colored_boxes:
-            area = box['area']
-            if area <= self.config['party_block_max_area']:
-                party_blocks.append({
-                    'bbox': box['bbox'],
-                    'color': box['color'],
-                    'vote': box['vote'],
-                    'shape': box['shape'],
-                    'area': area
-                })
-            elif area >= self.config['member_block_min_area']:
-                member_blocks.append({
-                    'bbox': box['bbox'],
-                    'color': box['color'],
-                    'vote': box['vote'],
-                    'shape': box['shape'],
+            member_blocks.append({
+                'bbox': box['bbox'],
+                'color': box['color'],
+                'vote': box['vote'],
+                'shape': box['shape'],
+                'area': box['area']
+            })
+            
+            all_boxes.append({
+                'bbox': box['bbox'],
+                'color': box['color'],
+                'vote': box['vote'],
+                'shape': box['shape'],
+                'area': box['area']
+            })
+        
+        return party_blocks, member_blocks, all_boxes
+    
+    def _detect_party_names_by_text(self) -> List[Dict]:
+        """Detect party names by finding text in the party name row"""
+        party_blocks = []
+        
+        # Extract party name row (y=593-667 based on analysis)
+        party_row = self.image[593:667, :]
+        gray_row = cv2.cvtColor(party_row, cv2.COLOR_BGR2GRAY)
+        
+        # Apply threshold to detect text
+        _, thresh = cv2.threshold(gray_row, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        
+        # Find text contours
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Filter for text-sized contours
+        text_contours = []
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            # Text characters: small area, reasonable aspect ratio
+            if 50 <= area <= 5000 and 0.2 <= w/h <= 5:
+                text_contours.append({
+                    'bbox': (x, y, w, h),
                     'area': area
                 })
         
-        return party_blocks, member_blocks, all_boxes
+        # Sort by x position
+        text_contours.sort(key=lambda c: c['bbox'][0])
+        
+        # Group text characters into party names
+        party_names = []
+        current_group = []
+        last_x = -100
+        
+        for data in text_contours:
+            x, y, w, h = data['bbox']
+            
+            # If this contour is close to the previous one, add to current group
+            if x - last_x < 50:
+                current_group.append(data)
+            else:
+                # Save current group if it has enough characters
+                if len(current_group) >= 3:
+                    # Calculate bounding box of group
+                    min_x = min(c['bbox'][0] for c in current_group)
+                    min_y = min(c['bbox'][1] for c in current_group)
+                    max_x = max(c['bbox'][0] + c['bbox'][2] for c in current_group)
+                    max_y = max(c['bbox'][1] + c['bbox'][3] for c in current_group)
+                    
+                    party_names.append({
+                        'bbox': (min_x, min_y + 593, max_x - min_x, max_y - min_y),
+                        'char_count': len(current_group)
+                    })
+                
+                # Start new group
+                current_group = [data]
+            
+            last_x = x + w
+        
+        # Don't forget the last group
+        if len(current_group) >= 3:
+            min_x = min(c['bbox'][0] for c in current_group)
+            min_y = min(c['bbox'][1] for c in current_group)
+            max_x = max(c['bbox'][0] + c['bbox'][2] for c in current_group)
+            max_y = max(c['bbox'][1] + c['bbox'][3] for c in current_group)
+            
+            party_names.append({
+                'bbox': (min_x, min_y + 593, max_x - min_x, max_y - min_y),
+                'char_count': len(current_group)
+            })
+        
+        # Convert to party blocks format
+        for name_data in party_names:
+            x, y, w, h = name_data['bbox']
+            
+            # Extract text using OCR
+            name_text = self._extract_text((x, y, w, h))
+            
+            # Sample color from the region (will be background color)
+            region = self.image[y:y+h, x:x+w]
+            region_hsv = cv2.cvtColor(region, cv2.COLOR_BGR2HSV)
+            color = tuple(int(c) for c in np.mean(region_hsv.reshape(-1, 3), axis=0))
+            
+            party_blocks.append({
+                'bbox': (x, y, w, h),
+                'color': color,
+                'vote': 'GRAY',  # Party name boxes are neutral
+                'shape': 'rectangle',
+                'area': w * h,
+                'name': name_text
+            })
+        
+        return party_blocks
     
     def _group_by_columns(self, blocks: List, tolerance: int) -> List[List]:
         """Group blocks into columns by X position"""
@@ -661,10 +774,6 @@ class VoteExtractor:
         # Load image
         self.load_image(image_path)
         
-        return self._extract_new_format(known_parties, known_members, party_mapping, member_party_mapping)
-    
-    def _extract_new_format(self, known_parties, known_members, party_mapping, member_party_mapping) -> VoteResult:
-        """Extract from new format (donut charts)"""
         # Create color masks
         ja_mask = self._create_color_mask(self.config['ja_color'])
         nein_mask = self._create_color_mask(self.config['nein_color'])
@@ -682,11 +791,10 @@ class VoteExtractor:
         all_contours = self._find_contours(combined_mask)
         print(f"Found {len(all_contours)} contours")
         
-        # Detect donut charts
+        # Detect regions
         donuts = self._detect_donut_charts(all_contours)
         print(f"Detected {len(donuts)} donut charts")
         
-        # Detect OB box
         ob_box = self._detect_ob_box(all_contours)
         if ob_box:
             ob_name = self._extract_text(ob_box['bbox'])
@@ -702,23 +810,17 @@ class VoteExtractor:
         print(f"Detected {len(party_blocks)} party blocks, {len(member_blocks)} member blocks")
         
         # Store all detected boxes in results
-        self.results.all_boxes = [
-            {
-                'bbox': box['bbox'],
-                'color': box['color'],
-                'vote': box['vote'],
-                'shape': box['shape'],
-                'area': box['area']
-            }
-            for box in all_boxes
-        ]
+        self.results.all_boxes = all_boxes
         
-        # Assign members to parties
+        # Use member-party mapping from HTML if provided
         if member_party_mapping:
             print("Using member-party mapping from HTML data")
             self.results.parties = self._assign_members_by_known_mapping(member_blocks, member_party_mapping)
         else:
+            # Fallback to spatial assignment
             self.results.parties = self._assign_members_to_parties(party_blocks, member_blocks)
+            
+            # Apply party name mapping if provided
             if party_mapping:
                 for party in self.results.parties:
                     if party.name in party_mapping:
@@ -726,7 +828,7 @@ class VoteExtractor:
                         party.name = party_mapping[old_name]
                         print(f"Mapped party name: '{old_name}' -> '{party.name}'")
         
-        # Count totals from donuts
+        # Count totals
         self.results.totals = self._count_totals_from_donuts(donuts)
         
         # Validate names
@@ -834,19 +936,6 @@ class VoteExtractor:
                         if clean_score > 0.8:
                             score = max(score, clean_score * 0.95)
                     
-                    # Strategy 7: Direct character replacement for known OCR issues
-                    # Common: & -> é, @ -> a, # -> h, etc.
-                    ocr_replacements = {
-                        '&': 'é', '@': 'a', '#': 'h', '$': 's', '%': 'p',
-                        '0': 'o', '1': 'i', '3': 'e', '5': 's', '7': 't'
-                    }
-                    for ocr_char, correct_char in ocr_replacements.items():
-                        if ocr_char in member_name:
-                            test_name = member_name.replace(ocr_char, correct_char)
-                            test_score = fuzzy_ratio(test_name.lower(), known_name.lower())
-                            if test_score > 0.85:
-                                score = max(score, test_score * 0.95)
-                    
                     if score > best_score:
                         best_score = score
                         best_match = (known_name, party)
@@ -912,17 +1001,13 @@ class VoteExtractor:
         # Create Party objects with calculated bboxes
         parties = []
         for party_name, members in party_members.items():
-            # Calculate bbox from member positions, excluding members with (0,0,0,0) bbox
+            # Calculate bbox from member positions
             if members:
-                valid_members = [m for m in members if m.bbox != (0, 0, 0, 0)]
-                if valid_members:
-                    min_x = min(m.bbox[0] for m in valid_members)
-                    min_y = min(m.bbox[1] for m in valid_members)
-                    max_x = max(m.bbox[0] + m.bbox[2] for m in valid_members)
-                    max_y = max(m.bbox[1] + m.bbox[3] for m in valid_members)
-                    bbox = (min_x, min_y, max_x - min_x, max_y - min_y)
-                else:
-                    bbox = (0, 0, 0, 0)
+                min_x = min(m.bbox[0] for m in members)
+                min_y = min(m.bbox[1] for m in members)
+                max_x = max(m.bbox[0] + m.bbox[2] for m in members)
+                max_y = max(m.bbox[1] + m.bbox[3] for m in members)
+                bbox = (min_x, min_y, max_x - min_x, max_y - min_y)
             else:
                 bbox = (0, 0, 0, 0)
             
