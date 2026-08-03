@@ -1,0 +1,737 @@
+[
+  {
+    "group":"econ",
+    "package":"aktionsplan-city-2020-2026",
+    "title":"Aktionsplan City 2020-2026"
+  },
+  {
+    "group":"educ",
+    "package":"allgemeinbildende-schulen",
+    "title":"Allgemeinbildende Schulen"
+  },
+  {
+    "group":"soci",
+    "package":"altersstruktur-der-bevolkerung",
+    "title":"Altersstruktur der Bev\u00f6lkerung"
+  },
+  {
+    "group":"econ",
+    "package":"arbeitsmarkt",
+    "title":"Arbeitsmarkt"
+  },
+  {
+    "group":"econ",
+    "package":"armutsbekaempfung",
+    "title":"Indikatoren zum Thema Armutsbek\u00e4mpfung"
+  },
+  {
+    "group":"none",
+    "package":"badegewasser",
+    "title":"Badegew\u00e4sser"
+  },
+  {
+    "group":"tran",
+    "package":"baustellen",
+    "title":"Baustellen"
+  },
+  {
+    "group":"regi",
+    "package":"bautaetigkeit",
+    "title":"Baut\u00e4tigkeit"
+  },
+  {
+    "group":"tran",
+    "package":"behindertenparkplaetze",
+    "title":"Behindertenparkpl\u00e4tze"
+  },
+  {
+    "group":"soci",
+    "package":"bevoelkerung",
+    "title":"Bev\u00f6lkerung Quartalsbericht"
+  },
+  {
+    "group":"soci",
+    "package":"bevoelkerung-jahresbericht",
+    "title":"Bev\u00f6lkerung Jahresbericht"
+  },
+  {
+    "group":"soci",
+    "package":"bevolkerung",
+    "title":"Bev\u00f6lkerung"
+  },
+  {
+    "group":"soci",
+    "package":"bevolkerungsbewegungen",
+    "title":"Bev\u00f6lkerungsbewegungen"
+  },
+  {
+    "group":"tran",
+    "package":"bewohnerparken",
+    "title":"Bewohnerparken"
+  },
+  {
+    "group":"tran",
+    "package":"blitzer",
+    "title":"Blitzer"
+  },
+  {
+    "group":"gove",
+    "package":"bundestagswahl-2013",
+    "title":"Bundestagswahl 2013"
+  },
+  {
+    "group":"gove",
+    "package":"bundestagswahl-2017",
+    "title":"Bundestagswahl 2017"
+  },
+  {
+    "group":"tran",
+    "package":"busparkplaetze",
+    "title":"Busparkpl\u00e4tze"
+  },
+  {
+    "group":"gove",
+    "package":"daten-des-haushaltsplans-2019-2020",
+    "title":"Daten des Haushaltsplans 2019\/2020"
+  },
+  {
+    "group":"gove",
+    "package":"daten-des-haushaltsplans-2021",
+    "title":"Daten des Haushaltsplans 2021"
+  },
+  {
+    "group":"gove",
+    "package":"daten-des-haushaltsplans-2022-2023",
+    "title":"Daten des Haushaltsplans 2022\/2023"
+  },
+  {
+    "group":"econ",
+    "package":"daten-des-haushaltsplans-2024-2025",
+    "title":"Daten des Haushaltsplans 2024\/2025"
+  },
+  {
+    "group":"gove",
+    "package":"daten-und-fakten",
+    "title":"Daten und Fakten"
+  },
+  {
+    "group":"tran",
+    "package":"dynamische-infotafeln",
+    "title":"Dynamische Infotafeln"
+  },
+  {
+    "group":"tran",
+    "package":"einbahnstrassen",
+    "title":"Einbahnstrassen"
+  },
+  {
+    "group":"envi",
+    "package":"energieberichte-karlsruhe",
+    "title":"Energieberichte Karlsruhe"
+  },
+  {
+    "group":"none",
+    "package":"ergebnisbericht-burgerumfrage-2023-sport-und-bewegung",
+    "title":"Ergebnisbericht B\u00fcrgerumfrage 2023 - Sport und Bewegung"
+  },
+  {
+    "group":"none",
+    "package":"ergebnisbericht-burgerumfrage-2024-lebensqualitat-und-zukunftsfragen",
+    "title":"Ergebnisbericht B\u00fcrgerumfrage 2024 - Lebensqualit\u00e4t und Zukunftsfragen"
+  },
+  {
+    "group":"tran",
+    "package":"escooter-in-karlsruhe",
+    "title":"E-Scooter in Karlsruhe"
+  },
+  {
+    "group":"gove",
+    "package":"europawahl-2019",
+    "title":"Europawahl 2019"
+  },
+  {
+    "group":"gove",
+    "package":"europawahl-2024",
+    "title":"Europawahl und Kommunalwahl 2024"
+  },
+  {
+    "group":"none",
+    "package":"fachplane-baumkataster",
+    "title":"Fachpl\u00e4ne - Baumkataster"
+  },
+  {
+    "group":"tran",
+    "package":"fahren",
+    "title":"F\u00e4hren"
+  },
+  {
+    "group":"tran",
+    "package":"fahrrad-abstellanlagen",
+    "title":"Fahrradabstellanlagen"
+  },
+  {
+    "group":"none",
+    "package":"fahrradverleih-ritmo",
+    "title":"Fahrradverleih Ritmo"
+  },
+  {
+    "group":"tran",
+    "package":"freies-parken",
+    "title":"Freies Parken"
+  },
+  {
+    "group":"educ",
+    "package":"fremdenverkehr",
+    "title":"Fremdenverkehr"
+  },
+  {
+    "group":"tran",
+    "package":"fussgaengerzonen",
+    "title":"Fu\u00dfg\u00e4ngerzonen"
+  },
+  {
+    "group":"regi",
+    "package":"gebaude-und-wohnungen",
+    "title":"Geb\u00e4ude und Wohnungen"
+  },
+  {
+    "group":"regi",
+    "package":"gebaudegroenstruktur",
+    "title":"Geb\u00e4udegr\u00f6\u00dfenstruktur"
+  },
+  {
+    "group":"tran",
+    "package":"geschwindigkeiten",
+    "title":"Geschwindigkeiten"
+  },
+  {
+    "group":"tran",
+    "package":"geschwindigkeitsmessungen",
+    "title":"Geschwindigkeitsmessungen"
+  },
+  {
+    "group":"soci",
+    "package":"haushalte",
+    "title":"Haushalte"
+  },
+  {
+    "group":"gove",
+    "package":"haushaltsplan-2011-2012",
+    "title":"Haushaltsplan 2011\/2012"
+  },
+  {
+    "group":"gove",
+    "package":"haushaltsplan-2013-2014",
+    "title":"Haushaltsplan 2013\/2014"
+  },
+  {
+    "group":"gove",
+    "package":"haushaltsplan-2015-2016",
+    "title":"Haushaltsplan 2015\/2016"
+  },
+  {
+    "group":"gove",
+    "package":"haushaltsplan-2017-2018",
+    "title":"Haushaltsplan 2017\/2018"
+  },
+  {
+    "group":"none",
+    "package":"haushaltsplan-2019-2020",
+    "title":"Haushaltsplan 2019\/2020"
+  },
+  {
+    "group":"gove",
+    "package":"haushaltsplan-daten-2017-2018",
+    "title":"Daten des Haushaltsplans 2017\/2018"
+  },
+  {
+    "group":"envi",
+    "package":"https-www-karlsruhe-de-b3-natur_und_umwelt-umweltschutz-laerm-laermaktionsplan-de",
+    "title":"L\u00e4rmaktionsplan"
+  },
+  {
+    "group":"econ",
+    "package":"indikatoren-gleichstellung-frau-mann",
+    "title":"Indikatoren zur Gleichstellung von Frauen und M\u00e4nnern"
+  },
+  {
+    "group":"soci",
+    "package":"informationen-zum-immobilienmarkt-karlsruhe",
+    "title":"Informationen zum Immobilienmarkt Karlsruhe"
+  },
+  {
+    "group":"regi",
+    "package":"integriertes-stadtentwicklungskonzept-karlsruhe-2020",
+    "title":"Integriertes Stadtentwicklungskonzept Karlsruhe"
+  },
+  {
+    "group":"gove",
+    "package":"jahrbuch",
+    "title":"Statistisches Jahrbuch"
+  },
+  {
+    "group":"educ",
+    "package":"jahresberichte-kulturamt",
+    "title":"Jahresberichte Kulturamt"
+  },
+  {
+    "group":"heal",
+    "package":"jahresmittelwerte-zur-trinkwasserqualitat",
+    "title":"Jahresmittelwerte zur Trinkwasserqualit\u00e4t"
+  },
+  {
+    "group":"gove",
+    "package":"jahresstatistik-burgerdienste",
+    "title":"Jahresstatistik B\u00fcrgerdienste"
+  },
+  {
+    "group":"gove",
+    "package":"ka-feedback-meldungen",
+    "title":"KA-Feedback Meldungen"
+  },
+  {
+    "group":"heal",
+    "package":"karlsruher-hygienesiegel",
+    "title":"Karlsruher Hygienesiegel"
+  },
+  {
+    "group":"soci",
+    "package":"karlsruher-mietspiegel",
+    "title":"Karlsruher Mietspiegel"
+  },
+  {
+    "group":"soci",
+    "package":"kindertagesbetreuung",
+    "title":"Kindertagesbetreuung"
+  },
+  {
+    "group":"soci",
+    "package":"kindeswohlgefaehrdung",
+    "title":"Kindeswohlgef\u00e4hrdung"
+  },
+  {
+    "group":"envi",
+    "package":"klimaschutzkonzept-karlsruhe-2030",
+    "title":"Klimaschutzkonzept Karlsruhe 2030"
+  },
+  {
+    "group":"agri",
+    "package":"kontrollergebnisse-der-amtlichen-lebensmitteluberwachung",
+    "title":"Kontrollergebnisse der amtlichen Lebensmittel\u00fcberwachung"
+  },
+  {
+    "group":"just",
+    "package":"kriminalstatistik",
+    "title":"Kriminalstatistik"
+  },
+  {
+    "group":"none",
+    "package":"kulturumfrage",
+    "title":"Kulturumfrage"
+  },
+  {
+    "group":"tran",
+    "package":"kvv-fahrplandaten",
+    "title":"KVV Fahrplandaten"
+  },
+  {
+    "group":"tran",
+    "package":"kvv-nextbike",
+    "title":"KVV.nextbike-Zone"
+  },
+  {
+    "group":"gove",
+    "package":"landtagswahl-2016",
+    "title":"Landtagswahl 2016"
+  },
+  {
+    "group":"gove",
+    "package":"landtagswahl-2021",
+    "title":"Landtagswahl 2021"
+  },
+  {
+    "group":"soci",
+    "package":"lebensqualitat-in-karlsruhe",
+    "title":"Lebensqualit\u00e4t in Karlsruhe"
+  },
+  {
+    "group":"tran",
+    "package":"leihfahrrader",
+    "title":"Leihfahrr\u00e4der"
+  },
+  {
+    "group":"tran",
+    "package":"lkw-parkplatze",
+    "title":"LKW-Parkpl\u00e4tze"
+  },
+  {
+    "group":"none",
+    "package":"lubw-wetterdaten",
+    "title":"LUBW Wetterdaten"
+  },
+  {
+    "group":"envi",
+    "package":"meteorologische-daten-und-klimadaten-fur-den-raum-karlsruhe",
+    "title":"Meteorologische Daten und Klimadaten f\u00fcr den Raum Karlsruhe"
+  },
+  {
+    "group":"soci",
+    "package":"migration",
+    "title":"Migration"
+  },
+  {
+    "group":"econ",
+    "package":"minijobs",
+    "title":"Minijobs"
+  },
+  {
+    "group":"tran",
+    "package":"motorradparkplaetze",
+    "title":"Motorradparkpl\u00e4tze"
+  },
+  {
+    "group":"none",
+    "package":"nachhaltigkeit-in-karlsruhe",
+    "title":"Nachhaltigkeit in Karlsruhe"
+  },
+  {
+    "group":"tran",
+    "package":"nextbike",
+    "title":"Nextbike"
+  },
+  {
+    "group":"tran",
+    "package":"park-and-ride",
+    "title":"Park and Ride"
+  },
+  {
+    "group":"tran",
+    "package":"parken-und-mitfahren",
+    "title":"Parken und Mitfahren"
+  },
+  {
+    "group":"tran",
+    "package":"parkhaeuser",
+    "title":"Parkh\u00e4user"
+  },
+  {
+    "group":"tran",
+    "package":"parkscheiben-parkplatze",
+    "title":"Parkscheiben Parkpl\u00e4tze"
+  },
+  {
+    "group":"tran",
+    "package":"parkscheinautomaten",
+    "title":"Parkscheinautomaten"
+  },
+  {
+    "group":"tran",
+    "package":"parkscheinautomatenflachen",
+    "title":"Parkscheinautomatenfl\u00e4chen"
+  },
+  {
+    "group":"econ",
+    "package":"pendlerverflechtungen-in-karlsruhe-2009-2019",
+    "title":"Pendlerverflechtungen in Karlsruhe"
+  },
+  {
+    "group":"soci",
+    "package":"pflegestatistik",
+    "title":"Pflegestatistik"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-baulandflachen-punkthaft",
+    "title":"Points of Interest - Baulandfl\u00e4chen (punkthaft)"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-behinderteneinrichtungen",
+    "title":"Points of Interest - Behinderteneinrichtungen"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-behorden-und-offentliche-einrichtungen",
+    "title":"Points of Interest - Beh\u00f6rden und \u00f6ffentliche Einrichtungen"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-beratungsstellen",
+    "title":"Points of Interest - Beratungsstellen"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-bestattungen",
+    "title":"Points of Interest - Bestattungen"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-burgerservice",
+    "title":"Points of Interest - B\u00fcrgerservice"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-entsorgungseinrichtungen",
+    "title":"Points of Interest - Entsorgungseinrichtungen"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-essen-und-trinken",
+    "title":"Points of Interest - Essen und Trinken"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-freizeit-und-erholung",
+    "title":"Points of Interest - Freizeit und Erholung"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-gesundheit",
+    "title":"Points of Interest - Gesundheit"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-hochschulen-und-forschung",
+    "title":"Points of Interest - Hochschulen und Forschung"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-kinder-und-jugendliche",
+    "title":"Points of Interest - Kinder und Jugendliche"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-kultur",
+    "title":"Points of Interest - Kultur"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-offentlicher-nahverkehr",
+    "title":"Points of Interest - \u00d6ffentlicher Nahverkehr"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-parken-und-autoservices",
+    "title":"Points of Interest - Parken und Autoservices"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-radverkehr",
+    "title":"Points of Interest - Radverkehr"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-schulen",
+    "title":"Points of Interest - Schulen"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-senioren",
+    "title":"Points of Interest - Senioren"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-sonstige-bildungseinrichtungen",
+    "title":"Points of Interest - Sonstige Bildungseinrichtungen"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-sportanlagen",
+    "title":"Points of Interest - Sportanlagen"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-tourismus",
+    "title":"Points of Interest - Tourismus"
+  },
+  {
+    "group":"none",
+    "package":"points-of-interest-wirtschaft",
+    "title":"Points of Interest - Wirtschaft"
+  },
+  {
+    "group":"tran",
+    "package":"radnetz-stadt-karlsruhe",
+    "title":"Radnetz Stadt Karlsruhe"
+  },
+  {
+    "group":"tran",
+    "package":"radnetz_osm",
+    "title":"Radnetz OSM"
+  },
+  {
+    "group":"gove",
+    "package":"ratsinformationen",
+    "title":"Ratsinformationen"
+  },
+  {
+    "group":"tran",
+    "package":"regiomove-ports",
+    "title":"regiomove-Ports"
+  },
+  {
+    "group":"gove",
+    "package":"registrierte-hunde",
+    "title":"Registrierte Hunde"
+  },
+  {
+    "group":"soci",
+    "package":"schwerbehindertenstatistik",
+    "title":"Schwerbehindertenstatistik"
+  },
+  {
+    "group":"envi",
+    "package":"sensordaten-karlsruhe",
+    "title":"Sensordaten Smarter Friedrichsplatz Karlsruhe"
+  },
+  {
+    "group":"just",
+    "package":"sicherheitsbericht-2018",
+    "title":"Sicherheitsbericht"
+  },
+  {
+    "group":"none",
+    "package":"sicherheitsempfinden-der-bevolkerung",
+    "title":"Sicherheitsempfinden der Bev\u00f6lkerung"
+  },
+  {
+    "group":"envi",
+    "package":"solarstrom",
+    "title":"Solaranlagen der Stadt Karlsruhe"
+  },
+  {
+    "group":"educ",
+    "package":"spielflachenversorgung",
+    "title":"Spielfl\u00e4chenversorgung"
+  },
+  {
+    "group":"educ",
+    "package":"sportvereine-in-ka",
+    "title":"Sportangebot der Sportvereine in Karlsruhe"
+  },
+  {
+    "group":"none",
+    "package":"stadtentwicklungsstrategie-2035",
+    "title":"Stadtentwicklungsstrategie 2035"
+  },
+  {
+    "group":"gove",
+    "package":"stadtteile",
+    "title":"Stadtteile Stadt Karlsruhe"
+  },
+  {
+    "group":"gove",
+    "package":"stadtteilprofile",
+    "title":"Stadtteilprofile Karlsruhe"
+  },
+  {
+    "group":"tran",
+    "package":"tempozonen",
+    "title":"Tempozonen"
+  },
+  {
+    "group":"educ",
+    "package":"tourismus",
+    "title":"Tourismus Monatsbericht"
+  },
+  {
+    "group":"educ",
+    "package":"tourismus-jahresbericht",
+    "title":"Tourismus Jahresbericht"
+  },
+  {
+    "group":"envi",
+    "package":"treibhausgasbilanz-karlsruhe",
+    "title":"Treibhausgasbilanz Karlsruhe"
+  },
+  {
+    "group":"heal",
+    "package":"trinkwasseranalyse-hochbehalter-luss",
+    "title":"Trinkwasseranalyse Hochbeh\u00e4lter Luss"
+  },
+  {
+    "group":"educ",
+    "package":"ubergange-auf-weiterfuhrende-schulen",
+    "title":"\u00dcberg\u00e4nge auf weiterf\u00fchrende Schulen"
+  },
+  {
+    "group":"none",
+    "package":"ubersichtskarte-geothermieanlagen",
+    "title":"Geothermieanlagen"
+  },
+  {
+    "group":"soci",
+    "package":"umfragen-zur-karlsruher-city-2022",
+    "title":"Umfragen zur Karlsruher City 2022"
+  },
+  {
+    "group":"tran",
+    "package":"umweltzonen",
+    "title":"Umweltzonen"
+  },
+  {
+    "group":"tran",
+    "package":"veranstaltungen",
+    "title":"Veranstaltungen"
+  },
+  {
+    "group":"educ",
+    "package":"veranstaltungskalender-stadt-karlsruhe",
+    "title":"Veranstaltungskalender"
+  },
+  {
+    "group":"tran",
+    "package":"verkehrsmittelwahl-und-mobilitatsverhalten",
+    "title":"Verkehrsmittelwahl und Mobilit\u00e4tsverhalten"
+  },
+  {
+    "group":"envi",
+    "package":"wetterdaten-13-monate-ruckwirkend",
+    "title":"Wetterdaten 13 Monate r\u00fcckwirkend"
+  },
+  {
+    "group":"tran",
+    "package":"winterdienst-auto",
+    "title":"Winterdienst Auto"
+  },
+  {
+    "group":"tran",
+    "package":"winterdienst-rad",
+    "title":"Winterdienst Rad"
+  },
+  {
+    "group":"educ",
+    "package":"wochenmaerkte",
+    "title":"Wochenm\u00e4rkte"
+  },
+  {
+    "group":"soci",
+    "package":"wohngeldstatistik",
+    "title":"Wohngeldstatistik"
+  },
+  {
+    "group":"tran",
+    "package":"wohnmobilparkplaetze",
+    "title":"Wohnmobilparkpl\u00e4tze"
+  },
+  {
+    "group":"econ",
+    "package":"zensus-bevoelkerung-und-erwerbstaetigkeit",
+    "title":"Bev\u00f6lkerung und Erwerbst\u00e4tigkeit Zensus 2011"
+  },
+  {
+    "group":"soci",
+    "package":"zensus-bevoelkerungsstruktur",
+    "title":"Zensusergebnisse Bev\u00f6lkerungsstruktur in Karlsruhe"
+  },
+  {
+    "group":"regi",
+    "package":"zensus-gebaeude-und-wohnungen",
+    "title":"Geb\u00e4ude- und Wohnungen in Karlsruhe Zensus 2011"
+  },
+  {
+    "group":"regi",
+    "package":"zensus-gebaeude-und-wohnungszaehlung",
+    "title":"Zensusergebnisse Geb\u00e4ude und Wohnungen in Karlsruhe"
+  }
+]

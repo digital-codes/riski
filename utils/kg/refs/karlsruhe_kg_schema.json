@@ -1,0 +1,262 @@
+{
+  "dataset": {
+    "name": "Karlsruhe Ämter und Dienststellen KG-Konzeptschema",
+    "source": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/aemter-dienststellen",
+    "generatedAt": "2026-08-02",
+    "designContext": {
+      "module": "risKg",
+      "principles": [
+        "Reused before developed",
+        "Structure and content separation",
+        "Extensibility via SKOS concept schemes",
+        "Read focus",
+        "LLM security via Query Plan"
+      ]
+    },
+    "concepts": [
+      {
+        "id": "OrganizationUnit",
+        "label": "Organisationseinheit",
+        "description": "Generische organisatorische Einheit der Stadtverwaltung."
+      },
+      {
+        "id": "AdministrativeUnit",
+        "label": "Verwaltungseinheit",
+        "description": "Kommunale Verwaltungseinheit als fachliche Oberklasse für Ämter, Dezernate und Ortsverwaltungen."
+      },
+      {
+        "id": "Department",
+        "label": "Amt",
+        "description": "Fachamt oder Behörde der Stadtverwaltung."
+      },
+      {
+        "id": "Division",
+        "label": "Dezernat",
+        "description": "Leitungseinheit bzw. Dezernat als organisatorische Gliederungsebene."
+      },
+      {
+        "id": "Office",
+        "label": "Dienststelle",
+        "description": "Dienststelle oder lokale Verwaltungseinheit, etwa Ortsverwaltung oder Stadtamt."
+      },
+      {
+        "id": "StaffUnit",
+        "label": "Stabsstelle",
+        "description": "Querschnitts- oder Unterstützungsstelle mit spezifischem Aufgabenfokus."
+      },
+      {
+        "id": "Facility",
+        "label": "Einrichtung",
+        "description": "Öffentliche Einrichtung mit Verwaltungs- oder Kulturbetrieb, etwa Bibliothek, Museum oder Zoo."
+      },
+      {
+        "id": "Address",
+        "label": "Adresse",
+        "description": "Postanschrift eines Standorts."
+      },
+      {
+        "id": "ContactPoint",
+        "label": "Kontaktpunkt",
+        "description": "Kontaktkanal wie Telefon, E-Mail oder Webauftritt."
+      },
+      {
+        "id": "OpeningHoursSpecification",
+        "label": "Öffnungszeiten",
+        "description": "Strukturierte oder textuelle Angabe zu Öffnungs-, Sprech- oder Erreichbarkeitszeiten."
+      },
+      {
+        "id": "Responsibility",
+        "label": "Zuständigkeit",
+        "description": "Fachliche Aufgabe, Zuständigkeit oder thematische Rolle einer Einheit."
+      },
+      {
+        "id": "ServiceMode",
+        "label": "Servicemodus",
+        "description": "Art der Inanspruchnahme, etwa Terminvereinbarung, offen zugänglich oder Expressbereich."
+      }
+    ],
+    "properties": [
+      {
+        "id": "id",
+        "domain": "OrganizationUnit",
+        "range": "string",
+        "description": "Persistente URI oder lokaler Identifikator."
+      },
+      {
+        "id": "name",
+        "domain": "OrganizationUnit",
+        "range": "string",
+        "description": "Bevorzugte Bezeichnung der Einheit."
+      },
+      {
+        "id": "alternateName",
+        "domain": "OrganizationUnit",
+        "range": "string[]",
+        "description": "Alternative Namen oder Abkürzungen."
+      },
+      {
+        "id": "unitType",
+        "domain": "OrganizationUnit",
+        "range": "concept",
+        "description": "Klassifikation als Amt, Dezernat, Dienststelle, Ortsverwaltung, Einrichtung oder Stabsstelle."
+      },
+      {
+        "id": "address",
+        "domain": "OrganizationUnit",
+        "range": "Address",
+        "description": "Standortadresse der Einheit."
+      },
+      {
+        "id": "contactPoint",
+        "domain": "OrganizationUnit",
+        "range": "ContactPoint[]",
+        "description": "Kontaktmöglichkeiten der Einheit."
+      },
+      {
+        "id": "openingHours",
+        "domain": "OrganizationUnit",
+        "range": "OpeningHoursSpecification[]",
+        "description": "Öffnungs- oder Sprechzeiten, strukturiert oder als Freitext."
+      },
+      {
+        "id": "appointmentRequired",
+        "domain": "OrganizationUnit",
+        "range": "boolean",
+        "description": "Kennzeichnet, ob persönliche Vorsprache nur nach Termin möglich ist."
+      },
+      {
+        "id": "serviceMode",
+        "domain": "OrganizationUnit",
+        "range": "ServiceMode[]",
+        "description": "Zusätzliche Hinweise zur Nutzung, etwa Expressbereich oder Terminabsprache."
+      },
+      {
+        "id": "responsibilities",
+        "domain": "OrganizationUnit",
+        "range": "Responsibility[]",
+        "description": "Aufgaben- oder Zuständigkeitsbereiche der Einheit."
+      },
+      {
+        "id": "parentOrganization",
+        "domain": "OrganizationUnit",
+        "range": "OrganizationUnit",
+        "description": "Übergeordnete Einheit in der Verwaltungshierarchie."
+      },
+      {
+        "id": "subOrganization",
+        "domain": "OrganizationUnit",
+        "range": "OrganizationUnit[]",
+        "description": "Untergeordnete Einheiten."
+      },
+      {
+        "id": "sourceUrl",
+        "domain": "OrganizationUnit",
+        "range": "url",
+        "description": "Quellseite der jeweiligen Detailansicht."
+      },
+      {
+        "id": "sourceListingUrl",
+        "domain": "OrganizationUnit",
+        "range": "url",
+        "description": "Ursprüngliche Listenansicht."
+      },
+      {
+        "id": "notes",
+        "domain": "OrganizationUnit",
+        "range": "string",
+        "description": "Freitext für Hinweise, Besonderheiten oder nicht vollständig strukturierbare Angaben."
+      }
+    ],
+    "suggestedConceptSchemes": [
+      {
+        "uri": "https://example.org/kg/organization-unit-types",
+        "title": "Typen kommunaler Organisationseinheiten",
+        "concepts": [
+          "Department",
+          "Division",
+          "Office",
+          "Facility",
+          "StaffUnit"
+        ]
+      },
+      {
+        "uri": "https://example.org/kg/service-modes",
+        "title": "Servicemodi kommunaler Stellen",
+        "concepts": [
+          "appointment-only",
+          "walk-in",
+          "express-service",
+          "phone-service"
+        ]
+      }
+    ],
+    "alignment": {
+      "reuseStandards": [
+        "SKOS",
+        "FOAF",
+        "DCAT-AP",
+        "DCTERMS",
+        "schema.org"
+      ],
+      "mappingHints": {
+        "name": "skos:prefLabel / schema:name",
+        "alternateName": "skos:altLabel / schema:alternateName",
+        "responsibilities": "dcterms:subject / dcat:theme (controlled where possible)",
+        "sourceUrl": "dcterms:source",
+        "contactPoint": "schema:contactPoint",
+        "address": "schema:address",
+        "parentOrganization": "org:subOrganizationOf"
+      }
+    },
+    "sourcePagesFollowed": [
+      {
+        "name_hint": "Hauptregion der Seite anspringen",
+        "url": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/aemter-dienststellen#main",
+        "title": "Karlsruhe: Ämter und Dienststellen der Stadtverwaltung Karlsruhe",
+        "snippet": "Karlsruhe: Ämter und Dienststellen der Stadtverwaltung Karlsruhe Hauptregion der Seite anspringen eService – Ihr Anliegen bequem Online erledigen Wohnsitz elektronisch anmelden Wohnsitz elektronisch anmelden Virtuelles Amt Meldebescheinigung Meldebescheinigung Online-Zulassung über i-Kfz Online-Zulassung über i-Kfz Online-Abmeldung über i-Kfz Online-Abmeldung über i-Kfz Wunschkennzeichen beantragen oder reservieren Wunschkennzeichen beantragen oder reservieren Aufenthaltserlaubnis Aufenthaltserlaubnis Urkundenbestellung Urkundenbestellung Sperrmüll – Abholtermin vereinbaren Sperrmüll – Abholtermin vereinbaren Weiße Ware Abholtermin Weiße Ware Abholtermin Online-Termine Online-Termine Weitere Services eService 20 °C Stadt & Rathaus So ist Karlsruhe Gemeinsam Karlsruhe gestalten UNESCO City "
+      },
+      {
+        "name_hint": "Bürgermeisterinnen & Bürgermeister",
+        "url": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/buergermeisterinnen-buegermeister",
+        "title": "Karlsruhe: Bürgermeisterinnen und Bürgermeister der Stadt Karlsruhe",
+        "snippet": "Karlsruhe: Bürgermeisterinnen und Bürgermeister der Stadt Karlsruhe Hauptregion der Seite anspringen eService – Ihr Anliegen bequem Online erledigen Wohnsitz elektronisch anmelden Wohnsitz elektronisch anmelden Virtuelles Amt Meldebescheinigung Meldebescheinigung Online-Zulassung über i-Kfz Online-Zulassung über i-Kfz Online-Abmeldung über i-Kfz Online-Abmeldung über i-Kfz Wunschkennzeichen beantragen oder reservieren Wunschkennzeichen beantragen oder reservieren Aufenthaltserlaubnis Aufenthaltserlaubnis Urkundenbestellung Urkundenbestellung Sperrmüll – Abholtermin vereinbaren Sperrmüll – Abholtermin vereinbaren Weiße Ware Abholtermin Weiße Ware Abholtermin Online-Termine Online-Termine Weitere Services eService 20 °C Stadt & Rathaus So ist Karlsruhe Gemeinsam Karlsruhe gestalten UNESCO Ci"
+      },
+      {
+        "name_hint": "Gemeinderat",
+        "url": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/gemeinderat",
+        "title": "Karlsruhe: Gemeinderat in Karlsruhe",
+        "snippet": "Karlsruhe: Gemeinderat in Karlsruhe Hauptregion der Seite anspringen eService – Ihr Anliegen bequem Online erledigen Wohnsitz elektronisch anmelden Wohnsitz elektronisch anmelden Virtuelles Amt Meldebescheinigung Meldebescheinigung Online-Zulassung über i-Kfz Online-Zulassung über i-Kfz Online-Abmeldung über i-Kfz Online-Abmeldung über i-Kfz Wunschkennzeichen beantragen oder reservieren Wunschkennzeichen beantragen oder reservieren Aufenthaltserlaubnis Aufenthaltserlaubnis Urkundenbestellung Urkundenbestellung Sperrmüll – Abholtermin vereinbaren Sperrmüll – Abholtermin vereinbaren Weiße Ware Abholtermin Weiße Ware Abholtermin Online-Termine Online-Termine Weitere Services eService 20 °C Stadt & Rathaus So ist Karlsruhe Gemeinsam Karlsruhe gestalten UNESCO City of Media Arts Mit Recht - Kar"
+      },
+      {
+        "name_hint": "Stadtfinanzen",
+        "url": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/stadtfinanzen",
+        "title": "Karlsruhe: Stadtfinanzen Karlsruhe",
+        "snippet": "Karlsruhe: Stadtfinanzen Karlsruhe Hauptregion der Seite anspringen eService – Ihr Anliegen bequem Online erledigen Wohnsitz elektronisch anmelden Wohnsitz elektronisch anmelden Virtuelles Amt Meldebescheinigung Meldebescheinigung Online-Zulassung über i-Kfz Online-Zulassung über i-Kfz Online-Abmeldung über i-Kfz Online-Abmeldung über i-Kfz Wunschkennzeichen beantragen oder reservieren Wunschkennzeichen beantragen oder reservieren Aufenthaltserlaubnis Aufenthaltserlaubnis Urkundenbestellung Urkundenbestellung Sperrmüll – Abholtermin vereinbaren Sperrmüll – Abholtermin vereinbaren Weiße Ware Abholtermin Weiße Ware Abholtermin Online-Termine Online-Termine Weitere Services eService 20 °C Stadt & Rathaus So ist Karlsruhe Gemeinsam Karlsruhe gestalten UNESCO City of Media Arts Mit Recht - Karl"
+      },
+      {
+        "name_hint": "Stadtrecht",
+        "url": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/stadtrecht",
+        "title": "Karlsruhe: Karlsruher Stadtrecht",
+        "snippet": "Karlsruhe: Karlsruher Stadtrecht Hauptregion der Seite anspringen eService – Ihr Anliegen bequem Online erledigen Wohnsitz elektronisch anmelden Wohnsitz elektronisch anmelden Virtuelles Amt Meldebescheinigung Meldebescheinigung Online-Zulassung über i-Kfz Online-Zulassung über i-Kfz Online-Abmeldung über i-Kfz Online-Abmeldung über i-Kfz Wunschkennzeichen beantragen oder reservieren Wunschkennzeichen beantragen oder reservieren Aufenthaltserlaubnis Aufenthaltserlaubnis Urkundenbestellung Urkundenbestellung Sperrmüll – Abholtermin vereinbaren Sperrmüll – Abholtermin vereinbaren Weiße Ware Abholtermin Weiße Ware Abholtermin Online-Termine Online-Termine Weitere Services eService 20 °C Stadt & Rathaus So ist Karlsruhe Gemeinsam Karlsruhe gestalten UNESCO City of Media Arts Mit Recht - Karlsr"
+      },
+      {
+        "name_hint": "Wahlen",
+        "url": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/wahlen",
+        "title": "Karlsruhe: Wahlamt der Stadt Karlsruhe, Briefwahl in Karlsruhe beantragen.",
+        "snippet": "Karlsruhe: Wahlamt der Stadt Karlsruhe, Briefwahl in Karlsruhe beantragen. Hauptregion der Seite anspringen eService – Ihr Anliegen bequem Online erledigen Wohnsitz elektronisch anmelden Wohnsitz elektronisch anmelden Virtuelles Amt Meldebescheinigung Meldebescheinigung Online-Zulassung über i-Kfz Online-Zulassung über i-Kfz Online-Abmeldung über i-Kfz Online-Abmeldung über i-Kfz Wunschkennzeichen beantragen oder reservieren Wunschkennzeichen beantragen oder reservieren Aufenthaltserlaubnis Aufenthaltserlaubnis Urkundenbestellung Urkundenbestellung Sperrmüll – Abholtermin vereinbaren Sperrmüll – Abholtermin vereinbaren Weiße Ware Abholtermin Weiße Ware Abholtermin Online-Termine Online-Termine Weitere Services eService 20 °C Stadt & Rathaus So ist Karlsruhe Gemeinsam Karlsruhe gestalten UN"
+      },
+      {
+        "name_hint": "Beflaggung",
+        "url": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/beflaggung",
+        "title": "Karlsruhe: Beflaggung in Karlsruhe",
+        "snippet": "Karlsruhe: Beflaggung in Karlsruhe Hauptregion der Seite anspringen eService – Ihr Anliegen bequem Online erledigen Wohnsitz elektronisch anmelden Wohnsitz elektronisch anmelden Virtuelles Amt Meldebescheinigung Meldebescheinigung Online-Zulassung über i-Kfz Online-Zulassung über i-Kfz Online-Abmeldung über i-Kfz Online-Abmeldung über i-Kfz Wunschkennzeichen beantragen oder reservieren Wunschkennzeichen beantragen oder reservieren Aufenthaltserlaubnis Aufenthaltserlaubnis Urkundenbestellung Urkundenbestellung Sperrmüll – Abholtermin vereinbaren Sperrmüll – Abholtermin vereinbaren Weiße Ware Abholtermin Weiße Ware Abholtermin Online-Termine Online-Termine Weitere Services eService 20 °C Stadt & Rathaus So ist Karlsruhe Gemeinsam Karlsruhe gestalten UNESCO City of Media Arts Mit Recht - Karl"
+      },
+      {
+        "name_hint": "Footer der Seite anspringen",
+        "url": "https://www.karlsruhe.de/stadt-rathaus/verwaltung-stadtpolitik/aemter-dienststellen#footer",
+        "title": "Karlsruhe: Ämter und Dienststellen der Stadtverwaltung Karlsruhe",
+        "snippet": "Karlsruhe: Ämter und Dienststellen der Stadtverwaltung Karlsruhe Hauptregion der Seite anspringen eService – Ihr Anliegen bequem Online erledigen Wohnsitz elektronisch anmelden Wohnsitz elektronisch anmelden Virtuelles Amt Meldebescheinigung Meldebescheinigung Online-Zulassung über i-Kfz Online-Zulassung über i-Kfz Online-Abmeldung über i-Kfz Online-Abmeldung über i-Kfz Wunschkennzeichen beantragen oder reservieren Wunschkennzeichen beantragen oder reservieren Aufenthaltserlaubnis Aufenthaltserlaubnis Urkundenbestellung Urkundenbestellung Sperrmüll – Abholtermin vereinbaren Sperrmüll – Abholtermin vereinbaren Weiße Ware Abholtermin Weiße Ware Abholtermin Online-Termine Online-Termine Weitere Services eService 20 °C Stadt & Rathaus So ist Karlsruhe Gemeinsam Karlsruhe gestalten UNESCO City "
+      }
+    ]
+  }
+}
