@@ -1,7 +1,7 @@
 """
 curl https://api.mistral.ai/v1/ocr\
     -H "Content-Type: application/json"\
-    -H "Authorization: Bearer ${MISTRAL_API_KEY}"\
+    -H "Authorization: Bearer ${OCR_KEY}"\
     -d '{
         "document": {
             "type": "document_url",
@@ -21,8 +21,13 @@ import argparse
 import re
 import time
 
-MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY")
-MISTRAL_API_URL = "https://api.mistral.ai/v1/ocr"
+try:
+    import private as pr
+    OCR_KEY = pr.OCR_KEY
+    OCR_URL = pr.OCR_URL
+    OCR_MDL = pr.get("OCR_MDL", "mistral-ocr-latest")
+except ImportError:
+    raise ImportError("private.py not found. Please create it with the required API keys.")
 
 def perform_ocr(document_path: str) -> Dict[str, Any]:
     print(f"Performing OCR on document: {document_path}")
@@ -34,14 +39,14 @@ def perform_ocr(document_path: str) -> Dict[str, Any]:
             "type": "document_url",
             "document_url": f"data:application/pdf;base64,{base64_file}"
         },
-        "model": "mistral-ocr-latest",
+        "model": OCR_MDL,
         "include_image_base64": True
     }
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {MISTRAL_API_KEY}"
+        "Authorization": f"Bearer {OCR_KEY}"
     }
-    response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
+    response = requests.post(OCR_URL, headers=headers, data=json.dumps(payload))
     if response.status_code == 429:
 
         max_retries = 8
@@ -55,7 +60,7 @@ def perform_ocr(document_path: str) -> Dict[str, Any]:
                 delay = base_delay * (2 ** (attempt - 1))
 
             time.sleep(delay)
-            response = requests.post(MISTRAL_API_URL, headers=headers, data=json.dumps(payload))
+            response = requests.post(OCR_URL, headers=headers, data=json.dumps(payload))
 
             if response.status_code != 429:
                 break

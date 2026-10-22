@@ -10,6 +10,8 @@ from sqlalchemy import (
 # Import helper to create DB engine
 from sqlalchemy import create_engine as sa_create_engine  # needed for openDb
 
+from local_geo_matching import prepare_street_matcher
+
 
 # Copied from refs
 def openDb():
@@ -70,74 +72,103 @@ def create_streets_agendaitems_table(engine):
     return table
 
 
-def add_street_agendaitem_refs(street_table, agendaitem_table):
-    # type: (Table, Table) -> int
-    """Process all agenda items for all streets and add name matches.
+def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=500):
+    # type: (Table, Table, int) -> int
+    """Add Street -> AgendaItem relations efficiently.
 
-    This function finds all pairs where a street name appears in an agenda item name
-    and adds entries to the Streets_items_AgendaItems table.
-
-    Args:
-        street_table: SQLAlchemy Table object for Street table
-        agendaitem_table: SQLAlchemy Table object for AgendaItem table
-
-    Returns:
-        Number of new references inserted
+    Performance characteristics:
+    - compile the complete Street vocabulary once into one boundary-aware regex;
+    - preload existing relation pairs once instead of SELECT-per-match;
+    - batch INSERT and COMMIT every `progress_every` AgendaItems;
+    - print progress after each committed batch.
     """
     engine = openDb()
     metadata = MetaData()
 
-    # Ensure we have the correct table reference
     street_table = Table("Street", metadata, autoload_with=engine)
     agendaitem_table = Table("AgendaItem", metadata, autoload_with=engine)
     ref_table = Table("Streets_items_AgendaItems", metadata, autoload_with=engine)
 
     with engine.connect() as conn:
-        # Get all streets
-        street_stmt = select(street_table.c.id, street_table.c.name)
-        streets = conn.execute(street_stmt).fetchall()
+        streets = [
+            (row.id, row.name)
+            for row in conn.execute(
+                select(street_table.c.id, street_table.c.name)
+            ).fetchall()
+            if row.name
+        ]
+        matcher = prepare_street_matcher(streets)
 
-        # Get all agenda items with their names
-        agendaitem_stmt = select(agendaitem_table.c.id, agendaitem_table.c.name)
-        agendaitems = conn.execute(agendaitem_stmt).fetchall()
+        agendaitems = conn.execute(
+            select(agendaitem_table.c.id, agendaitem_table.c.name)
+            .order_by(agendaitem_table.c.id)
+        ).fetchall()
+        total = len(agendaitems)
 
-        # For each street, check all agenda items
+        existing_pairs = {
+            (int(row.street_id), int(row.agendaitem_id))
+            for row in conn.execute(
+                select(ref_table.c.street_id, ref_table.c.agendaitem_id)
+            ).fetchall()
+        }
+
         inserted_count = 0
-        for street_row in streets:
-            street_id = street_row.id
-            street_name = street_row.name
-            if not street_name:
-                continue
+        pending = []
+        processed = 0
 
-            for agendaitem_row in agendaitems:
-                agendaitem_id = agendaitem_row.id
-                agendaitem_name = agendaitem_row.name
-                if not agendaitem_name:
-                    continue
+        for agendaitem_row in agendaitems:
+            processed += 1
+            agendaitem_id = int(agendaitem_row.id)
+            agendaitem_name = agendaitem_row.name
 
-                # Check if street name is present in agenda item name
-                # Case-insensitive match
-                if street_name.lower() in agendaitem_name.lower():
-                    # Avoid duplicates
-                    check_stmt = select(ref_table.c.id).where(
-                        ref_table.c.street_id == street_id
-                    ).where(
-                        ref_table.c.agendaitem_id == agendaitem_id
-                    )
-                    existing = conn.execute(check_stmt).fetchone()
-                    if not existing:
-                        insert_stmt = ref_table.insert().values(
-                            street_id=street_id,
-                            agendaitem_id=agendaitem_id,
-                            name_match=agendaitem_name,
-                            created_at=datetime.now(timezone.utc)
-                        )
-                        conn.execute(insert_stmt)
-                        inserted_count += 1
+            if agendaitem_name:
+                # The combined regex is longest-first and finditer returns
+                # non-overlapping matches, preserving longest-match-wins.
+                matches = matcher.matches(agendaitem_name)
+                matched_street_ids = []
+                seen = set()
+                for match in matches:
+                    if match.item_id not in seen:
+                        seen.add(match.item_id)
+                        matched_street_ids.append(match.item_id)
 
+                now = datetime.now(timezone.utc)
+                for street_id in matched_street_ids:
+                    pair = (int(street_id), agendaitem_id)
+                    if pair not in existing_pairs:
+                        existing_pairs.add(pair)
+                        pending.append({
+                            "street_id":street_id,
+                            "agendaitem_id":agendaitem_id,
+                            "name_match":agendaitem_name,
+                            "created_at":now,
+                        })
+
+            if processed % progress_every == 0:
+                if pending:
+                    conn.execute(ref_table.insert(), pending)
+                    inserted_count += len(pending)
+                    pending.clear()
+                conn.commit()
+                print(
+                    f"Processed {processed}/{total} AgendaItems; "
+                    f"inserted {inserted_count} street references",
+                    flush=True,
+                )
+
+        if pending:
+            conn.execute(ref_table.insert(), pending)
+            inserted_count += len(pending)
+            pending.clear()
         conn.commit()
-        return inserted_count
 
+        if processed % progress_every != 0:
+            print(
+                f"Processed {processed}/{total} AgendaItems; "
+                f"inserted {inserted_count} street references",
+                flush=True,
+            )
+        return inserted_count
 
 def main():
     # type: () -> None

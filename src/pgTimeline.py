@@ -32,10 +32,15 @@ try:
     RERANKING_API_URL = pr.RERANK_URL # "http://localhost:8080/v1/chat/completions"
     RERANKING_MODEL = pr.RERANK_MDL # "ibm-granite.granite-4.0-350m.Q4_K_M"
     RERANKING_API_KEY = pr.RERANK_KEY # None # pr.RERANK_KEY
+    if "rerank" in RERANKING_API_URL.lower():
+        RERANK_MODE = "rerank"
+    else:
+        RERANK_MODE = "chat"
 except AttributeError:
     RERANKING_API_URL = None
     RERANKING_MODEL = None
     RERANKING_API_KEY = None
+    RERANK_MODE = None
 
 # try to get summary model configuration
 try:
@@ -47,7 +52,7 @@ except AttributeError:
     SUMMARY_MODEL = None
     SUMMARY_API_KEY = None
 
-def call_reranking_model(query: str, content: str) -> float:
+def call_reranking_chat_model(query: str, content: str) -> float:
     """
     Call local reranking model and return relevance score
     Adjust based on your actual API endpoint
@@ -93,6 +98,84 @@ def call_reranking_model(query: str, content: str) -> float:
     else:
         print(f"Unexpected response format from reranking model: {result}")
         return 0.0 
+
+def call_reranking_model(query: str, content: list[str], top_n=0) -> list[float]:
+    """
+    Call local reranking model and return relevance score
+    Adjust based on your actual API endpoint
+    """
+    if RERANKING_API_URL == None:
+        print("Reranking API URL not configured, skipping reranking")
+        return [1.0 for x in content]  # If no reranking API is configured, return a default relevance score of 1.0 (keep all results)
+    headers = {"Authorization": f"Bearer {RERANKING_API_KEY}"} if RERANKING_API_KEY else {}
+    # adjust top_n if zero
+    top_n = top_n if top_n > 0 else len(content)
+    # with reranker we don't need a prompt, just the query and the content
+    params = {"model": RERANKING_MODEL,  "random_seed": 42, 
+                      "top_n": top_n, "query": query, "documents": content, 
+                      "return_embeddings": False, "return_documents": False,
+                      "max_doc_length": 4096}
+    #print(f"Reranking model params: {params}")  # Debugging line
+    response = requests.post(
+        RERANKING_API_URL,
+        json=params,
+        headers=headers
+    )
+    # handle 429 too many requests error by retrying after a delay. get delay from response headers if available, otherwise default to 5 seconds
+    if response.status_code == 429:
+        for attempt in range(5):  # Retry up to 5 times
+            retry_after = int(response.headers.get("Retry-After", 5))
+            print(f"Reranking model rate limit exceeded. Retrying after {retry_after} seconds...")
+            time.sleep(retry_after)
+            response = requests.post(
+                RERANKING_API_URL,
+                json=params,
+                headers=headers
+            )
+            if response.status_code != 429:
+                break
+    response.raise_for_status()
+    result = response.json()
+    # Adjust based on actual API response structure
+    # llamacpp repsonse is like this:{
+    #     "model": "jina-reranker-v3.5-Q4_K_M",
+    #     "object": "list",
+    #     "results": [
+    #         {
+    #             "index": 0,
+    #             "relevance_score": 0.9999481439590454
+    #         },
+    #         {
+    #             "index": 2,
+    #             "relevance_score": 4.775548950419761e-05
+    #         }
+    #     ],
+    #     "usage": {
+    #         "prompt_tokens": 196,
+    #         "total_tokens": 196
+    #     }
+    # }
+    if isinstance(result, dict) and result.get("results") and isinstance(result["results"], list) and len(result["results"]) > 0:
+        scores = []
+        # results are ordered by best relevance first, with index indicating the original index of the document in the input list
+        # we need to reorder the scores to match the original order of the content list
+        for item in result["results"]:
+            print(f"Reranking model item: {item}")  # Debugging line
+            try:
+                index = item.get("index")
+                score = 1.0 if item.get("relevance_score") is None else float(item.get("relevance_score", 1.0))
+                scores.append((index, score))
+            except ValueError:
+                print(f"Could not parse relevance score from model response: '{item}'")
+                scores.append((index, 1.0))
+            print(f"Reranking model item: index={index}, score={score}")  # Debugging line
+        # reorder scores to match the original order of the content list
+        scores.sort(key=lambda x: x[0])
+        return [score for index, score in scores]
+    else:
+        print(f"Unexpected response format from reranking model: {result}")
+        return [1.0 for x in content]  # Return a list of default relevance scores if response format is unexpected
+
 
 ######### 
 
@@ -689,22 +772,51 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
     # run reranking on all files and append rerank score to file_score 
     top_scores_with_rerank = []
     print(f"Running reranking on top {len(top_scores)} files")  # Debugging line
-    for oparlKey, score in top_scores:
-        print(f"Processing file {oparlKey} with initial score {score:.4f}")  # Debugging line
-        # get file content for reranking
-        file_content = session.query(File.content).filter(File.oparlKey == oparlKey).first()
-        if file_content and file_content[0]:  # Check if content exists and is not None
-            rerank_score = call_reranking_model(query, file_content[0])
-            print(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
-            if rerank_score is not None and isinstance(rerank_score, (int, float)) and rerank_score >= .8:
-                top_scores_with_rerank.append((oparlKey, score))
-                print(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+
+    if RERANK_MODE == "chat":
+        for oparlKey, score in top_scores:
+            print(f"Processing file {oparlKey} with initial score {score:.4f}")  # Debugging line
+            # get file content for reranking
+            file_content = session.query(File.content).filter(File.oparlKey == oparlKey).first()
+            if file_content and file_content[0]:  # Check if content exists and is not None
+                rerank_score = call_reranking_chat_model(query, file_content[0])
+                print(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
+                if rerank_score is not None and isinstance(rerank_score, (int, float)) and rerank_score >= .8:
+                    top_scores_with_rerank.append((oparlKey, score))
+                    print(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+                else:
+                    print(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
             else:
-                print(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
-        else:
-            print(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
-            top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
-            print(f"No content for file {oparlKey}, keeping original score {score:.4f}")  # Debugging line
+                print(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
+                top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
+                print(f"No content for file {oparlKey}, keeping original score {score:.4f}")  # Debugging line
+
+        # update top_scores_with_rerank with rerank scores
+        # top_scores_with_rerank = [(top_scores[i][0], rerank_scores[i]) for i in range(len(top_scores))]
+    else:
+        # we call the real reranker with the full list of documents and the query, and it will return a list of scores for each document
+        documents = []
+        for oparlKey, score in top_scores:
+            file_content = session.query(File.content).filter(File.oparlKey == oparlKey).first()
+            if file_content and file_content[0]:  # Check if content exists and is not None
+                documents.append(file_content[0])
+            else:
+                print(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
+                documents.append("")  # Append empty string to maintain order
+        rerank_scores = call_reranking_model(query, documents, top_n=len(documents))
+        print(f"Reranking scores: {rerank_scores}")  # Debugging line
+        for i, rscore in enumerate(rerank_scores):
+            oparlKey, score = top_scores[i]
+            if rscore is None or not isinstance(rscore, (int, float)):
+                print(f"Invalid rerank score received: {rscore}, keep old score")  # Debugging line
+                top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
+            elif rscore >= .8:
+                top_scores_with_rerank.append((oparlKey, score * rscore))
+                print(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
+            else:
+                print(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
+                # reject reranked file. don't append
+        
 
     print(f"Top files after reranking: {top_scores_with_rerank}")  # Debugging line
 

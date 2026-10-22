@@ -1,166 +1,122 @@
 {
-  "query": "\"Erzähl mir etwas über den Neubau des Forum Recht\"",
+  "query": "\"wo liegt die Governance für Digitalisierung bei der Stadt Karlsruhe?\"",
   "top_files": [
     {
-      "sid": 1843,
-      "oparlKey": "620353",
-      "name": "Protokoll GR 29.09.2020 TOP 10",
-      "fileName": "00620353.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620353.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620353",
-      "date": "2020-10-23 00:00:00",
-      "distance": 0.43684399127960205
+      "sid": 39201,
+      "oparlKey": "635289",
+      "name": "BV Digitalstrategie",
+      "fileName": "00635289.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635289.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635289",
+      "date": "2022-01-17 00:00:00",
+      "distance": 0.3102213925255175
     },
     {
-      "sid": 6703,
-      "oparlKey": "601247",
-      "name": "Protokoll TOP 1.1",
-      "fileName": "00601247.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00601247.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/601247",
-      "date": "2018-02-01 00:00:00",
-      "distance": 0.3801796805751503
+      "sid": 30646,
+      "oparlKey": "635290",
+      "name": "Digitalstrategie ANLAGE",
+      "fileName": "00635290.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635290.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635290",
+      "date": "2022-01-17 00:00:00",
+      "distance": 0.30692090669509775
     },
     {
-      "sid": 11579,
-      "oparlKey": "604768",
-      "name": "TOP 2 Forum Recht",
-      "fileName": "00604768.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00604768.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/604768",
-      "date": "2018-08-31 00:00:00",
-      "distance": 0.43957802293169534
+      "sid": 39202,
+      "oparlKey": "636459",
+      "name": "Protokoll GR 22.02.2022 TOP 6",
+      "fileName": "00636459.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00636459.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/636459",
+      "date": "2022-03-11 00:00:00",
+      "distance": 0.28949997691810025
     },
     {
-      "sid": 11889,
-      "oparlKey": "619590",
-      "name": "Protokoll GR 28.07.2020",
-      "fileName": "00619590.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619590.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619590",
-      "date": "2020-09-16 00:00:00",
-      "distance": 0.41978228092193604
+      "sid": 14476,
+      "oparlKey": "647527",
+      "name": "Anfrage",
+      "fileName": "00647527.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647527.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647527",
+      "date": "2023-05-23 00:00:00",
+      "distance": 0.3018024327519443
     },
     {
-      "sid": 14375,
-      "oparlKey": "619588",
-      "name": "Protokoll GR 28.07.2020",
-      "fileName": "00619588.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619588.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619588",
-      "date": "2020-09-16 00:00:00",
-      "distance": 0.43081537301448647
+      "sid": 27231,
+      "oparlKey": "647667",
+      "name": "StN_Antrag_FDP_ITSM",
+      "fileName": "00647667.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647667.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647667",
+      "date": "2023-05-26 00:00:00",
+      "distance": 0.3087597077345674
     },
     {
-      "sid": 23194,
-      "oparlKey": "620351",
-      "name": "Protokoll GR 29.09.2020 TOP 10",
-      "fileName": "00620351.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620351.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620351",
-      "date": "2020-10-23 00:00:00",
-      "distance": 0.427695095539093
-    },
-    {
-      "sid": 31492,
-      "oparlKey": "618949",
-      "name": "Stellungnahme CDU Forum Recht",
-      "fileName": "00618949.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618949.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618949",
-      "date": "2020-07-21 00:00:00",
-      "distance": 0.4137890338897705
-    },
-    {
-      "sid": 35056,
-      "oparlKey": "619606",
-      "name": "Forum Recht Standortbetrachtung",
-      "fileName": "00619606.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619606.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619606",
-      "date": "2020-09-17 00:00:00",
-      "distance": 0.39531471701351995
-    },
-    {
-      "sid": 35095,
-      "oparlKey": "605393",
-      "name": "Protokoll TOP 2",
-      "fileName": "00605393.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00605393.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/605393",
-      "date": "2018-10-09 00:00:00",
-      "distance": 0.41279137134552
-    },
-    {
-      "sid": 35313,
-      "oparlKey": "620354",
-      "name": "Protokoll GR 29.09.2020 TOP 10",
-      "fileName": "00620354.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620354.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620354",
-      "date": "2020-10-23 00:00:00",
-      "distance": 0.442887544631958
-    },
-    {
-      "sid": 38217,
-      "oparlKey": "620352",
-      "name": "Protokoll GR 29.09.2020 TOP 10",
-      "fileName": "00620352.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620352.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620352",
-      "date": "2020-10-23 00:00:00",
-      "distance": 0.44435834884643555
-    },
-    {
-      "sid": 39611,
-      "oparlKey": "611056",
-      "name": "Antrag",
-      "fileName": "00611056.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00611056.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/611056",
-      "date": "2019-09-13 00:00:00",
-      "distance": 0.4052245020866394
-    },
-    {
-      "sid": 45047,
-      "oparlKey": "619591",
-      "name": "Protokoll GR 28.07.2020",
-      "fileName": "00619591.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619591.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619591",
-      "date": "2020-09-16 00:00:00",
-      "distance": 0.3959917662138789
-    },
-    {
-      "sid": 46517,
-      "oparlKey": "620355",
-      "name": "Protokoll GR 29.09.2020 TOP 10",
-      "fileName": "00620355.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620355.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620355",
-      "date": "2020-10-23 00:00:00",
-      "distance": 0.3956874248795156
+      "sid": 46914,
+      "oparlKey": "663776",
+      "name": "Digitale Transformation von kommunalen Services",
+      "fileName": "00663776.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00663776.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/663776",
+      "date": "2024-12-17 00:00:00",
+      "distance": 0.29364601652759337
     }
   ],
   "timeline": [
     {
-      "start_date": "2018-01-18 00:00:00",
-      "end_date": "2018-02-01 00:00:00",
+      "start_date": "2021-12-27 00:00:00",
+      "end_date": "2022-01-17 00:00:00",
       "events": [
         {
           "type": "Paper",
-          "id": 36066,
-          "oparlKey": "36066",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36066",
-          "name": "Resolution für das Forum Recht in Karlsruhe",
-          "date": "2018-01-18 00:00:00",
+          "id": 46236,
+          "oparlKey": "46236",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/46236",
+          "name": "Digitalstrategie der Stadtverwaltung Karlsruhe",
+          "date": "2021-12-27 00:00:00",
           "details": {
-            "sid": 11265,
-            "id": 36066,
-            "oparlKey": "36066",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36066",
-            "name": "Resolution für das Forum Recht in Karlsruhe",
-            "reference": "2018/0014",
+            "sid": 7747,
+            "id": 46236,
+            "oparlKey": "46236",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/46236",
+            "name": "Digitalstrategie der Stadtverwaltung Karlsruhe",
+            "reference": "2021/1528",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 46236,
+          "oparlKey": "46236",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/46236",
+          "name": "Digitalstrategie der Stadtverwaltung Karlsruhe",
+          "date": "2021-12-27 00:00:00",
+          "details": {
+            "sid": 7747,
+            "id": 46236,
+            "oparlKey": "46236",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/46236",
+            "name": "Digitalstrategie der Stadtverwaltung Karlsruhe",
+            "reference": "2021/1528",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 46236,
+          "oparlKey": "46236",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/46236",
+          "name": "Digitalstrategie der Stadtverwaltung Karlsruhe",
+          "date": "2021-12-27 00:00:00",
+          "details": {
+            "sid": 7747,
+            "id": 46236,
+            "oparlKey": "46236",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/46236",
+            "name": "Digitalstrategie der Stadtverwaltung Karlsruhe",
+            "reference": "2021/1528",
             "paperType": "Beschlussvorlage",
             "bodySid": 1
           }
@@ -168,733 +124,181 @@
         {
           "type": "AuxFile",
           "id": null,
-          "oparlKey": "601092",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/601092",
-          "name": "Resolution Forum Recht",
-          "date": "2018-01-19 00:00:00",
+          "oparlKey": "635290",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635290",
+          "name": "Digitalstrategie ANLAGE",
+          "date": "2022-01-17 00:00:00",
           "details": {
-            "sid": 39895,
-            "oparlKey": "601092",
-            "name": "Resolution Forum Recht",
-            "fileName": "00601092.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/601092",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00601092.pdf"
+            "sid": 30646,
+            "oparlKey": "635290",
+            "name": "Digitalstrategie ANLAGE",
+            "fileName": "00635290.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635290",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635290.pdf"
           }
         },
         {
           "type": "AuxFile",
           "id": null,
-          "oparlKey": "601247",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/601247",
-          "name": "Protokoll TOP 1.1",
-          "date": "2018-02-01 00:00:00",
+          "oparlKey": "635289",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635289",
+          "name": "BV Digitalstrategie",
+          "date": "2022-01-17 00:00:00",
           "details": {
-            "sid": 6703,
-            "oparlKey": "601247",
-            "name": "Protokoll TOP 1.1",
-            "fileName": "00601247.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/601247",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00601247.pdf"
+            "sid": 39201,
+            "oparlKey": "635289",
+            "name": "BV Digitalstrategie",
+            "fileName": "00635289.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635289",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635289.pdf"
           }
         }
       ]
     },
     {
-      "start_date": "2018-08-13 00:00:00",
-      "end_date": "2018-08-31 00:00:00",
+      "start_date": "2022-02-23 00:00:00",
+      "end_date": "2022-03-11 00:00:00",
       "events": [
         {
-          "type": "Paper",
-          "id": 36561,
-          "oparlKey": "36561",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36561",
-          "name": "Sachstandsbericht FORUM RECHT",
-          "date": "2018-08-13 00:00:00",
+          "type": "AuxFile",
+          "id": null,
+          "oparlKey": "636104",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/636104",
+          "name": "Abstimmungsergebnis TOP 6",
+          "date": "2022-02-23 00:00:00",
           "details": {
-            "sid": 6521,
-            "id": 36561,
-            "oparlKey": "36561",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36561",
-            "name": "Sachstandsbericht FORUM RECHT",
-            "reference": "2018/0540",
-            "paperType": "Beschlussvorlage",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 36561,
-          "oparlKey": "36561",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36561",
-          "name": "Sachstandsbericht FORUM RECHT",
-          "date": "2018-08-13 00:00:00",
-          "details": {
-            "sid": 6521,
-            "id": 36561,
-            "oparlKey": "36561",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/36561",
-            "name": "Sachstandsbericht FORUM RECHT",
-            "reference": "2018/0540",
-            "paperType": "Beschlussvorlage",
-            "bodySid": 1
+            "sid": 21534,
+            "oparlKey": "636104",
+            "name": "Abstimmungsergebnis TOP 6",
+            "fileName": "00636104.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/636104",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00636104.pdf"
           }
         },
         {
           "type": "AuxFile",
           "id": null,
-          "oparlKey": "604768",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/604768",
-          "name": "TOP 2 Forum Recht",
-          "date": "2018-08-31 00:00:00",
+          "oparlKey": "636459",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/636459",
+          "name": "Protokoll GR 22.02.2022 TOP 6",
+          "date": "2022-03-11 00:00:00",
           "details": {
-            "sid": 11579,
-            "oparlKey": "604768",
-            "name": "TOP 2 Forum Recht",
-            "fileName": "00604768.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/604768",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00604768.pdf"
+            "sid": 39202,
+            "oparlKey": "636459",
+            "name": "Protokoll GR 22.02.2022 TOP 6",
+            "fileName": "00636459.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/636459",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00636459.pdf"
           }
         }
       ]
     },
     {
-      "start_date": "2018-10-09 00:00:00",
-      "end_date": "2018-10-09 00:00:00",
+      "start_date": "2023-05-23 00:00:00",
+      "end_date": "2023-05-26 00:00:00",
       "events": [
+        {
+          "type": "Paper",
+          "id": 48663,
+          "oparlKey": "48663",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/48663",
+          "name": "Vollständige Umsetzung einer zentralen städtischen IT-Zuständigkeitsstelle",
+          "date": "2023-05-23 00:00:00",
+          "details": {
+            "sid": 4600,
+            "id": 48663,
+            "oparlKey": "48663",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/48663",
+            "name": "Vollständige Umsetzung einer zentralen städtischen IT-Zuständigkeitsstelle",
+            "reference": "2023/0585",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        },
+        {
+          "type": "Paper",
+          "id": 48663,
+          "oparlKey": "48663",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/48663",
+          "name": "Vollständige Umsetzung einer zentralen städtischen IT-Zuständigkeitsstelle",
+          "date": "2023-05-23 00:00:00",
+          "details": {
+            "sid": 4600,
+            "id": 48663,
+            "oparlKey": "48663",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/48663",
+            "name": "Vollständige Umsetzung einer zentralen städtischen IT-Zuständigkeitsstelle",
+            "reference": "2023/0585",
+            "paperType": "Anfrage",
+            "bodySid": 1
+          }
+        },
         {
           "type": "AuxFile",
           "id": null,
-          "oparlKey": "605393",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/605393",
-          "name": "Protokoll TOP 2",
-          "date": "2018-10-09 00:00:00",
+          "oparlKey": "647527",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647527",
+          "name": "Anfrage",
+          "date": "2023-05-23 00:00:00",
           "details": {
-            "sid": 35095,
-            "oparlKey": "605393",
-            "name": "Protokoll TOP 2",
-            "fileName": "00605393.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/605393",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00605393.pdf"
+            "sid": 14476,
+            "oparlKey": "647527",
+            "name": "Anfrage",
+            "fileName": "00647527.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647527",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647527.pdf"
+          }
+        },
+        {
+          "type": "AuxFile",
+          "id": null,
+          "oparlKey": "647667",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647667",
+          "name": "StN_Antrag_FDP_ITSM",
+          "date": "2023-05-26 00:00:00",
+          "details": {
+            "sid": 27231,
+            "oparlKey": "647667",
+            "name": "StN_Antrag_FDP_ITSM",
+            "fileName": "00647667.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647667",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647667.pdf"
           }
         }
       ]
     },
     {
-      "start_date": "2019-09-13 00:00:00",
-      "end_date": "2019-09-13 00:00:00",
-      "events": [
-        {
-          "type": "Paper",
-          "id": 37765,
-          "oparlKey": "37765",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/37765",
-          "name": "Standort für das \"Forum Recht\" überdenken",
-          "date": "2019-09-13 00:00:00",
-          "details": {
-            "sid": 9612,
-            "id": 37765,
-            "oparlKey": "37765",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/37765",
-            "name": "Standort für das \"Forum Recht\" überdenken",
-            "reference": "2019/0871",
-            "paperType": "Antrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "611056",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/611056",
-          "name": "Antrag",
-          "date": "2019-09-13 00:00:00",
-          "details": {
-            "sid": 39611,
-            "oparlKey": "611056",
-            "name": "Antrag",
-            "fileName": "00611056.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/611056",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00611056.pdf"
-          }
-        }
-      ]
-    },
-    {
-      "start_date": "2019-10-15 00:00:00",
-      "end_date": "2019-10-15 00:00:00",
+      "start_date": "2023-07-17 00:00:00",
+      "end_date": "2023-07-17 00:00:00",
       "events": [
         {
           "type": "AuxFile",
           "id": null,
-          "oparlKey": "611647",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/611647",
-          "name": "Stellungnahme KAL/Die PARTEI Forum Recht",
-          "date": "2019-10-15 00:00:00",
+          "oparlKey": "649015",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/649015",
+          "name": "Protokoll GR TOP 36",
+          "date": "2023-07-17 00:00:00",
           "details": {
-            "sid": 43869,
-            "oparlKey": "611647",
-            "name": "Stellungnahme KAL/Die PARTEI Forum Recht",
-            "fileName": "00611647.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/611647",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00611647.pdf"
-          }
-        }
-      ]
-    },
-    {
-      "start_date": "2019-11-28 00:00:00",
-      "end_date": "2019-11-28 00:00:00",
-      "events": [
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "612712",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/612712",
-          "name": "Protokoll GR 22.10.2020 TOP 32",
-          "date": "2019-11-28 00:00:00",
-          "details": {
-            "sid": 20933,
-            "oparlKey": "612712",
-            "name": "Protokoll GR 22.10.2020 TOP 32",
-            "fileName": "00612712.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/612712",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00612712.pdf"
-          }
-        }
-      ]
-    },
-    {
-      "start_date": "2020-05-27 00:00:00",
-      "end_date": "2020-10-23 00:00:00",
-      "events": [
-        {
-          "type": "Paper",
-          "id": 39855,
-          "oparlKey": "39855",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/39855",
-          "name": "Neue Prüfung von Standorten für das Forum Recht",
-          "date": "2020-05-27 00:00:00",
-          "details": {
-            "sid": 7442,
-            "id": 39855,
-            "oparlKey": "39855",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/39855",
-            "name": "Neue Prüfung von Standorten für das Forum Recht",
-            "reference": "2020/0647",
-            "paperType": "Antrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 39855,
-          "oparlKey": "39855",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/39855",
-          "name": "Neue Prüfung von Standorten für das Forum Recht",
-          "date": "2020-05-27 00:00:00",
-          "details": {
-            "sid": 7442,
-            "id": 39855,
-            "oparlKey": "39855",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/39855",
-            "name": "Neue Prüfung von Standorten für das Forum Recht",
-            "reference": "2020/0647",
-            "paperType": "Antrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "617824",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/617824",
-          "name": "Antrag",
-          "date": "2020-05-27 00:00:00",
-          "details": {
-            "sid": 6838,
-            "oparlKey": "617824",
-            "name": "Antrag",
-            "fileName": "00617824.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/617824",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00617824.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "618493",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618493",
-          "name": "Stellungnahme GRÜNE Forum Recht",
-          "date": "2020-06-26 00:00:00",
-          "details": {
-            "sid": 38216,
-            "oparlKey": "618493",
-            "name": "Stellungnahme GRÜNE Forum Recht",
-            "fileName": "00618493.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618493",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618493.pdf"
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 40122,
-          "oparlKey": "40122",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40122",
-          "name": "Standort für das \"Forum Recht\" überdenken",
-          "date": "2020-07-17 00:00:00",
-          "details": {
-            "sid": 2378,
-            "id": 40122,
-            "oparlKey": "40122",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40122",
-            "name": "Standort für das \"Forum Recht\" überdenken",
-            "reference": "2020/0913",
-            "paperType": "Änderungs-/Ergänzungsantrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "618873",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618873",
-          "name": "Änderungs-/Ergänzungsantrag",
-          "date": "2020-07-17 00:00:00",
-          "details": {
-            "sid": 15072,
-            "oparlKey": "618873",
-            "name": "Änderungs-/Ergänzungsantrag",
-            "fileName": "00618873.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618873",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618873.pdf"
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 40133,
-          "oparlKey": "40133",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40133",
-          "name": "Standort für das Forum Recht",
-          "date": "2020-07-20 00:00:00",
-          "details": {
-            "sid": 6581,
-            "id": 40133,
-            "oparlKey": "40133",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40133",
-            "name": "Standort für das Forum Recht",
-            "reference": "2020/0924",
-            "paperType": "Änderungs-/Ergänzungsantrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 40133,
-          "oparlKey": "40133",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40133",
-          "name": "Standort für das Forum Recht",
-          "date": "2020-07-20 00:00:00",
-          "details": {
-            "sid": 6581,
-            "id": 40133,
-            "oparlKey": "40133",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40133",
-            "name": "Standort für das Forum Recht",
-            "reference": "2020/0924",
-            "paperType": "Änderungs-/Ergänzungsantrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 40133,
-          "oparlKey": "40133",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40133",
-          "name": "Standort für das Forum Recht",
-          "date": "2020-07-20 00:00:00",
-          "details": {
-            "sid": 6581,
-            "id": 40133,
-            "oparlKey": "40133",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40133",
-            "name": "Standort für das Forum Recht",
-            "reference": "2020/0924",
-            "paperType": "Änderungs-/Ergänzungsantrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "618948",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618948",
-          "name": "Stellungnahme FW-FÜR Forum Recht",
-          "date": "2020-07-21 00:00:00",
-          "details": {
-            "sid": 15073,
-            "oparlKey": "618948",
-            "name": "Stellungnahme FW-FÜR Forum Recht",
-            "fileName": "00618948.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618948",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618948.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "618949",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618949",
-          "name": "Stellungnahme CDU Forum Recht",
-          "date": "2020-07-21 00:00:00",
-          "details": {
-            "sid": 31492,
-            "oparlKey": "618949",
-            "name": "Stellungnahme CDU Forum Recht",
-            "fileName": "00618949.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618949",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618949.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "618934",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618934",
-          "name": "Änderungs-/Ergänzungsantrag",
-          "date": "2020-07-21 00:00:00",
-          "details": {
-            "sid": 35312,
-            "oparlKey": "618934",
-            "name": "Änderungs-/Ergänzungsantrag",
-            "fileName": "00618934.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618934",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618934.pdf"
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 40145,
-          "oparlKey": "40145",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40145",
-          "name": "Standort für das \"Forum Recht\" überdenken",
-          "date": "2020-07-27 00:00:00",
-          "details": {
-            "sid": 11374,
-            "id": 40145,
-            "oparlKey": "40145",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40145",
-            "name": "Standort für das \"Forum Recht\" überdenken",
-            "reference": "2020/0935",
-            "paperType": "Änderungs-/Ergänzungsantrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 40145,
-          "oparlKey": "40145",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40145",
-          "name": "Standort für das \"Forum Recht\" überdenken",
-          "date": "2020-07-27 00:00:00",
-          "details": {
-            "sid": 11374,
-            "id": 40145,
-            "oparlKey": "40145",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40145",
-            "name": "Standort für das \"Forum Recht\" überdenken",
-            "reference": "2020/0935",
-            "paperType": "Änderungs-/Ergänzungsantrag",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619009",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619009",
-          "name": "Änderungs-/Ergänzungsantrag",
-          "date": "2020-07-27 00:00:00",
-          "details": {
-            "sid": 20084,
-            "oparlKey": "619009",
-            "name": "Änderungs-/Ergänzungsantrag",
-            "fileName": "00619009.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619009",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619009.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619033",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619033",
-          "name": "KAL Forum Recht - Stellungnahme",
-          "date": "2020-07-28 00:00:00",
-          "details": {
-            "sid": 1162,
-            "oparlKey": "619033",
-            "name": "KAL Forum Recht - Stellungnahme",
-            "fileName": "00619033.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619033",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619033.pdf"
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 40187,
-          "oparlKey": "40187",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40187",
-          "name": "Forum Recht - Standortbetrachtung",
-          "date": "2020-08-21 00:00:00",
-          "details": {
-            "sid": 6797,
-            "id": 40187,
-            "oparlKey": "40187",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40187",
-            "name": "Forum Recht - Standortbetrachtung",
-            "reference": "2020/0977",
-            "paperType": "Beschlussvorlage",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "Paper",
-          "id": 40187,
-          "oparlKey": "40187",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40187",
-          "name": "Forum Recht - Standortbetrachtung",
-          "date": "2020-08-21 00:00:00",
-          "details": {
-            "sid": 6797,
-            "id": 40187,
-            "oparlKey": "40187",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/40187",
-            "name": "Forum Recht - Standortbetrachtung",
-            "reference": "2020/0977",
-            "paperType": "Beschlussvorlage",
-            "bodySid": 1
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619589",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619589",
-          "name": "Protokoll GR 28.07.2020",
-          "date": "2020-09-16 00:00:00",
-          "details": {
-            "sid": 15074,
-            "oparlKey": "619589",
-            "name": "Protokoll GR 28.07.2020",
-            "fileName": "00619589.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619589",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619589.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619590",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619590",
-          "name": "Protokoll GR 28.07.2020",
-          "date": "2020-09-16 00:00:00",
-          "details": {
-            "sid": 11889,
-            "oparlKey": "619590",
-            "name": "Protokoll GR 28.07.2020",
-            "fileName": "00619590.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619590",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619590.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619588",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619588",
-          "name": "Protokoll GR 28.07.2020",
-          "date": "2020-09-16 00:00:00",
-          "details": {
-            "sid": 14375,
-            "oparlKey": "619588",
-            "name": "Protokoll GR 28.07.2020",
-            "fileName": "00619588.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619588",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619588.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619591",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619591",
-          "name": "Protokoll GR 28.07.2020",
-          "date": "2020-09-16 00:00:00",
-          "details": {
-            "sid": 45047,
-            "oparlKey": "619591",
-            "name": "Protokoll GR 28.07.2020",
-            "fileName": "00619591.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619591",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619591.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619606",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619606",
-          "name": "Forum Recht Standortbetrachtung",
-          "date": "2020-09-17 00:00:00",
-          "details": {
-            "sid": 35056,
-            "oparlKey": "619606",
-            "name": "Forum Recht Standortbetrachtung",
-            "fileName": "00619606.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619606",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619606.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619806",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619806",
-          "name": "TOP 10_Forum Recht_Präsentation",
-          "date": "2020-09-29 00:00:00",
-          "details": {
-            "sid": 36153,
-            "oparlKey": "619806",
-            "name": "TOP 10_Forum Recht_Präsentation",
-            "fileName": "00619806.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619806",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619806.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619826",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619826",
-          "name": "Abstimmungsergebnis mündl. ÄAntrag Bebauung Ettlinger Tor",
-          "date": "2020-09-30 00:00:00",
-          "details": {
-            "sid": 15075,
-            "oparlKey": "619826",
-            "name": "Abstimmungsergebnis mündl. ÄAntrag Bebauung Ettlinger Tor",
-            "fileName": "00619826.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619826",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619826.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "619827",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619827",
-          "name": "Abstimmungsergebnis TOP 10 mündl. ÄAntrag BGH",
-          "date": "2020-09-30 00:00:00",
-          "details": {
-            "sid": 24142,
-            "oparlKey": "619827",
-            "name": "Abstimmungsergebnis TOP 10 mündl. ÄAntrag BGH",
-            "fileName": "00619827.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619827",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00619827.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "620353",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620353",
-          "name": "Protokoll GR 29.09.2020 TOP 10",
-          "date": "2020-10-23 00:00:00",
-          "details": {
-            "sid": 1843,
-            "oparlKey": "620353",
-            "name": "Protokoll GR 29.09.2020 TOP 10",
-            "fileName": "00620353.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620353",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620353.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "620354",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620354",
-          "name": "Protokoll GR 29.09.2020 TOP 10",
-          "date": "2020-10-23 00:00:00",
-          "details": {
-            "sid": 35313,
-            "oparlKey": "620354",
-            "name": "Protokoll GR 29.09.2020 TOP 10",
-            "fileName": "00620354.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620354",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620354.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "620351",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620351",
-          "name": "Protokoll GR 29.09.2020 TOP 10",
-          "date": "2020-10-23 00:00:00",
-          "details": {
-            "sid": 23194,
-            "oparlKey": "620351",
-            "name": "Protokoll GR 29.09.2020 TOP 10",
-            "fileName": "00620351.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620351",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620351.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "620352",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620352",
-          "name": "Protokoll GR 29.09.2020 TOP 10",
-          "date": "2020-10-23 00:00:00",
-          "details": {
-            "sid": 38217,
-            "oparlKey": "620352",
-            "name": "Protokoll GR 29.09.2020 TOP 10",
-            "fileName": "00620352.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620352",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620352.pdf"
-          }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "620355",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620355",
-          "name": "Protokoll GR 29.09.2020 TOP 10",
-          "date": "2020-10-23 00:00:00",
-          "details": {
-            "sid": 46517,
-            "oparlKey": "620355",
-            "name": "Protokoll GR 29.09.2020 TOP 10",
-            "fileName": "00620355.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620355",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620355.pdf"
+            "sid": 27232,
+            "oparlKey": "649015",
+            "name": "Protokoll GR TOP 36",
+            "fileName": "00649015.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/649015",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00649015.pdf"
           }
         }
       ]
     }
   ],
   "stats": {
-    "total_files": 14,
-    "total_events": 42,
+    "total_files": 6,
+    "total_events": 12,
     "event_types": {
-      "Paper": 14,
-      "Consultation": 13,
-      "Organization": 16,
-      "AuxFile": 28
+      "Paper": 5,
+      "Consultation": 2,
+      "Organization": 3,
+      "AuxFile": 7
     }
   },
-  "summary": "### **Zusammenfassung der Protokolle zum „Forum Recht“ in Karlsruhe (2018–2020)**\n\n#### **1. Chronologische Entwicklung & Kernpunkte**\nDas **„Forum Recht“** ist ein bundesweites Projekt zur Stärkung Karlsruhes als *„Residenz des Rechts“* und soll als kulturelle und rechtspolitische Institution neben dem **Bundesgerichtshof (BGH)** entstehen. Die Diskussionen im Gemeinderat (2018–2020) drehten sich vor allem um **Standortwahl, Naturschutz, Bürgerbeteiligung und rechtliche Rahmenbedingungen**.\n\n---\n\n### **2. Wichtige Meilensteine & Beschlüsse**\n\n#### **A. 23. Januar 2018 (Gemeinderat, TOP 1.1)**\n- **Beschluss**: Der Gemeinderat **begrüßt einstimmig** (37 Ja, 3 Enthaltungen) die Machbarkeitsstudie für das „Forum Recht“ und fordert den Bundestag auf, die Umsetzung zu unterstützen.\n- **Hintergrund**:\n  - Projekt ist im **Koalitionsvertrag (CDU/SPD)** verankert.\n  - Ziel: **Bundesmittel sichern** und Standort am **BGH-Gelände** (Erbgroßherzogliches Palais) festlegen.\n  - Symbolische Bedeutung: Karlsruhe als *„Rechtsmetropole“* stärken (z. B. durch Besucherresonanz am BGH).\n\n#### **B. 11. September 2018 (Hauptausschuss, TOP 2)**\n- **Thema**: Aktueller Stand des Projekts.\n- **Beschluss**: **Kenntnisnahme** des Hauptausschusses.\n- **Wichtige Punkte**:\n  - **Standort**: BGH-Gelände (Denkmalschutzgebiet).\n  - **Finanzierung**: 150.000 € Fördergelder, Förderverein gegründet.\n  - **Zeitplan**: Baubeginn **2019**, Fertigstellung **2025/26**.\n\n#### **C. 28. Juli 2020 (Gemeinderat, TOP 2 & 10)**\n- **Kritische Diskussionen** über den Standort:\n  - **Befürworter (CDU, SPD, AfD)**:\n    - Standort am BGH als **logisch und symbolträchtig** (bestehende Bebauungsrechte, Nähe zu Gerichten).\n    - Projekt stärkt Karlsruhes Image als *„Rechtsstadt“*.\n  - **Gegner (GRÜNE, KAL/Die PARTEI, Teile der FDP/DIE LINKE)**:\n    - **Naturschutz**: Gefährdung von Bäumen und Grünflächen (historischer Park am BGH).\n    - **Klimaneutralität**: Forderung nach nachhaltiger Bauweise.\n    - **Bürgerbeteiligung**: Vorwürfe mangelnder Transparenz.\n    - **Alternative Standorte**: Prüfung von **Markgräflischem Palais** oder **Ettlinger Tor** gefordert.\n- **Beschluss**:\n  - **Anträge auf Alternativstandorte oder Verzicht auf Bebauung** wurden **abgelehnt** (mehrheitlich).\n  - **Ausnahme**: Einige Anträge (z. B. von GRÜNEN) wurden in den **Fachausschuss verwiesen** für weitere Prüfung.\n  - **Nächster Schritt**: **Oktober 2020** – Aufstellungsbeschluss für **vorhabenbezogenen Bebauungsplan** (inkl. Ersatzflächen für Naturschutz).\n\n#### **D. 29. September 2020 (Gemeinderat, TOP 10)**\n- **Endgültige Entscheidung**:\n  - **Standort am BGH-Gelände** wird **bestätigt**.\n  - **Alternative Standorte** (Markgräflisches Palais, Ettlinger Tor) werden **ausgeschlossen** (keine realistischen Optionen).\n  - **Bebauungsplan** soll bis **Oktober 2020** beschlossen werden, mit Fokus auf:\n    - **Ökologische Kompensation** (Ersatzflächen für Grünland/Bäume).\n    - **Klimaneutrale Bauweise**.\n\n---\n\n### **3. Zentrale Argumente im Überblick**\n| **Thema**               | **Befürworter (Pro-BGH)**                          | **Gegner (Alternativen/Naturschutz)**          |\n|--------------------------|----------------------------------------------------|--------------------------------------------------|\n| **Standort**             | Logische Lage, bestehende Bebauungsrechte, Imagegewinn | Beeinträchtigung historischer Grünflächen       |\n| **Naturschutz**          | Kompensationsflächen geplant                       | Gefährdung von Bäumen und Biodiversität         |\n| **Bürgerbeteiligung**    | Projekt wird transparent kommuniziert             | Vorwürfe mangelnder Einbindung                  |\n| **Kosten/Nutzen**        | Bundesmittel gesichert, langfristiger Nutzen       | Hohe Kosten, fragwürdiger Nutzen               |\n| **Rechtliche Rahmen**    | Stiftungsgesetz erlaubt Standort                   | Verhandlungsbedarf mit Bund gefordert           |\n\n---\n\n### **4. Aktueller Stand (2020)**\n- **Standort**: **BGH-Gelände** (Erbgroßherzogliches Palais) ist **festgelegt**.\n- **Nächste Schritte**:\n  1. **Bebauungsplan** (Oktober 2020) mit ökologischen Auflagen.\n  2. **Baubeginn ab 2021** (geplant), Fertigstellung **2025/26**.\n  3. **Öffentlichkeitsarbeit**: Förderverein und Bürgerdialog sollen Vertrauen stärken.\n- **Kontroversen**:\n  - **Naturschützer** fordern weitere Prüfungen.\n  - **Politische Spannungen** zwischen Befürwortern (CDU/SPD) und Kritikern (GRÜNE/KAL).\n\n---\n### **5. Fazit**\nDas „Forum Recht“ ist ein **hochsymbolisches Projekt**, das Karlsruhes Rolle als *„Rechtsstadt“* festigen soll. Trotz **Kritik an Umweltaspekten und Bürgerbeteiligung** setzte sich der **Standort am BGH-Gelände** durch. Die nächsten Monate werden zeigen, ob die **ökologischen und partizipativen Auflagen** umgesetzt werden können. Die Umsetzung hängt stark von der **Zusammenarbeit mit dem Bund** und der **Akzeptanz in der Bevölkerung** ab."
+  "summary": "### **Zusammenfassung der Digitalstrategie und IT-Zentralisierung in Karlsruhe**\n\n#### **1. Digitalstrategie der Stadtverwaltung Karlsruhe (2022)**\nDie Stadt Karlsruhe hat eine **Digitalstrategie** verabschiedet, die auf einem partizipativen Prozess basiert und vom Gemeinderat am **22.02.2022** beschlossen wurde. Sie verfolgt folgende Ziele:\n\n- **Gestaltungsprinzipien:**\n  - Nutzer- und bedarfsorientierte Digitalisierung\n  - Effizienzsteigerung durch moderne IT-Infrastruktur (z. B. E-Akte, Glasfasernetz)\n  - Digitale Souveränität und Datenschutz (ISO 27001, BSI-Standards)\n  - Offenheit (Open Government, Transparenz, Partizipation)\n  - Nachhaltigkeit (CO₂-Reduktion durch digitale Prozesse)\n  - Vernetzung (lokal, national, international)\n\n- **Handlungsfelder:**\n  - IT-moderner Arbeitsplatz (z. B. Cloud-Lösungen, mobile Geräte)\n  - Infrastruktur (Glasfaser, WLAN, E-Akte)\n  - Fachanwendungen (Vernetzung von 400 Systemen)\n  - Bürgerservice (drei Säulen: persönlich, telefonisch, digital)\n  - Open Government (offene Daten, Bürgerbeteiligung)\n  - Innovation (DigitalLab, Fortbildungsprogramme)\n  - Kulturwandel (Agilität, digitale Kompetenz)\n\n- **Umsetzung:**\n  - Das **Amt für Informationstechnik und Digitalisierung (ITD)** koordiniert die Maßnahmen.\n  - Finanzierung erfolgt über Budgetumschichtungen und Effizienzgewinne.\n  - Jährliche **Digitale Agenda** priorisiert Projekte (bis zu 30 pro Jahr).\n\n#### **2. Aktuelle IT-Struktur und Kritik (2023)**\nTrotz der Digitalstrategie gibt es **Kritik an dezentralen IT-Strukturen**:\n- **Anfrage der FDP (Mai 2023):**\n  - Frage nach **Zahl der Ämter mit eigener IT** (keine konkrete Zahl genannt).\n  - Kritik an **doppelten IT-Strukturen** (zentrale vs. dezentrale IT).\n  - Forderung nach **vollständiger Zentralisierung** zur Kosteneinsparung.\n\n- **Stellungnahme des Oberbürgermeisters (Juni 2023):**\n  - **Ziel:** Schrittweise Zentralisierung der IT-Services (z. B. SAP-Administration, Hotline 1717).\n  - **Maßnahmen:**\n    - Auflösung von **luK-Koordinationsstellen** (dezentrale IT-Rollen).\n    - Neuordnung von IT-Koordinatoren und Fachanwendungsadministratoren.\n    - **Keine Streichung von Stellen** aufgrund Haushaltslage, aber Umverteilung.\n  - **Zeitplan:** Vollständige Neukonfiguration bis **2023**.\n\n#### **3. Fazit**\nDie Digitalstrategie ist ein **Meilenstein für moderne Verwaltung**, setzt aber auf **schrittweise Zentralisierung** der IT. Während die FDP eine schnellere Konsolidierung fordert, wird die Umsetzung aufgrund von **Haushaltsbeschränkungen** und **technischen Herausforderungen** (z. B. Integration von 400 Fachanwendungen) verzögert. Die Stadt bleibt jedoch auf Kurs, um **Effizienz, Sicherheit und Bürgernähe** zu verbessern.\n\n**Kernpunkte:**\n✔ **Digitalstrategie beschlossen** (2022) mit Fokus auf Nutzerorientierung, Effizienz und Nachhaltigkeit.\n✔ **IT-Zentralisierung im Gange**, aber nicht vollständig umgesetzt (Haushaltsgrenzen).\n✔ **Jährliche Digitale Agenda** steuert Prioritäten, z. B. E-Akte, Open Government, IT-Sicherheit."
 }

@@ -151,6 +151,9 @@ Why is that?
 Structure only:
 > pg_dump -U <user> -W -d <db> -s -f <db>_struct.sql -h localhost
 
+or 
+> pg_dump -h localhost  --schema-only   --no-owner   --no-privileges   -d riski_agentic   -U wiski -W    > risk_agentic_schema.sql
+
 Leave out *-s* to dump data as well.
 
 ### Import 

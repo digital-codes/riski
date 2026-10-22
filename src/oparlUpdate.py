@@ -7,7 +7,7 @@ import logging
 import requests
 from collections import deque
 from urllib.parse import urlparse, urlunparse, quote
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 # ----------------------------------------------------------------------
 # CONFIGURATION
@@ -311,6 +311,8 @@ def crawl_oparl(root_url: str, start_from: str):
         "bodies/0001/consultations",
         "bodies/0001/papers",
         "bodies/0001/agendaItems",
+        "bodies/0001/meetings",
+        "bodies/0001/people",
         "bodies/0001?createdSince=" + quote(start_from, safe='')
     ]
     queue = deque([f"{root_url}/{c}" for c in collections])
@@ -325,21 +327,21 @@ def crawl_oparl(root_url: str, start_from: str):
             continue
         visited.add(current_url)
 
-        # PDF handling – unchanged from original script
+        # PDF handling
         if current_url.lower().endswith('.pdf'):
             logging.info("Saving PDF URL: %s", current_url)
-    pdf_path = os.path.join(OUTPUT_PDF_FOLDER, sanitize_filename(current_url.split('/')[-1]))
-    if os.path.exists(pdf_path):
-        logging.info("Skipping existing PDF: %s", pdf_path)
-        continue
+            pdf_path = os.path.join(
+                OUTPUT_PDF_FOLDER,
+                sanitize_filename(current_url.split('/')[-1])
+            )
+            if os.path.exists(pdf_path):
+                logging.info("Skipping existing PDF: %s", pdf_path)
+                continue
+
             pdf_data = fetch_pdf(current_url)
             if pdf_data:
                 if not os.path.exists(OUTPUT_PDF_FOLDER):
                     os.makedirs(OUTPUT_PDF_FOLDER)
-                pdf_path = os.path.join(
-                    OUTPUT_PDF_FOLDER,
-                    sanitize_filename(current_url.split('/')[-1])
-                )
                 try:
                     with open(pdf_path, 'wb') as f:
                         f.write(pdf_data)
@@ -381,8 +383,24 @@ def main():
     A ``KeyboardInterrupt`` (Ctrl‑C) is caught to allow a graceful shutdown – the
     latest processed timestamp is still persisted before exiting.
     """
+    import argparse
+    global SYSTEM_URL, OUTPUT_FOLDER, OUTPUT_PDF_FOLDER, LAST_RUN_FILE
+    parser = argparse.ArgumentParser(description="Incremental OParl crawler for Karlsruhe RIS.")
+    parser.add_argument("--system-url", default=SYSTEM_URL, help="Base URL of the OParl system (default: %(default)s)")
+    parser.add_argument("--output-folder", default=OUTPUT_FOLDER, help="Folder to save JSON files (default: %(default)s)")
+    parser.add_argument("--output-pdf-folder", default=OUTPUT_PDF_FOLDER, help="Folder to save PDF files (default: %(default)s)")
+    parser.add_argument("--last-run-file", default=LAST_RUN_FILE, help="File to store the last run timestamp (default: %(default)s)")   
+    parser.add_argument("--last-date", default=(datetime.now(timezone.utc) - timedelta(days=365 * 2)).replace(microsecond=0).isoformat(), help="Optional ISO timestamp to override the last run file (default: %(default)s)")
+    args = parser.parse_args()
+    SYSTEM_URL = args.system_url
+    OUTPUT_FOLDER = args.output_folder
+    OUTPUT_PDF_FOLDER = args.output_pdf_folder
+    LAST_RUN_FILE = args.last_run_file
+
     logging.info("Starting OParl incremental crawl at %s", SYSTEM_URL)
     last_ts = load_last_run()
+    if args.last_date:
+        last_ts = args.last_date
     logging.info("Last run timestamp: %s", last_ts)
     try:
         crawl_oparl(SYSTEM_URL, last_ts)

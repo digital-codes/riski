@@ -24,7 +24,8 @@ except ImportError:
 import requests
 
 LLM_URL = os.environ.get('RISKI_LLM_URL', 'http://localhost:11434')
-LLM_MDL = os.environ.get('RISKI_LLM_MDL', 'granite4.1:3b')
+LLM_MDL = os.environ.get('RISKI_LLM_MDL', 'granite4.1:8b')
+LLM_API_KEY = os.environ.get('RISKI_LLM_API_KEY', "123")
 MAX_RETRIES = 3
 RETRY_DELAY = 2.0
 DEFAULT_MAX_LEN = 200
@@ -33,6 +34,7 @@ SUMMARY_TEMP = 0.2
 SUMMARY_MAX_TOKENS = 500
 API_TIMEOUT = 300
 
+print(f"Using LLM_URL={LLM_URL}, LLM_MDL={LLM_MDL}, MAX_RETRIES={MAX_RETRIES}, SUMMARY_MAX_TOKENS={SUMMARY_MAX_TOKENS}")
 
 def parse_args():
     p = argparse.ArgumentParser(description="Generate document teasers using OpenAI compatible API")
@@ -41,6 +43,7 @@ def parse_args():
     p.add_argument("-c", "--count", type=int, default=None, help="number of files to process")
     p.add_argument("-l", "--lang", default="de", help="language for teaser (de=German, en=English)")
     p.add_argument("--ids", type=str, nargs='*', default=[], help="file ids")
+    p.add_argument("--oparlid", type=str, default=None, help="process only files where column oparlId equals this value")
     p.add_argument("--force", action="store_true", help="overwrite existing teaser")
     p.add_argument("--max-bar", type=int, default=50, help="progress bar width")
     return p.parse_args()
@@ -74,7 +77,7 @@ def make_request(text, lang="de", maxlen=DEFAULT_MAX_LEN):
         try:
             response = requests.post(LLM_URL + "/v1/chat/completions",
                                      json=payload,
-                                     headers={"Content-Type": "application/json"},
+                                     headers={"Content-Type": "application/json", "Authorization": f"Bearer {LLM_API_KEY}"},
                                      timeout=API_TIMEOUT)
             result = response.json()
 
@@ -167,11 +170,20 @@ def main():
 
         conn.commit()
 
-        # Filter out files with existing teasers before processing if not forcing
+        where_clauses = ["content IS NOT NULL"]
+        query_params = []
+
+        # Filter out files with existing teasers before processing if not forcing.
         if not args.force:
-            cursor.execute("""SELECT id, content, length(content) FROM "File" WHERE content IS NOT NULL AND (teaser IS NULL OR LENGTH(teaser) = 0) ORDER BY length(content) DESC""")
-        else:
-            cursor.execute("""SELECT id, content, length(content) FROM "File" WHERE content IS NOT NULL ORDER BY length(content) DESC""")
+            where_clauses.append("(teaser IS NULL OR LENGTH(teaser) = 0)")
+
+        # Keep exact case in column name: "oparlId".
+        if args.oparlid is not None:
+            where_clauses.append("\"oparlKey\" = %s")
+            query_params.append(args.oparlid)
+
+        query = f'''SELECT id, content, length(content) FROM "File" WHERE {' AND '.join(where_clauses)} ORDER BY length(content) DESC'''
+        cursor.execute(query, tuple(query_params))
 
         files = list(cursor.fetchall())
 
@@ -184,6 +196,8 @@ def main():
         print(f"\nProcessing {len(files)} documents... (language: {args.lang})")
         if not args.force:
             print("(filtered: only files without existing teaser)")
+        if args.oparlid is not None:
+            print(f"(filtered: only files with oparlId='{args.oparlid}')")
         print(f"Retries enabled: {MAX_RETRIES} attempts per file")
         print("="*60)
 

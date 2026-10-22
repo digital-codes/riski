@@ -10,6 +10,8 @@ from sqlalchemy import (
 # Import helper to create DB engine
 from sqlalchemy import create_engine as sa_create_engine  # needed for openDb
 
+from local_geo_matching import name_matches
+
 # Copied from refs
 def openDb():
     # type: (...) -> Any
@@ -114,14 +116,14 @@ def add_district_agendaitem_refs(district_table, agendaitem_table):
                 if not agendaitem_name:
                     continue
 
-                # Check if district name is present in agenda item name
-                # Case-insensitive match
-                if district_name.lower() in agendaitem_name.lower():
-                    # Avoid duplicates
+                # Boundary-aware literal match: e.g. Weststadt must not match
+                # inside Nordweststadt.
+                if name_matches(agendaitem_name, district_name):
+                    # Check if this exact match already exists
                     check_stmt = select(ref_table.c.id).where(
-                        ref_table.c.district_id == district_id
-                    ).where(
-                        ref_table.c.agendaitem_id == agendaitem_id
+                        (ref_table.c.district_id == district_id) &
+                        (ref_table.c.agendaitem_id == agendaitem_id) &
+                        (ref_table.c.name_match == agendaitem_name)
                     )
                     existing = conn.execute(check_stmt).fetchone()
                     if not existing:

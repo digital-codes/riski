@@ -17,8 +17,13 @@ from sqlalchemy import (
     Text,
     Boolean,
     Float,
+    Integer,
+    LargeBinary,
     create_engine,
-    inspect
+    inspect,
+    Index,
+    UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB as PGJSON, insert
 #from sqlalchemy.dialects.postgresql import excluded
@@ -322,9 +327,12 @@ def make_main_tables(
             colname = scalar_colnames[t][orig_key]
             quote = scalar_quote[t][orig_key]
             cols.append(Column(colname, sa_type, nullable=True, quote=quote))
-        # special content column for File
+        # special content and teaser columns for File
         if t == 'File':
             cols.append(Column('content', Text, nullable=True))
+            cols.append(Column('teaser', Text, nullable=True))
+        # for "party" relation we would rather introduce it later as a concept with start and end date, 
+        # so we don't create a direct FK column here 
         for field, tgt_table in sorted(single_fk_fields.get(t, {}).items()):
             fk_col = f"{field}Sid"
             cols.append(Column(fk_col, BigInteger, ForeignKey(f"{tgt_table}.sid"), nullable=True, index=True))
@@ -359,6 +367,154 @@ def make_assoc_tables(
                 Column('tgtSid', BigInteger, ForeignKey(f"{tgt_table}.sid"), primary_key=True),
             )
     return assoc
+
+
+# ----------------------------
+# PROJECT-OWNED ADDITIVE SCHEMA
+# ----------------------------
+def ensure_project_schema(engine) -> None:
+    """Add RIS-KI-owned OParl extensions/tables/indexes without destructive rebuilds."""
+    md = MetaData()
+
+    # Local geography tables are part of the canonical schema but populated separately.
+    street = Table(
+        "Street", md,
+        Column("id", Integer, primary_key=True),
+        Column("name", String(255), nullable=False, unique=True),
+        Column("text", String(255), nullable=False, unique=True),
+        Column("year", Integer, nullable=True),
+        Column("description", String(4096), nullable=True),
+        Column("timestamp", DateTime, nullable=True),
+        Column("districtName", String(255), nullable=True),
+        Column("geo", LargeBinary, nullable=True),
+        extend_existing=True,
+    )
+    district = Table(
+        "District", md,
+        Column("id", Integer, primary_key=True),
+        Column("name", String(255), nullable=False, unique=True),
+        Column("number", Integer, nullable=True),
+        Column("timestamp", DateTime, nullable=True),
+        Column("geo", LargeBinary, nullable=True),
+        extend_existing=True,
+    )
+    street_refs = Table(
+        "Streets_items_AgendaItems", md,
+        Column("id", Integer, primary_key=True),
+        Column("street_id", Integer, nullable=False),
+        Column("agendaitem_id", Integer, nullable=False),
+        Column("name_match", String(255), nullable=False),
+        Column("created_at", DateTime, nullable=True),
+        UniqueConstraint("street_id", "agendaitem_id", name="uq_street_agendaitem"),
+        extend_existing=True,
+    )
+    district_refs = Table(
+        "Districts_items_AgendaItems", md,
+        Column("id", Integer, primary_key=True),
+        Column("district_id", Integer, nullable=False),
+        Column("agendaitem_id", Integer, nullable=False),
+        Column("name_match", String(255), nullable=False),
+        Column("created_at", DateTime, nullable=True),
+        UniqueConstraint("district_id", "agendaitem_id", name="uq_district_agendaitem"),
+        extend_existing=True,
+    )
+    md.create_all(engine)
+
+    # Existing databases may predate explicit File derived columns.
+    insp = inspect(engine)
+    if "File" in insp.get_table_names():
+        existing = {c["name"] for c in insp.get_columns("File")}
+        with engine.begin() as conn:
+            if "content" not in existing:
+                conn.execute(text('ALTER TABLE "File" ADD COLUMN content TEXT'))
+            if "teaser" not in existing:
+                conn.execute(text('ALTER TABLE "File" ADD COLUMN teaser TEXT'))
+
+    # Search support. These are deliberately the only FAST trigram text indexes.
+    with engine.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        trigram_indexes = {
+            "Paper": "idx_paper_name_trgm",
+            "File": "idx_file_name_trgm",
+            "AgendaItem": "idx_agendaitem_name_trgm",
+            "Meeting": "idx_meeting_name_trgm",
+        }
+        for table_name, idx in trigram_indexes.items():
+            if table_name not in inspect(engine).get_table_names():
+                continue
+            cols = {c["name"] for c in inspect(engine).get_columns(table_name)}
+            if "name" in cols:
+                conn.execute(text(
+                    f'CREATE INDEX IF NOT EXISTS "{idx}" ON "{table_name}" '
+                    'USING gin ("name" gin_trgm_ops)'
+                ))
+        if "Paper" in inspect(engine).get_table_names():
+            cols = {c["name"] for c in inspect(engine).get_columns("Paper")}
+            if "papertype" in {c.lower() for c in cols}:
+                actual = next(c for c in cols if c.lower() == "papertype")
+                conn.execute(text(
+                    f'CREATE INDEX IF NOT EXISTS idx_paper_papertype ON "Paper" ("{actual}")'
+                ))
+
+    # Existing relation tables may lack uniqueness. Add only when current data validates.
+    with engine.begin() as conn:
+        for table_name, left in (
+            ("Streets_items_AgendaItems", "street_id"),
+            ("Districts_items_AgendaItems", "district_id"),
+        ):
+            if table_name not in inspect(engine).get_table_names():
+                continue
+            duplicate = conn.execute(text(
+                f'SELECT 1 FROM "{table_name}" GROUP BY {left}, agendaitem_id '
+                'HAVING count(*) > 1 LIMIT 1'
+            )).fetchone()
+            if not duplicate:
+                idx = "uq_street_agendaitem" if left == "street_id" else "uq_district_agendaitem"
+                conn.execute(text(
+                    f'CREATE UNIQUE INDEX IF NOT EXISTS "{idx}" '
+                    f'ON "{table_name}" ({left}, agendaitem_id)'
+                ))
+
+
+def migration_preservation_snapshot(engine) -> Dict[str, Any]:
+    """Cheap preservation snapshot for generated/expensive OParl data."""
+    insp = inspect(engine)
+    tables = set(insp.get_table_names())
+    snap: Dict[str, Any] = {"tables": {}, "generated": {}}
+    with engine.connect() as conn:
+        for table_name in sorted(tables):
+            try:
+                snap["tables"][table_name] = int(
+                    conn.execute(text(f'SELECT count(*) FROM "{table_name}"')).scalar_one()
+                )
+            except Exception:
+                pass
+        if "File" in tables:
+            cols = {c["name"] for c in insp.get_columns("File")}
+            for col in ("content", "teaser"):
+                if col in cols:
+                    row = conn.execute(text(
+                        f'SELECT count(*) FILTER (WHERE "{col}" IS NOT NULL), '
+                        f'count(*) FILTER (WHERE "{col}" IS NOT NULL AND length("{col}") > 0) '
+                        f'FROM "File"'
+                    )).one()
+                    snap["generated"][f"File.{col}"] = {
+                        "non_null": int(row[0]), "non_empty": int(row[1])
+                    }
+    return snap
+
+
+def verify_preservation(before: Dict[str, Any], after: Dict[str, Any]) -> None:
+    """Fail if preservation-critical generated counts decrease."""
+    for key, old in before.get("generated", {}).items():
+        new = after.get("generated", {}).get(key, {})
+        for metric in ("non_null", "non_empty"):
+            if int(new.get(metric, 0)) < int(old.get(metric, 0)):
+                raise RuntimeError(
+                    f"lossless migration check failed: {key} {metric} "
+                    f"{old.get(metric)} -> {new.get(metric)}"
+                )
+
 
 # ----------------------------
 # INSERT LOGIC
@@ -569,6 +725,7 @@ def main(directory: str) -> None:
     scalar_types, scalar_colnames, scalar_quote = detect_scalar_columns(entities, single_fk_fields, many_fields)
     #print('  -> Scalar columns detected',scalar_colnames)
 
+    before_snapshot = migration_preservation_snapshot(engine)
     print('Building schema ...')
     main_tables = make_main_tables(metadata, all_tables, single_fk_fields, scalar_types, scalar_colnames, scalar_quote)
     # create also assoc tables for single FKs to allow later migration from single to many without downtime
@@ -576,17 +733,55 @@ def main(directory: str) -> None:
     metadata.create_all(engine)  # creates only missing tables
     # Add any scalar columns that were not present at creation time
     add_missing_scalar_columns(engine, metadata, scalar_colnames, scalar_types, scalar_quote)
+    ensure_project_schema(engine)
+    after_schema_snapshot = migration_preservation_snapshot(engine)
+    verify_preservation(before_snapshot, after_schema_snapshot)
     print('Inserting data ...')
     insert_all(engine, main_tables, assoc_tables, entities, url_to_key, single_fk_fields, many_fields, scalar_types, scalar_colnames)
+    after_import_snapshot = migration_preservation_snapshot(engine)
+    verify_preservation(before_snapshot, after_import_snapshot)
     insp = inspect(engine)
     print('Created tables:')
     for t in insp.get_table_names():
         print(' -', t)
     print('Done.')
 
+
+def migrate_project_schema_only() -> None:
+    """Apply only additive RIS-KI-owned OParl schema/index changes.
+
+    This is the recommended upgrade path for an already populated OParl DB when
+    raw OParl JSON does not need to be re-imported.
+    """
+    import private as pr
+    db_url = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@localhost/{pr.DB_NAME}"
+    engine = create_engine(db_url, future=True)
+    before = migration_preservation_snapshot(engine)
+    ensure_project_schema(engine)
+    after = migration_preservation_snapshot(engine)
+    verify_preservation(before, after)
+    print(json.dumps({
+        "status": "ok",
+        "mode": "schema-only",
+        "preservation_before": before.get("generated", {}),
+        "preservation_after": after.get("generated", {}),
+    }, ensure_ascii=False))
+
+
 if __name__ == '__main__':
-    import sys
-    if len(sys.argv) != 2:
-        print('Usage: python dbPgGen.py <path_to_directory_with_json_files>')
-        raise SystemExit(2)
-    main(sys.argv[1])
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Create/update OParl provider DB without destroying generated RIS-KI data."
+    )
+    parser.add_argument("directory", nargs="?", help="Directory containing OParl JSON files")
+    parser.add_argument(
+        "--schema-only", action="store_true",
+        help="Only add project-owned tables/indexes; do not import OParl JSON"
+    )
+    args = parser.parse_args()
+    if args.schema_only:
+        migrate_project_schema_only()
+    else:
+        if not args.directory:
+            parser.error("directory is required unless --schema-only is used")
+        main(args.directory)
