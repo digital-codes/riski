@@ -9,8 +9,8 @@ from src import pgOcr
 def mock_ocr(monkeypatch):
     calls = []
 
-    def _ocr(document, model=None):
-        calls.append(document)
+    def _ocr(document, model=None, pages=None):
+        calls.append((document, pages))
         return {"pages": [{"markdown": "# Seite 1"}, {"markdown": "Seite 2"}]}
 
     monkeypatch.setattr(pgOcr.remote, "ocr", _ocr)
@@ -21,10 +21,73 @@ class TestOcrPdfToMarkdown:
     def test_joins_pages(self, mock_ocr):
         md = pgOcr.ocr_pdf_to_markdown("whatever.pdf")
         assert md == "# Seite 1\n\nSeite 2"
+        assert mock_ocr[0][1] is None  # no page limit requested
 
     def test_empty_pages(self, monkeypatch):
-        monkeypatch.setattr(pgOcr.remote, "ocr", lambda d: {"pages": []})
+        monkeypatch.setattr(pgOcr.remote, "ocr", lambda d, model=None, pages=None: {"pages": []})
         assert pgOcr.ocr_pdf_to_markdown("x.pdf") == ""
+
+
+class TestPageLimit:
+    def _make_pdf(self, path, n_pages):
+        from pypdf import PdfWriter
+        writer = PdfWriter()
+        for _ in range(n_pages):
+            writer.add_blank_page(width=100, height=100)
+        with path.open("wb") as f:
+            writer.write(f)
+
+    def test_large_document_limited(self, tmp_path, monkeypatch):
+        calls = []
+
+        def _ocr(document, model=None, pages=None):
+            calls.append(pages)
+            return {"pages": [{"markdown": f"p{i}"} for i in range(12)]}
+
+        monkeypatch.setattr(pgOcr.remote, "ocr", _ocr)
+        pdf = tmp_path / "big.pdf"
+        self._make_pdf(pdf, 20)
+        md = pgOcr.ocr_pdf_to_markdown(pdf, max_pages=12)
+        assert calls == ["0-11"]
+        assert md.endswith("<!-- OCR truncated to the first 12 pages of 20 -->")
+
+    def test_small_document_unlimited(self, tmp_path, monkeypatch):
+        calls = []
+
+        def _ocr(document, model=None, pages=None):
+            calls.append(pages)
+            return {"pages": [{"markdown": "p"}]}
+
+        monkeypatch.setattr(pgOcr.remote, "ocr", _ocr)
+        pdf = tmp_path / "small.pdf"
+        self._make_pdf(pdf, 3)
+        pgOcr.ocr_pdf_to_markdown(pdf, max_pages=12)
+        assert calls == [None]
+
+    def test_unknown_page_count_unlimited(self, tmp_path, monkeypatch):
+        calls = []
+        monkeypatch.setattr(pgOcr, "pdf_page_count", lambda p: None)
+
+        def _ocr(document, model=None, pages=None):
+            calls.append(pages)
+            return {"pages": [{"markdown": "p"}]}
+
+        monkeypatch.setattr(pgOcr.remote, "ocr", _ocr)
+        assert pgOcr.ocr_pdf_to_markdown(tmp_path / "broken.pdf", max_pages=12) == "p"
+        assert calls == [None]
+
+    def test_max_pages_zero_disables_limit(self, tmp_path, monkeypatch):
+        calls = []
+
+        def _ocr(document, model=None, pages=None):
+            calls.append(pages)
+            return {"pages": [{"markdown": "p"}]}
+
+        monkeypatch.setattr(pgOcr.remote, "ocr", _ocr)
+        pdf = tmp_path / "big.pdf"
+        self._make_pdf(pdf, 20)
+        pgOcr.ocr_pdf_to_markdown(pdf, max_pages=None)
+        assert calls == [None]
 
 
 class TestFindMissing:
@@ -77,7 +140,7 @@ class TestRun:
         (pdf_dir / "0001.pdf").write_bytes(b"%PDF")
         (pdf_dir / "0002.pdf").write_bytes(b"%PDF")
 
-        def boom(document, model=None):
+        def boom(document, model=None, pages=None):
             raise RuntimeError("api down")
 
         monkeypatch.setattr(pgOcr.remote, "ocr", boom)
@@ -113,7 +176,9 @@ class TestRun:
         md_dir = tmp_path / "md"
         pdf_dir.mkdir()
         (pdf_dir / "0001.pdf").write_bytes(b"%PDF")
-        monkeypatch.setattr(pgOcr.remote, "ocr", lambda d: {"pages": [{"markdown": ""}]})
+        monkeypatch.setattr(
+            pgOcr.remote, "ocr", lambda d, model=None, pages=None: {"pages": [{"markdown": ""}]}
+        )
         stats = pgOcr.run(pdf_dir, md_dir)
         assert stats["empty"] == 1
         assert not (md_dir / "0001.md").exists()

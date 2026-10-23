@@ -22,12 +22,36 @@ from pathlib import Path
 
 from src import remote
 
+# Marker appended to the markdown when OCR was truncated to the first pages.
+_TRUNCATION_NOTE = "\n\n<!-- OCR truncated to the first {max_pages} pages of {total} -->"
 
-def ocr_pdf_to_markdown(pdf_path: Path) -> str:
-    """OCR *pdf_path* and return the joined page markdown."""
-    result = remote.ocr(str(pdf_path))
-    pages = result.get("pages", [])
-    return "\n\n".join(p.get("markdown", "") for p in pages).strip()
+
+def pdf_page_count(pdf_path: Path) -> int | None:
+    """Number of pages in *pdf_path*, or None when it cannot be determined."""
+    try:
+        from pypdf import PdfReader
+        with pdf_path.open("rb") as f:
+            return len(PdfReader(f).pages)
+    except Exception:  # noqa: BLE001 - malformed PDF: fall back to unlimited OCR
+        return None
+
+
+def ocr_pdf_to_markdown(pdf_path: Path, max_pages: int | None = None) -> str:
+    """OCR *pdf_path* and return the joined page markdown.
+
+    With *max_pages*, documents with more pages are OCR'd only up to that
+    page and a truncation marker is appended.
+    """
+    pages = None
+    note = ""
+    if max_pages is not None:
+        total = pdf_page_count(pdf_path)
+        if total is not None and total > max_pages:
+            pages = f"0-{max_pages - 1}"
+            note = _TRUNCATION_NOTE.format(max_pages=max_pages, total=total)
+    result = remote.ocr(str(pdf_path), pages=pages)
+    pages_md = result.get("pages", [])
+    return "\n\n".join(p.get("markdown", "") for p in pages_md).strip() + note
 
 
 def find_missing(pdf_dir: Path, md_dir: Path) -> list[Path]:
@@ -39,7 +63,8 @@ def find_missing(pdf_dir: Path, md_dir: Path) -> list[Path]:
 
 
 def run(pdf_dir: Path, md_dir: Path, limit: int | None = None,
-        dry_run: bool = False, out_dir: Path | None = None) -> dict:
+        dry_run: bool = False, out_dir: Path | None = None,
+        max_pages: int | None = 12) -> dict:
     """OCR all PDFs missing from *md_dir*. Markdown is written to
     *out_dir* (defaults to *md_dir*, e.g. when the canonical markdown
     folder is read-only and new files must land elsewhere).
@@ -59,7 +84,7 @@ def run(pdf_dir: Path, md_dir: Path, limit: int | None = None,
             continue
         print(f"[{i}/{len(missing)}] OCR {pdf_path.name} ...", flush=True)
         try:
-            markdown = ocr_pdf_to_markdown(pdf_path)
+            markdown = ocr_pdf_to_markdown(pdf_path, max_pages=max_pages)
         except Exception as e:  # noqa: BLE001 - keep going on single failures
             print(f"  ERROR {pdf_path.name}: {e}", flush=True)
             stats["ocr_failed"] += 1
@@ -82,6 +107,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--out-dir", default=None,
                     help="Write markdown here instead of --md-dir (read-only canonical dir)")
     ap.add_argument("--limit", type=int, default=None, help="Max PDFs to OCR (testing)")
+    ap.add_argument("--max-pages", type=int, default=12,
+                    help="OCR only the first N pages of larger documents (0 = no limit)")
     ap.add_argument("--dry-run", action="store_true", help="Only list what would be OCR'd")
     args = ap.parse_args(argv)
 
@@ -91,7 +118,8 @@ def main(argv: list[str] | None = None) -> int:
     if not pdf_dir.is_dir():
         raise SystemExit(f"pdf_dir is not a directory: {pdf_dir}")
 
-    run(pdf_dir, md_dir, limit=args.limit, dry_run=args.dry_run, out_dir=out_dir)
+    run(pdf_dir, md_dir, limit=args.limit, dry_run=args.dry_run, out_dir=out_dir,
+        max_pages=args.max_pages or None)
     return 0
 
 

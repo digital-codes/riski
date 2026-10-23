@@ -187,10 +187,13 @@ def embed(text: str, model: str | None = None, dimensions: int | None = None) ->
     return arr / norm
 
 
-def ocr(document: bytes | str, model: str | None = None) -> Dict[str, Any]:
+def ocr(document: bytes | str, model: str | None = None,
+        pages: str | list[int] | None = None) -> Dict[str, Any]:
     """Perform OCR on a PDF.
 
-    *document* may be raw PDF bytes or a filesystem path. Sends a base64
+    *document* may be raw PDF bytes or a filesystem path. *pages* limits
+    processing to specific pages — a string like ``"0-11"`` or a list of
+    page numbers (0-based, Mistral OCR ``pages`` parameter). Sends a base64
     encoded document to the configured OCR endpoint and returns the parsed
     JSON result. HTTP 429 responses are retried honouring ``Retry-After``,
     up to 8 attempts.
@@ -209,6 +212,8 @@ def ocr(document: bytes | str, model: str | None = None) -> Dict[str, Any]:
         "model": model or OCR_MDL,
         "include_image_base64": True,
     }
+    if pages is not None:
+        payload["pages"] = pages
     headers = {"Content-Type": "application/json"}
     if OCR_KEY:
         headers["Authorization"] = f"Bearer {OCR_KEY}"
