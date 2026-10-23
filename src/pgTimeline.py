@@ -1041,10 +1041,9 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K, filters: Op
                         for event in group['events']:
                             print(f"  - {event['date']}: [{event['type']}] {event['name']} {event['oparlId']}")
 
-                # Save results to file
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                save_path = os.path.join(directory, f"search_results_{timestamp}.json")
-                with open(save_path, 'w') as f:
+                # Save results for the web app (single stable location)
+                save_path = os.path.join("app", "src", "assets", "sampleData.json")
+                with open(save_path, "w") as f:
                     json.dump(results, f, default=str, indent=2, ensure_ascii=False)
                 print(f"\nDetailed results saved to {save_path}")
 
