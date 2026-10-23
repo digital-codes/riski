@@ -22,7 +22,7 @@ import signal
 from pathlib import Path
 from typing import List, Optional
 
-from sqlalchemy import MetaData, Table, select, update, Column, Integer, String, UniqueConstraint
+from sqlalchemy import MetaData, Table, select, update, Column, Integer, String, UniqueConstraint, inspect, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import declarative_base, sessionmaker
 from pgvector.sqlalchemy import Vector
@@ -94,6 +94,27 @@ def content_kind_for(md_path: Path, sums_dir: Path, full_dir: Path) -> str:
         return "fulltext"
     except ValueError:
         return "summary"
+
+
+def ensure_embedding_unique_constraint(engine) -> None:
+    """Ensure the declared unique constraint on contentEmbeddings.oparlKey.
+
+    Tables created before the constraint existed (e.g. by older pgAddVecs
+    loads) lack it, which makes the ON CONFLICT upsert fail with
+    ``no unique constraint matching the ON CONFLICT specification`` and
+    aborts the surrounding transaction. Self-healing: add the constraint
+    when absent (duplicates must not exist — verified before adding).
+    """
+    insp = inspect(engine)
+    uqs = {u["name"] for u in insp.get_unique_constraints("contentEmbeddings")}
+    if "uq_embedding_oparlKey" in uqs:
+        return
+    with engine.begin() as conn:
+        conn.execute(text(
+            'ALTER TABLE "contentEmbeddings" '
+            'ADD CONSTRAINT uq_embedding_oparlKey UNIQUE ("oparlKey")'
+        ))
+    print("Added missing unique constraint uq_embedding_oparlKey on contentEmbeddings")
 
 
 def run(
@@ -250,9 +271,11 @@ def main() -> None:
     # Shared engine from the centralised DB layer (private.py / env)
     engine = get_engine()
 
-    if args.embeddings:
-        # Ensure the embedding table exists if we're adding embeddings
+    if args.embeddings or args.embed_missing:
+        # Ensure the embedding table + its unique constraint exist (upsert
+        # via ON CONFLICT requires the constraint).
         Base.metadata.create_all(engine)
+        ensure_embedding_unique_constraint(engine)
 
     md_map = iter_md_files(sums_dir, full_dir)
     print(f"Found {len(md_map)} markdown files under: {sums_dir}")
