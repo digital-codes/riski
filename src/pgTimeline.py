@@ -278,15 +278,38 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
     """
     Find all OParl objects related to the given file sids through junction tables.
 
+    Traverses the OParl association tables and logs every relationship it
+    walks as a typed edge (add-network-view tasks 1.2/1.3). The returned
+    dict carries the objects per type plus two extra keys: ``edges`` (the
+    typed edge log) and ``_sid_maps`` (sid→oparlKey lookups used for FK
+    edges) — both consumed by ``build_graph`` and stripped before output.
+
     Args:
         session: SQLAlchemy session
-        file_sids: List of File sids to find related objects for
+        file_sids: Dict mapping File oparlKey → File sid to find related objects for
 
     Returns:
-        Dictionary with object types as keys and lists of related objects as values
+        Dictionary with object types as keys and lists of related objects
+        as values, plus "edges" and "_sid_maps".
     """
     engine = session.get_bind()
     metadata = MetaData()
+
+    # typed edge log: {"source": "Type_key", "target": "Type_key", "relation": ..., "via": ...}
+    edges: List[Dict[str, str]] = []
+    # invert file_sids (oparlKey → sid) for junction-target resolution
+    sid_to_file_key = {sid: key for key, sid in file_sids.items()}
+
+    def log_edge(src_type: str, src_key, relation: str, tgt_type: str, tgt_key, via: str) -> None:
+        if src_key is None or tgt_key is None:
+            return
+        edges.append({
+            "source": f"{src_type}_{src_key}",
+            "target": f"{tgt_type}_{tgt_key}",
+            "relation": relation,
+            "via": via,
+        })
+
     
     
     # Load tables
@@ -330,7 +353,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             agenda_tbl.c.end_date,
             agenda_tbl.c.meetingSid,
             agenda_tbl.c.number,
-            agenda_tbl.c.result
+            agenda_tbl.c.result,
+            af_assoc_tbl.c.tgtSid.label("fileSid"),
         )
         .select_from(
             af_assoc_tbl.join(
@@ -341,7 +365,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
     )
     with engine.connect() as conn:
         agenda_items = conn.execute(stmt).fetchall()
-    
+
     for row in agenda_items:
         related_objects["AgendaItem"].append({
             "sid": row.sid,
@@ -355,6 +379,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             "number": row.number,
             "result": row.result
         })
+        log_edge("AgendaItem", row.oparlKey, "auxiliaryFile", "File",
+                 sid_to_file_key.get(row.fileSid), "AgendaItem__auxiliaryFile__File")
 
     print(f"Found {len(related_objects['AgendaItem'])} agenda items related to files")  # Debugging line
 
@@ -369,7 +395,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             paper_tbl.c.date,
             paper_tbl.c.reference,
             paper_tbl.c.papertype,
-            paper_tbl.c.bodySid
+            paper_tbl.c.bodySid,
+            pf_assoc_tbl.c.tgtSid.label("fileSid"),
         )
         .select_from(
             pf_assoc_tbl.join(
@@ -380,7 +407,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
     )
     with engine.connect() as conn:
         papers = conn.execute(stmt).fetchall()
-    
+
     for row in papers:
         related_objects["Paper"].append({
             "sid": row.sid,
@@ -393,6 +420,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             "paperType": row.papertype,
             "bodySid": row.bodySid
         })
+        log_edge("Paper", row.oparlKey, "auxiliaryFile", "File",
+                 sid_to_file_key.get(row.fileSid), "Paper__auxiliaryFile__File")
     print(f"Found {len(related_objects['Paper'])} papers related to files")  # Debugging line
 
     # 2.b when a paper is identified, we also want to get all associated files via pf_assoc_tbl, since the paper may have multiple files, and we want to include them in the timeline
@@ -406,7 +435,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                 file_tbl.c.filename,
                 file_tbl.c.oparlId,
                 file_tbl.c.downloadurl,
-                file_tbl.c.date
+                file_tbl.c.date,
+                pf_assoc_tbl.c.srcSid.label("paperSid"),
             )
             .select_from(
                 pf_assoc_tbl.join(
@@ -417,7 +447,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
         )
         with engine.connect() as conn:
             paper_files = conn.execute(stmt).fetchall()
-        
+
+        paper_sid_to_key = {p["sid"]: p["oparlKey"] for p in related_objects["Paper"]}
         for row in paper_files:
             if not any(f["sid"] == row.sid for f in related_objects["AuxFile"]):
                 related_objects["AuxFile"].append({
@@ -429,6 +460,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                     "downloadurl": row.downloadurl,
                     "date": row.date
                 })
+            log_edge("Paper", paper_sid_to_key.get(row.paperSid), "auxiliaryFile", "AuxFile",
+                     row.oparlKey, "Paper__auxiliaryFile__File")
         print(f"Found {len(related_objects['AuxFile'])} additional files related to papers")  # Debugging line
     
     # 3. Find Meetings connected to Files
@@ -440,7 +473,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             meeting_tbl.c.oparlId,
             meeting_tbl.c.name,
             meeting_tbl.c.start_date,
-            meeting_tbl.c.end_date
+            meeting_tbl.c.end_date,
+            mf_assoc_tbl.c.tgtSid.label("fileSid"),
         )
         .select_from(
             mf_assoc_tbl.join(
@@ -451,7 +485,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
     )
     with engine.connect() as conn:
         meetings = conn.execute(stmt).fetchall()
-    
+
     for row in meetings:
         related_objects["Meeting"].append({
             "sid": row.sid,
@@ -462,6 +496,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             "start_date": row.start_date,
             "end_date": row.end_date
         })
+        log_edge("Meeting", row.oparlKey, "auxiliaryFile", "File",
+                 sid_to_file_key.get(row.fileSid), "Meeting__auxiliaryFile__File")
 
     # 4. For Papers, find related Consultations
     paper_sids = [p["sid"] for p in related_objects["Paper"]]
@@ -487,7 +523,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
         )
         with engine.connect() as conn:
             consultations = conn.execute(stmt).fetchall()
-        
+
+        paper_sid_to_key = {p["sid"]: p["oparlKey"] for p in related_objects["Paper"]}
         for row in consultations:
             related_objects["Consultation"].append({
                 "sid": row.sid,
@@ -500,6 +537,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                 "meetingSid": row.meetingSid,
                 "paperSid": row.paperSid
             })
+            log_edge("Paper", paper_sid_to_key.get(row.paperSid), "consultation", "Consultation",
+                     row.oparlKey, "Paper__consultation__Consultation")
     print(f"Found {len(related_objects['Consultation'])} consultations related to papers")  # Debugging line
 
     # 5. For Meetings, find related AgendaItems
@@ -527,7 +566,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
         )
         with engine.connect() as conn:
             meeting_agenda_items = conn.execute(stmt).fetchall()
-        
+
+        meeting_sid_to_key = {m["sid"]: m["oparlKey"] for m in related_objects["Meeting"]}
         for row in meeting_agenda_items:
             if not any(ai["sid"] == row.sid for ai in related_objects["AgendaItem"]):
                 related_objects["AgendaItem"].append({
@@ -542,6 +582,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                     "number": row.number,
                     "result": row.result
                 })
+            log_edge("Meeting", meeting_sid_to_key.get(row.meetingSid), "agendaItem", "AgendaItem",
+                     row.oparlKey, "Meeting__agendaItem__AgendaItem")
     print(f"Found {len(related_objects['AgendaItem'])} agenda items related to meetings")  # Debugging line
 
     # 6. For AgendaItems, find related Consultations
@@ -578,6 +620,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
 
     # 7. For Consultations, find related Organizations
     consultation_sids = [c["sid"] for c in related_objects["Consultation"]]
+    consultation_sid_to_key = {c["sid"]: c["oparlKey"] for c in related_objects["Consultation"]}
     if consultation_sids:
         stmt = (
             select(
@@ -587,7 +630,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                 organization_tbl.c.oparlId,
                 organization_tbl.c.name,
                 organization_tbl.c.classification,
-                organization_tbl.c.shortname
+                organization_tbl.c.shortname,
+                co_assoc_tbl.c.srcSid.label("consultSid"),
             )
             .select_from(
                 co_assoc_tbl.join(
@@ -609,10 +653,13 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                 "classification": row.classification,
                 "shortName": row.shortname
             })
+            log_edge("Consultation", consultation_sid_to_key.get(row.consultSid), "organization", "Organization",
+                     row.oparlKey, "Consultation__organization__Organization")
 
     print(f"Found {len(related_objects['Organization'])} organizations related to consultations")  # Debugging line
 
     # 8. For Papers, find related Organizations (underDirectionOf)
+    paper_sid_to_key = {p["sid"]: p["oparlKey"] for p in related_objects["Paper"]}
     if paper_sids:
         stmt = (
             select(
@@ -622,7 +669,8 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                 organization_tbl.c.oparlId,
                 organization_tbl.c.name,
                 organization_tbl.c.classification,
-                organization_tbl.c.shortname
+                organization_tbl.c.shortname,
+                po_assoc_tbl.c.srcSid.label("paperSid"),
             )
             .select_from(
                 po_assoc_tbl.join(
@@ -633,7 +681,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
         )
         with engine.connect() as conn:
             paper_orgs = conn.execute(stmt).fetchall()
-        
+
         for row in paper_orgs:
             if not any(o["sid"] == row.sid for o in related_objects["Organization"]):
                 related_objects["Organization"].append({
@@ -645,9 +693,27 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                     "classification": row.classification,
                     "shortName": row.shortname
                 })
+            log_edge("Paper", paper_sid_to_key.get(row.paperSid), "underDirectionOf", "Organization",
+                     row.oparlKey, "Paper__underDirectionOf__Organization")
 
         print(f"Found {len(related_objects['Organization'])} organizations related to papers")  # Debugging line
 
+    # 9. Direct-FK edges derivable from collected objects (no extra queries):
+    #    Consultation.meetingSid/paperSid, AgendaItem.meetingSid
+    meeting_sid_to_key = {m["sid"]: m["oparlKey"] for m in related_objects["Meeting"]}
+    agenda_sid_to_key = {a["sid"]: a["oparlKey"] for a in related_objects["AgendaItem"]}
+    for c in related_objects["Consultation"]:
+        log_edge("Consultation", c["oparlKey"], "meeting", "Meeting",
+                 meeting_sid_to_key.get(c.get("meetingSid")), "FK:Consultation.meetingSid")
+        log_edge("Consultation", c["oparlKey"], "paper", "Paper",
+                 paper_sid_to_key.get(c.get("paperSid")), "FK:Consultation.paperSid")
+        log_edge("Consultation", c["oparlKey"], "agendaItem", "AgendaItem",
+                 agenda_sid_to_key.get(c.get("agendaItemSid")), "FK:Consultation.agendaItemSid")
+    for a in related_objects["AgendaItem"]:
+        log_edge("AgendaItem", a["oparlKey"], "meeting", "Meeting",
+                 meeting_sid_to_key.get(a.get("meetingSid")), "FK:AgendaItem.meetingSid")
+
+    related_objects["edges"] = edges
     return related_objects
 
 def build_timeline(related_objects: Dict[str, List[Dict]]) -> List[Dict]:
@@ -933,6 +999,10 @@ def search_and_build_timeline(
     related_objects = find_related_objects(session, file_sids)
     print(f"Related objects found: { {k: len(v) for k, v in related_objects.items()} }")  # Debugging line
 
+    # Serialize the traversed graph (nodes + typed edges, add-network-view)
+    from src.graphModel import build_graph
+    graph = build_graph(related_objects, related_objects.pop("edges", []), top_files)
+
     # Build timeline from all related objects
     timeline_events = build_timeline(related_objects)
     print(f"Timeline events built: {len(timeline_events)}")  # Debugging line
@@ -957,6 +1027,7 @@ def search_and_build_timeline(
             "match": f.get("match")
         } for f in top_files],
         "timeline": grouped_timeline,
+        "graph": graph,
         "matched_entities": matched_entities,
         "facets": facets_data,
         "applied_filters": applied_filters,
