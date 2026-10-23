@@ -774,10 +774,11 @@ def search_and_build_timeline(
     query_embedding = call_embedding_model(query, EMBEDDING_API_URL, EMBEDDING_API_KEY, EMBEDDING_MODEL)
     print(f"Generated embedding for query: {query_embedding[:5]}...")  # Debugging line
 
-    hybrid_distances: Dict[str, Optional[float]] = {}
     matched_entities: List[Dict[str, Any]] = []
     facets_data: Dict[str, Any] = {}
     applied_filters: List[Dict[str, Any]] = []
+    hybrid_distances: Dict[str, Optional[float]] = {}
+    hybrid_match_info: Dict[str, Dict[str, Any]] = {}
 
     if hybrid:
         from src.pgHybridSearch import (
@@ -804,9 +805,12 @@ def search_and_build_timeline(
             query_embedding_stripped=query_embedding_stripped,
         )
         matched_entities = hyb["matched_entities"]
-        candidates = hyb["file_candidates"]  # [(oparlKey, fused_score, content_distance)]
+        candidates = hyb["file_candidates"]  # [{oparlKey, score, signals}]
         facets_data = facet_listing(conn)
-        hybrid_distances = {k: d for k, _s, d in candidates}
+        hybrid_distances = {
+            c["oparlKey"]: c["signals"].get("content") for c in candidates
+        }
+        hybrid_match_info = {c["oparlKey"]: c["signals"] for c in candidates}
         print(f"Hybrid recall: {len(matched_entities)} entities, {len(candidates)} file candidates")
         if not candidates:
             return {
@@ -820,7 +824,7 @@ def search_and_build_timeline(
                 "message": "No candidates found for the given query/filters",
             }
         # Fused score feeds the reranker stage; distances are kept for output.
-        top_scores = [(key, fused) for key, fused, _dist in candidates]
+        top_scores = [(c["oparlKey"], c["score"]) for c in candidates]
     else:
         # legacy vector-only path
         # find similarities and get top-k files
@@ -911,10 +915,12 @@ def search_and_build_timeline(
         "oparlId": row.oparlId,
         "date": row.date,
         # hybrid mode: content-vector cosine distance where the file came
-        # from that signal, else the fused score (None-safe for JSON)
+        # from that signal, plus which signals matched it (match-type
+        # qualifier; name-vector distance included where available)
         "distance": hybrid_distances.get(row.oparlKey)
                     if hybrid else
-                    next((score for key, score in top_scores_with_rerank if key == row.oparlKey), None)
+                    next((score for key, score in top_scores_with_rerank if key == row.oparlKey), None),
+        "match": hybrid_match_info.get(row.oparlKey) if hybrid else None,
     } for row in result]
     top_files.sort(key=lambda f: key_rank.get(f["oparlKey"], len(key_rank)))
     print(f"Top files details: {top_files}")  # Debugging line
@@ -947,7 +953,8 @@ def search_and_build_timeline(
             "downloadurl": f["downloadurl"],
             "oparlId": f["oparlId"],
             "date": f["date"],
-            "distance": f["distance"]
+            "distance": f["distance"],
+            "match": f.get("match")
         } for f in top_files],
         "timeline": grouped_timeline,
         "matched_entities": matched_entities,

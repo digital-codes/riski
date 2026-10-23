@@ -9,7 +9,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00636459.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/636459",
       "date": "2022-03-11 00:00:00",
-      "distance": 0.3115107231431756
+      "distance": 0.3115,
+      "match": {
+        "content": 0.3115
+      }
     },
     {
       "sid": 46914,
@@ -19,7 +22,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00663776.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/663776",
       "date": "2024-12-17 00:00:00",
-      "distance": 0.33185050893720813
+      "distance": 0.3319,
+      "match": {
+        "content": 0.3319
+      }
     },
     {
       "sid": 17182,
@@ -29,7 +35,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00150630.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/150630",
       "date": "2015-02-02 00:00:00",
-      "distance": 0.33694887161254417
+      "distance": 0.3369,
+      "match": {
+        "content": 0.3369
+      }
     },
     {
       "sid": 39201,
@@ -39,7 +48,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635289.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635289",
       "date": "2022-01-17 00:00:00",
-      "distance": 0.34068371830332855
+      "distance": 0.3407,
+      "match": {
+        "content": 0.3407
+      }
     },
     {
       "sid": 30646,
@@ -49,7 +61,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635290.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635290",
       "date": "2022-01-17 00:00:00",
-      "distance": 0.34115048156374916
+      "distance": 0.3412,
+      "match": {
+        "content": 0.3412
+      }
     },
     {
       "sid": 14476,
@@ -59,7 +74,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647527.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647527",
       "date": "2023-05-23 00:00:00",
-      "distance": 0.3424086970808641
+      "distance": 0.3424,
+      "match": {
+        "content": 0.3424
+      }
     },
     {
       "sid": 27231,
@@ -69,7 +87,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647667.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647667",
       "date": "2023-05-26 00:00:00",
-      "distance": 0.34581657213519035
+      "distance": 0.3458,
+      "match": {
+        "content": 0.3458
+      }
     },
     {
       "sid": 32965,
@@ -79,7 +100,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00645440.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/645440",
       "date": "2023-03-02 00:00:00",
-      "distance": 0.35235007377266003
+      "distance": 0.3524,
+      "match": {
+        "content": 0.3524
+      }
     },
     {
       "sid": 38016,
@@ -89,7 +113,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00603787.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/603787",
       "date": "2018-06-22 00:00:00",
-      "distance": 0.35699323672096395
+      "distance": 0.357,
+      "match": {
+        "content": 0.357
+      }
     },
     {
       "sid": 5576,
@@ -99,7 +126,10 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00150428.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/150428",
       "date": "2015-01-23 00:00:00",
-      "distance": 0.3616199087613823
+      "distance": 0.3616,
+      "match": {
+        "content": 0.3616
+      }
     }
   ],
   "timeline": [
@@ -758,714 +788,1520 @@
       "type": "Paper",
       "oparlKey": "39591",
       "name": "Beratungsstelle für die Digitalisierung von Sportvereinen",
-      "score": 0.01639
+      "score": 0.01639,
+      "signals": {
+        "lexical": true
+      }
+    },
+    {
+      "id": "Paper_50519",
+      "type": "Paper",
+      "oparlKey": "50519",
+      "name": "Wie sieht der Zeitplan für die Einführung eines digitalen Anzeigesystems zur Umsetzung von Gemeinderatsbeschlüssen aus?",
+      "score": 0.01639,
+      "signals": {
+        "name": 0.501
+      }
     },
     {
       "id": "File_636459",
       "type": "File",
       "oparlKey": "636459",
       "name": "Protokoll GR 22.02.2022 TOP 6",
-      "score": 0.01639
+      "score": 0.01639,
+      "signals": {
+        "content": 0.3115
+      }
     },
     {
       "id": "AgendaItem_51560",
       "type": "AgendaItem",
       "oparlKey": "51560",
       "name": "Beratungsstelle für die Digitalisierung von Sportvereinen",
-      "score": 0.01639
+      "score": 0.01639,
+      "signals": {
+        "lexical": true
+      }
     },
     {
       "id": "Meeting_10428",
       "type": "Meeting",
       "oparlKey": "10428",
       "name": "Infoveranstaltung Haushalt",
-      "score": 0.01639
+      "score": 0.01639,
+      "signals": {
+        "name": 0.6006
+      }
+    },
+    {
+      "id": "Paper_33766",
+      "type": "Paper",
+      "oparlKey": "33766",
+      "name": "Neuorganisation TechnologieRegion: Politische Gremien einbinden",
+      "score": 0.01613,
+      "signals": {
+        "name": 0.5101
+      }
     },
     {
       "id": "File_663776",
       "type": "File",
       "oparlKey": "663776",
       "name": "Digitale Transformation von kommunalen Services",
-      "score": 0.01613
+      "score": 0.01613,
+      "signals": {
+        "content": 0.3319
+      }
     },
     {
       "id": "Meeting_10479",
       "type": "Meeting",
       "oparlKey": "10479",
       "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
-      "score": 0.01613
+      "score": 0.01613,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_34638",
+      "type": "Paper",
+      "oparlKey": "34638",
+      "name": "Gründung eines neuen Amtes \"170\" mit dem Aufgabenschwerpunkt Informationstechnologie zum 01.01.2017",
+      "score": 0.01587,
+      "signals": {
+        "name": 0.552
+      }
     },
     {
       "id": "File_150630",
       "type": "File",
       "oparlKey": "150630",
       "name": "Stellungnahme TOP 19",
-      "score": 0.01587
+      "score": 0.01587,
+      "signals": {
+        "content": 0.3369
+      }
     },
     {
       "id": "Meeting_10193",
       "type": "Meeting",
       "oparlKey": "10193",
       "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
-      "score": 0.01587
+      "score": 0.01587,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_27930",
+      "type": "Paper",
+      "oparlKey": "27930",
+      "name": "Einführung der einheitlichen Behördennummer 115 in der TechnologieRegion Karlsruhe in interkommunaler Zusammenarbeit mit dem Landratsamt",
+      "score": 0.01562,
+      "signals": {
+        "name": 0.5599
+      }
     },
     {
       "id": "File_635289",
       "type": "File",
       "oparlKey": "635289",
       "name": "BV Digitalstrategie",
-      "score": 0.01562
+      "score": 0.01562,
+      "signals": {
+        "content": 0.3407
+      }
     },
     {
       "id": "Meeting_10628",
       "type": "Meeting",
       "oparlKey": "10628",
       "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
-      "score": 0.01562
+      "score": 0.01562,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_51829",
+      "type": "Paper",
+      "oparlKey": "51829",
+      "name": "Kauf einer CAFM-Software mit Support (Wartung/Service) beim Amt für Hochbau und Gebäudewirtschaft",
+      "score": 0.01538,
+      "signals": {
+        "name": 0.5843
+      }
     },
     {
       "id": "File_635290",
       "type": "File",
       "oparlKey": "635290",
       "name": "Digitalstrategie ANLAGE",
-      "score": 0.01538
+      "score": 0.01538,
+      "signals": {
+        "content": 0.3412
+      }
     },
     {
-      "id": "Meeting_10531",
+      "id": "Meeting_9585",
       "type": "Meeting",
-      "oparlKey": "10531",
+      "oparlKey": "9585",
       "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
-      "score": 0.01538
+      "score": 0.01538,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_33881",
+      "type": "Paper",
+      "oparlKey": "33881",
+      "name": "THH 8000: Wirtschaftsförderung",
+      "score": 0.01515,
+      "signals": {
+        "name": 0.5914
+      }
     },
     {
       "id": "File_647527",
       "type": "File",
       "oparlKey": "647527",
       "name": "Anfrage",
-      "score": 0.01515
+      "score": 0.01515,
+      "signals": {
+        "content": 0.3424
+      }
     },
     {
-      "id": "Meeting_10191",
+      "id": "Meeting_10192",
       "type": "Meeting",
-      "oparlKey": "10191",
+      "oparlKey": "10192",
       "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
-      "score": 0.01515
+      "score": 0.01515,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_32944",
+      "type": "Paper",
+      "oparlKey": "32944",
+      "name": "Erhöhung der interkulturellen Kompetenz in der Stadtverwaltung",
+      "score": 0.01493,
+      "signals": {
+        "name": 0.5979
+      }
     },
     {
       "id": "File_647667",
       "type": "File",
       "oparlKey": "647667",
       "name": "StN_Antrag_FDP_ITSM",
-      "score": 0.01493
+      "score": 0.01493,
+      "signals": {
+        "content": 0.3458
+      }
     },
     {
-      "id": "Meeting_1051",
+      "id": "Meeting_10571",
       "type": "Meeting",
-      "oparlKey": "1051",
-      "name": "Gemeinderat",
-      "score": 0.01493
+      "oparlKey": "10571",
+      "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
+      "score": 0.01493,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_41766",
+      "type": "Paper",
+      "oparlKey": "41766",
+      "name": "Vergabe der Lieferung von Hardware und Zubehör für Karlsruher Schulen",
+      "score": 0.01471,
+      "signals": {
+        "name": 0.5981
+      }
     },
     {
       "id": "File_645440",
       "type": "File",
       "oparlKey": "645440",
       "name": "Stellungnahme Antrag",
-      "score": 0.01471
+      "score": 0.01471,
+      "signals": {
+        "content": 0.3524
+      }
     },
     {
-      "id": "Meeting_2256",
+      "id": "Meeting_10531",
       "type": "Meeting",
-      "oparlKey": "2256",
-      "name": "Gemeinderat",
-      "score": 0.01471
+      "oparlKey": "10531",
+      "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
+      "score": 0.01471,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_50881",
+      "type": "Paper",
+      "oparlKey": "50881",
+      "name": "Kenntnisnahme über die Bildung von Fraktionen und Benennung der Fraktionsvorsitzenden und Stellvertreter*innen",
+      "score": 0.01449,
+      "signals": {
+        "name": 0.5998
+      }
     },
     {
       "id": "File_603787",
       "type": "File",
       "oparlKey": "603787",
       "name": "IT-moderne Schule",
-      "score": 0.01449
+      "score": 0.01449,
+      "signals": {
+        "content": 0.357
+      }
     },
     {
-      "id": "Meeting_2192",
+      "id": "Meeting_10191",
       "type": "Meeting",
-      "oparlKey": "2192",
-      "name": "Gemeinderat",
-      "score": 0.01449
+      "oparlKey": "10191",
+      "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
+      "score": 0.01449,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_50963",
+      "type": "Paper",
+      "oparlKey": "50963",
+      "name": "Verwaltungsgebäude Helmholtzstraße 1, Modernisierung, Rohbau",
+      "score": 0.01429,
+      "signals": {
+        "name": 0.6027
+      }
     },
     {
       "id": "File_150428",
       "type": "File",
       "oparlKey": "150428",
       "name": "GRÜNE-Neuorganisation TechnologieRegion",
-      "score": 0.01429
+      "score": 0.01429,
+      "signals": {
+        "content": 0.3616
+      }
     },
     {
-      "id": "Meeting_974",
+      "id": "Meeting_9586",
       "type": "Meeting",
-      "oparlKey": "974",
-      "name": "Gemeinderat",
-      "score": 0.01429
+      "oparlKey": "9586",
+      "name": "Ausschuss für Wirtschaft und Wissenschaft (öffentlich/nicht öffentlich)",
+      "score": 0.01429,
+      "signals": {
+        "name": 0.6486
+      }
+    },
+    {
+      "id": "Paper_46885",
+      "type": "Paper",
+      "oparlKey": "46885",
+      "name": "Stiftungen der Ortsverwaltung, Rechnungsabschluss 2021",
+      "score": 0.01408,
+      "signals": {
+        "name": 0.6113
+      }
     },
     {
       "id": "File_645352",
       "type": "File",
       "oparlKey": "645352",
       "name": "Antrag",
-      "score": 0.01408
+      "score": 0.01408,
+      "signals": {
+        "content": 0.3625
+      }
     },
     {
-      "id": "Meeting_1798",
+      "id": "Meeting_6275",
       "type": "Meeting",
-      "oparlKey": "1798",
-      "name": "Gemeinderat",
-      "score": 0.01408
+      "oparlKey": "6275",
+      "name": "Ausschuss für öffentliche Einrichtungen",
+      "score": 0.01408,
+      "signals": {
+        "name": 0.6548
+      }
+    },
+    {
+      "id": "Paper_54394",
+      "type": "Paper",
+      "oparlKey": "54394",
+      "name": "Zentrale Anlaufstelle für sichere Schulwege",
+      "score": 0.01389,
+      "signals": {
+        "name": 0.6129
+      }
     },
     {
       "id": "File_616957",
       "type": "File",
       "oparlKey": "616957",
       "name": "Antrag",
-      "score": 0.01389
+      "score": 0.01389,
+      "signals": {
+        "content": 0.3676
+      }
     },
     {
-      "id": "Meeting_2949",
+      "id": "Meeting_2024",
       "type": "Meeting",
-      "oparlKey": "2949",
+      "oparlKey": "2024",
       "name": "Gemeinderat",
-      "score": 0.01389
+      "score": 0.01389,
+      "signals": {
+        "name": 0.6558
+      }
+    },
+    {
+      "id": "Paper_38257",
+      "type": "Paper",
+      "oparlKey": "38257",
+      "name": "Bürgerfreundlichkeit der Neuorganisation der Terminvergabe und der Arbeitsabläufe bei den Bürgerbüros und Ortsverwaltungen überprüfen",
+      "score": 0.0137,
+      "signals": {
+        "name": 0.6139
+      }
     },
     {
       "id": "File_600307",
       "type": "File",
       "oparlKey": "600307",
       "name": "GR-Vorlage Bildung Kommission IT und Digitalisierung neu",
-      "score": 0.0137
+      "score": 0.0137,
+      "signals": {
+        "content": 0.3688
+      }
     },
     {
-      "id": "Meeting_1233",
+      "id": "Meeting_2694",
       "type": "Meeting",
-      "oparlKey": "1233",
+      "oparlKey": "2694",
       "name": "Gemeinderat",
-      "score": 0.0137
+      "score": 0.0137,
+      "signals": {
+        "name": 0.6558
+      }
+    },
+    {
+      "id": "Paper_30631",
+      "type": "Paper",
+      "oparlKey": "30631",
+      "name": "Strukturierung des städtischen Beteiligungsportfolios",
+      "score": 0.01351,
+      "signals": {
+        "name": 0.6221
+      }
     },
     {
       "id": "File_603450",
       "type": "File",
       "oparlKey": "603450",
       "name": "Protokoll TOP 39",
-      "score": 0.01351
+      "score": 0.01351,
+      "signals": {
+        "content": 0.3694
+      }
     },
     {
-      "id": "Meeting_2935",
+      "id": "Meeting_943",
       "type": "Meeting",
-      "oparlKey": "2935",
+      "oparlKey": "943",
       "name": "Gemeinderat",
-      "score": 0.01351
+      "score": 0.01351,
+      "signals": {
+        "name": 0.6558
+      }
+    },
+    {
+      "id": "Paper_32080",
+      "type": "Paper",
+      "oparlKey": "32080",
+      "name": "Anfrage FDP: Energieeffizienz bei öffentlichen Gebäuden",
+      "score": 0.01333,
+      "signals": {
+        "name": 0.6224
+      }
     },
     {
       "id": "File_663475",
       "type": "File",
       "oparlKey": "663475",
       "name": "Antrag",
-      "score": 0.01333
+      "score": 0.01333,
+      "signals": {
+        "content": 0.3697
+      }
     },
     {
-      "id": "Meeting_2729",
+      "id": "Meeting_3159",
       "type": "Meeting",
-      "oparlKey": "2729",
+      "oparlKey": "3159",
       "name": "Gemeinderat",
-      "score": 0.01333
+      "score": 0.01333,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_50411",
+      "type": "Paper",
+      "oparlKey": "50411",
+      "name": "Neue Finanzierungssystematik für Kindertagesstätten und Kinderkrippen in Karlsruhe - weiteres Vorgehen",
+      "score": 0.01316,
+      "signals": {
+        "name": 0.6243
+      }
     },
     {
       "id": "File_147061",
       "type": "File",
       "oparlKey": "147061",
       "name": "Protokoll TOP 14",
-      "score": 0.01316
+      "score": 0.01316,
+      "signals": {
+        "content": 0.3711
+      }
     },
     {
-      "id": "Meeting_1515",
+      "id": "Meeting_3100",
       "type": "Meeting",
-      "oparlKey": "1515",
+      "oparlKey": "3100",
       "name": "Gemeinderat",
-      "score": 0.01316
+      "score": 0.01316,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_32779",
+      "type": "Paper",
+      "oparlKey": "32779",
+      "name": "WLAN-Offensive für Karlsruhe",
+      "score": 0.01299,
+      "signals": {
+        "name": 0.6297
+      }
     },
     {
       "id": "File_587242",
       "type": "File",
       "oparlKey": "587242",
       "name": "Stellungnahme TOP 28",
-      "score": 0.01299
+      "score": 0.01299,
+      "signals": {
+        "content": 0.3727
+      }
     },
     {
-      "id": "Meeting_1455",
+      "id": "Meeting_3167",
       "type": "Meeting",
-      "oparlKey": "1455",
+      "oparlKey": "3167",
       "name": "Gemeinderat",
-      "score": 0.01299
+      "score": 0.01299,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_41271",
+      "type": "Paper",
+      "oparlKey": "41271",
+      "name": "Interne Struktur und Neuaufstellung der Leitungsebene des Badischen Staatstheaters",
+      "score": 0.01282,
+      "signals": {
+        "name": 0.6302
+      }
     },
     {
       "id": "File_620967",
       "type": "File",
       "oparlKey": "620967",
       "name": "Antrag Nr. 7 SPD - Digitalisierung Verwaltung",
-      "score": 0.01282
+      "score": 0.01282,
+      "signals": {
+        "content": 0.3734
+      }
     },
     {
-      "id": "Meeting_2625",
+      "id": "Meeting_3003",
       "type": "Meeting",
-      "oparlKey": "2625",
+      "oparlKey": "3003",
       "name": "Gemeinderat",
-      "score": 0.01282
+      "score": 0.01282,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_54396",
+      "type": "Paper",
+      "oparlKey": "54396",
+      "name": "Mittagsverpflegung in Kitas und Schulen ganzheitlich gestalten",
+      "score": 0.01266,
+      "signals": {
+        "name": 0.6369
+      }
     },
     {
       "id": "File_597517",
       "type": "File",
       "oparlKey": "597517",
       "name": "FDP Breitbandversorgung",
-      "score": 0.01266
+      "score": 0.01266,
+      "signals": {
+        "content": 0.3743
+      }
     },
     {
-      "id": "Meeting_3186",
+      "id": "Meeting_2466",
       "type": "Meeting",
-      "oparlKey": "3186",
+      "oparlKey": "2466",
       "name": "Gemeinderat",
-      "score": 0.01266
+      "score": 0.01266,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_46700",
+      "type": "Paper",
+      "oparlKey": "46700",
+      "name": "Start Vergabeverfahren zur Beschaffung von IT-Systemen (Lose 1, 2 und 5)",
+      "score": 0.0125,
+      "signals": {
+        "name": 0.637
+      }
     },
     {
       "id": "File_146408",
       "type": "File",
       "oparlKey": "146408",
       "name": "Stellungnahme TOP 14",
-      "score": 0.0125
+      "score": 0.0125,
+      "signals": {
+        "content": 0.375
+      }
     },
     {
-      "id": "Meeting_1490",
+      "id": "Meeting_3024",
       "type": "Meeting",
-      "oparlKey": "1490",
+      "oparlKey": "3024",
       "name": "Gemeinderat",
-      "score": 0.0125
+      "score": 0.0125,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_54193",
+      "type": "Paper",
+      "oparlKey": "54193",
+      "name": "Schulleitungsstellenbesetzungsverfahren",
+      "score": 0.01235,
+      "signals": {
+        "name": 0.6375
+      }
     },
     {
       "id": "File_619216",
       "type": "File",
       "oparlKey": "619216",
       "name": "Protokoll GR 21.07.20 TOP 20",
-      "score": 0.01235
+      "score": 0.01235,
+      "signals": {
+        "content": 0.3757
+      }
     },
     {
-      "id": "Meeting_2251",
+      "id": "Meeting_3182",
       "type": "Meeting",
-      "oparlKey": "2251",
+      "oparlKey": "3182",
       "name": "Gemeinderat",
-      "score": 0.01235
+      "score": 0.01235,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_46245",
+      "type": "Paper",
+      "oparlKey": "46245",
+      "name": "Stadthalle, Modernisierung",
+      "score": 0.0122,
+      "signals": {
+        "name": 0.6384
+      }
     },
     {
       "id": "File_659348",
       "type": "File",
       "oparlKey": "659348",
       "name": "Stellungnahme Anfrage",
-      "score": 0.0122
+      "score": 0.0122,
+      "signals": {
+        "content": 0.3765
+      }
     },
     {
-      "id": "Meeting_141",
+      "id": "Meeting_2212",
       "type": "Meeting",
-      "oparlKey": "141",
+      "oparlKey": "2212",
       "name": "Gemeinderat",
-      "score": 0.0122
+      "score": 0.0122,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_16891",
+      "type": "Paper",
+      "oparlKey": "16891",
+      "name": "Anfrage GRÜNE: Entwicklung der Mitarbeiterzahl beim Konzern Stadt Karlsruhe",
+      "score": 0.01205,
+      "signals": {
+        "name": 0.6384
+      }
     },
     {
       "id": "File_647577",
       "type": "File",
       "oparlKey": "647577",
       "name": "Protokoll Sitzungseröffnung und TOP 1 HA_09.05.2023",
-      "score": 0.01205
+      "score": 0.01205,
+      "signals": {
+        "content": 0.3768
+      }
     },
     {
-      "id": "Meeting_2659",
+      "id": "Meeting_1274",
       "type": "Meeting",
-      "oparlKey": "2659",
+      "oparlKey": "1274",
       "name": "Gemeinderat",
-      "score": 0.01205
+      "score": 0.01205,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_48150",
+      "type": "Paper",
+      "oparlKey": "48150",
+      "name": "Auftragsvergabe für die Annahme, Verwertung und Entsorgung von Altholz",
+      "score": 0.0119,
+      "signals": {
+        "name": 0.639
+      }
     },
     {
       "id": "File_609179",
       "type": "File",
       "oparlKey": "609179",
       "name": "Anlage CIMA IQ-Leitprojekt Korridorthema Innenstadt Einzelhandelsgutachten Synopse",
-      "score": 0.0119
+      "score": 0.0119,
+      "signals": {
+        "content": 0.3775
+      }
     },
     {
-      "id": "Meeting_2268",
+      "id": "Meeting_2262",
       "type": "Meeting",
-      "oparlKey": "2268",
+      "oparlKey": "2262",
       "name": "Gemeinderat",
-      "score": 0.0119
+      "score": 0.0119,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_51692",
+      "type": "Paper",
+      "oparlKey": "51692",
+      "name": "IQ-Leitprojekt \"karlsruhe.digital\" - Sachstand und Jahresbericht sowie weiteres Vorgehen",
+      "score": 0.01176,
+      "signals": {
+        "name": 0.6401
+      }
     },
     {
       "id": "File_9521",
       "type": "File",
       "oparlKey": "9521",
       "name": "TOp 17",
-      "score": 0.01176
+      "score": 0.01176,
+      "signals": {
+        "content": 0.3791
+      }
     },
     {
-      "id": "Meeting_2042",
+      "id": "Meeting_2244",
       "type": "Meeting",
-      "oparlKey": "2042",
+      "oparlKey": "2244",
       "name": "Gemeinderat",
-      "score": 0.01176
+      "score": 0.01176,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_49618",
+      "type": "Paper",
+      "oparlKey": "49618",
+      "name": "Kita-Gebühren gerecht verteilen",
+      "score": 0.01163,
+      "signals": {
+        "name": 0.6408
+      }
     },
     {
       "id": "File_603803",
       "type": "File",
       "oparlKey": "603803",
       "name": "Anlage ka-digital Projektbericht Digitale Agenda nö",
-      "score": 0.01163
+      "score": 0.01163,
+      "signals": {
+        "content": 0.3791
+      }
     },
     {
-      "id": "Meeting_1837",
+      "id": "Meeting_1249",
       "type": "Meeting",
-      "oparlKey": "1837",
+      "oparlKey": "1249",
       "name": "Gemeinderat",
-      "score": 0.01163
+      "score": 0.01163,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_36460",
+      "type": "Paper",
+      "oparlKey": "36460",
+      "name": "Zukünftige kommunale Flotte: Stand der Planungen bei den Verkehrsbetrieben und den städtischen Unternehmen",
+      "score": 0.01149,
+      "signals": {
+        "name": 0.6409
+      }
     },
     {
       "id": "File_611295",
       "type": "File",
       "oparlKey": "611295",
       "name": "Anlage 8, IT-Kommission",
-      "score": 0.01149
+      "score": 0.01149,
+      "signals": {
+        "content": 0.3793
+      }
     },
     {
-      "id": "Meeting_2152",
+      "id": "Meeting_1313",
       "type": "Meeting",
-      "oparlKey": "2152",
+      "oparlKey": "1313",
       "name": "Gemeinderat",
-      "score": 0.01149
+      "score": 0.01149,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_33027",
+      "type": "Paper",
+      "oparlKey": "33027",
+      "name": "Aufnahme einer Projektpartnerschaft im Rahmen der kommunalen Entwicklungszusammenarbeit",
+      "score": 0.01136,
+      "signals": {
+        "name": 0.6426
+      }
     },
     {
       "id": "File_585562",
       "type": "File",
       "oparlKey": "585562",
       "name": "Protokoll GR TOP 6",
-      "score": 0.01136
+      "score": 0.01136,
+      "signals": {
+        "content": 0.3793
+      }
     },
     {
-      "id": "Meeting_1464",
+      "id": "Meeting_2648",
       "type": "Meeting",
-      "oparlKey": "1464",
+      "oparlKey": "2648",
       "name": "Gemeinderat",
-      "score": 0.01136
+      "score": 0.01136,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_38062",
+      "type": "Paper",
+      "oparlKey": "38062",
+      "name": "Stand der Realisierung eines integrierten Rettungszentrums",
+      "score": 0.01124,
+      "signals": {
+        "name": 0.6428
+      }
     },
     {
       "id": "File_648766",
       "type": "File",
       "oparlKey": "648766",
       "name": "Stellungnahme Anfrage",
-      "score": 0.01124
+      "score": 0.01124,
+      "signals": {
+        "content": 0.3812
+      }
     },
     {
-      "id": "Meeting_1528",
+      "id": "Meeting_1798",
       "type": "Meeting",
-      "oparlKey": "1528",
+      "oparlKey": "1798",
       "name": "Gemeinderat",
-      "score": 0.01124
+      "score": 0.01124,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_54399",
+      "type": "Paper",
+      "oparlKey": "54399",
+      "name": "Stand und Strategie des Glasfaserausbaus in Karlsruhe",
+      "score": 0.01111,
+      "signals": {
+        "name": 0.6429
+      }
     },
     {
       "id": "File_609178",
       "type": "File",
       "oparlKey": "609178",
       "name": "Anlage 2 CIMA-Gutachten",
-      "score": 0.01111
+      "score": 0.01111,
+      "signals": {
+        "content": 0.3812
+      }
     },
     {
-      "id": "Meeting_1778",
+      "id": "Meeting_1827",
       "type": "Meeting",
-      "oparlKey": "1778",
+      "oparlKey": "1827",
       "name": "Gemeinderat",
-      "score": 0.01111
+      "score": 0.01111,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_51454",
+      "type": "Paper",
+      "oparlKey": "51454",
+      "name": "Vorstellung des neuen Amtsleiters des Schul- und Sportamtes",
+      "score": 0.01099,
+      "signals": {
+        "name": 0.6435
+      }
     },
     {
       "id": "File_604943",
       "type": "File",
       "oparlKey": "604943",
       "name": "Stellungnahme TOP 30",
-      "score": 0.01099
+      "score": 0.01099,
+      "signals": {
+        "content": 0.3813
+      }
     },
     {
-      "id": "Meeting_1503",
+      "id": "Meeting_2949",
       "type": "Meeting",
-      "oparlKey": "1503",
+      "oparlKey": "2949",
       "name": "Gemeinderat",
-      "score": 0.01099
+      "score": 0.01099,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_39961",
+      "type": "Paper",
+      "oparlKey": "39961",
+      "name": "Standort Geothermiekraftanlage – weitere Beratungs- und Beschlussgrundlage, aktueller Sachstand",
+      "score": 0.01087,
+      "signals": {
+        "name": 0.644
+      }
     },
     {
       "id": "File_603804",
       "type": "File",
       "oparlKey": "603804",
       "name": "Anlage ka-digital Thesenpapier nö",
-      "score": 0.01087
+      "score": 0.01087,
+      "signals": {
+        "content": 0.3819
+      }
     },
     {
-      "id": "Meeting_2419",
+      "id": "Meeting_2256",
       "type": "Meeting",
-      "oparlKey": "2419",
-      "name": "Schulbeirat",
-      "score": 0.01087
+      "oparlKey": "2256",
+      "name": "Gemeinderat",
+      "score": 0.01087,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_52774",
+      "type": "Paper",
+      "oparlKey": "52774",
+      "name": "HHS4_V107 - Karlsruhe.App Marketingaufwendungen",
+      "score": 0.01075,
+      "signals": {
+        "name": 0.6476
+      }
     },
     {
       "id": "File_148152",
       "type": "File",
       "oparlKey": "148152",
       "name": "Protokoll TOP 21",
-      "score": 0.01075
+      "score": 0.01075,
+      "signals": {
+        "content": 0.3826
+      }
     },
     {
-      "id": "Meeting_2740",
+      "id": "Meeting_2211",
       "type": "Meeting",
-      "oparlKey": "2740",
-      "name": "Hauptausschuss",
-      "score": 0.01075
+      "oparlKey": "2211",
+      "name": "Gemeinderat",
+      "score": 0.01075,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_49371",
+      "type": "Paper",
+      "oparlKey": "49371",
+      "name": "Kunstkommission straffer organisieren",
+      "score": 0.01064,
+      "signals": {
+        "name": 0.648
+      }
     },
     {
       "id": "File_617222",
       "type": "File",
       "oparlKey": "617222",
       "name": "Stellungnahme TOP Cities coalition for digital rights",
-      "score": 0.01064
+      "score": 0.01064,
+      "signals": {
+        "content": 0.3829
+      }
     },
     {
-      "id": "Meeting_2970",
+      "id": "Meeting_2925",
       "type": "Meeting",
-      "oparlKey": "2970",
-      "name": "Hauptausschuss",
-      "score": 0.01064
+      "oparlKey": "2925",
+      "name": "Gemeinderat",
+      "score": 0.01064,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_37446",
+      "type": "Paper",
+      "oparlKey": "37446",
+      "name": "Schloss-Schule Durlach, Erweiterung und Modernisierung: Vergabe von Architekten- und Ingenieurleitungen",
+      "score": 0.01053,
+      "signals": {
+        "name": 0.6482
+      }
     },
     {
       "id": "File_617202",
       "type": "File",
       "oparlKey": "617202",
       "name": "Stellungnahme TOP 46",
-      "score": 0.01053
+      "score": 0.01053,
+      "signals": {
+        "content": 0.3834
+      }
     },
     {
-      "id": "Meeting_2118",
+      "id": "Meeting_2975",
       "type": "Meeting",
-      "oparlKey": "2118",
-      "name": "Hauptausschuss",
-      "score": 0.01053
+      "oparlKey": "2975",
+      "name": "Gemeinderat",
+      "score": 0.01053,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_36527",
+      "type": "Paper",
+      "oparlKey": "36527",
+      "name": "Breitbandförderprogramm für Karlsruher Schulen",
+      "score": 0.01042,
+      "signals": {
+        "name": 0.6483
+      }
     },
     {
       "id": "File_604438",
       "type": "File",
       "oparlKey": "604438",
       "name": "Protokoll GR TOP 20",
-      "score": 0.01042
+      "score": 0.01042,
+      "signals": {
+        "content": 0.384
+      }
     },
     {
-      "id": "Meeting_2665",
+      "id": "Meeting_1051",
       "type": "Meeting",
-      "oparlKey": "2665",
-      "name": "Hauptausschuss",
-      "score": 0.01042
+      "oparlKey": "1051",
+      "name": "Gemeinderat",
+      "score": 0.01042,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_49714",
+      "type": "Paper",
+      "oparlKey": "49714",
+      "name": "Vergabe des Supports des pädagogischen Netzes von 76 Karlsruher Schulen",
+      "score": 0.01031,
+      "signals": {
+        "name": 0.6494
+      }
     },
     {
       "id": "File_617046",
       "type": "File",
       "oparlKey": "617046",
       "name": "Protokoll TOP 4",
-      "score": 0.01031
+      "score": 0.01031,
+      "signals": {
+        "content": 0.3842
+      }
     },
     {
-      "id": "Meeting_3015",
+      "id": "Meeting_1629",
       "type": "Meeting",
-      "oparlKey": "3015",
-      "name": "Hauptausschuss",
-      "score": 0.01031
+      "oparlKey": "1629",
+      "name": "Gemeinderat",
+      "score": 0.01031,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_22897",
+      "type": "Paper",
+      "oparlKey": "22897",
+      "name": "Benennung der Mitglieder für den Umlegungsausschuss",
+      "score": 0.0102,
+      "signals": {
+        "name": 0.6499
+      }
     },
     {
       "id": "File_150429",
       "type": "File",
       "oparlKey": "150429",
       "name": "Stellungnahme TOP 20",
-      "score": 0.0102
+      "score": 0.0102,
+      "signals": {
+        "content": 0.3848
+      }
     },
     {
-      "id": "Meeting_2266",
+      "id": "Meeting_2192",
       "type": "Meeting",
-      "oparlKey": "2266",
-      "name": "Hauptausschuss",
-      "score": 0.0102
+      "oparlKey": "2192",
+      "name": "Gemeinderat",
+      "score": 0.0102,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_30945",
+      "type": "Paper",
+      "oparlKey": "30945",
+      "name": "Einrichtung einer kommunalen Grundbucheinsichtsstelle in Karlsruhe-Durlach",
+      "score": 0.0101,
+      "signals": {
+        "name": 0.6515
+      }
     },
     {
       "id": "File_146139",
       "type": "File",
       "oparlKey": "146139",
       "name": "GRÜNE-Breitbandversorgung in Karlsruhe",
-      "score": 0.0101
+      "score": 0.0101,
+      "signals": {
+        "content": 0.3867
+      }
     },
     {
-      "id": "Meeting_2249",
+      "id": "Meeting_1322",
       "type": "Meeting",
-      "oparlKey": "2249",
-      "name": "Hauptausschuss",
-      "score": 0.0101
+      "oparlKey": "1322",
+      "name": "Gemeinderat",
+      "score": 0.0101,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_29289",
+      "type": "Paper",
+      "oparlKey": "29289",
+      "name": "Anfrage StRn Dr. Leidig, StRn Kluth, StRn Dr. Polle-Holl (GRÜNE): Verfahrensstand eines Internet-Portals zur Anmeldung für Kinderbetreuungsplätze",
+      "score": 0.01,
+      "signals": {
+        "name": 0.6517
+      }
     },
     {
       "id": "File_614587",
       "type": "File",
       "oparlKey": "614587",
       "name": "Anlage neu Aktionsplan City 2020-2026",
-      "score": 0.01
+      "score": 0.01,
+      "signals": {
+        "content": 0.3889
+      }
     },
     {
-      "id": "Meeting_2962",
+      "id": "Meeting_1627",
       "type": "Meeting",
-      "oparlKey": "2962",
-      "name": "Hauptausschuss",
-      "score": 0.01
+      "oparlKey": "1627",
+      "name": "Gemeinderat",
+      "score": 0.01,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_34678",
+      "type": "Paper",
+      "oparlKey": "34678",
+      "name": "Neukonzeption der Außenstelle Karlsruhe der Ludwig-Guttmann-Schule in Trägerschaft des Landkreises Karlsruhe",
+      "score": 0.0099,
+      "signals": {
+        "name": 0.6517
+      }
     },
     {
       "id": "File_623285",
       "type": "File",
       "oparlKey": "623285",
       "name": "Anfrage",
-      "score": 0.0099
+      "score": 0.0099,
+      "signals": {
+        "content": 0.3891
+      }
     },
     {
-      "id": "Meeting_10480",
+      "id": "Meeting_1068",
       "type": "Meeting",
-      "oparlKey": "10480",
-      "name": "Gestaltungsbeirat (öffentlich/nichtöffentlich)",
-      "score": 0.0099
+      "oparlKey": "1068",
+      "name": "Gemeinderat",
+      "score": 0.0099,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_48833",
+      "type": "Paper",
+      "oparlKey": "48833",
+      "name": "Rahmenbedingungen für Inklusion in Kitas verbessern",
+      "score": 0.0098,
+      "signals": {
+        "name": 0.652
+      }
     },
     {
       "id": "File_144964",
       "type": "File",
       "oparlKey": "144964",
       "name": "TOP 21",
-      "score": 0.0098
+      "score": 0.0098,
+      "signals": {
+        "content": 0.3899
+      }
     },
     {
-      "id": "Meeting_9858",
+      "id": "Meeting_2746",
       "type": "Meeting",
-      "oparlKey": "9858",
-      "name": "Gestaltungsbeirat (öffentlich/nichtöffentlich)",
-      "score": 0.0098
+      "oparlKey": "2746",
+      "name": "Gemeinderat",
+      "score": 0.0098,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_19169",
+      "type": "Paper",
+      "oparlKey": "19169",
+      "name": "Anfrage GRÜNE: Lernnetzwerk gegen Kinderarmut",
+      "score": 0.00971,
+      "signals": {
+        "name": 0.6524
+      }
     },
     {
       "id": "File_601448",
       "type": "File",
       "oparlKey": "601448",
       "name": "IT-moderne Schule",
-      "score": 0.00971
+      "score": 0.00971,
+      "signals": {
+        "content": 0.3903
+      }
     },
     {
-      "id": "Meeting_10640",
+      "id": "Meeting_2209",
       "type": "Meeting",
-      "oparlKey": "10640",
-      "name": "Gestaltungsbeirat (öffentlich/nichtöffentlich)",
-      "score": 0.00971
+      "oparlKey": "2209",
+      "name": "Gemeinderat",
+      "score": 0.00971,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_53981",
+      "type": "Paper",
+      "oparlKey": "53981",
+      "name": "HHS4_GR49 - Institutionelle Förderung Sonstige 3 - Panorama e. V.",
+      "score": 0.00962,
+      "signals": {
+        "name": 0.6528
+      }
     },
     {
       "id": "File_592260",
       "type": "File",
       "oparlKey": "592260",
       "name": "Anlage Stellungnahme TechnologieRegion",
-      "score": 0.00962
+      "score": 0.00962,
+      "signals": {
+        "content": 0.3907
+      }
     },
     {
-      "id": "Meeting_10168",
+      "id": "Meeting_1771",
       "type": "Meeting",
-      "oparlKey": "10168",
-      "name": "Gestaltungsbeirat (öffentlich/nichtöffentlich)",
-      "score": 0.00962
+      "oparlKey": "1771",
+      "name": "Gemeinderat",
+      "score": 0.00962,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_19871",
+      "type": "Paper",
+      "oparlKey": "19871",
+      "name": "Antrag SPD: Ausbau der Schulanmeldung zu einem Beratungs-, Informations- und Kontakttag",
+      "score": 0.00952,
+      "signals": {
+        "name": 0.6529
+      }
     },
     {
       "id": "File_600462",
       "type": "File",
       "oparlKey": "600462",
       "name": "Änderung_Dezernatsverteilungsplan",
-      "score": 0.00952
+      "score": 0.00952,
+      "signals": {
+        "content": 0.3914
+      }
     },
     {
-      "id": "Meeting_4260",
+      "id": "Meeting_1447",
       "type": "Meeting",
-      "oparlKey": "4260",
-      "name": "Ausschuss für Wirtschaftsförderung (nicht öffentlich)",
-      "score": 0.00952
+      "oparlKey": "1447",
+      "name": "Gemeinderat",
+      "score": 0.00952,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_49396",
+      "type": "Paper",
+      "oparlKey": "49396",
+      "name": "Dynamisierung der Förderbeträge im freien, nicht-kommerziellen Kulturbereich",
+      "score": 0.00943,
+      "signals": {
+        "name": 0.653
+      }
     },
     {
       "id": "File_144963",
       "type": "File",
       "oparlKey": "144963",
       "name": "GRÜNE-Online-gestützte Bürgerbeteiligung",
-      "score": 0.00943
+      "score": 0.00943,
+      "signals": {
+        "content": 0.3915
+      }
     },
     {
-      "id": "Meeting_6343",
+      "id": "Meeting_2258",
       "type": "Meeting",
-      "oparlKey": "6343",
-      "name": "Ausschuss für Wirtschaftsförderung (nicht öffentlich)",
-      "score": 0.00943
+      "oparlKey": "2258",
+      "name": "Gemeinderat",
+      "score": 0.00943,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_39720",
+      "type": "Paper",
+      "oparlKey": "39720",
+      "name": "Weiterentwicklung des Services und der Hygienemaßnahmen in den Einrichtungen der Stadtbibliothek Karlsruhe",
+      "score": 0.00935,
+      "signals": {
+        "name": 0.6531
+      }
     },
     {
       "id": "File_600604",
       "type": "File",
       "oparlKey": "600604",
       "name": "Protokoll GR TOP 9",
-      "score": 0.00935
+      "score": 0.00935,
+      "signals": {
+        "content": 0.3915
+      }
     },
     {
-      "id": "Meeting_5773",
+      "id": "Meeting_1205",
       "type": "Meeting",
-      "oparlKey": "5773",
-      "name": "Ausschuss für Wirtschaftsförderung (nicht öffentlich)",
-      "score": 0.00935
+      "oparlKey": "1205",
+      "name": "Gemeinderat",
+      "score": 0.00935,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_365",
+      "type": "Paper",
+      "oparlKey": "365",
+      "name": "Noch ist „5 vor 12“ – CO2-Bilanz der Stadt Karlsruhe verbessern: Klimanotstand erklären",
+      "score": 0.00926,
+      "signals": {
+        "name": 0.6532
+      }
     },
     {
       "id": "File_597630",
       "type": "File",
       "oparlKey": "597630",
       "name": "Anlage 1 Übersicht zu den Inhalten der IQ-Korridorthemen",
-      "score": 0.00926
+      "score": 0.00926,
+      "signals": {
+        "content": 0.3918
+      }
     },
     {
-      "id": "Meeting_5299",
+      "id": "Meeting_1117",
       "type": "Meeting",
-      "oparlKey": "5299",
-      "name": "Ausschuss für Wirtschaftsförderung (nicht öffentlich)",
-      "score": 0.00926
+      "oparlKey": "1117",
+      "name": "Gemeinderat",
+      "score": 0.00926,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_36906",
+      "type": "Paper",
+      "oparlKey": "36906",
+      "name": "Änderung der Besetzung verschiedener Aufsichtsräte und des Stiftungsrates ZKM in Folge der Niederlegung von Mandaten durch Stadträtin Dr. Ute Leidig",
+      "score": 0.00917,
+      "signals": {
+        "name": 0.6541
+      }
     },
     {
       "id": "File_609211",
       "type": "File",
       "oparlKey": "609211",
       "name": "Anlage IQ-Zwischenbericht Bürgerservice",
-      "score": 0.00917
+      "score": 0.00917,
+      "signals": {
+        "content": 0.392
+      }
     },
     {
-      "id": "Meeting_6715",
+      "id": "Meeting_1106",
       "type": "Meeting",
-      "oparlKey": "6715",
-      "name": "Ausschuss für Wirtschaftsförderung (nicht öffentlich)",
-      "score": 0.00917
+      "oparlKey": "1106",
+      "name": "Gemeinderat",
+      "score": 0.00917,
+      "signals": {
+        "name": 0.6559
+      }
+    },
+    {
+      "id": "Paper_52054",
+      "type": "Paper",
+      "oparlKey": "52054",
+      "name": "Wahl einer*eines Beigeordneten für das Dezernat 3",
+      "score": 0.00909,
+      "signals": {
+        "name": 0.6561
+      }
     },
     {
       "id": "File_603052",
       "type": "File",
       "oparlKey": "603052",
       "name": "FDP Ausbau KA-WLAN",
-      "score": 0.00909
+      "score": 0.00909,
+      "signals": {
+        "content": 0.3922
+      }
     },
     {
-      "id": "Meeting_5733",
+      "id": "Meeting_2091",
       "type": "Meeting",
-      "oparlKey": "5733",
-      "name": "Arbeitstreffen der Gemeinderäte von Karlsruhe und Nancy",
-      "score": 0.00909
+      "oparlKey": "2091",
+      "name": "Gemeinderat",
+      "score": 0.00909,
+      "signals": {
+        "name": 0.6559
+      }
     }
   ],
   "facets": {
@@ -1617,5 +2453,5 @@
       "AuxFile": 27
     }
   },
-  "summary": "Hier ist eine prägnante Zusammenfassung der fünf Dokumente zur Digitalisierung der Stadtverwaltung Karlsruhe:\n\n---\n\n### **Zusammenfassung der Digitalisierungsstrategien der Stadt Karlsruhe**\n\n#### **1. Digitalstrategie der Stadtverwaltung (2022)**\n- **Ziel:** Effizientere Arbeitsabläufe, verbesserte Bürgerservices und langfristige Ressourceneinsparung durch Digitalisierung.\n- **Drei Säulen des Bürgerservices:** Persönlich, telefonisch und digital (ohne Ersatz der analogen Kanäle).\n- **Erfolge:** Karlsruhe wurde von Bitkom als „smarteste Verwaltung Deutschlands“ ausgezeichnet, doch es besteht Ungeduld bei einigen Akteuren.\n- **Inhalte:**\n  - Vernetzung von 400 Fachanwendungen mit gemeinsamen Datenschnittstellen.\n  - Priorisierung von IT-Sicherheit, Nachhaltigkeit und OpenID-Vault (offene Daten).\n  - Jährliche Fortschreibung in einer **Digitalen Agenda** mit konkreten Projekten.\n- **Beschluss:** Einstimmige Verabschiedung durch den Gemeinderat; Koordination durch das Amt für Informationstechnik und Digitalisierung.\n\n---\n\n#### **2. Digitale Transformation kommunaler Services (2024)**\n- **Grundlage:** Ergebnisse des **E-Government-Monitors 2024** und Anpassung an Karlsruher Bedürfnisse.\n- **Herausforderungen:**\n  - Barrieren wie fehlender digitaler Zugang (57 %), mangelnde digitale Identität (52 %) und analoge Gewohnheiten.\n  - Baden-Württemberg schneidet besser ab als der Bundesschnitt bei Offline-Zugänglichkeit.\n- **Lösungsansätze:**\n  - **Benutzerzentriertes Design** und Prozessvereinfachung.\n  - **Transparente Kommunikation** und Förderung mobiler Apps.\n  - **Zentrale Serviceplattform** für digitale Dienste (Beteiligung an bundesweiten Initiativen).\n- **Zukunftsmaßnahmen:**\n  - Nutzung von **KI, Chatbots und Videokommunikation**.\n  - Aktive Teilnahme am E-Government-Monitor und regionale Kooperationen.\n\n---\n\n#### **3. Open Government-Strategie (2014/2015)**\n- **Ziele:** Mehr Transparenz, Bürgerbeteiligung und Innovation durch offene Verwaltung.\n- **Projekte:**\n  - Aufbau eines **Informationsfreiheitsregisters** und **Open-Data-Portals**.\n  - **Bürgerbeteiligungsportal** und „Gemeinderat Live“ (Live-Übertragung von Sitzungen).\n  - **Große-Vorhaben-Portal** für transparente Projektinformationen.\n  - **Offener Haushalt** zur finanziellen Transparenz.\n- **Umsetzung:** Beschlossen im Gemeinderat 2015; Mittel und Personal wurden bereitgestellt.\n\n---\n\n#### **4. Digitalstrategie (Vorlage des Oberbürgermeisters, 2022)**\n- **Gestaltungsprinzipien:**\n  - **Nutzerorientierung**, Effizienz, digitale Souveränität, Offenheit, Innovation, Datenschutz und Nachhaltigkeit.\n  - **Vernetzung** (lokal: *karlsruhe.digital*; national/international).\n- **Handlungsfelder:**\n  - Moderne IT-Arbeitsplätze, Infrastruktur (Glasfaser, E-Akte), Fachanwendungen, Bürgerservice, Open Government und Kulturwandel.\n- **Organisation:**\n  - Neue Aufbauorganisation mit IT-Kommission, IT-Beirat und DigitalLab für Innovation.\n  - **Projekt-Management-Office** zur Koordination.\n- **Finanzen:** Kosten werden durch Effizienzgewinne und Budgetumschichtungen gedeckt.\n- **Beschluss:** Einstimmige Verabschiedung; Umsetzung über **Digitale Agenda 2022**.\n\n---\n\n#### **5. Anlage zur Digitalstrategie (Dezember 2021)**\n- **Kernaussagen:**\n  - **Menschenzentrierte Digitalisierung** mit Fokus auf Bedürfnisse von Bürgern und Mitarbeitern.\n  - **Sicherheit und Datenschutz** als zentrale Prioritäten (BSI-Grundschutz, ISO 27001).\n  - **Innovationsförderung** durch DigitalLab und DCA-Berater.\n  - **Offene Daten und Partizipation** via Karlsruhe.App und Beteiligungsformate.\n- **Umsetzung:**\n  - Regelmäßige **Digitale Agenda** zur Priorisierung von Projekten.\n  - Strukturierte Zusammenarbeit durch IT-Kommission und -Beirat.\n\n---\n### **Gesamtfazit**\nKarlsruhe verfolgt einen **ganzheitlichen Digitalisierungsansatz**, der Effizienz, Transparenz und Bürgerorientierung verbindet. Die Strategie wird jährlich aktualisiert und durch konkrete Projekte (z. B. Open Government, KI-Einsatz) umgesetzt. Schwerpunkte liegen auf **Sicherheit, Nachhaltigkeit und nutzerfreundlichen Lösungen**, wobei die Verwaltung als Vorreiter in Deutschland gilt. Die Umsetzung erfolgt in enger Abstimmung mit Bürgern, Politik und externen Partnern."
+  "summary": "Hier ist eine prägnante Zusammenfassung der fünf Dokumente zur Digitalisierung der Stadtverwaltung Karlsruhe:\n\n---\n\n### **Zusammenfassung der Digitalisierungsstrategien der Stadt Karlsruhe**\n\n#### **1. Digitalstrategie der Stadtverwaltung (2022)**\n- **Ziel:** Digitalisierung soll Arbeitsabläufe optimieren, den Bürgerservice verbessern und langfristig Ressourcen sparen.\n- **Drei-Säulen-Modell:** Persönlicher, telefonischer und digitaler Service – letzterer ergänzt, ersetzt nicht die anderen.\n- **Erfolge:** Karlsruhe wurde von Bitkom zur „smartesten Verwaltung Deutschlands“ gewählt, doch es besteht Ungeduld bei einigen Akteuren.\n- **Inhalte:**\n  - **Prioritäten:** IT-Sicherheit, Nachhaltigkeit und OpenID-Vault (offene Daten).\n  - **Herausforderung:** Digitalisierung von 400 Fachanwendungen mit gemeinsamen Schnittstellen.\n  - **Erwarteter Nutzen:** Effizientere Prozesse und bessere Serviceangebote für Verwaltung, Bürger:innen und Gemeinderat.\n- **Beschluss:** Einstimmige Annahme durch den Gemeinderat; Koordination durch das Amt für Informationstechnik und Digitalisierung. Die Strategie wird jährlich in eine **digitale Agenda** überführt, die konkrete Projekte priorisiert.\n\n---\n\n#### **2. Digitale Transformation kommunaler Services (2024)**\n- **Grundlage:** Ergebnisse des **E-Government-Monitors 2024** und deren Bezug auf Karlsruhe.\n- **Barrieren in Deutschland:**\n  - Mangelnder Zugang zu digitalen Diensten (57 %), fehlende digitale Identität (52 %), analoge Gewohnheiten.\n  - Baden-Württemberg schneidet besser ab als der Bundesschnitt.\n- **Treiber für Nutzung:**\n  - Zentrale Serviceplattform, geringerer Zeitaufwand, Personalisierung.\n- **Maßnahmen Karlsruhes:**\n  - **Benutzerfreundlichkeit:** Vereinfachung von Prozessen und benutzerzentriertes Design.\n  - **Transparenz:** Förderung mobiler Apps und Informationsveranstaltungen.\n  - **Zukunftspläne:**\n    - Ausbau einer **zentralen Serviceplattform** für digitale Dienste.\n    - Nutzung von **KI, Chatbots und Videokommunikation** zur Effizienzsteigerung.\n    - Teilnahme am **E-Government-Monitor** und regionale Kooperationen.\n\n---\n\n#### **3. Open Government-Strategie (2014/2015)**\n- **Ziele:** Mehr Transparenz, Bürgerbeteiligung und Innovation durch Öffnung der Verwaltung.\n- **Projektbausteine:**\n  1. Aufbau eines **Informationsfreiheitsregisters**.\n  2. **Open-Data-Portal** in Stufen einführen.\n  3. **Bürgerbeteiligungsportal** für digitale Partizipation.\n  4. **„Gemeinderat Live“** – Live-Übertragung von Sitzungen.\n  5. **„Große-Vorhaben-Portal“** für transparente Projektinformationen.\n  6. **Offener Haushalt** zur finanziellen Transparenz.\n- **Umsetzung:** Beschlossen im Gemeinderat 2015, mit zusätzlichem Personal- und Finanzbedarf. Die Strategie sollte vor dem Doppelhaushalt 2015/2016 umgesetzt werden.\n\n---\n\n#### **4. Digitalstrategie (Vorlage des Oberbürgermeisters, 2022)**\n- **Gestaltungsprinzipien:**\n  - **Nutzerorientierung**, Effizienz, digitale Souveränität, Offenheit, Innovation, Informationssicherheit, Nachhaltigkeit und Vernetzung (lokal, national, international).\n- **Handlungsfelder:**\n  - Moderner IT-Arbeitsplatz, Infrastruktur (Glasfaser, WLAN, E-Akte), Fachanwendungen, Bürgerservice, Open Government, Innovation und Kulturwandel.\n- **Umsetzung:**\n  - Beschluss durch Gemeinderat; Koordination durch das Amt für Informationstechnik und Digitalisierung.\n  - Finanzierung über jährliches Budget; Kosten werden durch Effizienzgewinne ausgeglichen.\n  - **Nachhaltigkeit:** Positive CO₂-Bilanz durch digitale Lösungen.\n  - **Partizipation:** Ständiger Dialog mit Bürgern und Verwaltungseinheiten.\n\n---\n\n#### **5. Anlage zur Digitalstrategie (Dezember 2021)**\n- **Vorlage durch:** Markus Losert (Direktor des Amtes für Informationstechnik und Digitalisierung).\n- **Schwerpunkte:**\n  - **Nutzerzentrierung** und Bedarfsorientierung.\n  - **Technische Umsetzung:** Moderne IT-Arbeitsplätze, flächendeckende Infrastruktur (Glasfaser, E-Akte), integrierte Plattformen.\n  - **Open Government:** Transparenz, Partizipation (z. B. Karlsruhe.App), offene Daten.\n  - **Kulturwandel:** Fortbildungsprogramme (DigitalLab, DCA-Berater), neue Aufbauorganisation mit klaren Zuständigkeiten.\n  - **Sicherheit:** IT-Compliance-Team nach BSI-Grundschutz und ISO 27001.\n- **Ergebnis:** Beschluss der Digitalstrategie durch den Gemeinderat; Ableitung einer **Digitalen Agenda 2022** für konkrete Projekte und Priorisierungen.\n\n---\n### **Gesamtfazit**\nKarlsruhe verfolgt eine **umfassende Digitalisierungsstrategie**, die auf **Nutzerorientierung, Effizienz, Transparenz und Innovation** setzt. Die Stadt verbindet technische Modernisierung (z. B. E-Akte, KI) mit partizipativen Ansätzen (Open Government, Bürgerbeteiligung) und Nachhaltigkeit. Durch jährliche **Digitale Agenden** und eine klare **Projektpriorisierung** soll die Umsetzung strukturiert erfolgen. Die Strategie zielt darauf ab, Verwaltung, Bürger:innen und Wirtschaft durch digitale Lösungen zu stärken."
 }

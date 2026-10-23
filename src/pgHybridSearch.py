@@ -486,7 +486,7 @@ def hybrid_candidates(
 
     matched: List[Dict[str, Any]] = []
     file_fused: Dict[str, float] = {}
-    file_distance: Dict[str, Optional[float]] = {}
+    file_signals: Dict[str, Dict[str, Any]] = {}
 
     shared_meta = MetaData()
     for table in CANDIDATE_TABLES:
@@ -518,11 +518,21 @@ def hybrid_candidates(
         if not fused:
             continue
 
+        # per-candidate signal provenance: which signals found it, with the
+        # distance where the signal provides one (lower = better)
+        lex_set, nv_set, vc_set = set(lex), set(nv), set(vc)
         names = _names_for(conn, tbl, list(fused)[: per_signal * 2])
         for oparl_key, score in fused.items():
+            signals_hit: Dict[str, Any] = {}
+            if oparl_key in lex_set:
+                signals_hit["lexical"] = True
+            if oparl_key in nv_set:
+                signals_hit["name"] = round(nv_dist[oparl_key], 4)
+            if oparl_key in vc_set:
+                signals_hit["content"] = round(vc_dist[oparl_key], 4)
             if table == "File":
                 file_fused[oparl_key] = score
-                file_distance[oparl_key] = vc_dist.get(oparl_key)
+                file_signals[oparl_key] = signals_hit
             if oparl_key in names or table == "File":
                 matched.append({
                     "id": f"{table}_{oparl_key}",
@@ -530,11 +540,15 @@ def hybrid_candidates(
                     "oparlKey": oparl_key,
                     "name": names.get(oparl_key),
                     "score": round(score, 5),
+                    "signals": signals_hit,
                 })
 
     matched.sort(key=lambda m: m["score"], reverse=True)
     file_candidates = sorted(file_fused.items(), key=lambda kv: kv[1], reverse=True)[:top_k]
     return {
         "matched_entities": matched,
-        "file_candidates": [(k, s, file_distance.get(k)) for k, s in file_candidates],
+        "file_candidates": [
+            {"oparlKey": k, "score": s, "signals": file_signals.get(k, {})}
+            for k, s in file_candidates
+        ],
     }
