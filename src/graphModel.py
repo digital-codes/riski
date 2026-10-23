@@ -193,6 +193,7 @@ def build_graph(
         nodes[nid] = {
             "id": nid,
             "type": node_type,
+            "oparlKey": str(key),
             "name": obj.get("name") or obj.get("fileName") or f"{node_type} {obj.get('id', key)}",
             "date": _pick_date(obj, node_type),
             "oparlId": obj.get("oparlId"),

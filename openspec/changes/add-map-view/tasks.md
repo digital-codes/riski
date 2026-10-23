@@ -20,3 +20,14 @@
 - [x] 3.1 End-to-end: query "Rückbau der Herrenalber Straße" → geo flag true, FeatureCollection contains linked district (Stupferich) with TOP backlink; the street itself has only 2 linked agenda items whose generic names rank outside top-10 (recall depth, not a map issue — POI/WFS ingestion is the future fix for road works)
 - [x] 3.2 End-to-end: non-georeferenced query → no flag, no map, no note
 - [ ] 3.3 README: map view section (config-free reuse of Street/District data; POI future work)
+
+## 4. File georeferences + stale-link pruning (added during review)
+
+- [ ] 4.1 `src/pgAddFileGeoRefs.py`: match street/district names against File `name` + `teaser` (boundary-valid matching via `local_geo_matching`), write `Streets_items_Files` / `Districts_items_Files` assoc tables (file_sid, name_match)
+- [ ] 4.2 Stale-link pruning for the existing agenda-item geo refs: delete links whose stored `name_match` no longer matches the current agenda-item name (fixes the Stupferich phantom reference)
+- [ ] 4.3 Extend `pgGeo` (`collect_geo`, `geo_available_for_keys`) to include file-linked georeferences (File nodes/entities of the answer set)
+- [ ] 4.4 Run backfill + prune; verify file 614953 links to "Herrenalber Straße" and the street appears in the map for the street query
+- [x] 4.1 `src/pgAddFileGeoRefs.py`: match street/district names against File `name` + `teaser` (boundary-valid matching via `local_geo_matching`), write `Streets_items_Files` / `Districts_items_Files` assoc tables (file_sid, name_match)  *(single matching mechanism: `prepare_street_matcher` from local_geo_matching — the same matcher as the agenda refs; 31805+16475 links; venue-boilerplate noise filter for "Rathaus am Marktplatz"; evidence-based name_match `[name|teaser] …excerpt…`)*
+- [x] 4.2 Stale-link pruning for the existing agenda-item geo refs: delete links whose stored `name_match` no longer matches the current agenda-item name (fixes the Stupferich phantom reference)  *(root cause was worse: pgAddStreetRefs/pgAddDistrictRefs stored AgendaItem.id instead of sid — mis-joins looked like phantom references. Both scripts now store sid; agenda geo tables rebuilt: 2298+2394 rows, 100% sid-join; 75101 correctly unlinked)*
+- [x] 4.3 Extend `pgGeo` (`collect_geo`, `geo_available_for_keys`) to include file-linked georeferences (File nodes/entities of the answer set)
+- [x] 4.4 Run backfill + prune; verify file 614953 links to "Herrenalber Straße" and the street appears in the map for the street query  *(verified: street on map via 59 file references; top-10 files all Herrenalber Straße docs with lexical+name+content matches; `--rebuild` flag added to pgAddFileGeoRefs for clean re-runs)*

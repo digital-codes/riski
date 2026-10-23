@@ -92,7 +92,7 @@ def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=50
         matcher = prepare_street_matcher(streets)
 
         agendaitems = conn.execute(
-            select(agendaitem_table.c.id, agendaitem_table.c.name)
+            select(agendaitem_table.c.sid, agendaitem_table.c.name)
             .order_by(agendaitem_table.c.id)
         ).fetchall()
         total = len(agendaitems)
@@ -110,7 +110,7 @@ def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=50
 
         for agendaitem_row in agendaitems:
             processed += 1
-            agendaitem_id = int(agendaitem_row.id)
+            agendaitem_id = int(agendaitem_row.sid)
             agendaitem_name = agendaitem_row.name
 
             if agendaitem_name:

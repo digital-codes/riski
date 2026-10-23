@@ -113,8 +113,11 @@ def geo(session_id: str) -> Dict[str, Any]:
     result = sess["result"]
     keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", []) if n.get("type") == "AgendaItem"]
     keys += [m["oparlKey"] for m in result.get("matched_entities", []) if m.get("type") == "AgendaItem"]
+    file_keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", [])
+                 if n.get("type") in ("File", "AuxFile")]
+    file_keys += [m["oparlKey"] for m in result.get("matched_entities", []) if m.get("type") == "File"]
     engine = get_engine(readonly=True)
-    return collect_geo(engine, keys)
+    return collect_geo(engine, keys, file_keys)
 
 
 class SummarizeRequest(BaseModel):

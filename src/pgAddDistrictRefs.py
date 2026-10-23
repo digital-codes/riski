@@ -91,7 +91,7 @@ def add_district_agendaitem_refs(district_table, agendaitem_table):
         districts = conn.execute(district_stmt).fetchall()
 
         # Get all agenda items with their names
-        agendaitem_stmt = select(agendaitem_table.c.id, agendaitem_table.c.name)
+        agendaitem_stmt = select(agendaitem_table.c.sid, agendaitem_table.c.name)
         agendaitems = conn.execute(agendaitem_stmt).fetchall()
 
         # For each district, check all agenda items
@@ -103,7 +103,7 @@ def add_district_agendaitem_refs(district_table, agendaitem_table):
                 continue
 
             for agendaitem_row in agendaitems:
-                agendaitem_id = agendaitem_row.id
+                agendaitem_id = agendaitem_row.sid
                 agendaitem_name = agendaitem_row.name
                 if not agendaitem_name:
                     continue

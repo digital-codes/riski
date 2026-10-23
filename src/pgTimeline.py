@@ -1045,11 +1045,15 @@ def search_and_build_timeline(
     from src.graphModel import build_graph
     graph = build_graph(related_objects, related_objects.pop("edges", []), top_files)
 
-    # georeferences: streets/districts linked to the answer set's agenda items
+    # georeferences: streets/districts linked to the answer set's agenda
+    # items AND files (file matching via name/teaser, pgAddFileGeoRefs)
     from src.pgGeo import geo_available_for_keys
     agenda_item_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] == "AgendaItem"]
     agenda_item_keys += [m["oparlKey"] for m in matched_entities if m["type"] == "AgendaItem"]
-    geo_available = geo_available_for_keys(session.get_bind(), agenda_item_keys)
+    file_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] in ("File", "AuxFile")]
+    file_keys += [m["oparlKey"] for m in matched_entities if m["type"] == "File"]
+    file_keys = [k for k in file_keys if k]
+    geo_available = geo_available_for_keys(session.get_bind(), agenda_item_keys, file_keys)
 
     # Build timeline from all related objects
     timeline_events = build_timeline(related_objects)

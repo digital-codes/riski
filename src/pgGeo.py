@@ -38,23 +38,49 @@ def _agenda_item_sids(engine, keys: Iterable[str]) -> Dict[str, int]:
     return {row.oparlKey: row.sid for row in rows}
 
 
-def geo_available_for_keys(engine, agenda_item_keys: Iterable[str]) -> bool:
-    """True when any of the agenda items is linked to a street or district
-    with geometry (single cheap existence check)."""
-    sids = _agenda_item_sids(engine, agenda_item_keys)
-    if not sids:
+def _file_sids(engine, keys: Iterable[str]) -> Dict[str, int]:
+    """Resolve File oparlKeys to sids (unknown keys silently dropped)."""
+    keys = [k for k in keys if k]
+    if not keys:
+        return {}
+    f = Table("File", MetaData(), autoload_with=engine)
+    with engine.connect() as conn:
+        rows = conn.execute(select(f.c.sid, f.c.oparlKey).where(f.c.oparlKey.in_(keys))).all()
+    return {row.oparlKey: row.sid for row in rows}
+
+
+def geo_available_for_keys(engine, agenda_item_keys: Iterable[str], file_keys: Iterable[str] = ()) -> bool:
+    """True when any of the agenda items or files is linked to a street or
+    district with geometry (single cheap existence check per table)."""
+    agenda_sids = set(_agenda_item_sids(engine, agenda_item_keys).values())
+    file_sids = set(_file_sids(engine, file_keys).values())
+    if not agenda_sids and not file_sids:
         return False
     import sqlalchemy as sa
 
     with engine.connect() as conn:
-        for assoc in ("Streets_items_AgendaItems", "Districts_items_AgendaItems"):
-            tbl = Table(assoc, MetaData(), autoload_with=conn)
+        checks = [
+            ("Streets_items_AgendaItems", "agendaitem_id", agenda_sids),
+            ("Districts_items_AgendaItems", "agendaitem_id", agenda_sids),
+            ("Streets_items_Files", "file_id", file_sids),
+            ("Districts_items_Files", "file_id", file_sids),
+        ]
+        for assoc_name, col, ids in checks:
+            if not ids or not _has_table(conn, assoc_name):
+                continue
+            tbl = Table(assoc_name, MetaData(), autoload_with=conn)
             n = conn.execute(
-                select(sa.func.count()).select_from(tbl).where(tbl.c.agendaitem_id.in_(set(sids.values())))
+                select(sa.func.count()).select_from(tbl).where(tbl.c[col].in_(ids))
             ).scalar()
             if n:
                 return True
     return False
+
+
+def _has_table(conn, name: str) -> bool:
+    import sqlalchemy as sa
+
+    return sa.inspect(conn).has_table(name)
 
 
 def _linked_features(
@@ -110,14 +136,62 @@ def _linked_features(
     return features
 
 
-def collect_geo(engine, agenda_item_keys: Iterable[str]) -> Dict[str, Any]:
-    """GeoJSON FeatureCollection for the streets/districts linked to the
-    given agenda items (WGS84, ready for Leaflet)."""
-    sids = set(_agenda_item_sids(engine, agenda_item_keys).values())
-    if not sids:
-        return dict(EMPTY_FEATURE_COLLECTION)
+def _linked_file_features(
+    engine,
+    assoc_name: str,
+    entity_table: str,
+    entity_type: str,
+    file_sids: set,
+) -> List[Dict[str, Any]]:
+    """Features of streets/districts linked directly to Files."""
+    if not file_sids:
+        return []
+    metadata = MetaData()
+    assoc = Table(assoc_name, metadata, autoload_with=engine)
+    entity = Table(entity_table, metadata, autoload_with=engine)
+    file_tbl = Table("File", metadata, autoload_with=engine)
 
-    features = []
-    features += _linked_features(engine, "Streets_items_AgendaItems", "Street", "street", sids)
-    features += _linked_features(engine, "Districts_items_AgendaItems", "District", "district", sids)
+    with engine.connect() as conn:
+        rows = conn.execute(
+            select(entity.c.id, entity.c.name, entity.c.geo, file_tbl.c.oparlKey)
+            .select_from(
+                assoc.join(entity, assoc.c[f"{entity_type.lower()}_id"] == entity.c.id)
+                .join(file_tbl, assoc.c.file_id == file_tbl.c.sid)
+            )
+            .where(assoc.c.file_id.in_(file_sids))
+        ).all()
+
+    features: List[Dict[str, Any]] = []
+    per_entity: Dict[int, Dict[str, Any]] = {}
+    for entity_id, name, geo, file_key in rows:
+        entry = per_entity.setdefault(entity_id, {"name": name, "files": set(), "geo": geo})
+        if file_key:
+            entry["files"].add(file_key)
+
+    for entry in per_entity.values():
+        if not entry["geo"]:
+            continue
+        try:
+            fc = json.loads(bytes(entry["geo"]))
+        except (ValueError, TypeError):
+            continue
+        for feature in fc.get("features", []):
+            feature.setdefault("properties", {})
+            feature["properties"]["name"] = entry["name"]
+            feature["properties"]["type"] = entity_type
+            feature["properties"]["files"] = sorted(entry["files"])
+            features.append(feature)
+    return features
+
+
+def collect_geo(engine, agenda_item_keys: Iterable[str], file_keys: Iterable[str] = ()) -> Dict[str, Any]:
+    """GeoJSON FeatureCollection for the streets/districts linked to the
+    given agenda items AND files (WGS84, ready for Leaflet)."""
+    agenda_sids = set(_agenda_item_sids(engine, agenda_item_keys).values())
+    file_sids = set(_file_sids(engine, file_keys).values())
+    features: List[Dict[str, Any]] = []
+    features += _linked_features(engine, "Streets_items_AgendaItems", "Street", "street", agenda_sids)
+    features += _linked_features(engine, "Districts_items_AgendaItems", "District", "district", agenda_sids)
+    features += _linked_file_features(engine, "Streets_items_Files", "Street", "street", file_sids)
+    features += _linked_file_features(engine, "Districts_items_Files", "District", "district", file_sids)
     return {"type": "FeatureCollection", "features": features}

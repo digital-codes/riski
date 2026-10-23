@@ -9,11 +9,11 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00001087.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/1087",
       "date": "2013-08-15 00:00:00",
-      "distance": 0.3537,
+      "distance": 0.3538,
       "match": {
         "lexical": true,
         "name": 0.2619,
-        "content": 0.3537
+        "content": 0.3538
       }
     },
     {
@@ -24,11 +24,11 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618429.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618429",
       "date": "2020-06-24 00:00:00",
-      "distance": 0.3398,
+      "distance": 0.3399,
       "match": {
         "lexical": true,
         "name": 0.3488,
-        "content": 0.3398
+        "content": 0.3399
       }
     },
     {
@@ -39,11 +39,11 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620145.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620145",
       "date": "2020-10-12 00:00:00",
-      "distance": 0.3963,
+      "distance": 0.3964,
       "match": {
         "lexical": true,
-        "name": 0.3254,
-        "content": 0.3963
+        "name": 0.3255,
+        "content": 0.3964
       }
     },
     {
@@ -69,11 +69,11 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00585346.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585346",
       "date": "2015-02-16 00:00:00",
-      "distance": 0.3462,
+      "distance": 0.3463,
       "match": {
         "lexical": true,
         "name": 0.3756,
-        "content": 0.3462
+        "content": 0.3463
       }
     },
     {
@@ -1486,15 +1486,16 @@
       {
         "id": "File_1087",
         "type": "File",
+        "oparlKey": "1087",
         "name": "TOP 12: Antrag GRÜNE: Rückbau Herrenalber Straße",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/1087",
         "attrs": {
-          "distance": 0.3537,
+          "distance": 0.3538,
           "match": {
             "lexical": true,
             "name": 0.2619,
-            "content": 0.3537
+            "content": 0.3538
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00001087.pdf",
           "fileName": "00001087.pdf"
@@ -1503,15 +1504,16 @@
       {
         "id": "File_618429",
         "type": "File",
+        "oparlKey": "618429",
         "name": "Stellungnahme Herrenalber Straße",
         "date": "2020-06-24 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618429",
         "attrs": {
-          "distance": 0.3398,
+          "distance": 0.3399,
           "match": {
             "lexical": true,
             "name": 0.3488,
-            "content": 0.3398
+            "content": 0.3399
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618429.pdf",
           "fileName": "00618429.pdf"
@@ -1520,15 +1522,16 @@
       {
         "id": "File_620145",
         "type": "File",
+        "oparlKey": "620145",
         "name": "TOP 6 - Umbau Herrenalber Straße",
         "date": "2020-10-12 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620145",
         "attrs": {
-          "distance": 0.3963,
+          "distance": 0.3964,
           "match": {
             "lexical": true,
-            "name": 0.3254,
-            "content": 0.3963
+            "name": 0.3255,
+            "content": 0.3964
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620145.pdf",
           "fileName": "00620145.pdf"
@@ -1537,6 +1540,7 @@
       {
         "id": "File_616652",
         "type": "File",
+        "oparlKey": "616652",
         "name": "Herrenalber Straße",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616652",
@@ -1554,15 +1558,16 @@
       {
         "id": "File_585346",
         "type": "File",
+        "oparlKey": "585346",
         "name": "OZ 173-174: GRÜNE, KULT: Umbau Herrenalber Straße",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585346",
         "attrs": {
-          "distance": 0.3462,
+          "distance": 0.3463,
           "match": {
             "lexical": true,
             "name": 0.3756,
-            "content": 0.3462
+            "content": 0.3463
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00585346.pdf",
           "fileName": "00585346.pdf"
@@ -1571,6 +1576,7 @@
       {
         "id": "File_15722",
         "type": "File",
+        "oparlKey": "15722",
         "name": "INTER-Herrenalber Straße",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/15722",
@@ -1588,6 +1594,7 @@
       {
         "id": "File_614954",
         "type": "File",
+        "oparlKey": "614954",
         "name": "BPlan Herrenalber Straße",
         "date": "2020-02-14 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/614954",
@@ -1605,6 +1612,7 @@
       {
         "id": "File_594253",
         "type": "File",
+        "oparlKey": "594253",
         "name": "Antrag 147 GRÜNE Herrenalber Straße",
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594253",
@@ -1622,6 +1630,7 @@
       {
         "id": "File_20064",
         "type": "File",
+        "oparlKey": "20064",
         "name": "Verkehrsversuch Herrenalber Straße",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20064",
@@ -1639,6 +1648,7 @@
       {
         "id": "File_6914",
         "type": "File",
+        "oparlKey": "6914",
         "name": "FW-BBPlan Herrenalber Straße",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6914",
@@ -1656,6 +1666,7 @@
       {
         "id": "Paper_33874",
         "type": "Paper",
+        "oparlKey": "33874",
         "name": "THH 6600: Tiefbau",
         "date": "2015-01-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/33874",
@@ -1667,6 +1678,7 @@
       {
         "id": "Paper_35129",
         "type": "Paper",
+        "oparlKey": "35129",
         "name": "THH 6600: Tiefbau",
         "date": "2016-10-26 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/35129",
@@ -1678,6 +1690,7 @@
       {
         "id": "Paper_24528",
         "type": "Paper",
+        "oparlKey": "24528",
         "name": "Vorhabenbezogener Bebauungsplan mit Vorhaben- und Erschließungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Einleitungs- und Auslegungsbeschluss gem. § 12 Abs. 2 und § 3 Abs. 2 des Baugesetzbuches",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/24528",
@@ -1689,6 +1702,7 @@
       {
         "id": "Paper_25551",
         "type": "Paper",
+        "oparlKey": "25551",
         "name": "Änderungsantrag StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Bürgerversammlung",
         "date": "2010-09-17 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/25551",
@@ -1700,6 +1714,7 @@
       {
         "id": "Paper_25552",
         "type": "Paper",
+        "oparlKey": "25552",
         "name": "Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Satzungsbeschluss gemäß § 10 des Baugesetzbuches (BauGB)",
         "date": "2020-02-14 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/25552",
@@ -1711,6 +1726,7 @@
       {
         "id": "Paper_39857",
         "type": "Paper",
+        "oparlKey": "39857",
         "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
         "date": "2020-05-27 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/39857",
@@ -1722,6 +1738,7 @@
       {
         "id": "Paper_26146",
         "type": "Paper",
+        "oparlKey": "26146",
         "name": "Antrag GRÜNE, SPD: Weiterführung Verkehrsversuch Herrenalber Straße",
         "date": "2010-12-06 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/26146",
@@ -1733,6 +1750,7 @@
       {
         "id": "Paper_26145",
         "type": "Paper",
+        "oparlKey": "26145",
         "name": "Verkehrsversuch Herrenalber Straße",
         "date": "2010-12-06 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/26145",
@@ -1744,6 +1762,7 @@
       {
         "id": "Meeting_2251",
         "type": "Meeting",
+        "oparlKey": "2251",
         "name": "Gemeinderat",
         "date": "2010-03-30 15:30:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/2251",
@@ -1754,6 +1773,7 @@
       {
         "id": "Meeting_2268",
         "type": "Meeting",
+        "oparlKey": "2268",
         "name": "Gemeinderat",
         "date": "2010-12-14 15:30:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/2268",
@@ -1764,6 +1784,7 @@
       {
         "id": "Meeting_5666",
         "type": "Meeting",
+        "oparlKey": "5666",
         "name": "Gemeinderat (öffentlich/nicht öffentlich)",
         "date": "2020-06-30 15:30:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/5666",
@@ -1774,6 +1795,7 @@
       {
         "id": "Meeting_2262",
         "type": "Meeting",
+        "oparlKey": "2262",
         "name": "Gemeinderat",
         "date": "2010-09-21 15:30:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/2262",
@@ -1784,6 +1806,7 @@
       {
         "id": "Meeting_3836",
         "type": "Meeting",
+        "oparlKey": "3836",
         "name": "Gemeinderat (öffentlich/nicht öffentlich)",
         "date": "2015-03-03 09:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/3836",
@@ -1794,6 +1817,7 @@
       {
         "id": "Meeting_5836",
         "type": "Meeting",
+        "oparlKey": "5836",
         "name": "Planungsausschuss (öffentlich/nicht öffentlich)",
         "date": "2020-09-17 16:30:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/5836",
@@ -1804,6 +1828,7 @@
       {
         "id": "Meeting_4154",
         "type": "Meeting",
+        "oparlKey": "4154",
         "name": "Gemeinderat (öffentlich/nicht öffentlich)",
         "date": "2016-11-15 09:30:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/meetings/4154",
@@ -1814,6 +1839,7 @@
       {
         "id": "Consultation_12221",
         "type": "Consultation",
+        "oparlKey": "12221",
         "name": "Consultation 12221",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/12221",
@@ -1825,6 +1851,7 @@
       {
         "id": "Consultation_13751",
         "type": "Consultation",
+        "oparlKey": "13751",
         "name": "Consultation 13751",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/13751",
@@ -1836,6 +1863,7 @@
       {
         "id": "Consultation_6398",
         "type": "Consultation",
+        "oparlKey": "6398",
         "name": "Consultation 6398",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/6398",
@@ -1847,6 +1875,7 @@
       {
         "id": "Consultation_6974",
         "type": "Consultation",
+        "oparlKey": "6974",
         "name": "Consultation 6974",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/6974",
@@ -1858,6 +1887,7 @@
       {
         "id": "Consultation_6975",
         "type": "Consultation",
+        "oparlKey": "6975",
         "name": "Consultation 6975",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/6975",
@@ -1869,6 +1899,7 @@
       {
         "id": "Consultation_19947",
         "type": "Consultation",
+        "oparlKey": "19947",
         "name": "Consultation 19947",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/19947",
@@ -1880,6 +1911,7 @@
       {
         "id": "Consultation_19484",
         "type": "Consultation",
+        "oparlKey": "19484",
         "name": "Consultation 19484",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/19484",
@@ -1892,6 +1924,7 @@
       {
         "id": "Consultation_7331",
         "type": "Consultation",
+        "oparlKey": "7331",
         "name": "Consultation 7331",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/7331",
@@ -1903,6 +1936,7 @@
       {
         "id": "Consultation_7330",
         "type": "Consultation",
+        "oparlKey": "7330",
         "name": "Consultation 7330",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/7330",
@@ -1914,6 +1948,7 @@
       {
         "id": "Organization_32130",
         "type": "Organization",
+        "oparlKey": "32130",
         "name": "Gemeinderat",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/organizations/gr/32130",
@@ -1925,6 +1960,7 @@
       {
         "id": "Organization_38449",
         "type": "Organization",
+        "oparlKey": "38449",
         "name": "Planungsausschuss",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/organizations/gr/38449",
@@ -1935,6 +1971,7 @@
       {
         "id": "Organization_883000",
         "type": "Organization",
+        "oparlKey": "883000",
         "name": "Offen",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/organizations/at/883000",
@@ -1945,6 +1982,7 @@
       {
         "id": "Organization_882972",
         "type": "Organization",
+        "oparlKey": "882972",
         "name": "Stadtkämmerei",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/organizations/at/882972",
@@ -1955,6 +1993,7 @@
       {
         "id": "Organization_882950",
         "type": "Organization",
+        "oparlKey": "882950",
         "name": "_Fachbereich Datenübernahme",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/organizations/at/882950",
@@ -1965,6 +2004,7 @@
       {
         "id": "AuxFile_585338",
         "type": "AuxFile",
+        "oparlKey": "585338",
         "name": "OZ 169: GRÜNE: Abschaffung Brötchentaste",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585338",
@@ -1975,6 +2015,7 @@
       {
         "id": "AuxFile_585339",
         "type": "AuxFile",
+        "oparlKey": "585339",
         "name": "OZ 169: Stellungnahme",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585339",
@@ -1985,6 +2026,7 @@
       {
         "id": "AuxFile_585340",
         "type": "AuxFile",
+        "oparlKey": "585340",
         "name": "OZ 170: FW: Innenstadt Parkgebühren",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585340",
@@ -1995,6 +2037,7 @@
       {
         "id": "AuxFile_585341",
         "type": "AuxFile",
+        "oparlKey": "585341",
         "name": "OZ 170: Stellungnahme",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585341",
@@ -2005,6 +2048,7 @@
       {
         "id": "AuxFile_585342",
         "type": "AuxFile",
+        "oparlKey": "585342",
         "name": "OZ 171: FW: Intelligente Ampeln",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585342",
@@ -2015,6 +2059,7 @@
       {
         "id": "AuxFile_585343",
         "type": "AuxFile",
+        "oparlKey": "585343",
         "name": "OZ 171: Stellungnahme",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585343",
@@ -2025,6 +2070,7 @@
       {
         "id": "AuxFile_585344",
         "type": "AuxFile",
+        "oparlKey": "585344",
         "name": "OZ 172: GRÜNE: Radwege",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585344",
@@ -2035,6 +2081,7 @@
       {
         "id": "AuxFile_585345",
         "type": "AuxFile",
+        "oparlKey": "585345",
         "name": "OZ 172: Stellungnahme",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585345",
@@ -2045,6 +2092,7 @@
       {
         "id": "AuxFile_585346",
         "type": "AuxFile",
+        "oparlKey": "585346",
         "name": "OZ 173-174: GRÜNE, KULT: Umbau Herrenalber Straße",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585346",
@@ -2055,6 +2103,7 @@
       {
         "id": "AuxFile_585347",
         "type": "AuxFile",
+        "oparlKey": "585347",
         "name": "OZ 173-174: Stellungnahme",
         "date": "2015-02-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585347",
@@ -2065,6 +2114,7 @@
       {
         "id": "AuxFile_586470",
         "type": "AuxFile",
+        "oparlKey": "586470",
         "name": "Protokoll Antrag 169",
         "date": "2015-04-24 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/586470",
@@ -2075,6 +2125,7 @@
       {
         "id": "AuxFile_586471",
         "type": "AuxFile",
+        "oparlKey": "586471",
         "name": "Protokoll Antrag 170",
         "date": "2015-04-24 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/586471",
@@ -2085,6 +2136,7 @@
       {
         "id": "AuxFile_586472",
         "type": "AuxFile",
+        "oparlKey": "586472",
         "name": "Protokoll Antrag 171",
         "date": "2015-04-24 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/586472",
@@ -2095,6 +2147,7 @@
       {
         "id": "AuxFile_586473",
         "type": "AuxFile",
+        "oparlKey": "586473",
         "name": "Protokoll Antrag 172",
         "date": "2015-04-24 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/586473",
@@ -2105,6 +2158,7 @@
       {
         "id": "AuxFile_586474",
         "type": "AuxFile",
+        "oparlKey": "586474",
         "name": "Protokoll Antrag 173+174",
         "date": "2015-04-24 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/586474",
@@ -2115,6 +2169,7 @@
       {
         "id": "AuxFile_595325",
         "type": "AuxFile",
+        "oparlKey": "595325",
         "name": "Protokollauszug Antrag Nr.  140",
         "date": "2016-12-19 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/595325",
@@ -2125,6 +2180,7 @@
       {
         "id": "AuxFile_594252",
         "type": "AuxFile",
+        "oparlKey": "594252",
         "name": "Antrag 146 SPD Verlegung Rasengleis Herrenalber Straße",
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594252",
@@ -2135,6 +2191,7 @@
       {
         "id": "AuxFile_594251",
         "type": "AuxFile",
+        "oparlKey": "594251",
         "name": "Antrag 145 GRÜNE Projekt Lichtplan",
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594251",
@@ -2145,6 +2202,7 @@
       {
         "id": "AuxFile_594250",
         "type": "AuxFile",
+        "oparlKey": "594250",
         "name": "Antrag 144 Die Linke Baumaßnahmen Infrastruktur Wildpark",
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594250",
@@ -2155,6 +2213,7 @@
       {
         "id": "AuxFile_595328",
         "type": "AuxFile",
+        "oparlKey": "595328",
         "name": "Protokollauszug Antrag Nr.  144",
         "date": "2016-12-19 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/595328",
@@ -2165,6 +2224,7 @@
       {
         "id": "AuxFile_594247",
         "type": "AuxFile",
+        "oparlKey": "594247",
         "name": "Antrag 140 CDU Beseitigung Graffitis",
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594247",
@@ -2175,6 +2235,7 @@
       {
         "id": "AuxFile_594248",
         "type": "AuxFile",
+        "oparlKey": "594248",
         "name": "Antrag 141 GRÜNE Radwege",
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594248",
@@ -2185,6 +2246,7 @@
       {
         "id": "AuxFile_594249",
         "type": "AuxFile",
+        "oparlKey": "594249",
         "name": "Anträge 142-143 KULT-GfK Erneuerung Wasserwerkbrücke",
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594249",
@@ -2195,6 +2257,7 @@
       {
         "id": "AuxFile_594253",
         "type": "AuxFile",
+        "oparlKey": "594253",
         "name": "Antrag 147 GRÜNE Herrenalber Straße",
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594253",
@@ -2205,6 +2268,7 @@
       {
         "id": "AuxFile_594597",
         "type": "AuxFile",
+        "oparlKey": "594597",
         "name": "Antrag 144a Die Linke",
         "date": "2016-11-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594597",
@@ -2215,6 +2279,7 @@
       {
         "id": "AuxFile_595326",
         "type": "AuxFile",
+        "oparlKey": "595326",
         "name": "Protokollauszug Antrag Nr.  141",
         "date": "2016-12-19 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/595326",
@@ -2225,6 +2290,7 @@
       {
         "id": "AuxFile_595327",
         "type": "AuxFile",
+        "oparlKey": "595327",
         "name": "Protokollauszug Anträge Nr.  142 - 143",
         "date": "2016-12-19 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/595327",
@@ -2235,6 +2301,7 @@
       {
         "id": "AuxFile_595329",
         "type": "AuxFile",
+        "oparlKey": "595329",
         "name": "Protokollauszug Antrag Nr.  145",
         "date": "2016-12-19 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/595329",
@@ -2245,6 +2312,7 @@
       {
         "id": "AuxFile_595330",
         "type": "AuxFile",
+        "oparlKey": "595330",
         "name": "Protokollauszug Anträge Nr.  146 - 147",
         "date": "2016-12-19 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/595330",
@@ -2255,6 +2323,7 @@
       {
         "id": "AuxFile_616654",
         "type": "AuxFile",
+        "oparlKey": "616654",
         "name": "Herrenalber Straße2",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616654",
@@ -2265,6 +2334,7 @@
       {
         "id": "AuxFile_616668",
         "type": "AuxFile",
+        "oparlKey": "616668",
         "name": "Herrenalber Straße16",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616668",
@@ -2275,6 +2345,7 @@
       {
         "id": "AuxFile_616655",
         "type": "AuxFile",
+        "oparlKey": "616655",
         "name": "Herrenalber Straße3",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616655",
@@ -2285,6 +2356,7 @@
       {
         "id": "AuxFile_616657",
         "type": "AuxFile",
+        "oparlKey": "616657",
         "name": "Herrenalber Straße5",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616657",
@@ -2295,6 +2367,7 @@
       {
         "id": "AuxFile_616660",
         "type": "AuxFile",
+        "oparlKey": "616660",
         "name": "Herrenalber Straße8",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616660",
@@ -2305,6 +2378,7 @@
       {
         "id": "AuxFile_616656",
         "type": "AuxFile",
+        "oparlKey": "616656",
         "name": "Herrenalber Straße4",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616656",
@@ -2315,6 +2389,7 @@
       {
         "id": "AuxFile_616667",
         "type": "AuxFile",
+        "oparlKey": "616667",
         "name": "Herrenalber Straße15",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616667",
@@ -2325,6 +2400,7 @@
       {
         "id": "AuxFile_616662",
         "type": "AuxFile",
+        "oparlKey": "616662",
         "name": "Herrenalber Straße10",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616662",
@@ -2335,6 +2411,7 @@
       {
         "id": "AuxFile_616666",
         "type": "AuxFile",
+        "oparlKey": "616666",
         "name": "Herrenalber Straße14",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616666",
@@ -2345,6 +2422,7 @@
       {
         "id": "AuxFile_616659",
         "type": "AuxFile",
+        "oparlKey": "616659",
         "name": "Herrenalber Straße7",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616659",
@@ -2355,6 +2433,7 @@
       {
         "id": "AuxFile_20918",
         "type": "AuxFile",
+        "oparlKey": "20918",
         "name": "AuslegBeschl-Herrenalber Str",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20918",
@@ -2365,6 +2444,7 @@
       {
         "id": "AuxFile_20919",
         "type": "AuxFile",
+        "oparlKey": "20919",
         "name": "Tischvorlage_Herrenalber_Straße",
         "date": "2014-01-29 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20919",
@@ -2375,6 +2455,7 @@
       {
         "id": "AuxFile_616652",
         "type": "AuxFile",
+        "oparlKey": "616652",
         "name": "Herrenalber Straße",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616652",
@@ -2385,6 +2466,7 @@
       {
         "id": "AuxFile_616653",
         "type": "AuxFile",
+        "oparlKey": "616653",
         "name": "Herrenalber Straße1",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616653",
@@ -2395,6 +2477,7 @@
       {
         "id": "AuxFile_616658",
         "type": "AuxFile",
+        "oparlKey": "616658",
         "name": "Herrenalber Straße6",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616658",
@@ -2405,6 +2488,7 @@
       {
         "id": "AuxFile_616661",
         "type": "AuxFile",
+        "oparlKey": "616661",
         "name": "Herrenalber Straße9",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616661",
@@ -2415,6 +2499,7 @@
       {
         "id": "AuxFile_616663",
         "type": "AuxFile",
+        "oparlKey": "616663",
         "name": "Herrenalber Straße11",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616663",
@@ -2425,6 +2510,7 @@
       {
         "id": "AuxFile_616664",
         "type": "AuxFile",
+        "oparlKey": "616664",
         "name": "Herrenalber Straße12",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616664",
@@ -2435,6 +2521,7 @@
       {
         "id": "AuxFile_616665",
         "type": "AuxFile",
+        "oparlKey": "616665",
         "name": "Herrenalber Straße13",
         "date": "2020-03-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616665",
@@ -2445,6 +2532,7 @@
       {
         "id": "AuxFile_6915",
         "type": "AuxFile",
+        "oparlKey": "6915",
         "name": "TOP 4 FW",
         "date": "2014-01-29 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6915",
@@ -2455,6 +2543,7 @@
       {
         "id": "AuxFile_6914",
         "type": "AuxFile",
+        "oparlKey": "6914",
         "name": "FW-BBPlan Herrenalber Straße",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6914",
@@ -2465,6 +2554,7 @@
       {
         "id": "AuxFile_614955",
         "type": "AuxFile",
+        "oparlKey": "614955",
         "name": "Anlage 2 Herrenalber Straße",
         "date": "2020-02-14 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/614955",
@@ -2475,6 +2565,7 @@
       {
         "id": "AuxFile_614954",
         "type": "AuxFile",
+        "oparlKey": "614954",
         "name": "BPlan Herrenalber Straße",
         "date": "2020-02-14 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/614954",
@@ -2485,6 +2576,7 @@
       {
         "id": "AuxFile_32512",
         "type": "AuxFile",
+        "oparlKey": "32512",
         "name": "SatzBeschluss HerrenalberStr",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/32512",
@@ -2495,6 +2587,7 @@
       {
         "id": "AuxFile_614953",
         "type": "AuxFile",
+        "oparlKey": "614953",
         "name": "Anlage 1 Herrenalber Straße",
         "date": "2020-02-14 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/614953",
@@ -2505,6 +2598,7 @@
       {
         "id": "AuxFile_618429",
         "type": "AuxFile",
+        "oparlKey": "618429",
         "name": "Stellungnahme Herrenalber Straße",
         "date": "2020-06-24 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618429",
@@ -2515,6 +2609,7 @@
       {
         "id": "AuxFile_617826",
         "type": "AuxFile",
+        "oparlKey": "617826",
         "name": "Antrag",
         "date": "2020-05-27 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/617826",
@@ -2525,6 +2620,7 @@
       {
         "id": "AuxFile_619587",
         "type": "AuxFile",
+        "oparlKey": "619587",
         "name": "Protokoll GR TOP 4",
         "date": "2020-09-16 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/619587",
@@ -2535,6 +2631,7 @@
       {
         "id": "AuxFile_620145",
         "type": "AuxFile",
+        "oparlKey": "620145",
         "name": "TOP 6 - Umbau Herrenalber Straße",
         "date": "2020-10-12 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620145",
@@ -2545,6 +2642,7 @@
       {
         "id": "AuxFile_15722",
         "type": "AuxFile",
+        "oparlKey": "15722",
         "name": "INTER-Herrenalber Straße",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/15722",
@@ -2555,6 +2653,7 @@
       {
         "id": "AuxFile_15723",
         "type": "AuxFile",
+        "oparlKey": "15723",
         "name": "TOP 22",
         "date": "2014-01-29 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/15723",
@@ -2565,6 +2664,7 @@
       {
         "id": "AuxFile_20064",
         "type": "AuxFile",
+        "oparlKey": "20064",
         "name": "Verkehrsversuch Herrenalber Straße",
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20064",
@@ -3271,7 +3371,7 @@
       "signals": {
         "lexical": true,
         "name": 0.2619,
-        "content": 0.3537
+        "content": 0.3538
       }
     },
     {
@@ -3283,7 +3383,7 @@
       "signals": {
         "lexical": true,
         "name": 0.3488,
-        "content": 0.3398
+        "content": 0.3399
       }
     },
     {
@@ -3294,8 +3394,8 @@
       "score": 0.04346,
       "signals": {
         "lexical": true,
-        "name": 0.3254,
-        "content": 0.3963
+        "name": 0.3255,
+        "content": 0.3964
       }
     },
     {
@@ -3319,7 +3419,7 @@
       "signals": {
         "lexical": true,
         "name": 0.3756,
-        "content": 0.3462
+        "content": 0.3463
       }
     },
     {
@@ -3391,7 +3491,7 @@
       "signals": {
         "lexical": true,
         "name": 0.4888,
-        "content": 0.4162
+        "content": 0.4163
       }
     },
     {
@@ -3414,7 +3514,7 @@
       "score": 0.03359,
       "signals": {
         "lexical": true,
-        "name": 0.4334,
+        "name": 0.4335,
         "content": 0.4464
       }
     },
@@ -3426,8 +3526,8 @@
       "score": 0.03344,
       "signals": {
         "lexical": true,
-        "name": 0.4877,
-        "content": 0.4352
+        "name": 0.4876,
+        "content": 0.4353
       }
     },
     {
@@ -3446,11 +3546,11 @@
       "type": "File",
       "oparlKey": "614955",
       "name": "Anlage 2 Herrenalber Straße",
-      "score": 0.03276,
+      "score": 0.03267,
       "signals": {
         "lexical": true,
-        "name": 0.4292,
-        "content": 0.479
+        "name": 0.4291,
+        "content": 0.4791
       }
     },
     {
@@ -3461,7 +3561,7 @@
       "score": 0.03252,
       "signals": {
         "lexical": true,
-        "name": 0.2948
+        "name": 0.2947
       }
     },
     {
@@ -3473,7 +3573,7 @@
       "signals": {
         "lexical": true,
         "name": 0.4612,
-        "content": 0.4824
+        "content": 0.4825
       }
     },
     {
@@ -3484,7 +3584,7 @@
       "score": 0.03202,
       "signals": {
         "lexical": true,
-        "name": 0.2812
+        "name": 0.2811
       }
     },
     {
@@ -3495,7 +3595,7 @@
       "score": 0.03128,
       "signals": {
         "lexical": true,
-        "name": 0.2948
+        "name": 0.2947
       }
     },
     {
@@ -3517,7 +3617,7 @@
       "score": 0.03102,
       "signals": {
         "lexical": true,
-        "name": 0.3839
+        "name": 0.384
       }
     },
     {
@@ -3528,7 +3628,7 @@
       "score": 0.03102,
       "signals": {
         "lexical": true,
-        "name": 0.2812
+        "name": 0.2811
       }
     },
     {
@@ -3550,7 +3650,7 @@
       "score": 0.03083,
       "signals": {
         "lexical": true,
-        "name": 0.2812
+        "name": 0.2811
       }
     },
     {
@@ -3561,7 +3661,7 @@
       "score": 0.03077,
       "signals": {
         "lexical": true,
-        "name": 0.2813
+        "name": 0.2812
       }
     },
     {
@@ -3594,7 +3694,7 @@
       "score": 0.03008,
       "signals": {
         "lexical": true,
-        "name": 0.3665
+        "name": 0.3666
       }
     },
     {
@@ -3602,10 +3702,10 @@
       "type": "AgendaItem",
       "oparlKey": "73917",
       "name": "Verkehrsversuch Herrenalber Straße",
-      "score": 0.02996,
+      "score": 0.02976,
       "signals": {
         "lexical": true,
-        "name": 0.3839
+        "name": 0.384
       }
     },
     {
@@ -3613,10 +3713,10 @@
       "type": "AgendaItem",
       "oparlKey": "26145",
       "name": "Verkehrsversuch Herrenalber Straße",
-      "score": 0.02951,
+      "score": 0.02971,
       "signals": {
         "lexical": true,
-        "name": 0.3839
+        "name": 0.384
       }
     },
     {
@@ -3638,7 +3738,7 @@
       "score": 0.02878,
       "signals": {
         "lexical": true,
-        "name": 0.3803
+        "name": 0.3804
       }
     },
     {
@@ -3671,7 +3771,7 @@
       "score": 0.02748,
       "signals": {
         "lexical": true,
-        "name": 0.4065
+        "name": 0.4066
       }
     },
     {
@@ -3693,7 +3793,7 @@
       "score": 0.02711,
       "signals": {
         "lexical": true,
-        "content": 0.3475
+        "content": 0.3476
       }
     },
     {
@@ -3726,7 +3826,7 @@
       "score": 0.02651,
       "signals": {
         "lexical": true,
-        "name": 0.4641
+        "name": 0.464
       }
     },
     {
@@ -3748,7 +3848,7 @@
       "score": 0.02545,
       "signals": {
         "lexical": true,
-        "name": 0.4236
+        "name": 0.4237
       }
     },
     {
@@ -3770,7 +3870,7 @@
       "score": 0.02518,
       "signals": {
         "lexical": true,
-        "name": 0.4106
+        "name": 0.4107
       }
     },
     {
@@ -3781,7 +3881,7 @@
       "score": 0.02496,
       "signals": {
         "lexical": true,
-        "name": 0.4125
+        "name": 0.4126
       }
     },
     {
@@ -3803,7 +3903,7 @@
       "score": 0.02442,
       "signals": {
         "lexical": true,
-        "name": 0.4123
+        "name": 0.4124
       }
     },
     {
@@ -3835,8 +3935,8 @@
       "name": "Antrag 146 SPD Verlegung Rasengleis Herrenalber Straße",
       "score": 0.02312,
       "signals": {
-        "name": 0.4222,
-        "content": 0.4361
+        "name": 0.4223,
+        "content": 0.4362
       }
     },
     {
@@ -3847,7 +3947,7 @@
       "score": 0.02295,
       "signals": {
         "name": 0.5356,
-        "content": 0.4129
+        "content": 0.413
       }
     },
     {
@@ -3862,9 +3962,9 @@
       }
     },
     {
-      "id": "Meeting_2992",
+      "id": "Meeting_2947",
       "type": "Meeting",
-      "oparlKey": "2992",
+      "oparlKey": "2947",
       "name": "Bauausschuss",
       "score": 0.01639,
       "signals": {
@@ -3872,9 +3972,9 @@
       }
     },
     {
-      "id": "Meeting_2934",
+      "id": "Meeting_2910",
       "type": "Meeting",
-      "oparlKey": "2934",
+      "oparlKey": "2910",
       "name": "Bauausschuss",
       "score": 0.01613,
       "signals": {
@@ -3902,9 +4002,9 @@
       }
     },
     {
-      "id": "Meeting_2947",
+      "id": "Meeting_2992",
       "type": "Meeting",
-      "oparlKey": "2947",
+      "oparlKey": "2992",
       "name": "Bauausschuss",
       "score": 0.01562,
       "signals": {
@@ -3918,7 +4018,7 @@
       "name": "Antrag GRÜNE, SPD: Weiterführung Verkehrsversuch Herrenalber Straße",
       "score": 0.01538,
       "signals": {
-        "name": 0.3598
+        "name": 0.3597
       }
     },
     {
@@ -3952,9 +4052,9 @@
       }
     },
     {
-      "id": "Meeting_2910",
+      "id": "Meeting_2934",
       "type": "Meeting",
-      "oparlKey": "2910",
+      "oparlKey": "2934",
       "name": "Bauausschuss",
       "score": 0.01515,
       "signals": {
@@ -3968,7 +4068,7 @@
       "name": "Umgestaltung Herrenalber Straße – Überarbeitete Planung aus dem Jahr 2012",
       "score": 0.01493,
       "signals": {
-        "name": 0.34
+        "name": 0.3401
       }
     },
     {
@@ -3998,13 +4098,13 @@
       "name": "Protokollauszug Anträge Nr.  146 - 147",
       "score": 0.01471,
       "signals": {
-        "content": 0.3817
+        "content": 0.3819
       }
     },
     {
-      "id": "Meeting_3001",
+      "id": "Meeting_3176",
       "type": "Meeting",
-      "oparlKey": "3001",
+      "oparlKey": "3176",
       "name": "Bauausschuss",
       "score": 0.01471,
       "signals": {
@@ -4018,7 +4118,7 @@
       "name": "Antrag KAL: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Umplanung der Herrenalber Straße zwischen Battstraße und Ostendorfplatz/Aussetzen der Entscheidung zum vorhabenbezogenen Bebauungsplan \"Sonnengrün\"",
       "score": 0.01449,
       "signals": {
-        "name": 0.4407
+        "name": 0.4408
       }
     },
     {
@@ -4028,13 +4128,13 @@
       "name": "Antrag GRÜNE, SPD: Weiterführung Verkehrsversuch Herrenalber Straße",
       "score": 0.01449,
       "signals": {
-        "name": 0.3598
+        "name": 0.3597
       }
     },
     {
-      "id": "Meeting_2725",
+      "id": "Meeting_2620",
       "type": "Meeting",
-      "oparlKey": "2725",
+      "oparlKey": "2620",
       "name": "Bauausschuss",
       "score": 0.01449,
       "signals": {
@@ -4048,7 +4148,7 @@
       "name": "Antrag SPD: Erarbeitung eines Gestaltungskonzeptes für Herrenstraße",
       "score": 0.01429,
       "signals": {
-        "name": 0.4657
+        "name": 0.4658
       }
     },
     {
@@ -4058,7 +4158,7 @@
       "name": "Antrag",
       "score": 0.01429,
       "signals": {
-        "content": 0.3919
+        "content": 0.392
       }
     },
     {
@@ -4072,9 +4172,9 @@
       }
     },
     {
-      "id": "Meeting_3176",
+      "id": "Meeting_2638",
       "type": "Meeting",
-      "oparlKey": "3176",
+      "oparlKey": "2638",
       "name": "Bauausschuss",
       "score": 0.01429,
       "signals": {
@@ -4102,9 +4202,9 @@
       }
     },
     {
-      "id": "Meeting_2638",
+      "id": "Meeting_3001",
       "type": "Meeting",
-      "oparlKey": "2638",
+      "oparlKey": "3001",
       "name": "Bauausschuss",
       "score": 0.01408,
       "signals": {
@@ -4118,7 +4218,7 @@
       "name": "Anfrage StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: \"Sonnengrün\": Bürgerversammlung und erneute Ausschreibung",
       "score": 0.01389,
       "signals": {
-        "name": 0.4919
+        "name": 0.492
       }
     },
     {
@@ -4138,7 +4238,7 @@
       "name": "Antrag GRÜNE: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Lärmschutz Herrenalber Straße",
       "score": 0.0137,
       "signals": {
-        "name": 0.4974
+        "name": 0.4975
       }
     },
     {
@@ -4168,13 +4268,13 @@
       "name": "„Klima Mobil Maßnahme: Verkehrsversuch Herrenalber Straße“",
       "score": 0.0137,
       "signals": {
-        "name": 0.4341
+        "name": 0.4342
       }
     },
     {
-      "id": "Meeting_2652",
+      "id": "Meeting_2725",
       "type": "Meeting",
-      "oparlKey": "2652",
+      "oparlKey": "2725",
       "name": "Bauausschuss",
       "score": 0.0137,
       "signals": {
@@ -4198,7 +4298,7 @@
       "name": "Stellungnahme TOP 30",
       "score": 0.01351,
       "signals": {
-        "content": 0.4029
+        "content": 0.403
       }
     },
     {
@@ -4212,9 +4312,9 @@
       }
     },
     {
-      "id": "Meeting_2025",
+      "id": "Meeting_3019",
       "type": "Meeting",
-      "oparlKey": "2025",
+      "oparlKey": "3019",
       "name": "Bauausschuss",
       "score": 0.01351,
       "signals": {
@@ -4272,9 +4372,9 @@
       }
     },
     {
-      "id": "Meeting_2669",
+      "id": "Meeting_2025",
       "type": "Meeting",
-      "oparlKey": "2669",
+      "oparlKey": "2025",
       "name": "Bauausschuss",
       "score": 0.01316,
       "signals": {
@@ -4288,7 +4388,7 @@
       "name": "Kein Kapazitätsrückbau auf wichtigen Verkehrswegen der Stadt",
       "score": 0.01299,
       "signals": {
-        "name": 0.5142
+        "name": 0.5141
       }
     },
     {
@@ -4308,13 +4408,13 @@
       "name": "Anfrage StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: \"Sonnengrün\": Bürgerversammlung und erneute Ausschreibung",
       "score": 0.01299,
       "signals": {
-        "name": 0.4919
+        "name": 0.492
       }
     },
     {
-      "id": "Meeting_3019",
+      "id": "Meeting_2669",
       "type": "Meeting",
-      "oparlKey": "3019",
+      "oparlKey": "2669",
       "name": "Bauausschuss",
       "score": 0.01299,
       "signals": {
@@ -4328,7 +4428,7 @@
       "name": "Änderungsantrag StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Bürgerversammlung",
       "score": 0.01282,
       "signals": {
-        "name": 0.5142
+        "name": 0.5143
       }
     },
     {
@@ -4338,13 +4438,13 @@
       "name": "Antrag GRÜNE: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Lärmschutz Herrenalber Straße",
       "score": 0.01282,
       "signals": {
-        "name": 0.4974
+        "name": 0.4975
       }
     },
     {
-      "id": "Meeting_2620",
+      "id": "Meeting_2652",
       "type": "Meeting",
-      "oparlKey": "2620",
+      "oparlKey": "2652",
       "name": "Bauausschuss",
       "score": 0.01282,
       "signals": {
@@ -4368,7 +4468,7 @@
       "name": "Vorlage TOP 11: Antrag CDU: Fußgängerüberweg an der Battstraße",
       "score": 0.01266,
       "signals": {
-        "content": 0.4223
+        "content": 0.4224
       }
     },
     {
@@ -4448,7 +4548,7 @@
       "name": "Anlage 2  Tabelle Sammel-Baubeschluss_THH7400",
       "score": 0.01235,
       "signals": {
-        "content": 0.4267
+        "content": 0.4268
       }
     },
     {
@@ -4478,7 +4578,7 @@
       "name": "Umbau der Kaiserstraße verschieben und Planung unter anderem zum Erhalt der Platanen überarbeiten",
       "score": 0.0122,
       "signals": {
-        "name": 0.5411
+        "name": 0.5412
       }
     },
     {
@@ -4518,7 +4618,7 @@
       "name": "Geplante Sanierung der bestehenden Pflanzfläche am Bärenweg",
       "score": 0.01205,
       "signals": {
-        "name": 0.5423
+        "name": 0.5424
       }
     },
     {
@@ -4578,7 +4678,7 @@
       "name": "Kein Kapazitätsrückbau auf wichtigen Verkehrswegen der Stadt",
       "score": 0.0119,
       "signals": {
-        "name": 0.5142
+        "name": 0.5141
       }
     },
     {
@@ -4618,7 +4718,7 @@
       "name": "Bürgerforum",
       "score": 0.01176,
       "signals": {
-        "name": 0.635
+        "name": 0.6351
       }
     },
     {
@@ -4648,7 +4748,7 @@
       "name": "Planungsausschuss",
       "score": 0.01163,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -4678,7 +4778,7 @@
       "name": "Planungsausschuss",
       "score": 0.01149,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -4698,7 +4798,7 @@
       "name": "Handwerkerhof / derzeitiger Stand mögliche Entwicklung",
       "score": 0.01136,
       "signals": {
-        "name": 0.5395
+        "name": 0.5396
       }
     },
     {
@@ -4708,7 +4808,7 @@
       "name": "Planungsausschuss",
       "score": 0.01136,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -4728,7 +4828,7 @@
       "name": "Vorlage TOP 24: Anfrage SPD: Ebenerdiger Fußgängerübergang an der Battstraße",
       "score": 0.01124,
       "signals": {
-        "content": 0.4522
+        "content": 0.4523
       }
     },
     {
@@ -4748,7 +4848,7 @@
       "name": "Planungsausschuss",
       "score": 0.01124,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -4788,7 +4888,7 @@
       "name": "Planungsausschuss",
       "score": 0.01111,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -4798,7 +4898,7 @@
       "name": "Straßensanierungsarbeiten",
       "score": 0.01099,
       "signals": {
-        "name": 0.5537
+        "name": 0.5538
       }
     },
     {
@@ -4818,14 +4918,14 @@
       "name": "Planungsausschuss",
       "score": 0.01099,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
-      "id": "Paper_26770",
+      "id": "Paper_49318",
       "type": "Paper",
-      "oparlKey": "26770",
-      "name": "Umbau der Helmholtzstraße, Vergabe von Tiefbauarbeiten",
+      "oparlKey": "49318",
+      "name": "HHSM - Rückbau der Wildgehege stoppen",
       "score": 0.01087,
       "signals": {
         "name": 0.5545
@@ -4848,17 +4948,17 @@
       "name": "Planungsausschuss",
       "score": 0.01087,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
-      "id": "Paper_49318",
+      "id": "Paper_26770",
       "type": "Paper",
-      "oparlKey": "49318",
-      "name": "HHSM - Rückbau der Wildgehege stoppen",
+      "oparlKey": "26770",
+      "name": "Umbau der Helmholtzstraße, Vergabe von Tiefbauarbeiten",
       "score": 0.01075,
       "signals": {
-        "name": 0.5545
+        "name": 0.5546
       }
     },
     {
@@ -4882,13 +4982,13 @@
       }
     },
     {
-      "id": "Meeting_1123",
+      "id": "Meeting_1520",
       "type": "Meeting",
-      "oparlKey": "1123",
+      "oparlKey": "1520",
       "name": "Planungsausschuss",
       "score": 0.01075,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -4922,13 +5022,13 @@
       }
     },
     {
-      "id": "Meeting_1520",
+      "id": "Meeting_1123",
       "type": "Meeting",
-      "oparlKey": "1520",
+      "oparlKey": "1123",
       "name": "Planungsausschuss",
       "score": 0.01064,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -4968,7 +5068,7 @@
       "name": "Planungsausschuss",
       "score": 0.01053,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -4988,7 +5088,7 @@
       "name": "TOP 16",
       "score": 0.01042,
       "signals": {
-        "content": 0.4693
+        "content": 0.4694
       }
     },
     {
@@ -5002,13 +5102,13 @@
       }
     },
     {
-      "id": "Meeting_2429",
+      "id": "Meeting_2431",
       "type": "Meeting",
-      "oparlKey": "2429",
+      "oparlKey": "2431",
       "name": "Planungsausschuss",
       "score": 0.01042,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -5028,7 +5128,7 @@
       "name": "Umbau der Röntgenstraße, Vergabe von Straßenbauarbeiten",
       "score": 0.01031,
       "signals": {
-        "name": 0.5506
+        "name": 0.5507
       }
     },
     {
@@ -5038,7 +5138,7 @@
       "name": "Planungsausschuss",
       "score": 0.01031,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -5068,17 +5168,17 @@
       "name": "Situation und mögliche Verbesserungen",
       "score": 0.0102,
       "signals": {
-        "name": 0.5509
+        "name": 0.551
       }
     },
     {
-      "id": "Meeting_2431",
+      "id": "Meeting_2687",
       "type": "Meeting",
-      "oparlKey": "2431",
+      "oparlKey": "2687",
       "name": "Planungsausschuss",
       "score": 0.0102,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -5088,7 +5188,7 @@
       "name": "Sachstand der Planungen für das Haus des Jugendrechts",
       "score": 0.0101,
       "signals": {
-        "name": 0.5579
+        "name": 0.558
       }
     },
     {
@@ -5112,13 +5212,13 @@
       }
     },
     {
-      "id": "Meeting_3187",
+      "id": "Meeting_2429",
       "type": "Meeting",
-      "oparlKey": "3187",
+      "oparlKey": "2429",
       "name": "Planungsausschuss",
       "score": 0.0101,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -5138,7 +5238,7 @@
       "name": "SPD-Gestaltungskonzept Herrenstraße",
       "score": 0.01,
       "signals": {
-        "name": 0.5035
+        "name": 0.5036
       }
     },
     {
@@ -5162,13 +5262,13 @@
       }
     },
     {
-      "id": "Meeting_2418",
+      "id": "Meeting_3187",
       "type": "Meeting",
-      "oparlKey": "2418",
+      "oparlKey": "3187",
       "name": "Planungsausschuss",
       "score": 0.01,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -5192,13 +5292,23 @@
       }
     },
     {
+      "id": "File_506777",
+      "type": "File",
+      "oparlKey": "506777",
+      "name": "Vorlage TOP 24: Anfrage SPD: Ebenerdiger Fußgängerübergang an der Battstraße",
+      "score": 0.0099,
+      "signals": {
+        "content": 0.4791
+      }
+    },
+    {
       "id": "AgendaItem_78831",
       "type": "AgendaItem",
       "oparlKey": "78831",
       "name": "Straßensanierungsarbeiten",
       "score": 0.0099,
       "signals": {
-        "name": 0.5536
+        "name": 0.5537
       }
     },
     {
@@ -5208,7 +5318,7 @@
       "name": "Planungsausschuss",
       "score": 0.0099,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -5218,7 +5328,7 @@
       "name": "Stadtwald: Rückblick 2020, Situation 2021 und Planung 2022",
       "score": 0.0098,
       "signals": {
-        "name": 0.5596
+        "name": 0.5597
       }
     },
     {
@@ -5232,16 +5342,6 @@
       }
     },
     {
-      "id": "File_506777",
-      "type": "File",
-      "oparlKey": "506777",
-      "name": "Vorlage TOP 24: Anfrage SPD: Ebenerdiger Fußgängerübergang an der Battstraße",
-      "score": 0.0098,
-      "signals": {
-        "content": 0.479
-      }
-    },
-    {
       "id": "AgendaItem_82953",
       "type": "AgendaItem",
       "oparlKey": "82953",
@@ -5252,20 +5352,20 @@
       }
     },
     {
-      "id": "Meeting_2687",
+      "id": "Meeting_2418",
       "type": "Meeting",
-      "oparlKey": "2687",
+      "oparlKey": "2418",
       "name": "Planungsausschuss",
       "score": 0.0098,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
-      "id": "Paper_46756",
+      "id": "Paper_37133",
       "type": "Paper",
-      "oparlKey": "46756",
-      "name": "Sachstand - Festplatz Rüppurr sowie Neubebauung der Grundstücke Herrenalber Straße 22/Rastatter Straße 19a",
+      "oparlKey": "37133",
+      "name": "Rücknahme der Klage gegen die zweite Rheinbrücke",
       "score": 0.00971,
       "signals": {
         "name": 0.5605
@@ -5288,7 +5388,7 @@
       "name": "TOP 02",
       "score": 0.00971,
       "signals": {
-        "content": 0.4804
+        "content": 0.4805
       }
     },
     {
@@ -5298,7 +5398,7 @@
       "name": "Umbau der Helmholtzstraße, Vergabe von Tiefbauarbeiten",
       "score": 0.00971,
       "signals": {
-        "name": 0.5545
+        "name": 0.5546
       }
     },
     {
@@ -5308,14 +5408,14 @@
       "name": "Planungsausschuss",
       "score": 0.00971,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
-      "id": "Paper_37133",
+      "id": "Paper_46756",
       "type": "Paper",
-      "oparlKey": "37133",
-      "name": "Rücknahme der Klage gegen die zweite Rheinbrücke",
+      "oparlKey": "46756",
+      "name": "Sachstand - Festplatz Rüppurr sowie Neubebauung der Grundstücke Herrenalber Straße 22/Rastatter Straße 19a",
       "score": 0.00962,
       "signals": {
         "name": 0.5606
@@ -5338,7 +5438,7 @@
       "name": "Planungsausschuss",
       "score": 0.00962,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -5362,13 +5462,13 @@
       }
     },
     {
-      "id": "File_22510",
+      "id": "File_508461",
       "type": "File",
-      "oparlKey": "22510",
-      "name": "TOP 4 c",
+      "oparlKey": "508461",
+      "name": "Vorlage TOP 11: Antrag CDU: Fußgängerüberweg an der Battstraße",
       "score": 0.00952,
       "signals": {
-        "content": 0.4851
+        "content": 0.4852
       }
     },
     {
@@ -5388,7 +5488,7 @@
       "name": "Planungsausschuss",
       "score": 0.00952,
       "signals": {
-        "name": 0.6472
+        "name": 0.6473
       }
     },
     {
@@ -5412,13 +5512,13 @@
       }
     },
     {
-      "id": "File_508461",
+      "id": "File_22510",
       "type": "File",
-      "oparlKey": "508461",
-      "name": "Vorlage TOP 11: Antrag CDU: Fußgängerüberweg an der Battstraße",
+      "oparlKey": "22510",
+      "name": "TOP 4 c",
       "score": 0.00943,
       "signals": {
-        "content": 0.4851
+        "content": 0.4852
       }
     },
     {
@@ -5438,7 +5538,7 @@
       "name": "Planungsausschuss",
       "score": 0.00943,
       "signals": {
-        "name": 0.6473
+        "name": 0.6474
       }
     },
     {
@@ -5478,7 +5578,7 @@
       "name": "Stadtwald: Rückblick 2021, Situation 2022 und Planung 2023",
       "score": 0.00935,
       "signals": {
-        "name": 0.5569
+        "name": 0.557
       }
     },
     {
@@ -5558,7 +5658,7 @@
       "name": "Sachstand der Planungen für das Haus des Jugendrechts",
       "score": 0.00917,
       "signals": {
-        "name": 0.558
+        "name": 0.5581
       }
     },
     {
@@ -5598,7 +5698,7 @@
       "name": "Protokoll TOP 30",
       "score": 0.00909,
       "signals": {
-        "content": 0.4995
+        "content": 0.4996
       }
     },
     {
