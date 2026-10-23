@@ -151,6 +151,16 @@ emissions when the endpoint reports them (`remote.chat` passes the
 `usage`/`impact` fields through). The footer is part of the stored
 summary and therefore included in the PDF export.
 
+The refusal verdict is machine-parseable (`result["summary_refused"]`):
+refused documents are listed by their `Datei <Nummer>` identifier from
+the prompt's numbered document list, and the map view gates on it —
+georeferences from refused documents are excluded (the frontend refetches
+`/geo` when the verdict arrives). The refusal strictness is a prompt
+lever (`_SYSTEM_PROMPT` in `src/pgResultSummarizer.py`): if refusals feel
+too aggressive — e.g. topically related documents dropped as redundant —
+tighten the instruction to refuse only clearly unrelated documents; if
+noise leaks through, sharpen it in the other direction.
+
 ### Performance instrumentation
 
 `src/timing.py` provides `@timed` / `timed_block` (stdlib-only) used
