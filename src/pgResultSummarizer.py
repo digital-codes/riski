@@ -50,7 +50,7 @@ class ResultSummarizer:
     (``top``, default 5).
     """
 
-    def __init__(self, session, top: int = 5, model: str | None = None,
+    def __init__(self, session, top: int = 10, model: str | None = None,
                  temperature: float = 0.1, content_chars: int = _MAX_CONTENT_CHARS) -> None:
         self._session = session
         self.top = top

@@ -27,7 +27,7 @@
 
 ## 4. Hybrid search + filters in pgTimeline
 
-- [ ] 4.1 Name-vector backfill: populate missing `{item}_name_vecs` (Paper, AgendaItem, Meeting, File) via NameVecs helper  *(deferred: ~82k embedding calls — operator run; hybrid degrades gracefully to lexical+content meanwhile)*
+- [x] 4.1 Name-vector backfill: populate missing `{item}_name_vecs` (Paper, AgendaItem, Meeting, File) via NameVecs helper  *(completed 2026-10-23 overnight run: 82,338/82,338 vectors, 0 failures, ~7.5/s)*
 - [x] 4.2 Lexical recall: trigram `similarity()`/ILIKE candidate lists over indexed name columns (θ and top-N configurable)
 - [x] 4.3 RRF fusion of lexical + name-vector + content-vector lists (k=60 default, per-signal toggle)
 - [x] 4.4 Filter model: parse/validate structured filters; apply pre-fusion (paperType, year range with basis, result, role/authoritative, tag scheme values, district)
