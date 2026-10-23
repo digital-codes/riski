@@ -29,6 +29,7 @@ import time
 # Shared layers: DB (read-only engine + config) and remote model client
 # ----------------------------------------------------------------------
 from src.db import get_engine, _load_private
+from src.timing import timed
 from src import remote
 
 
@@ -119,6 +120,7 @@ def call_reranking_chat_model(query: str, content: str) -> float:
         print(f"Unexpected response format from reranking model: {result}")
         return 0.0 
 
+@timed
 def call_reranking_model(query: str, content: list[str], top_n=0) -> list[float]:
     """
     Call local reranking model and return relevance score
@@ -227,6 +229,7 @@ class File(Base):
 
 
 
+@timed(label="pgTimeline.embed_query")
 def call_embedding_model(text: str, api_url: str = None, api_key: str = None, model: str = None) -> tuple[list[float], float]:
     """
     Call the shared remote embedding client and return a normalised vector.
@@ -248,6 +251,7 @@ def filter_by_threshold(vectors_with_scores: list[tuple], threshold: float) -> l
     """Filter vectors above threshold"""
     return [(vec, score) for vec, score in vectors_with_scores if score <= threshold]
 
+@timed
 def query_vector_similarity(session, query_vector: list[float], top_k: int = 10) -> list[int]:
     """
     Query PostgreSQL for vector similarity using pgvector
@@ -274,6 +278,7 @@ def get_db_session(db_url: str = None):
 
 
 
+@timed
 def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]:
     """
     Find all OParl objects related to the given file sids through junction tables.
@@ -809,6 +814,7 @@ def group_timeline_events(timeline_events: List[Dict], window_days: int = TIMELI
     print(f"Grouped into {len(grouped)} event groups")  # Debugging line
     return grouped
 
+@timed
 def search_and_build_timeline(
     session,
     query: str,
@@ -1038,6 +1044,7 @@ def search_and_build_timeline(
         }
     }
 
+@timed
 def search_and_summarize(
     session,
     query: str,

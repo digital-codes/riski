@@ -31,6 +31,7 @@ except ImportError:
 from sqlalchemy import text
 
 from src import remote
+from src.timing import timed
 
 _MAX_CONTENT_CHARS = 5000
 _SYSTEM_PROMPT = (
@@ -60,6 +61,7 @@ class ResultSummarizer:
     def _model_available(self) -> bool:
         return bool(remote.CHAT_BASE_URL and self.model)
 
+    @timed
     def summarize(self, result: dict, force: bool = False) -> dict:
         """Populate ``result["summary"]`` in place; returns the result.
 

@@ -24,6 +24,8 @@ except ImportError:
 
 from typing import Any, Dict, List, Optional
 
+from src.timing import timed
+
 # ----------------------------------------------------------------------
 # Adjacency map (task 1.1)
 # ----------------------------------------------------------------------
@@ -208,6 +210,7 @@ def _objs_from_rows(node_type: str, rows) -> List[Dict[str, Any]]:
     return out
 
 
+@timed
 def expand_neighbors(engine, node_id_str: str, limit_per_relation: int = 25) -> Dict[str, Any]:
     """Depth-1 neighborhood of a node, driven purely by ``ADJACENCY``.
 

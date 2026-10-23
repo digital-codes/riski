@@ -33,6 +33,7 @@ from sqlalchemy import Column, MetaData, Table, select
 from pgvector.sqlalchemy import Vector
 
 from src.db import _load_private
+from src.timing import timed, timed_block
 import os
 
 # ----------------------------------------------------------------------
@@ -182,6 +183,7 @@ def _has_table(conn, name: str) -> bool:
 # ----------------------------------------------------------------------
 # Candidate signals (task 4.2)
 # ----------------------------------------------------------------------
+@timed
 def lexical_candidates(
     conn,
     query: str,
@@ -218,6 +220,7 @@ def lexical_candidates(
     return [(row.oparlKey, row[1], float(row.sim)) for row in conn.execute(stmt)]
 
 
+@timed
 def name_vector_candidates(
     conn,
     query_embedding: Sequence[float],
@@ -255,6 +258,7 @@ def name_vector_candidates(
     return [(row.oparl_key, float(row.distance)) for row in conn.execute(stmt)]
 
 
+@timed
 def content_vector_candidates(
     conn,
     query_embedding: Sequence[float],
@@ -434,6 +438,7 @@ def _keys_for_facet(conn, table: str, f: Dict[str, Any]) -> Optional[set]:
 # ----------------------------------------------------------------------
 # Facet listing (task 4.5)
 # ----------------------------------------------------------------------
+@timed
 def facets(conn) -> Dict[str, Any]:
     """Available filter values with counts, to drive UI dropdowns."""
     out: Dict[str, Any] = {}
@@ -498,6 +503,7 @@ def facets(conn) -> Dict[str, Any]:
 # ----------------------------------------------------------------------
 # Hybrid candidate generation (tasks 4.2/4.3 wiring)
 # ----------------------------------------------------------------------
+@timed
 def hybrid_candidates(
     conn,
     query: str,
@@ -540,22 +546,25 @@ def hybrid_candidates(
 
         lex: List[str] = []
         if use_lexical:
-            lex = [k for k, _n, _s in lexical_candidates(
-                conn, query, tbl, per_signal, extra_where=extra, stop_terms=stop_terms)]
+            with timed_block(f"hybrid.lexical[{table}]"):
+                lex = [k for k, _n, _s in lexical_candidates(
+                    conn, query, tbl, per_signal, extra_where=extra, stop_terms=stop_terms)]
         nv: List[str] = []
         nv_dist: Dict[str, float] = {}
         if use_name_vecs:
-            pairs = name_vector_candidates(conn, nv_embedding, tbl, per_signal, extra_where=None)
-            nv = [k for k, _d in pairs]
-            nv_dist = dict(pairs)
+            with timed_block(f"hybrid.name_vecs[{table}]"):
+                pairs = name_vector_candidates(conn, nv_embedding, tbl, per_signal, extra_where=None)
+                nv = [k for k, _d in pairs]
+                nv_dist = dict(pairs)
         vc: List[str] = []
         vc_dist: Dict[str, float] = {}
         if use_content and table == "File":
-            pairs = content_vector_candidates(
-                conn, query_embedding, per_signal, extra_where=extra, file_tbl=tbl
-            )
-            vc = [k for k, _d in pairs]
-            vc_dist = dict(pairs)
+            with timed_block(f"hybrid.content_vecs[{table}]"):
+                pairs = content_vector_candidates(
+                    conn, query_embedding, per_signal, extra_where=extra, file_tbl=tbl
+                )
+                vc = [k for k, _d in pairs]
+                vc_dist = dict(pairs)
 
         fused = rrf_fuse([l for l in (lex, nv, vc) if l])
         if required is not None:
