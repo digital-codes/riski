@@ -17,5 +17,7 @@
 
 ## 3. Verification
 
+- [x] 3.3 The stored summary states the input query (deterministic `**Frage:** <query>` header prepended by the summarizer, not left to the model)
+
 - [x] 3.1 Update `app/src/assets/sampleData.json` via `search_and_summarize` with the new summary
 - [x] 3.2 Frontend shows the query-guided summary (no component changes expected)

@@ -66,6 +66,15 @@ class TestQueryGuidedPrompt:
         assert "in Hinblick auf die" in seen["system"]
         assert "gestellte Frage" in seen["system"]
 
+    def test_summary_states_the_query(self, summarizer, result):
+        summarizer.summarize(result)
+        assert result["summary"].startswith("**Frage:** Was macht die Digitalstrategie?")
+
+    def test_summary_without_query_has_no_header(self, summarizer, monkeypatch):
+        res = make_result(1, query="")
+        summarizer.summarize(res)
+        assert not res["summary"].startswith("**Frage:**")
+
     def test_generic_fallback_without_query(self, summarizer, monkeypatch):
         seen = {}
 
@@ -172,7 +181,8 @@ class TestSkipConditions:
         summarizer.summarize(result)
         assert result["summary"] == "vorhanden"
         summarizer.summarize(result, force=True)
-        assert result["summary"] == "Zusammenfassung."
+        assert result["summary"].startswith("**Frage:** ")
+        assert result["summary"].endswith("Zusammenfassung.")
 
     def test_dummy_response_ignored(self, result, monkeypatch):
         monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")

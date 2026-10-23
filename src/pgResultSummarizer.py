@@ -119,6 +119,9 @@ class ResultSummarizer:
         )
         summary = response.get("content", "")
         if summary and summary != "[dummy response]":
-            result["summary"] = summary
-            print(f"\nSummary (query-guided):\n{summary}")
+            # the summary must state the input query — prepended
+            # deterministically, not left to the model
+            header = f"**Frage:** {query}\n\n" if query else ""
+            result["summary"] = header + summary
+            print(f"\nSummary (query-guided):\n{result['summary']}")
         return result

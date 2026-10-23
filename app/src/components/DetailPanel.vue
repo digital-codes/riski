@@ -62,7 +62,7 @@ const TYPE_LABELS = {
 
 const RELATION_LABELS = {
   auxiliaryFile: 'Anlage zu', mainFile: 'Hauptdokument zu',
-  consultation: 'Beratung', underDirectionOf: 'unter Richtung von',
+  consultation: 'Beratung', underDirectionOf: 'unter Leitung von',
   agendaItem: 'Tagesordnungspunkt', organization: 'Organisation',
   meeting: 'Sitzung', paper: 'Dokument', subordinatedPaper: 'Unterdrucksache',
   semanticSimilarity: 'ähnlich wie',
