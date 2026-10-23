@@ -25,8 +25,10 @@ const summary = ref(null);
 const graph = computed(() => rawData.value?.graph ?? null);
 
 const onSelect = (selection) => {
-  // detail panel consumption lands with task 3.x; log for now
-  console.log('network selection', selection);
+  // interim: open the OParl record of a clicked node; DetailPanel lands in 3.x
+  if (selection.kind === 'node' && selection.data?.oparlId) {
+    window.open(selection.data.oparlId, '_blank', 'noopener');
+  }
 };
 
 onMounted(async () => {

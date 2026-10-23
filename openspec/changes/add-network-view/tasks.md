@@ -14,10 +14,10 @@
 
 ## 2. Frontend: component scaffolding
 
-- [ ] 2.1 Add `echarts` dependency to `app/package.json`; confirm tree-shaken import of `GraphChart` only
-- [ ] 2.2 Create `NetworkView.vue`: card wrapper consistent with existing cards, reactive `{nodes, edges}` state, ECharts init/dispose on mount/unmount, ResizeObserver
-- [ ] 2.3 Map contract to ECharts: categories per node type (legend + colors), node label = name (truncated), tooltip fallback
-- [ ] 2.4 Force layout tuning: repulsion, edge length, gravity — must be readable at ~50–300 nodes
+- [x] 2.1 Add `echarts` dependency to `app/package.json`; confirm tree-shaken import of `GraphChart` only
+- [x] 2.2 Create `NetworkView.vue`: card wrapper consistent with existing cards, reactive `{nodes, edges}` state, ECharts init/dispose on mount/unmount, ResizeObserver
+- [x] 2.3 Map contract to ECharts: categories per node type (legend + colors), node label = name (truncated), tooltip fallback
+- [x] 2.4 Force layout tuning: repulsion, edge length, gravity — must be readable at ~50–300 nodes
 
 ## 3. Frontend: interaction
 
