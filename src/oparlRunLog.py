@@ -62,6 +62,9 @@ class OparlUpdateRun(Base):
     total_new = Column(Integer, nullable=False, default=0)
     total_modified = Column(Integer, nullable=False, default=0)
     errors = Column(Integer, nullable=False, default=0)
+    # Comma-separated collection types fetched without a timestamp filter
+    # (filter-unsupported fallback); NULL when all collections were filtered.
+    full_fetches = Column(String(255), nullable=True)
 
 
 class OparlUpdateRunItem(Base):
@@ -107,6 +110,14 @@ def ensure_tables(engine=None) -> None:
     """Create the tracking tables if missing (additive, non-destructive)."""
     engine = engine or get_engine()
     Base.metadata.create_all(engine, tables=TABLES, checkfirst=True)
+    # full_fetches was added later: create_all does not extend existing tables.
+    try:
+        with engine.begin() as conn:
+            conn.execute(text(
+                'ALTER TABLE "oparlUpdateRuns" ADD COLUMN IF NOT EXISTS "full_fetches" VARCHAR(255)'
+            ))
+    except Exception as e:  # pragma: no cover - privilege dependent
+        _logger.debug("full_fetches column migration failed: %s", e)
     # Best-effort: make the tables readable by the read-only role.
     try:
         with engine.begin() as conn:
@@ -174,6 +185,7 @@ class RunRecorder:
         self._run_timestamp = run_timestamp or _now()
         self._baseline: Optional[str] = None
         self._end_state: Optional[str] = None
+        self._full_fetches: List[str] = []
         self._items: List[dict] = []
         self._pending: List[dict] = []
         self._errors = 0
@@ -258,6 +270,16 @@ class RunRecorder:
     def record_error(self) -> None:
         self._errors += 1
 
+    def record_full_fetch(self, element_type: str) -> None:
+        """Mark *element_type* as fetched without a timestamp filter.
+
+        Called when an endpoint provably ignored (or rejected) the
+        ``modifiedSince``/``createdSince`` filter and the collection had to
+        be fetched in full. Visible in the run row's ``full_fetches`` column.
+        """
+        if element_type not in self._full_fetches:
+            self._full_fetches.append(element_type)
+
     def set_end_state(self, state: str) -> None:
         self._end_state = state
 
@@ -333,6 +355,7 @@ class RunRecorder:
             self._flush_counts()
             total_new = sum(1 for i in self._items if i["status"] == STATUS_NEW)
             total_modified = sum(1 for i in self._items if i["status"] == STATUS_MODIFIED)
+            full_fetches = ",".join(self._full_fetches) or None
             stmt = (
                 pg_insert(OparlUpdateRun)
                 .values(
@@ -345,6 +368,7 @@ class RunRecorder:
                     total_new=total_new,
                     total_modified=total_modified,
                     errors=self._errors,
+                    full_fetches=full_fetches,
                 )
                 .on_conflict_do_update(
                     index_elements=["run_timestamp"],
@@ -355,6 +379,7 @@ class RunRecorder:
                         "total_new": total_new,
                         "total_modified": total_modified,
                         "errors": self._errors,
+                        "full_fetches": full_fetches,
                     },
                 )
             )

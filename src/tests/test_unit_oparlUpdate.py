@@ -105,6 +105,7 @@ class _FakeRecorder:
         self.finished = None
         self.items = []
         self.errors = 0
+        self.full_fetches = []
         self.available = True
 
     def start(self, baseline):
@@ -121,6 +122,9 @@ class _FakeRecorder:
     def record_error(self):
         self.errors += 1
 
+    def record_full_fetch(self, element_type):
+        self.full_fetches.append(element_type)
+
     def set_end_state(self, state):
         self.end_state = state
 
@@ -128,14 +132,16 @@ class _FakeRecorder:
         self.finished = success
 
 
-class TestCrawlIncremental:
-    @pytest.fixture()
-    def crawl_env(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(ou, "OUTPUT_FOLDER", str(tmp_path / "json"))
-        monkeypatch.setattr(ou, "OUTPUT_PDF_FOLDER", str(tmp_path / "pdf"))
-        requested = []
-        return requested, tmp_path
+@pytest.fixture()
+def crawl_env(tmp_path, monkeypatch):
+    """Shared crawl environment: output folders in tmp_path, request log."""
+    monkeypatch.setattr(ou, "OUTPUT_FOLDER", str(tmp_path / "json"))
+    monkeypatch.setattr(ou, "OUTPUT_PDF_FOLDER", str(tmp_path / "pdf"))
+    requested = []
+    return requested, tmp_path
 
+
+class TestCrawlIncremental:
     def test_first_run_crawls_and_records_state(self, crawl_env, monkeypatch, tmp_path):
         requested, _ = crawl_env
         recorder = _FakeRecorder()
@@ -278,6 +284,122 @@ class TestCrawlIncremental:
         ou.crawl_oparl("https://x/oparl", "1970-01-01T00:00:00Z", recorder=recorder)
         # end state advanced past the epoch despite the mixed offsets
         assert recorder.end_state.startswith("2026-10-23")
+
+
+class TestCollectionFiltering:
+    """Tasks 1.1/1.2: timestamp filter on every collection, with fallback."""
+
+    def test_every_collection_requested_with_modifiedsince(self, crawl_env, monkeypatch):
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        for collection in ou.COLLECTIONS:
+            assert any(
+                f"/bodies/0001/{collection}?modifiedSince=2026-10-01T00%3A00%3A00Z" in u
+                for u in requested
+            ), f"{collection} was not requested with modifiedSince"
+
+    def test_filter_honoured_detection(self):
+        baseline = ou.iso_to_dt("2026-10-01T00:00:00Z")
+        honoured = {"data": [{"id": "https://x/1", "modified": "2026-10-05T00:00:00Z"}]}
+        ignored = {"data": [{"id": "https://x/1", "modified": "2026-01-01T00:00:00Z"}]}
+        assert ou._filter_honoured(honoured, baseline, "modifiedSince") is True
+        assert ou._filter_honoured(ignored, baseline, "modifiedSince") is False
+        # createdSince compares the 'created' field
+        honoured_created = {"data": [{"id": "https://x/1", "created": "2026-10-05T00:00:00Z"}]}
+        ignored_created = {"data": [{"id": "https://x/1", "created": "2025-01-01T00:00:00Z"}]}
+        assert ou._filter_honoured(honoured_created, baseline, "createdSince") is True
+        assert ou._filter_honoured(ignored_created, baseline, "createdSince") is False
+        # empty page cannot be distinguished -> treated as honoured
+        assert ou._filter_honoured({"data": []}, baseline, "modifiedSince") is True
+
+    def test_fallback_to_full_fetch_when_filter_ignored(self, crawl_env, monkeypatch):
+        """modifiedSince ignored -> createdSince tried; if also ignored the
+        collection is fetched in full and recorded."""
+        requested, tmp_path = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            if "modifiedSince" in url:
+                # provably ignored: contains an item older than the baseline
+                return _json_response({"data": [
+                    {"id": "https://x/papers/1",
+                     "type": "https://schema.oparl.org/1.1/Paper",
+                     "modified": "2020-01-01T00:00:00Z"},
+                ], "links": {}})
+            if "createdSince" in url and "papers" in url:
+                return _json_response({"data": [
+                    {"id": "https://x/papers/1",
+                     "type": "https://schema.oparl.org/1.1/Paper",
+                     "created": "2020-01-01T00:00:00Z"},
+                ], "links": {}})
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        # both filter parameters were tried for papers ...
+        assert any("papers?modifiedSince=" in u for u in requested)
+        assert any("papers?createdSince=" in u for u in requested)
+        # ... and the fallback was recorded for the run
+        assert recorder.full_fetches == ["papers"]
+
+    def test_created_since_used_when_modified_since_rejected(self, crawl_env, monkeypatch):
+        """HTTP error on modifiedSince -> createdSince is used."""
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            if "modifiedSince" in url:
+                raise requests.ConnectionError("400 unknown parameter")
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        assert any("papers?createdSince=" in u for u in requested)
+        # createdSince was honoured (empty response) -> no full fetch recorded
+        assert recorder.full_fetches == []
+
+    def test_capability_decision_cached_per_run(self, crawl_env, monkeypatch):
+        """A decision made for one collection is not re-probed within a run."""
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            if "modifiedSince" in url:
+                return _json_response({"data": [], "links": {}})
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        # each collection was requested exactly once ( honoured first probe,
+        # no repeated capability checks for the same collection type)
+        for collection in ou.COLLECTIONS:
+            n = sum(1 for u in requested if f"/bodies/0001/{collection}?" in u)
+            assert n == 1, f"{collection} was probed {n} times"
+
+    def test_crawl_without_finalise_leaves_run_open(self, crawl_env, monkeypatch):
+        """finalise=False (sync entry point): end_state is set, run NOT finished."""
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z",
+                       recorder=recorder, finalise=False)
+        assert recorder.end_state is not None
+        assert recorder.finished is None
 
 
 class _JsonResponse:

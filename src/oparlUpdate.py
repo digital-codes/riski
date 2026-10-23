@@ -301,29 +301,98 @@ def process_resource(data, url: str, recorder=None) -> list:
 # ----------------------------------------------------------------------
 # CRAWL (updated for incremental start)
 # ----------------------------------------------------------------------
-def crawl_oparl(root_url: str, start_from: str, recorder=None):
+# Collections crawled under bodies/0001. Every collection is requested
+# with a timestamp filter (modifiedSince first, createdSince fallback);
+# endpoints that provably ignore the filter fall back to a full fetch.
+COLLECTIONS = ["consultations", "papers", "agendaItems", "meetings", "people"]
+
+# Filter parameters tried in order (OParl standard parameters).
+FILTER_PARAMS = ["modifiedSince", "createdSince"]
+
+MODE_FULL = "full"
+
+
+def _normalise_ts(ts: datetime) -> datetime:
+    """Normalise to a naive UTC datetime for comparisons."""
+    if ts.tzinfo is not None:
+        return ts.astimezone(timezone.utc).replace(tzinfo=None)
+    return ts
+
+
+# Map a filter parameter to the resource timestamp field it filters on.
+_FILTER_FIELD = {"modifiedSince": "modified", "createdSince": "created"}
+
+
+def _filter_honoured(data, baseline: datetime, field: str) -> bool:
+    """Heuristic check whether the endpoint applied the timestamp filter.
+
+    *field* is the filter parameter name (``modifiedSince``/``createdSince``);
+    the corresponding resource timestamp field (``modified``/``created``) is
+    compared against *baseline*. If any element of the returned (first) page
+    carries a timestamp older than *baseline*, the filter was provably
+    ignored (an honouring endpoint cannot return resources older than the
+    requested threshold). An empty page cannot be distinguished and is
+    treated as honoured: an ignoring endpoint would return the full,
+    non-empty set.
+    """
+    item_field = _FILTER_FIELD.get(field, field)
+    if isinstance(data, dict):
+        items = data.get("data", [])
+    elif isinstance(data, list):
+        items = data
+    else:
+        return False
+    baseline = _normalise_ts(baseline)
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        val = item.get(item_field)
+        if not isinstance(val, str):
+            continue
+        try:
+            if _normalise_ts(iso_to_dt(val)) < baseline:
+                return False
+        except Exception:
+            continue
+    return True
+
+
+def crawl_oparl(root_url: str, start_from: str, recorder=None,
+                finalise: bool = True):
     """Breadth‑first crawl of the OParl system starting from ``start_from``.
 
     ``start_from`` is an ISO‑8601 timestamp used to request only resources that
-    have been created or modified after that moment. The function respects the
-    same pagination mechanism as the original fetch script and continues even
-    when individual requests fail. When *recorder* is given, every new or
-    modified resource is logged and the run is finalised at the end.
+    have been created or modified after that moment. Every collection in
+    ``COLLECTIONS`` is requested with ``modifiedSince`` first; when the
+    endpoint rejects or provably ignores the filter, ``createdSince`` is
+    tried, and as a last resort the collection is fetched in full (with the
+    fallback recorded via ``recorder.record_full_fetch``). The capability
+    decision is cached per collection type for the duration of the run.
+    The function respects the same pagination mechanism as the original
+    fetch script and continues even when individual requests fail.
+
+    When *recorder* is given, every new or modified resource is logged.
+    With ``finalise=False`` (used by the combined sync entry point) the run
+    row is NOT finished here — the caller is responsible for finalising it
+    after the import phase.
     """
     visited = set()
-    collections = [
-        "bodies/0001/consultations",
-        "bodies/0001/papers",
-        "bodies/0001/agendaItems",
-        "bodies/0001/meetings",
-        "bodies/0001/people",
-        "bodies/0001?createdSince=" + quote(start_from, safe='')
-    ]
-    queue = deque([f"{root_url}/{c}" for c in collections])
+    baseline_dt = iso_to_dt(start_from)
+    capabilities: dict[str, str] = {}  # collection type -> decided mode
+
+    def collection_url(collection: str, param: str | None = None) -> str:
+        url = f"{root_url}/bodies/0001/{collection}"
+        if param:
+            url += f"?{param}=" + quote(start_from, safe='')
+        return url
+
+    queue = deque([f"{root_url}/bodies/0001?createdSince=" + quote(start_from, safe='')])
+    for collection in COLLECTIONS:
+        queue.append(collection_url(collection, FILTER_PARAMS[0]))
 
     # Keep the latest timestamp seen during this run – start with the provided
     # baseline so that we only ever move forward.
-    latest_ts = iso_to_dt(start_from)
+    latest_ts = baseline_dt
     if recorder is not None:
         recorder.start(start_from)
 
@@ -357,6 +426,63 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None):
 
         # JSON resources
         data = fetch_json(current_url)
+
+        # Collection first page: decide the filter capability for this run.
+        # Matches ".../bodies/0001/<collection>?modifiedSince=..." first-page
+        # requests only (pagination URLs carry page parameters and never
+        # match exactly).
+        collection = next(
+            (c for c in COLLECTIONS
+             if current_url == collection_url(c, FILTER_PARAMS[0])
+             or current_url == collection_url(c, FILTER_PARAMS[1])),
+            None,
+        )
+        if collection is not None:
+            attempted = FILTER_PARAMS[1] if FILTER_PARAMS[1] in current_url else FILTER_PARAMS[0]
+            idx = FILTER_PARAMS.index(attempted)
+            next_param = FILTER_PARAMS[idx + 1] if idx + 1 < len(FILTER_PARAMS) else None
+            if data:
+                if _filter_honoured(data, baseline_dt, attempted):
+                    capabilities[collection] = attempted
+                else:
+                    # Filter provably ignored: re-try with the next filter
+                    # parameter (it may still be honoured); the unfiltered
+                    # response is discarded, the next attempt decides.
+                    if next_param:
+                        logging.warning(
+                            "Collection %s ignored %s; falling back to %s",
+                            collection, attempted, next_param,
+                        )
+                        queue.appendleft(collection_url(collection, next_param))
+                        continue
+                    logging.warning(
+                        "Collection %s ignored all timestamp filters; fetching in full",
+                        collection,
+                    )
+                    capabilities[collection] = MODE_FULL
+                    if recorder is not None:
+                        recorder.record_full_fetch(collection)
+                    # fall through: process the (unfiltered) response
+            else:
+                # HTTP error with the filter attached: first try the next
+                # filter parameter before fetching the collection in full.
+                if next_param:
+                    logging.warning(
+                        "Collection %s rejected %s (HTTP error); falling back to %s",
+                        collection, attempted, next_param,
+                    )
+                    queue.appendleft(collection_url(collection, next_param))
+                    continue
+                logging.warning(
+                    "Collection %s rejected all timestamp filters; fetching in full",
+                    collection,
+                )
+                capabilities[collection] = MODE_FULL
+                if recorder is not None:
+                    recorder.record_full_fetch(collection)
+                queue.appendleft(collection_url(collection))
+                continue
+
         if not data:
             logging.warning("No data for %s; skipping.", current_url)
             if recorder is not None:
@@ -371,8 +497,7 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None):
         # baseline) is naive, so an aware timestamp would raise on comparison.
         try:
             ts_dt = get_resource_timestamp(data)
-            if ts_dt.tzinfo is not None:
-                ts_dt = ts_dt.astimezone(timezone.utc).replace(tzinfo=None)
+            ts_dt = _normalise_ts(ts_dt)
             if ts_dt > latest_ts:
                 latest_ts = ts_dt
         except Exception as e:
@@ -382,10 +507,13 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None):
             if link not in visited:
                 queue.append(link)
 
+    logging.info("Collection filter capabilities: %s", capabilities)
+
     # The tracking table is the source of truth for the next run baseline.
     if recorder is not None:
         recorder.set_end_state(latest_ts.isoformat())
-        recorder.finish(success=True)
+        if finalise:
+            recorder.finish(success=True)
 
 # ----------------------------------------------------------------------
 # MAIN
