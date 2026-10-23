@@ -111,8 +111,12 @@ def load_meeting_web_base() -> str | None:
     path = path or os.getenv("MEETING_WEB_URL_FILE") or DEFAULT_MEETING_WEB_URL_FILE
     try:
         with open(path, "r", encoding="utf-8") as f:
-            base = f.read().strip()
-        return base or None
+            # one URL per file; comment lines (#) and blanks are ignored
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#"):
+                    return line
+        return None
     except OSError:
         return None
 
