@@ -12,8 +12,8 @@ The pipeline has four stages, all built on two shared layers in `src/`:
 |---|---|---|
 | **1. Acquire** | `oparlUpdate` | Incremental crawl of the OParl API (JSON + PDFs), with URL fixing and run-state bookkeeping. |
 | **2. Import** | `pgGen` | Schema generator: detects entity types, relationships and scalar columns from the observed OParl JSON, creates main + association tables and imports everything (additive, non-destructive re-runs). |
-| **3. Enrich** | `pgAddSummaries`, `pgAddNameVectors`, `pgAddVecs`, `pgAddStreets`/`pgAddDistricts` (+ `pgAddStreetRefs`/`pgAddDistrictRefs`), `pgTagMgr`, `pgAddTags`, `pgSummarize`, `pgTeasers` | Load streets/districts, link agenda items that mention them, manage tags, update file contents, generate LLM summaries and teasers, compute pgvector embeddings. |
-| **4. Search & analyse** | `pgVecSearch`, `pgTimeline`, `pgFileQuery` | Cosine-similarity search over embeddings, an interactive CLI that builds a grouped 30-day timeline of related meetings/agenda items/papers for a query, and structural graph queries. |
+| **3. Enrich** | `pgAddSummaries`, `pgAddNameVectors`, `pgBackfillNameVecs`, `pgAddVecs`, `pgAddStreets`/`pgAddDistricts` (+ `pgAddStreetRefs`/`pgAddDistrictRefs`), `pgTagMgr`, `pgCategorise`, `pgAddTags`, `pgSummarize`, `pgTeasers`, `pgCoverage` | Load streets/districts, link agenda items that mention them, manage tags with provenance (scheme/source/confidence), derive canonical document-type categories, update file contents, generate LLM summaries and teasers, compute pgvector embeddings (content + name vectors), report enrichment-layer coverage. |
+| **4. Search & analyse** | `pgVecSearch`, `pgHybridSearch`, `pgTimeline`, `pgFileQuery`, `graphModel`, `pgResultSummarizer`, `apiServer` | Hybrid multi-signal search (trigram lexical + name vectors + content vectors, RRF-fused, faceted filters), query-guided German summaries, graph serialization/expansion over the OParl association tables, and a FastAPI layer serving the interactive web app. |
 
 ### Shared layers
 
@@ -45,12 +45,91 @@ python src/pgGen.py /path/to/oparl/json
 # one-off: rebuild content embeddings from a .npz vector dump
 python src/pgAddVecs.py vectors.npz
 
-# interactive semantic search with timeline output
+# (re)derive canonical document-type tags (papertype → name-regex → LLM)
+python src/pgCategorise.py all          # or: papertype | regex | llm
+
+# coverage report over all enrichment layers (content, teasers, vectors, tags)
+python src/pgCoverage.py
+
+# name-vector backfill (resume-safe; ~8 vectors/s with 6 workers)
+python src/pgBackfillNameVecs.py --workers 6
+
+# interactive semantic search with timeline output (results + graph +
+# facets; saves to app/src/assets/sampleData.json)
 python src/pgTimeline.py
 
 # or as a package module
 python -m src.pgVecSearch
 ```
+
+## Interactive search — web app + API
+
+```bash
+uvicorn src.apiServer:app --port 8000   # API (also: interactive /docs)
+cd app && npm run dev                   # web app (vite dev server)
+```
+
+The app (`app/`, Vue 3 + ECharts) issues hybrid searches against the API
+and renders the answer set three ways: a 30-day timeline, an interactive
+**network graph** (files, papers, agenda items, meetings, consultations,
+organizations and their OParl relations), and a query-guided German
+**summary**. Clicking a node opens a detail panel with the OParl record,
+the PDF download (files) and the public meeting-calendar page (meetings,
+agenda items with their TOP anchor). "Nachbarn laden" expands a node's
+depth-1 neighborhood into the graph (merge-by-id, positions preserved).
+
+In production the API is expected under the same origin at `/api/...`
+(the dev setup proxies `/api` to `localhost:8000` via vite; override with
+`VITE_API_BASE`).
+
+### How search works
+
+Three recall signals are fused per entity type by reciprocal-rank fusion
+and re-ranked by the LLM reranker:
+
+1. **Lexical** — pg_trgm trigram similarity over the indexed `name`
+   columns (Paper, File, AgendaItem, Meeting).
+2. **Name vectors** — pgvector cosine over `{item}_name_vecs` (embedded
+   from raw names).
+3. **Content vectors** — pgvector cosine over `contentEmbeddings`.
+
+Structured filters (`paperType`, year range, `AgendaItem.result`,
+`Consultation.role`/`authoritative`, tags by scheme, district,
+organization) are applied pre-fusion; results carry a match-type
+provenance (`match`/`signals`: which signals found each entry and at what
+distance) and a facet listing for filter dropdowns.
+
+### Deployment-specific configuration (`config/`)
+
+Two config files keep city-specific knowledge out of the code:
+
+- **`config/lexical_stop_terms.txt`** — terms with no discriminative
+  power (e.g. the city name). Stripped from both query and names for the
+  lexical signal, and from the query before its name-vector embedding.
+  The vector tables themselves stay decoupled: changing the list never
+  requires re-embedding.
+- **`config/meeting_web_url.txt`** — base URL of the public meeting
+  calendar; the graph appends `termin-<meeting number>` (agenda items
+  link to their `#dtop<top>` anchor). Missing file → no calendar links.
+
+Both paths can be overridden in `private.py` / environment
+(`LEXICAL_STOP_TERMS_FILE`, `MEETING_WEB_URL_FILE`).
+
+### Summaries
+
+The summary is a separate step (`pgResultSummarizer`), not part of the
+search: `/search` returns immediately, the frontend fetches `POST
+/summarize` asynchronously and fills the SummaryCard when it arrives.
+The summary is **query-guided** — it condenses ALL fetched document
+teasers with respect to the question, states the question, and names the
+key documents. Teasers (not full text) keep the LLM call fast.
+
+### Performance instrumentation
+
+`src/timing.py` provides `@timed` / `timed_block` (stdlib-only) used
+across the search pipeline, including per-signal hybrid timings. Output
+is `[timing] <label>: <seconds>s` on stdout; disable with
+`RISKI_TIMING=0`.
 
 ## Tests
 
@@ -68,13 +147,14 @@ endpoints are unavailable.
 
 - `docs/` — database DDL, pg reports, street-name data, visualisation notes
 - `docs/20261023-hermes/` — cross-repo analysis of related Karlsruhe-RIS projects
-- `openspec/` — capability specs describing the intended behaviour of each module
-- `app/` — prototype web visualisation (Vite)
+- `openspec/specs/` — capability specs describing the intended behaviour of each module (`search-api`, `network-view`, `result-summarizer`, `semantic-search`, `data-enrichment`, …)
+- `openspec/changes/archive/` — implemented change histories (incl. the 2026-10-23 search/network work)
+- `config/` — deployment-specific settings (lexical stop terms, meeting calendar base URL)
 - `utils/` — auxiliary tooling (video trailer generation, knowledge-graph experiments, street geometry helpers)
 
 ## Incremental update — implementation status
 
-The open change `openspec/changes/incremental-postgres-update` describes incremental
+The open change `openspec/changes/incremental-oparl-sync` describes incremental
 synchronisation of the PostgreSQL data. Much of it already exists in
 `src/oparlUpdate.py` and `src/pgGen.py`, partly in a different form than originally
 planned (the timestamp cursor moved from `last_run.txt` into the database — see the
@@ -113,18 +193,28 @@ archived change `track-oparl-update-runs`).
 Ideas that apply to this repo, distilled from `docs/20261023-hermes/riski-improvement-report.md`
 (which also covers the related syndication/viewer/desinformationssystem projects):
 
-- **Persist document categories.** Categorisation is currently regex-on-names only
-  (`pgAddTags`), producing JSON reports that are never written back to the
-  database. The OParl `term` field (`Antrag`, `Beschlussvorlage`, `Protokoll`,
-  `Abstimmung`, …) is authoritative and should be mapped via a lookup table to a
-  `category` stored on `Paper`/`File` rows (plus a document ↔ category
-  association table for multi-category documents).
-- **Categorise at ingestion time.** Hook the category resolution into
-  `oparlUpdate` (and `pgGen`'s import) so new entities are categorised as they
-  are persisted, with a one-off back-fill script for existing records.
-- **Reuse the TagManager.** Categories can be treated as tags and stored through
-  the existing `TagManager` many-to-many machinery instead of new ad-hoc code.
-- **Enable faceted filtering downstream.** With categories persisted, semantic
-  search (`pgTimeline`, `pgVecSearch`) and queries (`pgFileQuery`) can filter by
-  document type, submitter/faction and district instead of guessing from
-  filenames — reducing reliance on fragile filename heuristics.
+**Recently implemented** (2026-10-23, see `openspec/changes/archive/`):
+canonical tag model with provenance (`pgTagMgr` + `pgCategorise`, papertype
+backfill at 100% coverage), hybrid multi-signal search with faceted
+filters and match-type provenance, name vectors for all entity tables,
+the network graph view with OParl association edges, the FastAPI search
+API, and query-guided async summaries.
+
+**Still open:**
+
+- **LLM tag backfill for remaining items** — AgendaItem coverage is at
+  ~28% (name-regex misses escalate to the teaser-based LLM pass; run
+  `python src/pgCategorise.py llm`).
+- **Submitter/faction facet** — OParl `originator*`/`submitter` fields are
+  unpopulated in this corpus (verified by spike); would need rule-based
+  derivation like the desinformationssystem project's `submitter.py`.
+- **Semantic-similarity edges** — pairwise cosine over `contentEmbeddings`
+  within an answer set, rendered as a "mesh" layer in the network view.
+- **`/ask` endpoint** — contextual follow-up questions with LLM query
+  rewrite against the session context (session store already in place).
+- **graphGL 3D renderer** — time as third axis / color, behind a toggle.
+- **contentEmbeddings coverage** — 93.7% → 100% (files without embeddings).
+- **Full text in Postgres** — raw text lives on disk only; a bounded
+  `fulltext` column + tsvector would enable FTS beyond name trigrams.
+- **Extend `createdSince` to all collections** in `oparlUpdate` (see the
+  incremental-update section above) — the biggest crawl-time win.
