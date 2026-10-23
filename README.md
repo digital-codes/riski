@@ -72,6 +72,42 @@ endpoints are unavailable.
 - `app/` — prototype web visualisation (Vite)
 - `utils/` — auxiliary tooling (video trailer generation, knowledge-graph experiments, street geometry helpers)
 
+## Incremental update — implementation status
+
+The open change `openspec/changes/incremental-postgres-update` describes incremental
+synchronisation of the PostgreSQL data. Much of it already exists in
+`src/oparlUpdate.py` and `src/pgGen.py`, partly in a different form than originally
+planned (the timestamp cursor moved from `last_run.txt` into the database — see the
+archived change `track-oparl-update-runs`).
+
+**Already implemented:**
+
+| Planned | Status in the current code |
+|---|---|
+| Timestamp cursor tracking | ✅ Superseded and better: the `oparlUpdateRuns` table stores each run's baseline and end state in the database (DB is the sole source; `last_run.txt` was removed entirely). |
+| `?createdSince=<timestamp>` queries | ⚠️ Partial: `oparlUpdate` applies `createdSince` only to the `bodies/0001` collection. All other collections (papers, agendaItems, meetings, people, consultations) are always fetched in full — unchanged resources are only skipped when writing files, which makes each run re-validate the whole graph. |
+| Idempotent upsert (`ON CONFLICT DO UPDATE`) | ✅ `pgGen.insert_all` upserts on `oparlId`, updating only when the incoming `modified` timestamp is newer. |
+| Graceful shutdown / cursor persistence | ✅ `SIGINT` is caught; the run is recorded with `success=false` and the items collected so far are persisted. |
+| Timestamp validation | ✅ Superseded: the cursor lives in typed DB columns, not a text file. |
+| Unit tests (timestamps, shutdown) + mocked integration tests | ✅ `src/tests/test_unit_oparlUpdate.py`, `src/tests/test_unit_oparlRunLog.py`, `src/tests/test_integration_oparlRunLog.py` (rollback-only DB writes). |
+| README documentation | ✅ This section. |
+
+**Still to be done:**
+
+- **Extend `createdSince` to all collections** (papers, agendaItems, meetings, people,
+  consultations) so runs only fetch what actually changed instead of re-validating
+  everything — this is why a full crawl currently takes hours.
+- **Endpoint-capability detection and fallback**: no logic exists to detect that an
+  endpoint ignores `createdSince`; those endpoints should fall back to a full fetch
+  with a warning (planned task 3.1).
+- **Cover *modified* records, not only created ones.** OParl's `createdSince` only
+  matches entity creation dates; entities modified after creation can be missed.
+  Either use `modifiedSince` where the API supports it, or compare `modified`
+  timestamps against the tracked baseline during import.
+- **Direct-to-DB incremental sync is still two-phase.** The crawler only writes JSON
+  files; updating PostgreSQL requires running `pgGen` separately. A single command
+  that crawls *and* imports incrementally (or scheduling both together) does not exist.
+
 ## Potential improvements
 
 Ideas that apply to this repo, distilled from `docs/20261023-hermes/riski-improvement-report.md`
