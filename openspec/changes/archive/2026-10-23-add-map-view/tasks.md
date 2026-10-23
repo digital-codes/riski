@@ -19,7 +19,7 @@
 
 - [x] 3.1 End-to-end: query "Rückbau der Herrenalber Straße" → geo flag true, FeatureCollection contains linked district (Stupferich) with TOP backlink; the street itself has only 2 linked agenda items whose generic names rank outside top-10 (recall depth, not a map issue — POI/WFS ingestion is the future fix for road works)
 - [x] 3.2 End-to-end: non-georeferenced query → no flag, no map, no note
-- [ ] 3.3 README: map view section (config-free reuse of Street/District data; POI future work)
+- [x] 3.3 README: map view section (config-free reuse of Street/District data; POI future work)
 
 ## 5. File georeferences + stale-link pruning + geo scope (added during review)
 

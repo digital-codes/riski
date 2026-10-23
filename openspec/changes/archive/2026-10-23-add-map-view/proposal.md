@@ -50,3 +50,16 @@ a user asking about a street gets documents but never sees *where*.
   the same answer set.
 - **Format note**: geometries are served as GeoJSON WGS84 (EPSG:4326);
   EPSG:25832 source data is reprojected (proj4, as in klimaDashboard).
+
+## Future Work (descoped during this change)
+
+- **Residual map noise** — the map shows every street/district referenced
+  by the graph-connected answer set. Documents like B-Plan teasers list
+  many streets (plan-area context), so a query about one street can still
+  surface a dozen related ones. Refinements: restrict matching to the
+  file name field only, per-street relevance weighting (rank by reference
+  count / document rank), or an LLM relevance pass over the geo
+  candidates (analogous to the summary's refusal verdict).
+- **POI layers** — road constructions etc. from transparenz.karlsruhe.de
+  via the TBA geoserver WFS; the GeoJSON format and map component already
+  support Point features.
