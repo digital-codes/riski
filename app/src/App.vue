@@ -26,9 +26,13 @@ const graph = computed(() => rawData.value?.graph ?? null);
 
 const onSelect = (selection) => {
   // interim: open the OParl record of a clicked node; DetailPanel lands in 3.x
-  if (selection.kind === 'node' && selection.data?.oparlId) {
-    window.open(selection.data.oparlId, '_blank', 'noopener');
-  }
+  // Files link straight to the PDF download instead of the OParl record
+  const d = selection.data;
+  if (selection.kind !== 'node' || !d) return;
+  const url = d.type === 'File' || d.type === 'AuxFile'
+    ? d.attrs?.downloadurl
+    : d.oparlId;
+  if (url) window.open(url, '_blank', 'noopener');
 };
 
 onMounted(async () => {

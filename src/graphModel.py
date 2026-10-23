@@ -79,7 +79,7 @@ _ATTR_FIELDS = {
     "AgendaItem": ("number", "result"),
     "Consultation": ("role", "authoritative"),
     "Organization": ("classification", "shortName"),
-    "AuxFile": ("fileName",),
+    "AuxFile": ("fileName", "downloadurl"),
 }
 
 
@@ -132,11 +132,13 @@ def build_graph(
             "attrs": {k: v for k, v in (attrs or {}).items() if v is not None},
         }
 
-    # seed File nodes (search hits) carry their match provenance
+    # seed File nodes (search hits) carry their match provenance + download
     for f in top_files:
         add("File", f, attrs={
             "distance": f.get("distance"),
             "match": f.get("match"),
+            "downloadurl": f.get("downloadurl"),
+            "fileName": f.get("fileName"),
         })
 
     for node_type, objs in related_objects.items():
