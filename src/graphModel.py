@@ -87,8 +87,62 @@ _ATTR_FIELDS = {
     "AgendaItem": ("number", "result"),
     "Consultation": ("role", "authoritative"),
     "Organization": ("classification", "shortName"),
-    "AuxFile": ("fileName", "downloadurl"),
+    "AuxFile": ("fileName",),
 }
+
+# Deployment-specific: public calendar page for meetings. The base URL
+# lives in a config file (one per deployment, override the path via
+# private.py ``MEETING_WEB_URL_FILE`` or env); the graph builder appends
+# "termin-<meeting number>". Agenda items link to their TOP anchor on that
+# page (falls back to the page when the anchor doesn't exist). When the
+# file is missing, no calendar links are generated.
+DEFAULT_MEETING_WEB_URL_FILE = "config/meeting_web_url.txt"
+
+
+def load_meeting_web_base() -> str | None:
+    import os
+
+    from src.db import _load_private
+
+    pr = _load_private()
+    path = None
+    if pr is not None:
+        path = getattr(pr, "MEETING_WEB_URL_FILE", None)
+    path = path or os.getenv("MEETING_WEB_URL_FILE") or DEFAULT_MEETING_WEB_URL_FILE
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            base = f.read().strip()
+        return base or None
+    except OSError:
+        return None
+
+
+# Sentinel for "load the calendar base from config" in build_graph
+# (passing None explicitly disables calendar links).
+_UNSET = object()
+
+
+def _meeting_web_url(base: str, meeting_key) -> str:
+    return base.rstrip("/") + f"/termin-{meeting_key}"
+
+
+def _web_attrs(obj: Dict[str, Any], node_type: str, meeting_key_by_sid: Dict[int, Any],
+               web_base: str | None) -> Dict[str, Any]:
+    """Calendar links: Meeting -> its termin page; AgendaItem -> termin page
+    with its TOP anchor; Consultation -> the termin page it belongs to."""
+    attrs: Dict[str, Any] = {}
+    if web_base is None:
+        return attrs
+    if node_type == "Meeting" and obj.get("oparlKey") is not None:
+        attrs["webUrl"] = _meeting_web_url(web_base, obj["oparlKey"])
+    elif node_type in ("AgendaItem", "Consultation"):
+        meeting_key = meeting_key_by_sid.get(obj.get("meetingSid"))
+        if meeting_key:
+            url = _meeting_web_url(web_base, meeting_key)
+            if node_type == "AgendaItem" and obj.get("number"):
+                url += f"#dtop{obj['number']}"
+            attrs["webUrl"] = url
+    return attrs
 
 
 def node_id(node_type: str, oparl_key) -> str:
@@ -111,6 +165,7 @@ def build_graph(
     related_objects: Dict[str, List[Dict[str, Any]]],
     edges: List[Dict[str, Any]],
     top_files: List[Dict[str, Any]],
+    meeting_web_base: Any = _UNSET,
 ) -> Dict[str, Any]:
     """Serialize the traversed objects + logged edges into the graph contract.
 
@@ -149,9 +204,16 @@ def build_graph(
             "fileName": f.get("fileName"),
         })
 
+    meeting_key_by_sid = {
+        m.get("sid"): m.get("oparlKey") for m in related_objects.get("Meeting", [])
+    }
+    web_base = load_meeting_web_base() if meeting_web_base is _UNSET else meeting_web_base
+
     for node_type, objs in related_objects.items():
         for obj in objs:
-            add(node_type, obj, attrs=_pick_attrs(obj, node_type))
+            attrs = _pick_attrs(obj, node_type)
+            attrs.update(_web_attrs(obj, node_type, meeting_key_by_sid, web_base))
+            add(node_type, obj, attrs=attrs)
 
     # dedupe edges while preserving traversal order
     seen: set = set()

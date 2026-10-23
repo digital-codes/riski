@@ -623,6 +623,40 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                     "paperSid": row.paperSid
                 })
 
+    # 6b. Fetch Meetings referenced by consultations/agenda items that were
+    # not found through direct file links — without this, Meeting nodes (and
+    # their calendar links) are missing from the graph whenever no seed file
+    # links to the meeting directly.
+    meeting_sid_to_key = {m["sid"]: m["oparlKey"] for m in related_objects["Meeting"]}
+    referenced_meeting_sids = {c["meetingSid"] for c in related_objects["Consultation"] if c.get("meetingSid")}
+    referenced_meeting_sids |= {a["meetingSid"] for a in related_objects["AgendaItem"] if a.get("meetingSid")}
+    missing_meeting_sids = referenced_meeting_sids - set(meeting_sid_to_key)
+    if missing_meeting_sids:
+        stmt = (
+            select(
+                meeting_tbl.c.sid,
+                meeting_tbl.c.id,
+                meeting_tbl.c.oparlKey,
+                meeting_tbl.c.oparlId,
+                meeting_tbl.c.name,
+                meeting_tbl.c.start_date,
+                meeting_tbl.c.end_date,
+            )
+            .where(meeting_tbl.c.sid.in_(missing_meeting_sids))
+        )
+        with engine.connect() as conn:
+            for row in conn.execute(stmt).fetchall():
+                related_objects["Meeting"].append({
+                    "sid": row.sid,
+                    "id": row.id,
+                    "oparlKey": row.oparlKey,
+                    "oparlId": row.oparlId,
+                    "name": row.name,
+                    "start_date": row.start_date,
+                    "end_date": row.end_date,
+                })
+        print(f"Fetched {len(missing_meeting_sids)} additional meetings via consultations/agenda items")
+
     # 7. For Consultations, find related Organizations
     consultation_sids = [c["sid"] for c in related_objects["Consultation"]]
     consultation_sid_to_key = {c["sid"]: c["oparlKey"] for c in related_objects["Consultation"]}

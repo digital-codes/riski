@@ -18,6 +18,9 @@
         <a v-if="downloadurl" :href="downloadurl" target="_blank" rel="noopener" class="action-btn primary">
           PDF herunterladen
         </a>
+        <a v-if="webUrl" :href="webUrl" target="_blank" rel="noopener" class="action-btn">
+          Sitzungskalender öffnen
+        </a>
         <a v-if="oparlId" :href="oparlId" target="_blank" rel="noopener" class="action-btn">
           OParl-Datensatz öffnen
         </a>
@@ -83,6 +86,7 @@ const title = computed(() => {
 const date = computed(() => raw.value.date || null);
 const oparlId = computed(() => raw.value.oparlId || null);
 const downloadurl = computed(() => raw.value.attrs?.downloadurl || null);
+const webUrl = computed(() => raw.value.attrs?.webUrl || null);
 const distance = computed(() => raw.value.attrs?.distance);
 const subtitle = computed(() => raw.value.attrs?.fileName || raw.value.attrs?.paperType || raw.value.attrs?.reference || null);
 
@@ -101,7 +105,8 @@ const related = computed(() => {
     out.push({
       label: RELATION_LABELS[e.relation] || e.relation,
       name: n.name || n.id,
-      url: n.attrs?.downloadurl || n.oparlId,
+      // prefer the public calendar page for meetings, PDF for files
+      url: n.attrs?.webUrl || n.attrs?.downloadurl || n.oparlId,
     });
   }
   return out;

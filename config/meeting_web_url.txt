@@ -1,0 +1,5 @@
+# Base URL of the public meeting calendar (deployment-specific).
+# The graph builder appends "termin-<meeting number>" to this base.
+# Path can be overridden in private.py via MEETING_WEB_URL_FILE.
+
+https://sitzungskalender.karlsruhe.de/db/ratsinformation/

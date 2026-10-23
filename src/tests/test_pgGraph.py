@@ -112,6 +112,51 @@ class TestBuildGraph:
         assert any(e["target"] == "File_MISSING" for e in g["edges"])
 
 
+BASE = "https://sitzungskalender.karlsruhe.de/db/ratsinformation/"
+
+
+class TestMeetingWebUrls:
+    def test_meeting_gets_calendar_url(self):
+        related = {"Meeting": [{"sid": 3, "oparlKey": "4632", "name": "Gemeinderat",
+                                "start_date": "2022-01-17"}]}
+        g = build_graph(related, [], [], meeting_web_base=BASE)
+        node = next(n for n in g["nodes"] if n["id"] == "Meeting_4632")
+        assert node["attrs"]["webUrl"] == BASE + "termin-4632"
+
+    def test_agenda_item_links_to_top_anchor(self):
+        related = {
+            "Meeting": [{"sid": 3, "oparlKey": "4632", "name": "Gemeinderat"}],
+            "AgendaItem": [{"sid": 5, "oparlKey": "800", "name": "TOP 13.4",
+                            "number": "13.4", "meetingSid": 3}],
+        }
+        g = build_graph(related, [], [], meeting_web_base=BASE)
+        node = next(n for n in g["nodes"] if n["id"] == "AgendaItem_800")
+        assert node["attrs"]["webUrl"].endswith("termin-4632#dtop13.4")
+
+    def test_consultation_links_to_its_meeting_page(self):
+        related = {
+            "Meeting": [{"sid": 3, "oparlKey": "4632", "name": "Gemeinderat"}],
+            "Consultation": [{"sid": 2, "oparlKey": "9001", "meetingSid": 3,
+                              "role": "Entscheidung"}],
+        }
+        g = build_graph(related, [], [], meeting_web_base=BASE)
+        node = next(n for n in g["nodes"] if n["id"] == "Consultation_9001")
+        assert node["attrs"]["webUrl"].endswith("termin-4632")
+
+    def test_no_meeting_reference_no_url(self):
+        related = {"AgendaItem": [{"sid": 5, "oparlKey": "800", "name": "TOP 1",
+                                   "number": "1", "meetingSid": None}]}
+        g = build_graph(related, [], [], meeting_web_base=BASE)
+        node = next(n for n in g["nodes"] if n["id"] == "AgendaItem_800")
+        assert "webUrl" not in node["attrs"]
+
+    def test_no_base_configured_no_urls(self):
+        related = {"Meeting": [{"sid": 3, "oparlKey": "4632", "name": "Gemeinderat"}]}
+        g = build_graph(related, [], [], meeting_web_base=None)
+        node = next(n for n in g["nodes"] if n["id"] == "Meeting_4632")
+        assert "webUrl" not in node["attrs"]
+
+
 class TestFindRelatedObjectsEdgeLog:
     """Integration: edge log consistency on the live database (read-only)."""
 
