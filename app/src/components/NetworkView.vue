@@ -1,12 +1,28 @@
 <template>
   <div v-if="graph && graph.nodes && graph.nodes.length" class="card network-card">
-    <h3 class="card-title">Netzwerk ({{ graph.nodes.length }} Knoten, {{ graph.edges.length }} Kanten)</h3>
-    <div class="legend">
-      <span v-for="cat in categories" :key="cat.name" class="legend-item">
-        <span class="dot" :style="{ background: cat.color }"></span>
-        {{ typeLabel(cat.name) }}
-      </span>
+    <h3 class="card-title">Netzwerk ({{ visibleNodes.length }} Knoten, {{ visibleEdges.length }} Kanten)</h3>
+
+    <div class="filters">
+      <div class="filter-row">
+        <span class="filter-label">Typen:</span>
+        <button v-for="t in allTypes" :key="t" type="button"
+                class="chip" :class="{ off: !enabledTypes.has(t) }"
+                :style="enabledTypes.has(t) ? { borderColor: typeColor(t) } : {}"
+                @click="toggleType(t)">
+          <span class="dot" :style="{ background: typeColor(t) }"></span>
+          {{ typeLabel(t) }}
+        </button>
+      </div>
+      <div class="filter-row" v-if="allRelations.length > 1">
+        <span class="filter-label">Kanten:</span>
+        <button v-for="r in allRelations" :key="r" type="button"
+                class="chip" :class="{ off: !enabledRelations.has(r) }"
+                @click="toggleRelation(r)">
+          {{ relationLabel(r) }}
+        </button>
+      </div>
     </div>
+
     <div ref="chartEl" class="chart" role="img" aria-label="Netzwerkgraph des Suchergebnisses"></div>
   </div>
 </template>
@@ -48,18 +64,63 @@ const TYPE_LABELS = {
   Person: 'Person',
 };
 const typeLabel = (t) => TYPE_LABELS[t] || t;
+const typeColor = (t) => TYPE_COLORS[t] || '#999999';
+const RELATION_LABELS = {
+  auxiliaryFile: 'Anlage', mainFile: 'Hauptdokument', consultation: 'Beratung',
+  underDirectionOf: 'Richtung', agendaItem: 'TOP', organization: 'Organisation',
+  meeting: 'Sitzung', paper: 'Dokument', subordinatedPaper: 'Unterdrucksache',
+};
+const relationLabel = (r) => RELATION_LABELS[r] || r;
 
 const MAX_DEGREE_SIZE = 46;
 const MIN_DEGREE_SIZE = 14;
 
-const categories = computed(() => {
-  const present = [...new Set(props.graph.nodes.map((n) => n.type))].sort();
-  return present.map((name) => ({ name, color: TYPE_COLORS[name] || '#999999' }));
+// ---- filters (tasks 3.3/3.4): display-only, underlying data stays intact ----
+const enabledTypes = ref(new Set());
+const enabledRelations = ref(new Set());
+
+const allTypes = computed(() => [...new Set(props.graph.nodes.map((n) => n.type))].sort());
+const allRelations = computed(() => [...new Set(props.graph.edges.map((e) => e.relation))].sort());
+
+const toggleType = (t) => {
+  const next = new Set(enabledTypes.value);
+  next.has(t) ? next.delete(t) : next.add(t);
+  enabledTypes.value = next;
+};
+const toggleRelation = (r) => {
+  const next = new Set(enabledRelations.value);
+  next.has(r) ? next.delete(r) : next.add(r);
+  enabledRelations.value = next;
+};
+
+const visibleEdges = computed(() => props.graph.edges.filter((e) => enabledRelations.value.has(e.relation)));
+const visibleNodes = computed(() => {
+  const connected = new Set();
+  for (const e of visibleEdges.value) {
+    connected.add(e.source);
+    connected.add(e.target);
+  }
+  // keep seed/search-hit files visible even when their relation is filtered out
+  return props.graph.nodes.filter((n) => connected.has(n.id) || (n.type === 'File' && n.attrs?.match));
 });
+
+// keep filter sets in sync when the data changes (new search)
+watch(
+  () => props.graph,
+  () => {
+    enabledTypes.value = new Set(allTypes.value);
+    enabledRelations.value = new Set(allRelations.value);
+  },
+  { immediate: true }
+);
+
+const categories = computed(() =>
+  allTypes.value.map((name) => ({ name, color: typeColor(name) }))
+);
 
 const degree = computed(() => {
   const d = {};
-  for (const e of props.graph.edges) {
+  for (const e of visibleEdges.value) {
     d[e.source] = (d[e.source] || 0) + 1;
     d[e.target] = (d[e.target] || 0) + 1;
   }
@@ -77,26 +138,28 @@ function truncate(text, max = 40) {
 
 function toOption() {
   const catIndex = Object.fromEntries(categories.value.map((c, i) => [c.name, i]));
+  const visibleIds = new Set(visibleNodes.value.map((n) => n.id));
   // cap label clutter: only label nodes with few connections or high degree
   const maxDeg = Math.max(1, ...Object.values(degree.value));
-  const nodes = props.graph.nodes.map((n) => {
+  const nodes = visibleNodes.value.map((n) => {
     const deg = degree.value[n.id] || 0;
     return {
       id: n.id,
       name: truncate(n.name),
       category: catIndex[n.type] ?? 0,
       symbolSize: MIN_DEGREE_SIZE + (MAX_DEGREE_SIZE - MIN_DEGREE_SIZE) * Math.sqrt(deg / maxDeg),
-      itemStyle: n.attrs && n.attrs.match ? {} : undefined,
-      // full data for the detail panel (task 3.x) — kept raw on the node
+      // full data for the detail panel — kept raw on the node
       raw: n,
     };
   });
-  const links = props.graph.edges.map((e) => ({
-    source: e.source,
-    target: e.target,
-    relation: e.relation,
-    lineStyle: { curveness: 0.15 },
-  }));
+  const links = visibleEdges.value
+    .filter((e) => visibleIds.has(e.source) && visibleIds.has(e.target))
+    .map((e) => ({
+      source: e.source,
+      target: e.target,
+      relation: e.relation,
+      lineStyle: { curveness: 0.15 },
+    }));
   return {
     tooltip: {
       formatter: (p) => {
@@ -178,23 +241,54 @@ watch(() => props.graph, render, { deep: true });
 }
 
 .legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 8px;
-  font-size: 0.8rem;
-  color: #374151;
+  display: none; /* replaced by the filter chips */
 }
 
-.legend-item {
-  display: inline-flex;
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
 
-.dot {
-  width: 10px;
-  height: 10px;
+.filter-label {
+  font-size: 0.72rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  min-width: 52px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.5px solid #e5e7eb;
+  background: #f9fafb;
+  color: #374151;
+  border-radius: 14px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chip:hover { border-color: #667eea; }
+
+.chip.off {
+  opacity: 0.45;
+  background: #f3f4f6;
+}
+
+.chip .dot {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   display: inline-block;
 }
