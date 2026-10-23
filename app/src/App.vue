@@ -77,8 +77,12 @@ async function runSearch() {
   if (!q || loading.value) return;
   loading.value = true;
   error.value = null;
+  // clear all panes immediately — no stale data while the new search runs
+  rawData.value = null;
+  graph.value = null;
   summary.value = null;
   summaryLoading.value = false;
+  selection.value = null;
   try {
     // render results immediately; the summary arrives asynchronously
     const result = await apiSearch(q, { topK: 10, summarize: false });
