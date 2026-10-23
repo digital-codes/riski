@@ -41,6 +41,12 @@ ADJACENCY: Dict[str, List[Dict[str, str]]] = {
     ],
     "File": [
         {"relation": "meeting", "target": "Meeting", "via": "File__meeting__Meeting", "src_key": "srcSid", "tgt_key": "tgtSid"},
+        # reverse lookups: the relation is owned by the other side, but
+        # expanding a File must still find its papers. Edges keep the
+        # canonical direction (Paper --relation--> File) so merges never
+        # duplicate.
+        {"relation": "auxiliaryFile", "target": "Paper", "via": "Paper__auxiliaryFile__File", "src_key": "tgtSid", "tgt_key": "srcSid", "reverse": True},
+        {"relation": "mainFile", "target": "Paper", "via": "File__paper__Paper", "src_key": "tgtSid", "tgt_key": "srcSid", "reverse": True},
     ],
     "Meeting": [
         {"relation": "agendaItem", "target": "AgendaItem", "via": "Meeting__agendaItem__AgendaItem", "src_key": "srcSid", "tgt_key": "tgtSid"},
@@ -161,3 +167,123 @@ def build_graph(
         })
 
     return {"nodes": list(nodes.values()), "edges": out_edges}
+
+
+# ----------------------------------------------------------------------
+# Generic neighborhood expansion (used by the /expand API endpoint)
+# ----------------------------------------------------------------------
+def parse_node_id(node_id_str: str) -> tuple[str, str]:
+    """Split ``{Type}_{oparlKey}`` back into (type, oparl_key)."""
+    type_, _, key = node_id_str.partition("_")
+    if not type_ or not key:
+        raise ValueError(f"Invalid node id {node_id_str!r}; expected '{{Type}}_{{oparlKey}}'")
+    return type_, key
+
+
+def _table_columns(conn, table: str) -> set:
+    from sqlalchemy import inspect as sa_inspect
+
+    return {c["name"] for c in sa_inspect(conn).get_columns(table)}
+
+
+def _select_fields(tbl) -> List[Any]:
+    """Columns for a generic neighbor fetch, taken from the shared Table
+    object (mixing Table objects of the same name duplicates the FROM)."""
+    wanted = ["sid", "id", "oparlKey", "oparlId", "name", "fileName",
+              "date", "start_date", "end_date", "reference", "papertype",
+              "number", "result", "role", "authoritative", "classification", "shortname", "downloadurl"]
+    return [tbl.c[c] for c in wanted if c in tbl.c]
+
+
+def _objs_from_rows(node_type: str, rows) -> List[Dict[str, Any]]:
+    """Convert generic neighbor rows into the object dicts build_graph expects."""
+    out = []
+    for row in rows:
+        obj = dict(row._mapping)
+        obj["paperType"] = obj.pop("papertype", None)
+        obj["shortName"] = obj.pop("shortname", None)
+        if not obj.get("name"):
+            obj["name"] = obj.get("fileName")
+        out.append(obj)
+    return out
+
+
+def expand_neighbors(engine, node_id_str: str, limit_per_relation: int = 25) -> Dict[str, Any]:
+    """Depth-1 neighborhood of a node, driven purely by ``ADJACENCY``.
+
+    Returns a partial graph ``{"nodes": [...], "edges": [...]}`` — additive
+    to any existing graph (client merges by node id). This is the same
+    vocabulary the initial traversal logs; new relation types arrive as
+    map rows, not code.
+    """
+    import sqlalchemy as sa
+    from sqlalchemy import MetaData, Table, select
+
+    node_type, oparl_key = parse_node_id(node_id_str)
+    if node_type not in ADJACENCY or not ADJACENCY[node_type]:
+        raise ValueError(f"No adjacency defined for node type {node_type!r}")
+
+    metadata = MetaData()
+    with engine.connect() as conn:
+        item = Table(node_type, metadata, autoload_with=conn)
+        row = conn.execute(
+            select(item.c.sid).where(item.c.oparlKey == oparl_key).limit(1)
+        ).first()
+        if row is None:
+            raise ValueError(f"Node {node_id_str!r} not found in table {node_type}")
+        item_sid = row.sid
+
+        edges: List[Dict[str, Any]] = []
+        collected: Dict[str, List[Dict[str, Any]]] = {}
+
+        for rel in ADJACENCY[node_type]:
+            relation, target = rel["relation"], rel["target"]
+            tgt_table = Table(target, metadata, autoload_with=conn)
+            via = rel["via"]
+
+            if via.startswith("FK:"):
+                # direct FK on the SOURCE row pointing at the target's sid
+                col_name = via.split(".", 1)[1]
+                if col_name not in _table_columns(conn, node_type):
+                    continue
+                fk_row = conn.execute(
+                    select(item.c[col_name]).where(item.c.sid == item_sid)
+                ).first()
+                neighbor_sids = [fk_row[0]] if fk_row and fk_row[0] is not None else []
+                stmt = select(*_select_fields(tgt_table)).where(tgt_table.c.sid.in_(neighbor_sids))
+                via_label = via
+            else:
+                # junction table; rel["src_key"] locates THIS node, rel["tgt_key"] the neighbor
+                carrier = Table(via, metadata, autoload_with=conn)
+                src_col = carrier.c[rel["src_key"]]
+                tgt_col = carrier.c[rel["tgt_key"]]
+                sub = select(tgt_col).where(src_col == item_sid).limit(limit_per_relation)
+                neighbor_sids = [r[0] for r in conn.execute(sub)]
+                stmt = select(*_select_fields(tgt_table)).where(tgt_table.c.sid.in_(neighbor_sids))
+                via_label = via
+
+            if not neighbor_sids:
+                continue
+            rows = conn.execute(stmt).fetchall()
+            objs = _objs_from_rows(target, rows)
+            if not objs:
+                continue
+            collected.setdefault(target, []).extend(objs)
+            reverse = rel.get("reverse", False)
+            for obj in objs:
+                neighbor_id = node_id(target, obj["oparlKey"])
+                own_id = node_id(node_type, oparl_key)
+                edges.append({
+                    "source": neighbor_id if reverse else own_id,
+                    "target": own_id if reverse else neighbor_id,
+                    "relation": relation,
+                    "via": via_label,
+                })
+
+        related: Dict[str, List[Dict[str, Any]]] = {k: v for k, v in collected.items()}
+        # source node itself must be present as a node
+        src_row = conn.execute(select(*_select_fields(item)).where(item.c.sid == item_sid)).first()
+        if src_row is not None:
+            related.setdefault(node_type, []).extend(_objs_from_rows(node_type, [src_row]))
+
+    return build_graph(related, edges, [])
