@@ -44,3 +44,14 @@ against a session.
   multi-client use (MCP endpoint conceivable, cf. desinformationssystem).
 - Open design questions for the full change: session expiry, expand depth
   limits, read-only DB enforcement, CORS/deployment.
+
+## Future Work (descoped during this change)
+
+- **`POST /ask`** — contextual follow-up questions: the frontend sends a
+  question plus selected entity ids; the server rewrites it into a
+  standalone query (LLM) using session context (selected nodes +
+  `File.teaser`/`content` excerpts) and returns either a new search result
+  or an expansion. The in-memory session store (`/sessions/{id}`) is
+  already in place; only the prompt design and endpoint are missing.
+- **Session persistence** — sessions are in-memory only; a shared backend
+  deployment will need TTL/expiry semantics.
