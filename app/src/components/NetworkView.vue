@@ -221,12 +221,33 @@ onMounted(() => {
     if (p.dataType === 'node') emit('select', { kind: 'node', data: p.data.raw });
     else if (p.dataType === 'edge') emit('select', { kind: 'edge', data: { source: p.data.source, target: p.data.target, relation: p.data.relation } });
   });
+  // Deterministic wheel zoom: ECharts' built-in roam handler leaks wheel
+  // events to the page when the cursor is over an item (page scrolls,
+  // Ctrl+wheel zooms the browser). Capture-phase handler intercepts every
+  // wheel event before zrender and dispatches the zoom explicitly.
+  chartEl.value.addEventListener('wheel', onWheel, { passive: false, capture: true });
   resizeObserver = new ResizeObserver(() => chart && chart.resize());
   resizeObserver.observe(chartEl.value);
 });
 
+function onWheel(e) {
+  if (isMobile.value) return; // mobile: one-finger scroll must stay page scroll
+  e.preventDefault();
+  e.stopPropagation();
+  if (!chart) return;
+  const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+  chart.dispatchAction({
+    type: 'graphRoam',
+    seriesIndex: 0,
+    zoom: factor,
+    originX: e.offsetX,
+    originY: e.offsetY,
+  });
+}
+
 onUnmounted(() => {
   window.removeEventListener('resize', onResize);
+  chartEl.value?.removeEventListener('wheel', onWheel, { capture: true });
   if (resizeObserver) resizeObserver.disconnect();
   if (chart) chart.dispose();
   chart = null;

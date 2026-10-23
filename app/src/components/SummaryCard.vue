@@ -1,13 +1,18 @@
 <template>
 	<section class="summary-card">
 		<header class="summary-header">
-			<h2>Summary</h2>
-			<button type="button" class="pdf-btn" @click="downloadPdf" title="Zusammenfassung drucken oder als PDF speichern">
+			<h2>
+				Summary
+				<span v-if="loading" class="loading-note">
+					<span class="header-spinner"></span> Zusammenfassung wird erstellt…
+				</span>
+			</h2>
+			<button v-if="!loading && summary" type="button" class="pdf-btn" @click="downloadPdf" title="Zusammenfassung drucken oder als PDF speichern">
 				Als PDF speichern
 			</button>
 		</header>
 
-		<div class="summary-body" v-html="renderedSummary"></div>
+		<div v-if="!loading" class="summary-body" v-html="renderedSummary"></div>
 	</section>
 </template>
 
@@ -19,6 +24,10 @@ const props = defineProps({
 	summary: {
 		type: [String, Array, Object],
 		default: ''
+	},
+	loading: {
+		type: Boolean,
+		default: false
 	}
 });
 
@@ -128,6 +137,34 @@ const downloadPdf = () => {
 	color: #1f2937;
 	border-bottom: 2px solid #667eea;
 	padding-bottom: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex: 1;
+}
+
+.loading-note {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 0.85rem;
+	font-weight: 400;
+	color: #6b7280;
+}
+
+.header-spinner {
+	width: 14px;
+	height: 14px;
+	border: 2.5px solid #e5e7eb;
+	border-top-color: #667eea;
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+	display: inline-block;
+}
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
 }
 
 .summary-body {

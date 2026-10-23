@@ -16,7 +16,7 @@
   </div>
 
   <div class="wrapper" v-if="rawData">
-    <TimeLine :search-data="rawData" />
+    <TimeLine :search-data="rawData" :loading="loading" />
   </div>
   <div class="wrapper">
     <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph" @select="onSelect" />
@@ -30,7 +30,7 @@
     @expand="onExpand"
   />
   <div class="wrapper">
-    <SummaryCard v-if="summary && summary.length > 0" :summary="summary" />
+    <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" />
   </div>
 </template>
 
@@ -52,6 +52,7 @@ const selection = ref(null);
 const isMobile = ref(false);
 const loading = ref(false);
 const expanding = ref(false);
+const summaryLoading = ref(false);
 const error = ref(null);
 const sessionId = ref(null);
 
@@ -69,14 +70,17 @@ async function runSearch() {
   loading.value = true;
   error.value = null;
   summary.value = null;
+  summaryLoading.value = false;
   try {
     // render results immediately; the summary arrives asynchronously
     const result = await apiSearch(q, { topK: 10, summarize: false });
     applyResult(result);
     if (result.sessionId) {
+      summaryLoading.value = true;
       apiSummarize(result.sessionId)
         .then((res) => { if (res.summary) summary.value = res.summary; })
-        .catch(() => { /* summary is optional — ignore failures */ });
+        .catch(() => { /* summary is optional — ignore failures */ })
+        .finally(() => { summaryLoading.value = false; });
     }
   } catch (e) {
     error.value = `Suche fehlgeschlagen (${e.message}). Läuft der API-Server? (uvicorn src.apiServer:app --port 8000)`;

@@ -2,7 +2,10 @@
   <div v-if="searchData" class="search-results-container">
     <!-- Header: Query String -->
     <header class="query-header">
-      <h2>{{ query }}</h2>
+      <h2>
+        {{ query }}
+        <span v-if="loading" class="header-spinner" title="Suche läuft…"></span>
+      </h2>
     </header>
 
     <!-- Card 1: Files (First 3 visible, rest collapsed) -->
@@ -87,6 +90,10 @@ const props = defineProps({
   searchData: {
     type: Object,
     required: true
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -215,6 +222,23 @@ onUnmounted(() => {
   font-size: 1.25rem;
   font-weight: 600;
   word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-spinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Cards */
