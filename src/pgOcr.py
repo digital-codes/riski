@@ -39,9 +39,13 @@ def find_missing(pdf_dir: Path, md_dir: Path) -> list[Path]:
 
 
 def run(pdf_dir: Path, md_dir: Path, limit: int | None = None,
-        dry_run: bool = False) -> dict:
-    """OCR all missing PDFs. Returns a stats dict."""
-    md_dir.mkdir(parents=True, exist_ok=True)
+        dry_run: bool = False, out_dir: Path | None = None) -> dict:
+    """OCR all PDFs missing from *md_dir*. Markdown is written to
+    *out_dir* (defaults to *md_dir*, e.g. when the canonical markdown
+    folder is read-only and new files must land elsewhere).
+    Returns a stats dict."""
+    out_dir = out_dir or md_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
     missing = find_missing(pdf_dir, md_dir)
     if limit is not None:
         missing = missing[:limit]
@@ -49,7 +53,7 @@ def run(pdf_dir: Path, md_dir: Path, limit: int | None = None,
     print(f"{stats['missing']} PDFs without markdown in {md_dir}")
 
     for i, pdf_path in enumerate(missing, 1):
-        out_path = md_dir / (pdf_path.stem + ".md")
+        out_path = out_dir / (pdf_path.stem + ".md")
         if dry_run:
             print(f"[dry-run] would OCR {pdf_path.name} -> {out_path.name}")
             continue
@@ -75,16 +79,19 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="OCR PDFs missing markdown via src.remote.ocr (Mistral)")
     ap.add_argument("--pdf-dir", default="/mnt_ai/data/odd26/ris/ko_pdf")
     ap.add_argument("--md-dir", default="/mnt_ai/data/odd26/ris/ko_extracted")
+    ap.add_argument("--out-dir", default=None,
+                    help="Write markdown here instead of --md-dir (read-only canonical dir)")
     ap.add_argument("--limit", type=int, default=None, help="Max PDFs to OCR (testing)")
     ap.add_argument("--dry-run", action="store_true", help="Only list what would be OCR'd")
     args = ap.parse_args(argv)
 
     pdf_dir = Path(args.pdf_dir).expanduser().resolve()
     md_dir = Path(args.md_dir).expanduser().resolve()
+    out_dir = Path(args.out_dir).expanduser().resolve() if args.out_dir else None
     if not pdf_dir.is_dir():
         raise SystemExit(f"pdf_dir is not a directory: {pdf_dir}")
 
-    run(pdf_dir, md_dir, limit=args.limit, dry_run=args.dry_run)
+    run(pdf_dir, md_dir, limit=args.limit, dry_run=args.dry_run, out_dir=out_dir)
     return 0
 
 

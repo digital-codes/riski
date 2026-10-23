@@ -96,6 +96,18 @@ class TestRun:
         assert stats["missing"] == 2
         assert stats["ocr_ok"] == 2
 
+    def test_out_dir_writes_elsewhere(self, tmp_path, mock_ocr):
+        pdf_dir = tmp_path / "pdf"
+        md_dir = tmp_path / "md"   # canonical, read-only in production
+        out_dir = tmp_path / "out"
+        pdf_dir.mkdir()
+        md_dir.mkdir()
+        (pdf_dir / "0001.pdf").write_bytes(b"%PDF")
+        stats = pgOcr.run(pdf_dir, md_dir, out_dir=out_dir)
+        assert stats["ocr_ok"] == 1
+        assert (out_dir / "0001.md").read_text() == "# Seite 1\n\nSeite 2"
+        assert not (md_dir / "0001.md").exists()
+
     def test_empty_result_not_written(self, tmp_path, monkeypatch):
         pdf_dir = tmp_path / "pdf"
         md_dir = tmp_path / "md"
