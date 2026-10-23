@@ -104,11 +104,21 @@ def run(
     dry_run: bool = False,
     sums_dir: Path | None = None,
     full_dir: Path | None = None,
+    embed_missing_only: bool = False,
 ) -> None:
     stmt_files = select(file_tbl.c.sid, file_tbl.c.oparlKey, file_tbl.c.filename)
 
     matched = updated = 0
     skipped_no_md = skipped_no_filename = 0
+    # --embed-missing: embed only files that have no contentEmbeddings row
+    # yet (targeted incremental pass instead of re-embedding everything).
+    existing_embeddings: set[str] | None = None
+    if embeddings and embed_missing_only:
+        emb_tbl = Table("contentEmbeddings", MetaData(), autoload_with=conn)
+        existing_embeddings = {
+            key for (key,) in conn.execute(select(emb_tbl.c.oparlKey))
+        }
+        print(f"--embed-missing: {len(existing_embeddings)} embeddings already present")
 
     def signal_handler(signum, frame):
         print(f"\n\nInterrupt received. Committing progress to database...")
@@ -149,7 +159,9 @@ def run(
             )
             updated += 1
 
-            if embeddings:
+            if embeddings and not (
+                embed_missing_only and oparlKey in existing_embeddings
+            ):
                 try:
                     vec = embed(text)
                     print(f"Generated embedding for {oparlKey}, vector length: {len(vec)}")
@@ -215,6 +227,10 @@ def main() -> None:
     ap.add_argument("-s", "--sums_dir", required=True, help='Directory containing markdown files like "00123456.md"')
     ap.add_argument("-f", "--full_dir", required=True, help='Directory containing original files like "00123456.md"')
     ap.add_argument("-e", "--embeddings", action="store_true", help='Add embedding vectors')
+    ap.add_argument(
+        "--embed-missing", action="store_true",
+        help="Embed only files without a contentEmbeddings row (targeted incremental pass)",
+    )
     ap.add_argument("--dry-run", action="store_true", help="Do not write to DB; just report actions.")
     ap.add_argument(
         "--backfill-kind",
@@ -257,10 +273,11 @@ def main() -> None:
                 conn,
                 file_tbl,
                 md_map,
-                embeddings=args.embeddings,
+                embeddings=args.embeddings or args.embed_missing,
                 dry_run=False,
                 sums_dir=sums_dir,
                 full_dir=full_dir,
+                embed_missing_only=args.embed_missing,
             )
 
 
