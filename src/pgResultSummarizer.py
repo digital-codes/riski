@@ -39,14 +39,24 @@ from src import remote
 from src.timing import timed
 
 _MAX_CONTENT_CHARS = 5000
-# Query-guided instruction: condense the documents IN VIEW OF the question,
-# naming the key documents — not a neutral corpus summary.
+# Query-guided instruction with relevance filtering: wide searches can
+# deliver documents that don't actually relate to the question, so the
+# model must judge each document first, summarize only the relevant ones,
+# and disclose the excluded ones in a trailing note.
 _SYSTEM_PROMPT = (
-    "Du bist ein Assistent für das Ratsinformationssystem. Fasse die "
-    "vorgelegten Dokumente auf Deutsch zusammen — in Hinblick auf die "
-    "gestellte Frage. Nenne die für die Frage wichtigsten Dokumente und "
-    "Ergebnisse. Bleibe unter 500 Wörtern. Keine Emojis. Antworte nur mit "
-    "der Zusammenfassung."
+    "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine "
+    "Frage und eine Liste von Dokumenten (als Kurzfassungen/Teaser) "
+    "gegeben.\n"
+    "1) Beurteile zunächst für jedes Dokument, ob es inhaltlich zur "
+    "gestellten Frage beiträgt.\n"
+    "2) Fasse NUR die relevanten Dokumente auf Deutsch zusammen — in "
+    "Hinblick auf die Frage. Nenne die für die Frage wichtigsten "
+    "Dokumente und Ergebnisse. Bleibe unter 500 Wörtern. Keine Emojis.\n"
+    "3) Hänge an das Ende einen Abschnitt '**Nicht berücksichtigte "
+    "Dokumente:**' an, der die Titel aller als nicht relevant "
+    "eingestuften Dokumente auflistet — oder den Hinweis, dass alle "
+    "Dokumente berücksichtigt wurden.\n"
+    "Antworte nur mit der Zusammenfassung (inklusive dieses Abschnitts)."
 )
 
 

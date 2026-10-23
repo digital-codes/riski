@@ -64,7 +64,22 @@ class TestQueryGuidedPrompt:
         assert seen["user"].startswith("Frage: ")
         # guided instruction: summarize in view of the question
         assert "in Hinblick auf die" in seen["system"]
-        assert "gestellte Frage" in seen["system"]
+        assert "gestellte" in seen["system"]
+        # relevance filtering: evaluate each document, refuse off-topic ones
+        assert "Beurteile" in seen["system"] and "nicht relevant" in seen["system"]
+        assert "Nicht berücksichtigte Dokumente" in seen["system"]
+
+    def test_refusal_note_stored_verbatim(self, summarizer, result, monkeypatch):
+        """The model's trailing note (refused documents) is part of the
+        stored summary — not stripped or re-written."""
+
+        def fake_chat(messages, **kwargs):
+            return {"content": "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n- File 1"}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        summarizer.summarize(result)
+        assert "**Nicht berücksichtigte Dokumente:**" in result["summary"]
+        assert result["summary"].startswith("**Frage:** ")
 
     def test_summary_states_the_query(self, summarizer, result):
         summarizer.summarize(result)

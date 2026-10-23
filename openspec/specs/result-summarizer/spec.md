@@ -62,3 +62,19 @@ chat client returns its offline dummy response.
 #### Scenario: No model configured
 - **WHEN** the chat base URL or model is missing
 - **THEN** the result is returned unchanged and no error is raised
+
+### Requirement: Relevance filtering with refusal note
+The summarizer prompt SHALL instruct the model to evaluate whether each
+provided document actually relates to the question, to base the summary
+only on the related documents, and to append a trailing note listing the
+refused documents (or stating that all were used).
+
+#### Scenario: Off-topic documents from a wide search
+- **WHEN** the search returns documents unrelated to the question
+- **THEN** the prompt instructs the model to exclude them from the
+  summary and to list their titles under a "Nicht berücksichtigte
+  Dokumente" note at the end
+
+#### Scenario: All documents relevant
+- **WHEN** every document contributes to the question
+- **THEN** the note states that all documents were considered
