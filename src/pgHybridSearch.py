@@ -107,6 +107,7 @@ def _strip_expr(name_col, terms: Sequence[str]):
 # ----------------------------------------------------------------------
 _FACETS = {
     "paperType", "year", "result", "role", "authoritative", "tag", "district",
+    "organization",
 }
 _OPS = {"in", "eq", "range"}
 _YEAR_BASES = {"paper", "meeting", "file"}
@@ -168,6 +169,8 @@ def parse_filters(filters: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any
             if not scheme:
                 raise FilterError("tag filter requires a 'scheme' (e.g. 'document-type', 'topic')")
             norm["scheme"] = str(scheme)
+        if facet == "organization" and op != "in":
+            raise FilterError("organization filter supports op 'in' (names) only")
         normalized.append(norm)
     return normalized
 
@@ -385,23 +388,47 @@ def _keys_for_facet(conn, table: str, f: Dict[str, Any]) -> Optional[set]:
         )
         return {r[0] for r in conn.execute(stmt)}
     # district facet: only AgendaItems are district-linked (existing table)
-    if table != "AgendaItem":
-        return None
-    assoc_name = "Districts_items_AgendaItems"
-    if not _has_table(conn, assoc_name):
-        return None
-    assoc = Table(assoc_name, metadata, autoload_with=conn)
-    district = Table("District", metadata, autoload_with=conn)
-    agenda = Table("AgendaItem", metadata, autoload_with=conn)
-    stmt = (
-        select(agenda.c.oparlKey)
-        .select_from(
-            assoc.join(district, assoc.c.district_id == district.c.id)
-            .join(agenda, assoc.c.agendaitem_id == agenda.c.sid)
+    if f["facet"] == "district":
+        if table != "AgendaItem":
+            return None
+        assoc_name = "Districts_items_AgendaItems"
+        if not _has_table(conn, assoc_name):
+            return None
+        assoc = Table(assoc_name, metadata, autoload_with=conn)
+        district = Table("District", metadata, autoload_with=conn)
+        agenda = Table("AgendaItem", metadata, autoload_with=conn)
+        stmt = (
+            select(agenda.c.oparlKey)
+            .select_from(
+                assoc.join(district, assoc.c.district_id == district.c.id)
+                .join(agenda, assoc.c.agendaitem_id == agenda.c.sid)
+            )
+            .where(district.c.name.in_(f["values"]))
         )
-        .where(district.c.name.in_(f["values"]))
-    )
-    return {r[0] for r in conn.execute(stmt)}
+        return {r[0] for r in conn.execute(stmt)}
+    # organization facet: entities directly associated with the named
+    # organizations via their junction tables (committee membership etc.)
+    if f["facet"] == "organization":
+        org_links = {
+            "Meeting": "Meeting__organization__Organization",
+            "Paper": "Paper__underDirectionOf__Organization",
+        }
+        assoc_name = org_links.get(table)
+        if assoc_name is None or not _has_table(conn, assoc_name):
+            return None
+        assoc = Table(assoc_name, metadata, autoload_with=conn)
+        org = Table("Organization", metadata, autoload_with=conn)
+        item = Table(table, metadata, autoload_with=conn)
+        stmt = (
+            select(item.c.oparlKey)
+            .select_from(
+                assoc.join(org, assoc.c.tgtSid == org.c.sid)
+                .join(item, assoc.c.srcSid == item.c.sid)
+            )
+            .where(org.c.name.in_(f["values"]))
+        )
+        return {r[0] for r in conn.execute(stmt)}
+    return None
 
 
 # ----------------------------------------------------------------------
@@ -447,6 +474,24 @@ def facets(conn) -> Dict[str, Any]:
         for scheme, n in rows:
             tag_schemes[scheme] = tag_schemes.get(scheme, 0) + n
     out["tags"] = tag_schemes
+    # organizations (committee filter): item counts across direct links
+    org_counts: Dict[str, int] = {}
+    if _has_table(conn, "Organization"):
+        for assoc_name in ("Meeting__organization__Organization",
+                           "Paper__underDirectionOf__Organization"):
+            if not _has_table(conn, assoc_name):
+                continue
+            assoc = Table(assoc_name, meta, autoload_with=conn)
+            org = Table("Organization", meta, autoload_with=conn)
+            rows = conn.execute(
+                select(org.c.name, sa.func.count(sa.func.distinct(assoc.c.srcSid)))
+                .select_from(assoc.join(org, assoc.c.tgtSid == org.c.sid))
+                .group_by(org.c.name)
+            ).all()
+            for name, n in rows:
+                if name:
+                    org_counts[name] = org_counts.get(name, 0) + n
+    out["organization"] = dict(sorted(org_counts.items(), key=lambda kv: kv[1], reverse=True))
     return out
 
 

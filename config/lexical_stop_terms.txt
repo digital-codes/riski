@@ -12,3 +12,6 @@
 Karlsruhe
 Karlsruher
 Stadt
+Gemeinderat
+Gemeinderates
+Gemeinderats
