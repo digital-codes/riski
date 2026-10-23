@@ -369,3 +369,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
+
+# pgTimeline/pgVecSearch test output
+search_results_*.json

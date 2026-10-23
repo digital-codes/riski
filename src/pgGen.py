@@ -1,3 +1,10 @@
+
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
 #!/usr/bin/env python3
 import json
 import os
@@ -705,9 +712,10 @@ def add_missing_scalar_columns(engine, metadata, scalar_colnames, scalar_types, 
 # MAIN
 # ----------------------------
 def main(directory: str) -> None:
-    import private as pr
-    db_url = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@localhost/{pr.DB_NAME}"
-    engine = create_engine(db_url, future=True)
+    # Shared engine from the centralised DB layer (config: private.py/env)
+    from src.db import get_engine
+
+    engine = get_engine()
     metadata = MetaData()
     if DROP_ALL:
         print('Dropping existing tables ...')
@@ -753,9 +761,9 @@ def migrate_project_schema_only() -> None:
     This is the recommended upgrade path for an already populated OParl DB when
     raw OParl JSON does not need to be re-imported.
     """
-    import private as pr
-    db_url = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@localhost/{pr.DB_NAME}"
-    engine = create_engine(db_url, future=True)
+    from src.db import get_engine
+
+    engine = get_engine()
     before = migration_preservation_snapshot(engine)
     ensure_project_schema(engine)
     after = migration_preservation_snapshot(engine)

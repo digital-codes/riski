@@ -1,4 +1,4 @@
-'''Unit tests for the unified `src2` utilities.
+'''Unit tests for the unified `src` utilities.
 
 These tests run against the defaults defined in `src/private.py`:
 * PostgreSQL on `localhost` with user/password `riski`
@@ -9,7 +9,7 @@ These tests run against the defaults defined in `src/private.py`:
 import pytest
 import numpy as np
 
-from src2 import db, remote
+from src import db, remote
 
 def test_engine_connection():
     """Validate that the shared engine can connect to the DB."""
@@ -18,8 +18,18 @@ def test_engine_connection():
         result = conn.execute(db.text("SELECT 1"))
         assert result.scalar() == 1
 
+def test_readonly_engine_connection():
+    """Validate that the read-only role engine can connect to the DB."""
+    engine = db.get_engine(readonly=True)
+    with engine.connect() as conn:
+        result = conn.execute(db.text("SELECT 1"))
+        assert result.scalar() == 1
+
 def test_embed_returns_normalised_vector():
-    vec = remote.embed("unit test text")
+    try:
+        vec = remote.embed("unit test text")
+    except RuntimeError as e:
+        pytest.skip(f"live embedding endpoint unavailable: {e}")
     assert isinstance(vec, np.ndarray)
     assert vec.shape == (remote.EMBED_DIM,)
     norm = np.linalg.norm(vec)

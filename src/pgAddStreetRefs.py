@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
+
 from datetime import datetime, timezone
 from typing import Any
 
@@ -10,33 +17,18 @@ from sqlalchemy import (
 # Import helper to create DB engine
 from sqlalchemy import create_engine as sa_create_engine  # needed for openDb
 
-from local_geo_matching import prepare_street_matcher
+from src.local_geo_matching import prepare_street_matcher
 
 
-# Copied from refs
 def openDb():
-    # type: (...) -> Any
-    """Create and return a SQLAlchemy engine based on `private` settings.
+    """Create and return a SQLAlchemy engine based on the shared DB layer.
 
-    The `private` module defines the variables `RO_USER`, `RO_PWD`,
-    `DB_HOST`, and `DB_NAME`. This function builds the PostgreSQL URL and
-    returns an engine with `future=True` and connection pooling enabled.
-
-    Returns:
-        Engine configured with database connection parameters.
+    Connection settings are resolved by ``src.db`` (``private.py`` ->
+    environment variables -> safe defaults).
     """
-    try:
-        import private as pr
+    from src.db import get_engine
 
-        db_url = (
-            f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
-        )
-    except ImportError as exc:
-        raise ImportError(
-            "Could not import private for DB connection settings"
-        ) from exc
-
-    return sa_create_engine(db_url, future=True, pool_pre_ping=True)
+    return get_engine()
 
 
 def create_streets_agendaitems_table(engine):

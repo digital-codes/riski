@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
+
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple
 
@@ -11,25 +18,15 @@ from sqlalchemy import create_engine  # needed for openDb
 
 import json
 
-# Copied from refs
 def openDb():
-    """Create and return a SQLAlchemy engine based on `private` settings.
-    The `private` module defines the variables `RO_USER`, `RO_PWD`,
-    `DB_HOST`, and `DB_NAME`. This function builds the PostgreSQL URL and
-    returns an engine with `future=True` and connection pooling enabled.
+    """Create and return a SQLAlchemy engine based on the shared DB layer.
+
+    Connection settings are resolved by ``src.db`` (``private.py`` ->
+    environment variables -> safe defaults).
     """
-    try:
-        import private as pr
+    from src.db import get_engine
 
-        db_url = (
-            f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
-        )
-    except ImportError as exc:
-        raise ImportError(
-            "Could not import private for DB connection settings"
-        ) from exc
-
-    return create_engine(db_url, future=True, pool_pre_ping=True)
+    return get_engine()
 
 
 

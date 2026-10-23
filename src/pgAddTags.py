@@ -4,6 +4,13 @@ Currently supports the `analyze-db` subcommand which runs the OParl
 analysis pipeline.
 """
 
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
+
 import argparse
 import sys
 from pathlib import Path
@@ -16,18 +23,16 @@ import json
 
 # Import the DB configuration constants
 def openDb():
-    """Create and return a SQLAlchemy engine based on `private` settings.
-    The `private` module defines the variables `DB_USER`, `DB_PWD`,
-    `DB_HOST`, and `DB_NAME`. This function builds the PostgreSQL URL and
-    returns an engine with `future=True` and connection pooling enabled.
-    """
-    try:
-        import private as pr
-        db_url = f"postgresql+psycopg2://{pr.RO_USER}:{pr.RO_PWD}@localhost/{pr.DB_NAME}"
-    except ImportError as exc:
-        raise ImportError("Could not import private for DB connection settings") from exc
+    """Create and return a SQLAlchemy engine based on the shared DB layer.
 
-    return create_engine(db_url, future=True, pool_pre_ping=True)
+    Uses the read-only role (``RO_USER``/``RO_PWD``) resolved by
+    ``src.db``; falls back to the default credentials when no read-only
+    role is configured. The ``private`` module defines the variables
+    ``RO_USER``, ``RO_PWD``, ``DB_HOST``, and ``DB_NAME``.
+    """
+    from src.db import get_engine
+
+    return get_engine(readonly=True)
 
 
 
@@ -106,6 +111,27 @@ def categorize_name(name: str, patterns: Dict[str, re.Pattern]) -> str:
 
 
 
+def group_rows(rows: List[tuple], patterns: Dict[str, re.Pattern], min_group_size: int = 10) -> Dict[str, List[dict]]:
+    """Group ``(sid, oparlKey, name)`` rows by keyword patterns.
+
+    Names starting with "-" are ignored. Groups with fewer than
+    *min_group_size* items are merged into ``"Other"``.
+    """
+    groups: Dict[str, List[dict]] = defaultdict(list)
+    for i, k, n in rows:
+        grp = categorize_name(n, patterns)
+        # ignore n start start with "-" like "- abgesetzt"
+        if n.startswith("-"):
+            continue
+        groups[grp].append({"id": i, "key": k, "name": n})
+
+    # move all groups with less than min_group_size items to "Other"
+    for group in list(groups.keys()):
+        if len(groups[group]) < min_group_size:
+            groups["Other"].extend(groups.pop(group))
+    return dict(groups)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Riski utilities command‑line interface")
     parser.add_argument("--json-dir", required=True, help="Directory to write JSON and markdown outputs")
@@ -144,46 +170,22 @@ def main(argv: list[str] | None = None) -> int:
     with engine.connect() as conn:
         agenda_names = [(row.sid, row.oparlKey, row.name) for row in conn.execute(agenda.select()).fetchall() if row.name is not None]
 
-    agendaGroups: Dict[str, List[str]] = defaultdict(list)
-    for i, k, n in agenda_names:
-        # print(f"Processing AgendaItem id={i} name='{n}'"    )
-        grp = categorize_name(n, AGENDA_GROUP_PATTERNS)
-        # ignore n start start with "-" like "- abgesetzt"
-        if n.startswith("-"):
-            continue
-        agendaGroups[grp].append({"id": i, "key": k, "name": n})
-
-    # move all groups with less than 10 items to "Other"
-    for group in list(agendaGroups.keys()):
-        if len(agendaGroups[group]) < 10:
-            agendaGroups["Other"].extend(agendaGroups.pop(group))
+    agendaGroups = group_rows(agenda_names, AGENDA_GROUP_PATTERNS)
 
     with open(json_dir / "agenda_groups.json", "w", encoding="utf-8") as jf:
         json.dump(dict(agendaGroups), jf, ensure_ascii=False, indent=2)
-    
+
     # print summary
     print("Summary of agenda item groups:")
     for group, items in agendaGroups.items():
         print(f"  {group}: {len(items)} items")
-        
+
     # file name grouping
     files = tables["file"]
     with engine.connect() as conn:
         file_names = [(row.sid, row.oparlKey, row.name) for row in conn.execute(files.select()).fetchall() if row.name is not None]
 
-    fileGroups: Dict[str, List[str]] = defaultdict(list)
-    for i, k, n in file_names:
-        # print(f"Processing File id={i} name='{n}'"    )
-        grp = categorize_name(n, FILE_GROUP_PATTERNS)
-        # ignore n start start with "-" like "- abgesetzt"
-        if n.startswith("-"):
-            continue
-        fileGroups[grp].append({"id": i, "key": k, "name": n})
-
-    # move all groups with less than 10 items to "Other"
-    for group in list(fileGroups.keys()):
-        if len(fileGroups[group]) < 10:
-            fileGroups["Other"].extend(fileGroups.pop(group))
+    fileGroups = group_rows(file_names, FILE_GROUP_PATTERNS)
 
     with open(json_dir / "file_groups.json", "w", encoding="utf-8") as jf:
         json.dump(dict(fileGroups), jf, ensure_ascii=False, indent=2)

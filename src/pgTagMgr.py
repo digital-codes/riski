@@ -1,11 +1,21 @@
 """
-TagManager — SQLAlchemy-based tag management for PostgreSQL.
+TagManager — unified PostgreSQL helper (migrated to src).
 
-Provides a tag table, an association table linking tags to items
-(via the item's ``oparlKey`` column), and CRUD-style operations.
+Original implementation lived in ``src/pgTagMgr.py`` and instantiated its own
+SQLAlchemy engine per instance.  The refactored version uses the shared
+``src.db`` module for engine creation, session handling and table existence
+checks.  The public API is identical to the original; only the constructor
+gained an optional ``engine`` argument (defaulting to the shared engine).
 """
 
 from __future__ import annotations
+
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
 
 from typing import List, Optional, Sequence
 
@@ -20,37 +30,23 @@ from sqlalchemy import (
     select,
     text,
 )
+from sqlalchemy.orm import sessionmaker
 
-from sqlalchemy.orm import declarative_base, sessionmaker
+# ----------------------------------------------------------------------
+# Shared DB utilities
+# ----------------------------------------------------------------------
+from src.db import get_engine, Base, table_exists
 
-Base = declarative_base()
-
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
-
+# ----------------------------------------------------------------------
+# Constants – unchanged from original
+# ----------------------------------------------------------------------
 _ID_COL = Column("id", Integer, primary_key=True, autoincrement=True)
 _TAG_NAME_COL = Column("tag", String(255), nullable=False, unique=True)
 _OPAL_KEY_COL = "oparlKey"
 
 
-# ---------------------------------------------------------------------------
-# Builder helpers
-# ---------------------------------------------------------------------------
-
 def _make_tag_table(name: str) -> Table:
-    """Build a ``Table`` for the tag entity.
-
-    Parameters
-    ----------
-    name : str
-        Fully qualified table name (may include schema).
-
-    Returns
-    -------
-    Table
-        A SQLAlchemy ``Table`` with columns ``id`` and ``tag``.
-    """
+    """Build a ``Table`` for the tag entity."""
     return Table(
         name,
         Base.metadata,
@@ -63,20 +59,8 @@ def _make_tag_table(name: str) -> Table:
 def _make_assoc_table(tag_table_name: str, item_table_name: str) -> Table:
     """Build the many-to-many association table.
 
-    Parameters
-    ----------
-    tag_table_name : str
-        Name of the tag table (used to derive the association table name).
-    item_table_name : str
-        Name of the item table (for the FK constraint name only; the actual
-        column ``oparlKey`` is *not* a foreign key because the item table is
-        considered external and is never touched).
-
-    Returns
-    -------
-    Table
-        A SQLAlchemy ``Table`` with columns ``id``, ``tag_id`` (FK to tag
-        table), and ``oparl_key`` (plain string).
+    The item's ``oparlKey`` column is *not* a foreign key because the item
+    table is external and is never touched by the tag manager.
     """
     assoc_name = f"{tag_table_name}_assoc"
     return Table(
@@ -94,41 +78,22 @@ def _make_assoc_table(tag_table_name: str, item_table_name: str) -> Table:
     )
 
 
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
-
 class TagManager:
     """Manage tags for an external item table over PostgreSQL.
 
-    Parameters
-    ----------
-    engine : Engine
-        SQLAlchemy engine bound to a PostgreSQL database.
-    item_table : str
-        Name of the item table (e.g. ``"test_items"``).  This table must
-        exist and have a column ``oparlKey``.
-    tags : list[str] | None
-        Optional list of tag names to insert into the tag table.  When
-        provided, both the tag table and the association table will be
-        created (if they do not already exist).  When ``None`` the caller
-        guarantees those tables already exist---an error is raised otherwise.
-
-    Raises
-    ------
-    ValueError
-        If *tags* is ``None`` and the required tables are missing, or if the
-        item table does not exist.
+    ``engine`` is optional – if omitted the singleton engine from
+    ``src.db`` is used.  The public API is unchanged from the original
+    ``src/pgTagMgr.py``.
     """
 
     def __init__(
         self,
-        engine: Engine,
         item_table: str,
         tags: Optional[List[str]] = None,
+        engine=None,
     ) -> None:
-        self._engine = engine
-        self._session_factory = sessionmaker(bind=engine)
+        self._engine = engine or get_engine()
+        self._session_factory = sessionmaker(bind=self._engine)
         self._item_table_name = item_table
 
         # Derive table names from the item table name.
@@ -136,7 +101,7 @@ class TagManager:
         self._assoc_table_name = f"{self._tag_table_name}_assoc"
 
         # ---- Validate that the item table exists -------------------------
-        if not self._table_exists(item_table):
+        if not table_exists(item_table, engine=self._engine):
             raise ValueError(
                 f"Item table {item_table!r} does not exist in the database."
             )
@@ -152,12 +117,12 @@ class TagManager:
             self._ensure_tags_exist(tags)
         else:
             # Reflect existing tables.
-            if not self._table_exists(self._tag_table_name):
+            if not table_exists(self._tag_table_name, engine=self._engine):
                 raise ValueError(
                     f"Tag table {self._tag_table_name!r} not found; "
                     "provide a tag list to create it."
                 )
-            if not self._table_exists(self._assoc_table_name):
+            if not table_exists(self._assoc_table_name, engine=self._engine):
                 raise ValueError(
                     f"Association table {self._assoc_table_name!r} not found; "
                     "provide a tag list to create it."
@@ -166,7 +131,6 @@ class TagManager:
             self._assoc_table = _make_assoc_table(
                 self._tag_table_name, item_table
             )
-            # Bind the existing tables to the metadata.
             Base.metadata.create_all(self._engine, checkfirst=True)
 
     # ------------------------------------------------------------------
@@ -178,13 +142,6 @@ class TagManager:
 
         Tags that are not already in the tag table are inserted first.
         Duplicate associations are silently ignored.
-
-        Parameters
-        ----------
-        oparl_key : str
-            Value of the item's ``oparlKey`` column.
-        tags : list[str]
-            Tag names to associate.
         """
         self._ensure_tags_exist(tags)
         tag_ids = self._resolve_tag_ids(tags)
@@ -210,16 +167,6 @@ class TagManager:
         """Return ``oparlKey`` values of items that have **every** tag listed.
 
         Uses ``GROUP BY`` / ``HAVING`` counting for correctness.
-
-        Parameters
-        ----------
-        tags : list[str]
-            Tag names that must all be present.
-
-        Returns
-        -------
-        list[str]
-            Matching ``oparlKey`` values.
         """
         tag_ids = self._resolve_tag_ids(tags)
         if len(tag_ids) != len(tags):
@@ -237,18 +184,7 @@ class TagManager:
             return [row[0] for row in session.execute(stmt).all()]
 
     def find_items_with_any_tag(self, tags: List[str]) -> List[str]:
-        """Return ``oparlKey`` values of items that have **any** of the tags.
-
-        Parameters
-        ----------
-        tags : list[str]
-            Tag names to search for (at least one must match).
-
-        Returns
-        -------
-        list[str]
-            Matching ``oparlKey`` values (distinct).
-        """
+        """Return ``oparlKey`` values of items that have **any** of the tags."""
         tag_ids = self._resolve_tag_ids(tags)
         if not tag_ids:
             return []
@@ -262,18 +198,7 @@ class TagManager:
             return [row[0] for row in session.execute(stmt).all()]
 
     def get_tags_for_item(self, oparl_key: str) -> List[str]:
-        """Return all tag names associated with the given item.
-
-        Parameters
-        ----------
-        oparl_key : str
-            The item's ``oparlKey`` value.
-
-        Returns
-        -------
-        list[str]
-            Tag names (sorted alphabetically).
-        """
+        """Return all tag names associated with the given item (sorted)."""
         stmt = (
             select(self._tag_table.c.tag)
             .select_from(
@@ -289,23 +214,11 @@ class TagManager:
             return [row[0] for row in session.execute(stmt).all()]
 
     def add_tags_to_catalog(self, tags: List[str]) -> None:
-        """Add new tag names to the tag catalog (if not already present).
-
-        Parameters
-        ----------
-        tags : list[str]
-            Tag names to insert.  Duplicates are ignored.
-        """
+        """Add new tag names to the tag catalog (if not already present)."""
         self._ensure_tags_exist(tags)
 
     def remove_tags_from_catalog(self, tags: List[str]) -> None:
-        """Remove tag names **and** all their associations from the database.
-
-        Parameters
-        ----------
-        tags : list[str]
-            Tag names to delete.
-        """
+        """Remove tag names **and** all their associations from the database."""
         tag_ids = self._resolve_tag_ids(tags)
         if not tag_ids:
             return
@@ -329,17 +242,8 @@ class TagManager:
     # Internals
     # ------------------------------------------------------------------
 
-    def _table_exists(self, name: str) -> bool:
-        """Check if a table exists in the current database."""
-        with self._engine.connect() as conn:
-            return conn.dialect.has_table(conn, name)
-
     def _ensure_tags_exist(self, tags: Sequence[str]) -> None:
-        """Insert tags that are not yet in the tag table (idempotent).
-
-        Uses a simple check-then-insert approach that works across all
-        dialects supported by SQLAlchemy 1.4.
-        """
+        """Insert tags that are not yet in the tag table (idempotent)."""
         with self._session_factory() as session:
             for tag in tags:
                 already = session.execute(
@@ -350,11 +254,7 @@ class TagManager:
             session.commit()
 
     def _resolve_tag_ids(self, tags: Sequence[str]) -> List[int]:
-        """Return the primary key values for the given tag names.
-
-        Returns an empty list when *tags* is empty or none of the names
-        exist in the database.
-        """
+        """Return the primary key values for the given tag names."""
         if not tags:
             return []
         stmt = (

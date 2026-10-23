@@ -1,11 +1,9 @@
 """
-Tests for NameVecs against a real PostgreSQL database with the vector
-extension installed.
+Tests for the refactored NameVecs (src.pgNameVecs).
 
-The caller must provide:
-  DATABASE_URL (default: postgresql://localhost/octest)
-
-A temporary ``test_items`` table is created for each test run.
+Unit part: embeddings are mocked (no network, no live endpoint needed).
+Integration part: runs against the live DB and embedding endpoint, only
+touching ``test_*`` tables.
 """
 
 from __future__ import annotations
@@ -14,40 +12,35 @@ import os
 import uuid
 
 import numpy as np
-
-# Add ../src to path
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
-
-
 import pytest
-from sqlalchemy import Column, String, Table, create_engine, MetaData, text
+from sqlalchemy import Column, MetaData, String, Table, text
 from sqlalchemy.orm import sessionmaker
 
-from pgNameVecs import NameVecs
+from src import db
+from src.pgNameVecs import NameVecs
 
-try:
-    import private as pr
-    DATABASE_URL = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
-except (ImportError, KeyError):
-    DATABASE_URL = os.environ.get(
-        "DATABASE_URL", "postgresql://localhost/octest"
-    )   
+# ---------------------------------------------------------------------------
+# Fixtures
+# ---------------------------------------------------------------------------
 
 
-EMBEDDING_URL = os.environ.get("EMBEDDING_URL", "http://localhost:8085/v1")
-EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "bge-m3-Q4_K_M")
-EMBEDDING_API_KEY = os.environ.get("EMBEDDING_API_KEY", "")
-
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def engine():
-    eng = create_engine(DATABASE_URL, future=True)
+    if os.getenv("RW_USER") and os.getenv("RW_PWD"):
+        url = db.build_url(
+            os.environ["RW_USER"],
+            os.environ["RW_PWD"],
+            db.DB_HOST,
+            db.DB_NAME,
+        )
+        eng = db.get_engine(url=url)
+    else:
+        eng = db.get_engine()
     yield eng
     eng.dispose()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def item_table(engine):
     meta = MetaData()
     tbl = Table(
@@ -63,62 +56,62 @@ def item_table(engine):
             pk = str(uuid.uuid4())
             opk = f"oparl:{uuid.uuid4().hex[:12]}"
             session.execute(
-                tbl.insert().values(
-                    id=pk, oparlKey=opk, name=f"item_{pk[:8]}"
-                )
+                tbl.insert().values(id=pk, oparlKey=opk, name=f"item_{pk[:8]}")
             )
         session.commit()
     yield tbl
     with sessionmaker(bind=engine)() as session:
-        session.execute(
-            text("DROP TABLE IF EXISTS test_items_name_vecs CASCADE")
-        )
+        session.execute(text("DROP TABLE IF EXISTS test_items_name_vecs CASCADE"))
         session.execute(text("DROP TABLE IF EXISTS test_items CASCADE"))
         session.commit()
 
 
-@pytest.fixture
-def nv(engine, item_table):
-    mgr = NameVecs(
-        engine,
-        "test_items",
-        EMBEDDING_URL,
-        EMBEDDING_MODEL,
-        EMBEDDING_API_KEY or "",
-    )
+def _fake_embed(monkeypatch, dim=1024, seed=0):
+    """Patch src.pgNameVecs.embed with a deterministic pseudo-embedding."""
+    import hashlib
+
+    def _embed(text: str, **kwargs):
+        digest = hashlib.sha256(f"{seed}:{text}".encode()).digest()
+        vec = np.frombuffer(digest * (dim // len(digest) + 1), dtype=np.uint8)[:dim]
+        vec = vec.astype(np.float64) / 255.0
+        return vec / (np.linalg.norm(vec) + 1e-9)
+
+    monkeypatch.setattr("src.pgNameVecs.embed", _embed)
+    return _embed
+
+
+@pytest.fixture()
+def nv(engine, item_table, monkeypatch):
+    _fake_embed(monkeypatch)
+    mgr = NameVecs("test_items", engine=engine)
     yield mgr
     with sessionmaker(bind=engine)() as session:
-        session.execute(
-            text("DROP TABLE IF EXISTS test_items_name_vecs CASCADE")
-        )
+        session.execute(text("DROP TABLE IF EXISTS test_items_name_vecs CASCADE"))
         session.commit()
 
 
-# ------------------------------------------------------------------
-# Tests
-# ------------------------------------------------------------------
+def _table_exists(engine, name: str) -> bool:
+    from sqlalchemy import inspect
+
+    with engine.connect() as conn:
+        return inspect(conn).has_table(name)
+
+
+# ---------------------------------------------------------------------------
+# Unit tests (mocked embeddings)
+# ---------------------------------------------------------------------------
 
 
 class TestInit:
-    def test_table_created(self, engine, item_table):
-        nv = NameVecs(
-            engine,
-            "test_items",
-            EMBEDDING_URL,
-            EMBEDDING_MODEL,
-            EMBEDDING_API_KEY or "",
-        )
-        assert nv._table_exists("test_items_name_vecs")
+    def test_table_created(self, engine, item_table, monkeypatch):
+        _fake_embed(monkeypatch)
+        nv = NameVecs("test_items", engine=engine)
+        assert _table_exists(engine, "test_items_name_vecs")
 
-    def test_raises_on_missing_item_table(self, engine):
+    def test_raises_on_missing_item_table(self, engine, monkeypatch):
+        _fake_embed(monkeypatch)
         with pytest.raises(ValueError, match="does not exist"):
-            NameVecs(
-                engine,
-                "nonexistent",
-                EMBEDDING_URL,
-                EMBEDDING_MODEL,
-                EMBEDDING_API_KEY or "",
-            )
+            NameVecs("nonexistent", engine=engine)
 
 
 class TestUpsert:
@@ -127,9 +120,7 @@ class TestUpsert:
         nv.upsert(key, "hello world")
         with nv._session_factory() as session:
             row = session.execute(
-                nv._vec_table.select().where(
-                    nv._vec_table.c.oparl_key == key
-                )
+                nv._vec_table.select().where(nv._vec_table.c.oparl_key == key)
             ).first()
         assert row is not None
         assert row.oparl_key == key
@@ -140,9 +131,7 @@ class TestUpsert:
         nv.upsert(key, "second text")
         with nv._session_factory() as session:
             row = session.execute(
-                nv._vec_table.select().where(
-                    nv._vec_table.c.oparl_key == key
-                )
+                nv._vec_table.select().where(nv._vec_table.c.oparl_key == key)
             ).first()
         assert row is not None
         vals = np.array(row.embedding, dtype=np.float64)
@@ -156,9 +145,7 @@ class TestRemove:
         nv.remove(key)
         with nv._session_factory() as session:
             row = session.execute(
-                nv._vec_table.select().where(
-                    nv._vec_table.c.oparl_key == key
-                )
+                nv._vec_table.select().where(nv._vec_table.c.oparl_key == key)
             ).first()
         assert row is None
 
@@ -185,6 +172,12 @@ class TestFindSimilar:
         sims = [r[1] for r in results]
         assert sims == sorted(sims, reverse=True)
 
+    def test_self_is_best_match(self, nv: NameVecs):
+        nv.upsert("oparl:self-1", "municipal committee")
+        nv.upsert("oparl:self-2", "budget planning")
+        results = nv.find_similar("municipal committee", k=2, cutoff=0.0)
+        assert results[0][0] == "oparl:self-1"
+
     def test_cutoff_filters_low(self, nv: NameVecs):
         nv.upsert("oparl:cut-a", "Python is great")
         nv.upsert("oparl:cut-b", "quantum chromodynamics")
@@ -196,20 +189,24 @@ class TestFindSimilar:
         assert results == []
 
 
-class TestEmbed:
-    def test_embed_returns_normalized(self, nv: NameVecs):
-        sample = "test"
-        try:
-            vec = nv._embed(sample)
-        except Exception:
-            vec = None
-        assert vec is not None
-        assert vec.shape == (NameVecs.DIM,)
-        assert np.abs(np.linalg.norm(vec) - 1.0) < 1e-5
-
-
 class TestIntegration:
-    def test_full_workflow(self, nv: NameVecs):
+    """End-to-end with the real embedding endpoint."""
+
+    @pytest.fixture()
+    def live_nv(self, engine, item_table, monkeypatch):
+        try:
+            from src import remote
+
+            remote.embed("connectivity probe")
+        except Exception as e:
+            pytest.skip(f"live embedding endpoint unavailable: {e}")
+        mgr = NameVecs("test_items", engine=engine)
+        yield mgr
+        with sessionmaker(bind=engine)() as session:
+            session.execute(text("DROP TABLE IF EXISTS test_items_name_vecs CASCADE"))
+            session.commit()
+
+    def test_full_workflow(self, live_nv: NameVecs):
         docs = {
             "oparl:int-1": "machine learning algorithms",
             "oparl:int-2": "deep neural networks",
@@ -217,13 +214,15 @@ class TestIntegration:
             "oparl:int-4": "natural language processing",
         }
         for k, t in docs.items():
-            nv.upsert(k, t)
+            live_nv.upsert(k, t)
 
-        res = nv.find_similar("neural networks", k=2, cutoff=0.0)
+        res = live_nv.find_similar("neural networks", k=2, cutoff=0.0)
         assert len(res) == 2
         top_key = res[0][0]
         assert top_key == "oparl:int-2"
 
-        nv.remove("oparl:int-3")
-        res2 = nv.find_similar("indexing", k=5, cutoff=0.0)
+        live_nv.remove("oparl:int-3")
+        res2 = live_nv.find_similar("indexing", k=5, cutoff=0.0)
         assert "oparl:int-3" not in [r[0] for r in res2]
+
+pytestmark = pytest.mark.unit

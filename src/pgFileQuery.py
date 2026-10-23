@@ -10,6 +10,13 @@ foreign key `meetingSid` to `Meeting`, which can be NULL.
 
 from __future__ import annotations
 
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
+
 from datetime import datetime
 from typing import List, Optional, Tuple
 
@@ -18,26 +25,19 @@ from sqlalchemy import Table, MetaData, select
 # Import helper to create DB engine
 from sqlalchemy import create_engine  # needed for openDb
 
+from src.db import get_engine
+
 
 # Copied from refs
 def openDb():
-    """Create and return a SQLAlchemy engine based on `private` settings.
-    The `private` module defines the variables `RO_USER`, `RO_PWD`,
-    `DB_HOST`, and `DB_NAME`. This function builds the PostgreSQL URL and
-    returns an engine with `future=True` and connection pooling enabled.
+    """Create and return a SQLAlchemy engine based on the shared DB layer.
+
+    Uses the read-only role (``RO_USER``/``RO_PWD``) resolved by
+    ``src.db``; falls back to the default credentials when no read-only
+    role is configured. The ``private`` module defines the variables
+    ``RO_USER``, ``RO_PWD``, ``DB_HOST``, and ``DB_NAME``.
     """
-    try:
-        import private as pr
-
-        db_url = (
-            f"postgresql+psycopg2://{pr.RO_USER}:{pr.RO_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
-        )
-    except ImportError as exc:
-        raise ImportError(
-            "Could not import private for DB connection settings"
-        ) from exc
-
-    return create_engine(db_url, future=True, pool_pre_ping=True)
+    return get_engine(readonly=True)
 
 def find_unreferenced_files() -> List[Tuple[int, str, str]]:
     """Find files that are not linked to any agenda items or meetings or papers.

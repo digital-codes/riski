@@ -1,53 +1,53 @@
 """
-Tests for TagManager against a real PostgreSQL database.
+Tests for the refactored TagManager (src.pgTagMgr) against a live PostgreSQL.
 
-The caller is expected to provide a database URL via the environment
-variable ``DATABASE_URL`` (default: ``postgresql://localhost/octest``).
-
-A temporary table ``test_items`` is created for each test run and dropped
-afterward.
+Integration tests: use read/write credentials from ``.env`` (RW_USER/RW_PWD,
+falling back to the resolved default engine) and only touch ``test_*`` tables,
+which are dropped afterwards.
 """
 
 from __future__ import annotations
 
-import os
 import uuid
-from typing import Generator, List
-
-# Add ../src to path
-import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+from typing import Generator
 
 import pytest
-from sqlalchemy import Column, String, Table, create_engine, MetaData, text
+from sqlalchemy import Column, MetaData, String, Table, create_engine, text
 from sqlalchemy.orm import sessionmaker
 
+import os
 
-from pgTagMgr import TagManager
+from src.pgTagMgr import TagManager
+from src import db
+
+pytestmark = pytest.mark.integration
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
-try:
-    import private as pr
-    DATABASE_URL = f"postgresql+psycopg2://{pr.DB_USER}:{pr.DB_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
-except (ImportError, KeyError):
-    DATABASE_URL = os.environ.get(
-        "DATABASE_URL", "postgresql://localhost/octest"
-    )   
-
-
-
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def engine():
-    """Create a SQLAlchemy engine to the test database."""
-    eng = create_engine(DATABASE_URL, future=True)
+    """Create a SQLAlchemy engine to the test database.
+
+    Uses the read/write credentials from .env (RW_USER/RW_PWD) when present,
+    otherwise the shared default engine.
+    """
+    if os.getenv("RW_USER") and os.getenv("RW_PWD"):
+        url = db.build_url(
+            os.environ["RW_USER"],
+            os.environ["RW_PWD"],
+            db.DB_HOST,
+            db.DB_NAME,
+        )
+        eng = db.get_engine(url=url)
+    else:
+        eng = db.get_engine()
     yield eng
     eng.dispose()
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def item_table(engine):
     """Create a temporary ``test_items`` table and seed it with random rows.
 
@@ -85,13 +85,10 @@ def item_table(engine):
 
 @pytest.fixture
 def tm(engine, item_table) -> Generator[TagManager, None, None]:
-    """Return a TagManager that creates tag + assoc tables automatically.
-
-    The tables are dropped after the test to keep a clean state.
-    """
-    mgr = TagManager(engine, "test_items", tags=["red", "green", "blue"])
+    """Return a TagManager that creates tag + assoc tables automatically."""
+    mgr = TagManager("test_items", tags=["red", "green", "blue"], engine=engine)
     with sessionmaker(bind=engine)() as session:
-        result = session.execute(text("SELECT \"oparlKey\" FROM test_items"))
+        result = session.execute(text('SELECT "oparlKey" FROM test_items'))
         keys = [row[0] for row in result]
     for i, key in enumerate(keys):
         tags_for_item = [["red"], ["green"], ["blue"], ["red", "green"]][i % 4]
@@ -103,6 +100,13 @@ def tm(engine, item_table) -> Generator[TagManager, None, None]:
         session.commit()
 
 
+def _table_exists(engine, name: str) -> bool:
+    with engine.connect() as conn:
+        from sqlalchemy import inspect
+
+        return inspect(conn).has_table(name)
+
+
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
@@ -111,26 +115,24 @@ class TestTagManagerInit:
     """Tests around construction and table validation."""
 
     def test_init_with_tags_creates_tables(self, engine, item_table):
-        mgr = TagManager(engine, "test_items", tags=["a", "b"])
-        assert mgr._table_exists("test_items_tags")
-        assert mgr._table_exists("test_items_tags_assoc")
+        mgr = TagManager("test_items", tags=["a", "b"], engine=engine)
+        assert _table_exists(engine, "test_items_tags")
+        assert _table_exists(engine, "test_items_tags_assoc")
 
     def test_init_without_tags_raises_when_missing(self, engine, item_table):
         with pytest.raises(ValueError, match="not found"):
-            TagManager(engine, "test_items")
+            TagManager("test_items", engine=engine)
 
     def test_init_without_tags_ok_when_exist(self, engine, item_table):
         # First create them.
-        TagManager(engine, "test_items", tags=["x", "y"])
+        TagManager("test_items", tags=["x", "y"], engine=engine)
         # Should not raise.
-        mgr = TagManager(engine, "test_items")
+        mgr = TagManager("test_items", engine=engine)
         assert mgr is not None
 
     def test_init_raises_on_missing_item_table(self, engine):
         with pytest.raises(ValueError, match="does not exist"):
-            TagManager(
-                engine, "nonexistent_items", tags=["a"]
-            )
+            TagManager("nonexistent_items", tags=["a"], engine=engine)
 
 
 class TestAddTags:
@@ -166,8 +168,6 @@ class TestFindItemsWithAllTags:
 
     def test_items_with_exactly_one_tag(self, tm: TagManager):
         keys = tm.find_items_with_any_tag(["red"])
-        if not keys:
-            pytest.skip("no items tagged 'red'")
         result = tm.find_items_with_all_tags(["red"])
         assert len(result) == len(keys)
 
@@ -195,10 +195,6 @@ class TestGetTagsForItem:
     """Retrieving tags for an item."""
 
     def test_no_tags_returns_empty(self, tm: TagManager):
-        # Pick an oparlKey that has no tags yet by using green (assuming
-        # green has fewer initial associations).
-        keys = tm.find_items_with_any_tag(["green"])
-        # Untag an item by removing green from catalog (or use a new key).
         key = f"oparl:{uuid.uuid4().hex[:12]}"
         result = tm.get_tags_for_item(key)
         assert result == []

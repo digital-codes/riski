@@ -1,3 +1,10 @@
+
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
 from sqlalchemy import create_engine, Column, Integer, String, func, text, desc, inspect
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -5,7 +12,10 @@ import numpy as np
 from pgvector.sqlalchemy import Vector
 
 import requests
-import private as pr
+
+# Shared layers: read-only DB engine and centralised embedding client
+from src.db import get_engine
+from src import remote
 
 
 Base = declarative_base()
@@ -34,36 +44,19 @@ class File(Base):
     content = Column(String)
 
 
-def call_embedding_model(text: str, api_url: str, api_key: str, model: str) -> tuple[list[float], float]:
+def call_embedding_model(text: str, api_url: str = None, api_key: str = None, model: str = None) -> tuple[list[float], float]:
     """
-    Call remote embedding model and return (vector, score)
-    Adjust based on your actual API endpoint
+    Call the shared remote embedding client and return a normalised vector.
+
+    Endpoint/model/key configuration lives in ``src.remote`` (resolved from
+    ``private.py`` / environment variables); the arguments are kept for API
+    compatibility and override the shared configuration when given.
     """
-    headers = {"Authorization": f"Bearer {api_key}"}
-    
-    response = requests.post(
-        api_url,
-        json={"input": text, "model": model},
-        headers=headers
-    )
-    response.raise_for_status()
-    
-    result = response.json()
-    # print(f"API response: {result}")  # Debug print to check response structure
-    # Adjust based on actual API response structure
-    if isinstance(result, dict) and result.get("data") and isinstance(result["data"], list) and len(result["data"]) > 0:
-        vector = result["data"][0].get('embedding', [])
-        print(f"Raw vector from API: {vector[:5]}...")  # Debug print to check raw vector
-        vector = np.array(vector)
-        vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
-        vector = vector.tolist()
-    elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict) and 'embedding' in result[0]:
-        vector = result[0]['embedding'][0]
-        vector = np.array(vector)
-        vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
-        vector = vector.tolist()
+    if model:
+        vec = remote.embed(text, model=model)
     else:
-        vector = []
+        vec = remote.embed(text)
+    vector = vec.tolist()
     print(f"Received vector of length {len(vector)}")  # Debug print to check vector length
     return vector
 
@@ -99,17 +92,15 @@ def queryFiles(session, key) -> tuple[str, str, str, str]:
 
 
 def main():
-    # Configuration
-    EMBEDDING_API_URL = pr.EMB_URL  # Adjust based on your private.py structure
-    EMBEDDING_MODEL = pr.EMB_MDL  # Adjust based on your private.py structure
-    EMBEDDING_API_KEY = pr.EMB_KEY  # Add if authentication required
+    # Configuration comes from the shared layers (private.py / env)
+    EMBEDDING_API_URL = remote.EMBED_BASE_URL
+    EMBEDDING_MODEL = remote.EMBED_MODEL
+    EMBEDDING_API_KEY = remote.EMBED_API_KEY
     THRESHOLD = 0.45  # distance threshold (smaller is better)
     TOP_K = 10  # Number of results to return
-    
-    # Database setup
-    pgengine = create_engine(
-        f"postgresql+psycopg2://{pr.RO_USER}:{pr.RO_PWD}@{pr.DB_HOST}/{pr.DB_NAME}"
-    )
+
+    # Database setup on the shared read-only engine
+    pgengine = get_engine(readonly=True)
     PgSession = sessionmaker(bind=pgengine)
 
     # Check table exists

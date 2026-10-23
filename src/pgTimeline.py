@@ -1,3 +1,10 @@
+
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
 import os
 import json
 import requests
@@ -15,9 +22,14 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import create_engine  # needed for openDb
 
 import requests
-import private as pr
 
 import time
+
+# ----------------------------------------------------------------------
+# Shared layers: DB (read-only engine + config) and remote model client
+# ----------------------------------------------------------------------
+from src.db import get_engine, _load_private
+from src import remote
 
 
 # Configuration
@@ -27,11 +39,24 @@ EMBEDDING_API_KEY = None
 TOP_K = 100
 TIMELINE_WINDOW_DAYS = 30
 
+
+def _get_setting(attr: str, env_key: str):
+    """Resolve a setting from private.py, then environment variables."""
+    pr = _load_private()
+    if pr is not None:
+        value = getattr(pr, attr, None)
+        if value:
+            return value
+    return os.getenv(env_key) or None
+
+
 # test reranking with a small local model
 try:
-    RERANKING_API_URL = pr.RERANK_URL # "http://localhost:8080/v1/chat/completions"
-    RERANKING_MODEL = pr.RERANK_MDL # "ibm-granite.granite-4.0-350m.Q4_K_M"
-    RERANKING_API_KEY = pr.RERANK_KEY # None # pr.RERANK_KEY
+    RERANKING_API_URL = _get_setting("RERANK_URL", "RERANK_URL")
+    RERANKING_MODEL = _get_setting("RERANK_MDL", "RERANK_MDL")
+    RERANKING_API_KEY = _get_setting("RERANK_KEY", "RERANK_KEY")
+    if RERANKING_API_URL is None:
+        raise AttributeError("no reranking configuration")
     if "rerank" in RERANKING_API_URL.lower():
         RERANK_MODE = "rerank"
     else:
@@ -42,15 +67,10 @@ except AttributeError:
     RERANKING_API_KEY = None
     RERANK_MODE = None
 
-# try to get summary model configuration
-try:
-    SUMMARY_API_URL = pr.SUMMARY_URL # "http://localhost:8080/v1/chat/completions"
-    SUMMARY_MODEL = pr.SUMMARY_MDL # "ibm-granite.granite-4.0-350m.Q4_K_M"
-    SUMMARY_API_KEY = pr.SUMMARY_KEY # None # pr.SUMMARY_KEY
-except AttributeError:
-    SUMMARY_API_URL = None
-    SUMMARY_MODEL = None
-    SUMMARY_API_KEY = None
+# summary model configuration is handled by src.remote (SUMMARY_*/CHAT_*)
+SUMMARY_API_URL = remote.CHAT_BASE_URL
+SUMMARY_MODEL = remote.CHAT_MODEL
+SUMMARY_API_KEY = remote.CHAT_API_KEY
 
 def call_reranking_chat_model(query: str, content: str) -> float:
     """
@@ -207,36 +227,19 @@ class File(Base):
 
 
 
-def call_embedding_model(text: str, api_url: str, api_key: str, model: str) -> tuple[list[float], float]:
+def call_embedding_model(text: str, api_url: str = None, api_key: str = None, model: str = None) -> tuple[list[float], float]:
     """
-    Call remote embedding model and return (vector, score)
-    Adjust based on your actual API endpoint
+    Call the shared remote embedding client and return a normalised vector.
+
+    The endpoint/model/key configuration lives in ``src.remote`` (resolved
+    from ``private.py`` / environment variables); the arguments are kept for
+    API compatibility and override the shared configuration when given.
     """
-    headers = {"Authorization": f"Bearer {api_key}"}
-    
-    response = requests.post(
-        api_url,
-        json={"input": text, "model": model},
-        headers=headers
-    )
-    response.raise_for_status()
-    
-    result = response.json()
-    # print(f"API response: {result}")  # Debug print to check response structure
-    # Adjust based on actual API response structure
-    if isinstance(result, dict) and result.get("data") and isinstance(result["data"], list) and len(result["data"]) > 0:
-        vector = result["data"][0].get('embedding', [])
-        print(f"Raw vector from API: {vector[:5]}...")  # Debug print to check raw vector
-        vector = np.array(vector)
-        vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
-        vector = vector.tolist()
-    elif isinstance(result, list) and len(result) > 0 and isinstance(result[0], dict) and 'embedding' in result[0]:
-        vector = result[0]['embedding'][0]
-        vector = np.array(vector)
-        vector = vector / np.linalg.norm(vector)  # Normalize the vector to unit length
-        vector = vector.tolist()
+    if model:
+        vec = remote.embed(text, model=model)
     else:
-        vector = []
+        vec = remote.embed(text)
+    vector = vec.tolist()
     print(f"Received vector of length {len(vector)}")  # Debug print to check vector length
     return vector
 
@@ -260,9 +263,12 @@ def query_vector_similarity(session, query_vector: list[float], top_k: int = 10)
 
 
 
-def get_db_session(db_url: str):
-    """Create and return a new database session."""
-    engine = create_engine(db_url, future=True)
+def get_db_session(db_url: str = None):
+    """Create and return a new database session on the shared read-only engine."""
+    if db_url is None:
+        engine = get_engine(readonly=True)
+    else:
+        engine = create_engine(db_url, future=True)
     Session = sessionmaker(bind=engine)
     return Session()
 
@@ -885,14 +891,13 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
 def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
     """Main entry point for the script."""
     global EMBEDDING_API_KEY, EMBEDDING_API_URL, EMBEDDING_MODEL
-    EMBEDDING_API_KEY = pr.EMB_KEY
-    EMBEDDING_API_URL = pr.EMB_URL
-    EMBEDDING_MODEL = pr.EMB_MDL
+    # Embedding configuration comes from src.remote (private.py / env)
+    EMBEDDING_API_KEY = remote.EMBED_API_KEY
+    EMBEDDING_API_URL = remote.EMBED_BASE_URL
+    EMBEDDING_MODEL = remote.EMBED_MODEL
 
-    db_url = f"postgresql+psycopg2://{pr.RO_USER}:{pr.RO_PWD}@localhost/{pr.DB_NAME}"
-
-    # Create database session
-    session = get_db_session(db_url)
+    # Create database session on the shared read-only engine
+    session = get_db_session()
 
     try:
         while True:
@@ -932,30 +937,17 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
                             else:
                                 summary += f"\nFile {i}: {file['name']} ({file['fileName']})\n"
                                 summary += "Content: Not available\n"
-                        # Call summary model
-                        headers = {"Authorization": f"Bearer {SUMMARY_API_KEY}"} if SUMMARY_API_KEY else {}
-                        response = requests.post(
-                            SUMMARY_API_URL,
-                            json={"model": SUMMARY_MODEL, "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text. Respond in German. stay below 500 words. no emojis."}, {"role": "user", "content": summary}]},
-                            headers=headers
+                        # Call summary model via the shared chat client
+                        summary_response = remote.chat(
+                            [
+                                {"role": "system", "content": "You are a helpful assistant that summarizes German text. Respond in German. stay below 500 words. no emojis."},
+                                {"role": "user", "content": summary},
+                            ],
+                            model=SUMMARY_MODEL,
+                            temperature=0.1,
                         )
-                        # retry up to 5 times if rate limit exceeded. get delay from response headers if available, otherwise default to 5 seconds
-                        if response.status_code == 429:
-                            for attempt in range(5):  # Retry up to 5 times
-                                retry_after = int(response.headers.get("Retry-After", 5))
-                                print(f"Summary model rate limit exceeded. Retrying after {retry_after} seconds...")
-                                time.sleep(retry_after)
-                                response = requests.post(
-                                    SUMMARY_API_URL,
-                                    json={"model": SUMMARY_MODEL, "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": "You are a helpful assistant that summarizes German text."}, {"role": "user", "content": summary}]},
-                                    headers=headers
-                                )
-                                if response.status_code != 429:
-                                    break
-                        response.raise_for_status()
-                        summary_result = response.json()
-                        if isinstance(summary_result, dict) and summary_result.get("choices") and isinstance(summary_result["choices"], list) and len(summary_result["choices"]) > 0:
-                            summary_text = summary_result["choices"][0].get('message', {}).get('content', '')
+                        summary_text = summary_response.get("content", "")
+                        if summary_text and summary_text != "[dummy response]":
                             print(f"\nSummary of Top Files:\n{summary_text}")
                             # append summary to results for saving
                             results['summary'] = summary_text
