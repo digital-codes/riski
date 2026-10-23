@@ -924,6 +924,8 @@ def search_and_build_timeline(
                 "top_files": [],
                 "results": [],
                 "timeline": [],
+                "graph": {"nodes": [], "edges": []},
+                "geo_available": False,
                 "matched_entities": [],
                 "facets": facets_data,
                 "applied_filters": applied_filters,
@@ -939,13 +941,13 @@ def search_and_build_timeline(
 
         print(f"Top files (before thresholding): {file_scores}")  # Debugging line
         if not file_scores:
-            return {"query": query, "results": [], "timeline": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files with embeddings found"}
+            return {"query": query, "results": [], "timeline": [], "graph": {"nodes": [], "edges": []}, "geo_available": False, "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files with embeddings found"}
 
         # filter by threshold
         top_scores = filter_by_threshold(file_scores, threshold=threshold)
         print(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
         if not top_scores:
-            return {"query": query, "top_files": [], "results": [], "timeline": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
+            return {"query": query, "top_files": [], "results": [], "timeline": [], "graph": {"nodes": [], "edges": []}, "geo_available": False, "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
 
     # run reranking on all files and append rerank score to file_score 
     top_scores_with_rerank = []
@@ -1043,6 +1045,12 @@ def search_and_build_timeline(
     from src.graphModel import build_graph
     graph = build_graph(related_objects, related_objects.pop("edges", []), top_files)
 
+    # georeferences: streets/districts linked to the answer set's agenda items
+    from src.pgGeo import geo_available_for_keys
+    agenda_item_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] == "AgendaItem"]
+    agenda_item_keys += [m["oparlKey"] for m in matched_entities if m["type"] == "AgendaItem"]
+    geo_available = geo_available_for_keys(session.get_bind(), agenda_item_keys)
+
     # Build timeline from all related objects
     timeline_events = build_timeline(related_objects)
     print(f"Timeline events built: {len(timeline_events)}")  # Debugging line
@@ -1068,6 +1076,7 @@ def search_and_build_timeline(
         } for f in top_files],
         "timeline": grouped_timeline,
         "graph": graph,
+        "geo_available": geo_available,
         "matched_entities": matched_entities,
         "facets": facets_data,
         "applied_filters": applied_filters,

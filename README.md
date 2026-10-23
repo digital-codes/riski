@@ -115,6 +115,24 @@ Two config files keep city-specific knowledge out of the code:
 Both paths can be overridden in `private.py` / environment
 (`LEXICAL_STOP_TERMS_FILE`, `MEETING_WEB_URL_FILE`).
 
+### Map view for georeferenced queries
+
+Queries that hit documents linked to streets or districts (e.g. "Rückbau
+der Herrenalber Straße") get a **map view** at the bottom of the page.
+The data is already there: `pgAddStreetRefs`/`pgAddDistrictRefs` link
+agenda items to the Street/District tables, which carry GeoJSON
+geometries (WGS84, no reprojection needed). The API exposes them as a
+GeoJSON FeatureCollection under `GET /geo/{session_id}` — streets as
+lines, districts as polygons, each popup naming the linked agenda items.
+The frontend (`GeoMap.vue`, Leaflet — adapted from the klimaDashboard
+project's `SimpleMap.vue`) loads the layer lazily, only when the search
+result carries `geo_available: true`; the SummaryCard header then shows a
+"Karte verfügbar — weiter unten" note.
+
+Point layers (POIs) are future work: e.g. road constructions from
+transparenz.karlsruhe.de via the TBA geoserver WFS would add exactly the
+"where is the Baustelle on my street" dimension.
+
 ### Summaries
 
 The summary is a separate step (`pgResultSummarizer`), not part of the

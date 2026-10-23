@@ -94,10 +94,27 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         "query": req.query,
         "filters": req.filters or [],
         "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
-        "result": result,  # kept for the async /summarize step
+        "result": result,  # kept for the async /summarize + /geo steps
     }
     result["sessionId"] = session_id
     return result
+
+
+@app.get("/geo/{session_id}")
+def geo(session_id: str) -> Dict[str, Any]:
+    """GeoJSON FeatureCollection of the streets/districts linked to the
+    session's answer set (WGS84). Empty collection when the answer set
+    has no georeferences."""
+    from src.pgGeo import EMPTY_FEATURE_COLLECTION, collect_geo
+
+    sess = _sessions.get(session_id)
+    if sess is None or "result" not in sess:
+        raise HTTPException(status_code=404, detail="unknown session")
+    result = sess["result"]
+    keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", []) if n.get("type") == "AgendaItem"]
+    keys += [m["oparlKey"] for m in result.get("matched_entities", []) if m.get("type") == "AgendaItem"]
+    engine = get_engine(readonly=True)
+    return collect_geo(engine, keys)
 
 
 class SummarizeRequest(BaseModel):

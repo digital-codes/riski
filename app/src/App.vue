@@ -35,7 +35,10 @@
     @expand="onExpand"
   />
   <div class="wrapper">
-    <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" />
+    <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" />
+  </div>
+  <div class="wrapper">
+    <GeoMap v-if="geoAvailable" :session-id="sessionId" />
   </div>
   <div class="wrapper" v-if="rawData">
     <TimeLine :search-data="rawData" />
@@ -50,6 +53,8 @@ import DetailPanel from './components/DetailPanel.vue';
 import { search as apiSearch, summarize as apiSummarize, expand as apiExpand } from './api.js';
 // lazy: keeps echarts (large) out of the main bundle until the graph exists
 const NetworkView = defineAsyncComponent(() => import('./components/NetworkView.vue'));
+// lazy: keeps leaflet out until a georeferenced result arrives
+const GeoMap = defineAsyncComponent(() => import('./components/GeoMap.vue'));
 
 const DEFAULT_QUERY = 'wo liegt die Governance für Digitalisierung bei der Stadt Karlsruhe';
 
@@ -61,6 +66,7 @@ const isMobile = ref(false);
 const loading = ref(false);
 const expanding = ref(false);
 const summaryLoading = ref(false);
+const geoAvailable = ref(false);
 const error = ref(null);
 const sessionId = ref(null);
 
@@ -82,6 +88,7 @@ async function runSearch() {
   graph.value = null;
   summary.value = null;
   summaryLoading.value = false;
+  geoAvailable.value = false;
   selection.value = null;
   try {
     // render results immediately; the summary arrives asynchronously
@@ -106,6 +113,7 @@ function applyResult(result) {
   summary.value = result.summary || null;
   graph.value = result.graph || { nodes: [], edges: [] };
   sessionId.value = result.sessionId || null;
+  geoAvailable.value = !!result.geo_available && !!result.sessionId;
   selection.value = null;
 }
 

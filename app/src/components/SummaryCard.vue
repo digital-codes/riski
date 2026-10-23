@@ -6,6 +6,9 @@
 				<span v-if="loading" class="loading-note">
 					<span class="header-spinner"></span> Zusammenfassung wird erstellt…
 				</span>
+				<span v-else-if="mapAvailable" class="loading-note map-note" title="Zu den Suchergebnissen gehört eine Karte — weiter unten auf der Seite">
+					📍 Karte verfügbar — weiter unten
+				</span>
 			</h2>
 			<button v-if="!loading && summary" type="button" class="pdf-btn" @click="downloadPdf" title="Zusammenfassung drucken oder als PDF speichern">
 				Als PDF speichern
@@ -26,6 +29,10 @@ const props = defineProps({
 		default: ''
 	},
 	loading: {
+		type: Boolean,
+		default: false
+	},
+	mapAvailable: {
 		type: Boolean,
 		default: false
 	}
@@ -151,6 +158,10 @@ const downloadPdf = () => {
 	font-size: 0.85rem;
 	font-weight: 400;
 	color: #6b7280;
+}
+
+.map-note {
+	color: #667eea;
 }
 
 .header-spinner {

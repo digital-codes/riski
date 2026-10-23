@@ -39,3 +39,7 @@ export async function facets() {
 	if (!res.ok) throw new Error(`/facets failed: ${res.statusText}`);
 	return res.json();
 }
+
+export function geoUrl(sessionId) {
+	return `${API_BASE}/geo/${sessionId}`;
+}
