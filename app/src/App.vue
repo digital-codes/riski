@@ -5,6 +5,9 @@
     <TimeLine :search-data="rawData" />
   </div>
   <div class="wrapper">
+    <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph" @select="onSelect" />
+  </div>
+  <div class="wrapper">
   <SummaryCard v-if="summary && summary.length > 0" :summary="summary"/>
   </div>
 </template>
@@ -12,11 +15,19 @@
 <script setup>
 // Inline Component Definition for minimal setup
 // Normally you would move this to ./components/SearchResults.vue
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue';
 import TimeLine from './components/TimeLine.vue'; // Assuming you have this component, or you can inline it similarly if needed.
 import SummaryCard from './components/SummaryCard.vue';
+// lazy: keeps echarts (large) out of the main bundle until the graph exists
+const NetworkView = defineAsyncComponent(() => import('./components/NetworkView.vue'));
 const rawData = ref(null);
 const summary = ref(null);
+const graph = computed(() => rawData.value?.graph ?? null);
+
+const onSelect = (selection) => {
+  // detail panel consumption lands with task 3.x; log for now
+  console.log('network selection', selection);
+};
 
 onMounted(async () => {
   console.log('App Component Mounted');

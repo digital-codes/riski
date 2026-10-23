@@ -6,11 +6,11 @@
 
 ## 1. Backend: graph serialization
 
-- [ ] 1.1 Define the adjacency map (association tables + direct FKs) as a declarative constant in `src/pgTimeline.py` (or a new `src/graphModel.py`), derived from `references/postgres/riski-struct.sql`
-- [ ] 1.2 Extend `find_related_objects` to log typed edges (`source`, `target`, `relation`) during the existing traversal, including direct FKs (`File__paper`, `File__meeting`, `AgendaItem.meetingSid/consultationSid`)
-- [ ] 1.3 Implement `graph` serialization ({nodes, edges} per contract in design.md) into the `search_and_build_timeline` result
-- [ ] 1.4 Add unit tests: graph nodes cover all traversed objects, edge relations match association tables, node ids are stable (`{Type}_{oparlKey}`)
-- [ ] 1.5 Regenerate `app/src/assets/sampleData.json` including the `graph` section
+- [x] 1.1 Define the adjacency map (association tables + direct FKs) as a declarative constant in `src/pgTimeline.py` (or a new `src/graphModel.py`), derived from `references/postgres/riski-struct.sql`
+- [x] 1.2 Extend `find_related_objects` to log typed edges (`source`, `target`, `relation`) during the existing traversal, including direct FKs (`File__paper`, `File__meeting`, `AgendaItem.meetingSid/consultationSid`)
+- [x] 1.3 Implement `graph` serialization ({nodes, edges} per contract in design.md) into the `search_and_build_timeline` result
+- [x] 1.4 Add unit tests: graph nodes cover all traversed objects, edge relations match association tables, node ids are stable (`{Type}_{oparlKey}`)
+- [ ] 1.5 Regenerate `app/src/assets/sampleData.json` including the `graph` section  *(preliminary regen done; final regen after name-vec backfill completes)*
 
 ## 2. Frontend: component scaffolding
 
