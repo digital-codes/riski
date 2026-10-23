@@ -132,6 +132,29 @@ experiment, not v1.
   edge attr). Decide during frontend work with real data.
 - **ECharts bundle size**: import only used charts; NetworkView is lazy.
 
+## Contract Deltas from categorization-indexing (task 5.1 handoff)
+
+The search-result JSON now carries additive sections that map directly
+onto this change's node attributes and UI facets:
+
+- **`matched_entities`**: fused candidate entities across Paper, File,
+  AgendaItem, Meeting (`{id: "{Type}_{oparlKey}", type, oparlKey, name,
+  score}`) — same `{Type}_{oparlKey}` id convention as the graph contract;
+  renderable as pre-seeded graph nodes / graph entry points.
+- **`facets`**: available filter values with counts (`paperType`, `years`,
+  `result`, `tags` per scheme) → facet dropdowns in the network view UI.
+- **`applied_filters`**: normalized filter list; when the network view
+  renders node `attrs`, facet values (tags by scheme, paperType, dates)
+  arrive per node and support client-side graph filtering.
+- **Search entry point changed**: results may seed from Papers/AgendaItems
+  (name vectors / lexical), not only Files — the graph's seed set follows
+  `matched_entities`, expanding around whichever entity type matched.
+- **Filters at query time**: `search_and_build_timeline(..., filters=[...])`
+  — the API layer must accept the same filter model verbatim.
+- **Name-vector tables** (`{item}_name_vecs`) and LLM tag backfill are
+  pending operator runs (categorization-indexing tasks 3.5-LLM, 4.1);
+  contracts already tolerate their absence (graceful degradation).
+
 ## Migration Plan
 
 1. Backend: adjacency map + edge log + `graph` serialization + unit tests

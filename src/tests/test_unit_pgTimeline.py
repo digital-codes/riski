@@ -247,11 +247,15 @@ class TestParityWithLegacy:
         monkey.setattr(legacy_tl, "call_embedding_model", lambda *a, **k: [0.0])
         monkey.setattr(legacy_tl, "query_vector_similarity", lambda s, q, k: [])
         try:
-            res = mod.search_and_build_timeline(FakeSession(), "test query")
-            legacy_res = legacy_tl.search_and_build_timeline(FakeSession(), "test query")
+            # legacy vector-only path (hybrid=False) for structure parity;
+            # the hybrid path requires a live DB connection (integration tests)
+            res = mod.search_and_build_timeline(FakeSession(), "test query", hybrid=False)
+            legacy_res = legacy_tl.search_and_build_timeline(FakeSession(), "test query", hybrid=False)
         finally:
             monkey.undo()
-        assert set(res.keys()) == set(legacy_res.keys())
+        assert set(legacy_res.keys()) <= set(res.keys())
+        # additive keys of the hybrid-search change must not alter legacy keys
+        assert {"matched_entities", "facets", "applied_filters"} <= set(res.keys())
         assert res["results"] == [] and res["timeline"] == []
 
 pytestmark = pytest.mark.unit

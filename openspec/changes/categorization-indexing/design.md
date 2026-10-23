@@ -1,5 +1,18 @@
 # Design: categorization-indexing
 
+## Spike Results (2026-10-23, read-only probes — tasks 1.1–1.5)
+
+| Probe | Result | Consequence |
+|---|---|---|
+| `Paper.data.keyword[]` | **0% populated** (0/13,528) | Harvest step 3.4 for keywords is a no-op; documented "not populated" |
+| `Paper.data` originator*/mainFile/submitter | **0% populated** | No free submitter/originator edges; submitter facet would need rule-based derivation (desinformationssystem pattern) — out of scope here |
+| `File.content` length | 46,192/47,781 populated; **99.3% ≤5k chars** (p50=1,656); only 348 files >5k | The 5000-char cutoff barely bites; contentKind split matters less than assumed — heuristic backfill acceptable |
+| `File.teaser` | 46,192 populated; p50=897 chars (max 16,000) | Teaser-first LLM escalation viable at full corpus scale |
+| `Paper.paperType` | **100% coverage** (13,528/13,528). Top: Beschlussvorlage 8,168 · Antrag 1,844 · Anfrage 1,531 · Änderungs-/Ergänzungsantrag 788 · Informationsvorlage 670 · plus ~30 `Haushalt THH <n>` variants and Offenlage etc. | Authoritative document-type base needs a canonicalization rule: fold `Haushalt THH *` → `Haushalt` (keep THH code as association attr) |
+| name_vecs tables | **NONE exist**; contentEmbeddings: 44,785/47,781 (93.7%) | Task 4.1 must create + populate Paper/AgendaItem/Meeting/File name vectors (~82k embeddings total — significant embedding job, batch it) |
+| `AgendaItem.result` | 9,741/18,424 populated; rich values (Kenntnisnahme, einstimmig beschlossen, mehrheitlich abgelehnt, …) | Viable outcome facet; consider normalizing into wenige Kategorien (zugestimmt/abgelehnt/beschlossen/erledigt/…) for the filter UI |
+| `Consultation.role` | 100% populated (Entscheidung 6,551 · unbekannt 4,050 · Kenntnisnahme · Vorberatung · …) | Viable role facet out of the box |
+
 ## Context
 
 Search today (`pgTimeline.search_and_build_timeline`) is a single-signal

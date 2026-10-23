@@ -240,6 +240,96 @@ class TestRemoveTagsFromCatalog:
         assert ids == []
 
 
+class TestSchemeAndProvenance:
+    """Scheme-scoped associations with source/confidence metadata."""
+
+    def test_add_tags_with_scheme_and_source(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        tm.add_tags(key, ["red"], scheme="document-type", source="papertype")
+        details = tm.get_tag_details_for_item(key, scheme="document-type")
+        assert {"tag": "red", "scheme": "document-type", "source": "papertype", "confidence": 1.0} in details
+
+    def test_same_tag_under_two_schemes(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        tm.add_tags(key, ["red"], scheme="document-type", source="papertype")
+        tm.add_tags(key, ["red"], scheme="topic", source="llm", confidence=0.5)
+        assert "red" in tm.get_tags_for_item(key, scheme="document-type")
+        assert "red" in tm.get_tags_for_item(key, scheme="topic")
+        # Each scheme holds exactly one "red" association.
+        assert len(tm.get_tag_details_for_item(key, scheme="document-type")) == 1
+
+    def test_scheme_filter_excludes_other_schemes(self, tm: TagManager):
+        keys = tm.find_items_with_any_tag(["red"])
+        key = keys[0]
+        tm.add_tags(key, ["green"], scheme="document-type", source="name-regex")
+        # Scheme-scoped query ignores the unscoped "green" from the fixture.
+        assert tm.get_tags_for_item(key, scheme="topic") == []
+        # Unscoped query still sees everything.
+        assert "green" in tm.get_tags_for_item(key)
+
+    def test_legacy_rows_return_defaults(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        details = tm.get_tag_details_for_item(key)
+        assert details  # fixture added unscoped tags
+        for d in details:
+            assert d["scheme"] is None
+            assert d["source"] is None
+            assert d["confidence"] == 1.0
+
+    def test_find_with_all_tags_scheme_scoped(self, tm: TagManager):
+        keys = tm.find_items_with_any_tag(["red"])[:2]
+        for k in keys:
+            tm.add_tags(k, ["green"], scheme="document-type", source="name-regex")
+        scoped = tm.find_items_with_all_tags(["red", "green"], scheme="document-type")
+        assert not scoped  # "red" has no document-type association yet
+        for k in keys:
+            tm.add_tags(k, ["red"], scheme="document-type", source="papertype")
+        scoped = tm.find_items_with_all_tags(["red", "green"], scheme="document-type")
+        for k in keys:
+            assert k in scoped
+
+    def test_find_with_any_tag_scheme_scoped(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        tm.add_tags(key, ["red"], scheme="topic", source="llm")
+        scoped = tm.find_items_with_any_tag(["red", "green", "blue"], scheme="topic")
+        assert scoped == [key]
+
+    def test_duplicate_same_scheme_ignored(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        tm.add_tags(key, ["red"], scheme="document-type", source="papertype")
+        tm.add_tags(key, ["red"], scheme="document-type", source="papertype")
+        assert len(tm.get_tag_details_for_item(key, scheme="document-type")) == 1
+
+    def test_duplicate_different_scheme_allowed(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        tm.add_tags(key, ["red"], scheme="document-type")
+        tm.add_tags(key, ["red"], scheme="topic")
+        red_details = [
+            d for d in tm.get_tag_details_for_item(key)
+            if d["tag"] == "red" and d["scheme"] is not None
+        ]
+        assert len(red_details) == 2
+
+    def test_invalid_source_rejected(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        with pytest.raises(ValueError, match="Invalid tag source"):
+            tm.add_tags(key, ["red"], source="horoscope")
+
+    def test_confidence_out_of_range_rejected(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        with pytest.raises(ValueError, match="confidence"):
+            tm.add_tags(key, ["red"], confidence=1.5)
+
+    def test_remove_from_catalog_cascades_across_schemes(self, tm: TagManager):
+        key = tm.find_items_with_any_tag(["red"])[0]
+        tm.add_tags(key, ["teal"], scheme="document-type")
+        tm.add_tags(key, ["teal"], scheme="topic")
+        tm.remove_tags_from_catalog(["teal"])
+        assert tm.get_tag_details_for_item(key) == [] or all(
+            d["tag"] != "teal" for d in tm.get_tag_details_for_item(key)
+        )
+
+
 class TestIntegration:
     """End-to-end scenario."""
 

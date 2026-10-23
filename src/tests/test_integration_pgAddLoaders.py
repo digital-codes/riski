@@ -97,6 +97,7 @@ def file_tbl(engine):
         Column("oparlKey", String(255)),
         Column("filename", String(500)),
         Column("content", Text),
+        Column("contentKind", String(16)),
     )
     metadata.create_all(engine, checkfirst=True)
     yield tbl
@@ -142,6 +143,31 @@ class TestRunContentLoading:
 
             contents = dict(conn.execute(sel(file_tbl.c.sid, file_tbl.c.content)).fetchall())
         assert all(c is None for c in contents.values())
+
+    def test_content_kind_provenance(self, engine, file_tbl, tmp_path):
+        sums = tmp_path / "sums"
+        full = tmp_path / "full"
+        sums.mkdir()
+        full.mkdir()
+        # Same stem in both dirs: small full copy wins over the summary.
+        (sums / "doc.md").write_text("S" * 5000, encoding="utf-8")
+        (full / "doc.md").write_text("full text", encoding="utf-8")
+        # Stem only in sums: LLM summary.
+        (sums / "only_sum.md").write_text("summary only", encoding="utf-8")
+        with engine.begin() as conn:
+            conn.execute(file_tbl.insert().values(sid=10, oparlKey="k_sum", filename="only_sum.md"))
+            conn.execute(file_tbl.insert().values(sid=11, oparlKey="k_full", filename="doc.md"))
+
+        md_map = iter_md_files(sums, full)
+        with engine.begin() as conn:
+            run_summaries(conn, file_tbl, md_map, embeddings=False, dry_run=False,
+                          sums_dir=sums, full_dir=full)
+
+        with engine.connect() as conn:
+            from sqlalchemy import select as sel
+            kinds = dict(conn.execute(sel(file_tbl.c.sid, file_tbl.c.contentKind)).fetchall())
+        assert kinds[10] == "summary"
+        assert kinds[11] == "fulltext"
 
 
 class TestRunEmbeddings:

@@ -338,6 +338,10 @@ def make_main_tables(
         if t == 'File':
             cols.append(Column('content', Text, nullable=True))
             cols.append(Column('teaser', Text, nullable=True))
+            # provenance marker: 'fulltext' (stored full text, under the
+            # loader cutoff) or 'summary' (LLM summary). Set by the content
+            # loaders (pgAddSummaries); NULL = unknown/legacy.
+            cols.append(Column('contentKind', String(16), nullable=True))
         # for "party" relation we would rather introduce it later as a concept with start and end date, 
         # so we don't create a direct FK column here 
         for field, tgt_table in sorted(single_fk_fields.get(t, {}).items()):
@@ -441,6 +445,14 @@ def ensure_project_schema(engine) -> None:
                 conn.execute(text('ALTER TABLE "File" ADD COLUMN content TEXT'))
             if "teaser" not in existing:
                 conn.execute(text('ALTER TABLE "File" ADD COLUMN teaser TEXT'))
+            # Note: quoted identifier — must match Column('contentKind') in
+            # make_main_tables exactly (Postgres folds unquoted names).
+            if "contentKind" not in existing:
+                conn.execute(text('ALTER TABLE "File" ADD COLUMN "contentKind" VARCHAR(16)'))
+
+        # Facet index for contentKind (additive; safe to re-run).
+        with engine.begin() as conn:
+            conn.execute(text('CREATE INDEX IF NOT EXISTS idx_file_contentkind ON "File" ("contentKind")'))
 
     # Search support. These are deliberately the only FAST trigram text indexes.
     with engine.begin() as conn:

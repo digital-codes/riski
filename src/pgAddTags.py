@@ -2,6 +2,11 @@
 
 Currently supports the `analyze-db` subcommand which runs the OParl
 analysis pipeline.
+
+Note: this module only exports JSON reports. The database-writing
+category derivation lives in ``src/pgCategorise.py`` (change:
+categorization-indexing), which reuses the pattern vocabularies defined
+here.
 """
 
 # Dual-mode import support: allow running this file directly as a script

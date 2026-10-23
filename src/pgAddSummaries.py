@@ -83,7 +83,28 @@ def embed(text: str):
     return remote.embed(text)
 
 
-def run(conn, file_tbl, md_map, embeddings: bool = False, dry_run: bool = False) -> None:
+def content_kind_for(md_path: Path, sums_dir: Path, full_dir: Path) -> str:
+    """Classify the provenance of a markdown source file.
+
+    Files resolving under ``full_dir`` are stored full text; everything
+    else (resolved from ``sums_dir``) is an LLM-generated summary.
+    """
+    try:
+        md_path.relative_to(full_dir)
+        return "fulltext"
+    except ValueError:
+        return "summary"
+
+
+def run(
+    conn,
+    file_tbl,
+    md_map,
+    embeddings: bool = False,
+    dry_run: bool = False,
+    sums_dir: Path | None = None,
+    full_dir: Path | None = None,
+) -> None:
     stmt_files = select(file_tbl.c.sid, file_tbl.c.oparlKey, file_tbl.c.filename)
 
     matched = updated = 0
@@ -118,10 +139,13 @@ def run(conn, file_tbl, md_map, embeddings: bool = False, dry_run: bool = False)
         text = md_path.read_text(encoding="utf-8", errors="replace")
 
         if not dry_run:
+            values = {"content": text}
+            if sums_dir is not None and full_dir is not None:
+                values["contentKind"] = content_kind_for(md_path, sums_dir, full_dir)
             conn.execute(
                 update(file_tbl)
                 .where(file_tbl.c.sid == file_sid)
-                .values(content=text)
+                .values(**values)
             )
             updated += 1
 
@@ -147,12 +171,56 @@ def run(conn, file_tbl, md_map, embeddings: bool = False, dry_run: bool = False)
     print(f"  skipped no md      : {skipped_no_md}")
 
 
+def backfill_content_kind(engine, sums_dir: Path, full_dir: Path, dry_run: bool = False) -> None:
+    """Set ``contentKind`` for legacy rows from their markdown sources.
+
+    Deterministic: the kind is derived from which directory the matched
+    markdown file lives in (full_dir → fulltext, else summary), not from
+    guessing by content length. Rows without a matched markdown source are
+    left unchanged and reported.
+    """
+    md_map = iter_md_files(sums_dir, full_dir)
+    metadata = MetaData()
+    file_tbl = Table("File", metadata, autoload_with=engine)
+
+    updated = unmatched = 0
+    with engine.begin() as conn:
+        rows_ = conn.execute(
+            select(file_tbl.c.sid, file_tbl.c.filename).where(file_tbl.c.content.isnot(None))
+        ).all()
+        for file_sid, file_name in rows_:
+            base = normalize_file_basename(file_name)
+            md_path = md_map.get(base) if base else None
+            if md_path is None:
+                unmatched += 1
+                continue
+            if not dry_run:
+                conn.execute(
+                    update(file_tbl)
+                    .where(file_tbl.c.sid == file_sid)
+                    .values(contentKind=content_kind_for(md_path, sums_dir, full_dir))
+                )
+            updated += 1
+
+    print("\ncontentKind backfill")
+    print(f"  files with content      : {len(rows_)}")
+    print(f"  updated (matched md)    : {updated}")
+    print(f"  unmatched (left as NULL): {unmatched}")
+    if dry_run:
+        print("  dry run - nothing written")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description="Fill File.content from markdown files.")
     ap.add_argument("-s", "--sums_dir", required=True, help='Directory containing markdown files like "00123456.md"')
     ap.add_argument("-f", "--full_dir", required=True, help='Directory containing original files like "00123456.md"')
     ap.add_argument("-e", "--embeddings", action="store_true", help='Add embedding vectors')
     ap.add_argument("--dry-run", action="store_true", help="Do not write to DB; just report actions.")
+    ap.add_argument(
+        "--backfill-kind",
+        action="store_true",
+        help="Only (re)derive contentKind for existing content rows from the markdown sources.",
+    )
     args = ap.parse_args()
 
     sums_dir = Path(args.sums_dir).expanduser().resolve()
@@ -176,12 +244,24 @@ def main() -> None:
     metadata = MetaData()
     file_tbl = Table("File", metadata, autoload_with=engine)
 
+    if args.backfill_kind:
+        backfill_content_kind(engine, sums_dir, full_dir, dry_run=args.dry_run)
+        return
+
     if args.dry_run:
         with engine.connect() as conn:
             run(conn, file_tbl, md_map, embeddings=False, dry_run=True)
     else:
         with engine.begin() as conn:
-            run(conn, file_tbl, md_map, embeddings=args.embeddings, dry_run=False)
+            run(
+                conn,
+                file_tbl,
+                md_map,
+                embeddings=args.embeddings,
+                dry_run=False,
+                sums_dir=sums_dir,
+                full_dir=full_dir,
+            )
 
 
 if __name__ == "__main__":

@@ -743,7 +743,15 @@ def group_timeline_events(timeline_events: List[Dict], window_days: int = TIMELI
     print(f"Grouped into {len(grouped)} event groups")  # Debugging line
     return grouped
 
-def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold: float = 0.40) -> Dict[str, Any]:
+def search_and_build_timeline(
+    session,
+    query: str,
+    top_k: int = TOP_K,
+    threshold: float = 0.40,
+    hybrid: bool = True,
+    filters: Optional[List[Dict[str, Any]]] = None,
+    signals: Optional[Dict[str, bool]] = None,
+) -> Dict[str, Any]:
     """
     Main function to search files by embeddings and build a timeline of related OParl events.
 
@@ -751,7 +759,13 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
         session: SQLAlchemy session
         query: User search query
         top_k: Number of top results to return
-        threshold: Similarity threshold for filtering results
+        threshold: Similarity threshold for filtering results (legacy vector-only path)
+        hybrid: Use hybrid multi-signal recall (lexical + name vectors + content
+            vectors, RRF-fused). With False, falls back to the legacy
+            content-vector-only path with distance thresholding.
+        filters: Structured facet filters (see pgHybridSearch.parse_filters)
+        signals: Per-signal toggles {"lexical": bool, "name_vectors": bool,
+            "content_vectors": bool}; all default to True.
 
     Returns:
         Dictionary containing search results and timeline
@@ -760,20 +774,53 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
     query_embedding = call_embedding_model(query, EMBEDDING_API_URL, EMBEDDING_API_KEY, EMBEDDING_MODEL)
     print(f"Generated embedding for query: {query_embedding[:5]}...")  # Debugging line
 
+    hybrid_distances: Dict[str, Optional[float]] = {}
+    matched_entities: List[Dict[str, Any]] = []
+    facets_data: Dict[str, Any] = {}
+    applied_filters: List[Dict[str, Any]] = []
 
-    # find similarities and get top-k files
-    file_scores = query_vector_similarity(session, query_embedding, top_k)
-    print(f"Inital Top files: {file_scores}")  # Debugging line
+    if hybrid:
+        from src.pgHybridSearch import facets as facet_listing
+        from src.pgHybridSearch import hybrid_candidates, parse_filters
 
-    print(f"Top files (before thresholding): {file_scores}")  # Debugging line
-    if not file_scores:
-        return {"query": query, "results": [], "timeline": [], "message": "No files with embeddings found"}
+        conn = session.connection()
+        applied_filters = parse_filters(filters)
+        hyb = hybrid_candidates(
+            conn, query, query_embedding, top_k, filters=filters, signals=signals
+        )
+        matched_entities = hyb["matched_entities"]
+        candidates = hyb["file_candidates"]  # [(oparlKey, fused_score, content_distance)]
+        facets_data = facet_listing(conn)
+        hybrid_distances = {k: d for k, _s, d in candidates}
+        print(f"Hybrid recall: {len(matched_entities)} entities, {len(candidates)} file candidates")
+        if not candidates:
+            return {
+                "query": query,
+                "top_files": [],
+                "results": [],
+                "timeline": [],
+                "matched_entities": [],
+                "facets": facets_data,
+                "applied_filters": applied_filters,
+                "message": "No candidates found for the given query/filters",
+            }
+        # Fused score feeds the reranker stage; distances are kept for output.
+        top_scores = [(key, fused) for key, fused, _dist in candidates]
+    else:
+        # legacy vector-only path
+        # find similarities and get top-k files
+        file_scores = query_vector_similarity(session, query_embedding, top_k)
+        print(f"Inital Top files: {file_scores}")  # Debugging line
 
-    # filter by threshold
-    top_scores = filter_by_threshold(file_scores, threshold=threshold)
-    print(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
-    if not top_scores:
-        return {"query": query, "top_files": [], "results": [], "timeline": [], "message": "No files above similarity threshold"}
+        print(f"Top files (before thresholding): {file_scores}")  # Debugging line
+        if not file_scores:
+            return {"query": query, "results": [], "timeline": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files with embeddings found"}
+
+        # filter by threshold
+        top_scores = filter_by_threshold(file_scores, threshold=threshold)
+        print(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
+        if not top_scores:
+            return {"query": query, "top_files": [], "results": [], "timeline": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
 
     # run reranking on all files and append rerank score to file_score 
     top_scores_with_rerank = []
@@ -828,7 +875,9 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
 
     # Get Keys of top files
     top_file_keys = [f[0] for f in top_scores_with_rerank]
-    print(f"Top file Keys: {top_file_keys}")  # Debugging line
+    print(f"Top file Keys: {top_file_keys}")
+    # keep the rerank/fusion ordering in the output (DB returns arbitrary order)
+    key_rank = {k: i for i, k in enumerate(top_file_keys)}  # Debugging line
 
     # first, we need to get the sid for each file key, since the associations are based on sids, not keys
     engine = session.get_bind()
@@ -846,8 +895,13 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
         "downloadurl": row.downloadurl,
         "oparlId": row.oparlId,
         "date": row.date,
-        "distance": next((score for key, score in top_scores_with_rerank if key == row.oparlKey), None)
-    } for row in result]    
+        # hybrid mode: content-vector cosine distance where the file came
+        # from that signal, else the fused score (None-safe for JSON)
+        "distance": hybrid_distances.get(row.oparlKey)
+                    if hybrid else
+                    next((score for key, score in top_scores_with_rerank if key == row.oparlKey), None)
+    } for row in result]
+    top_files.sort(key=lambda f: key_rank.get(f["oparlKey"], len(key_rank)))
     print(f"Top files details: {top_files}")  # Debugging line
     
     file_sids = {item["oparlKey"]: item["sid"] for item in top_files}
@@ -881,6 +935,9 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
             "distance": f["distance"]
         } for f in top_files],
         "timeline": grouped_timeline,
+        "matched_entities": matched_entities,
+        "facets": facets_data,
+        "applied_filters": applied_filters,
         "stats": {
             "total_files": len(top_files),
             "total_events": len(timeline_events),
@@ -888,7 +945,7 @@ def search_and_build_timeline(session, query: str, top_k: int = TOP_K, threshold
         }
     }
 
-def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
+def main(directory: str, threshold: float = .40, top_k: int = TOP_K, filters: Optional[str] = None) -> None:
     """Main entry point for the script."""
     global EMBEDDING_API_KEY, EMBEDDING_API_URL, EMBEDDING_MODEL
     # Embedding configuration comes from src.remote (private.py / env)
@@ -910,7 +967,8 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K) -> None:
                 continue
 
             try:
-                results = search_and_build_timeline(session, query, top_k=top_k, threshold=threshold)
+                parsed_filters = json.loads(filters) if filters else None
+                results = search_and_build_timeline(session, query, top_k=top_k, threshold=threshold, filters=parsed_filters)
 
                 # Print results
                 print(f"\nQuery: {results['query']}")
@@ -983,5 +1041,7 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--directory", default = os.getcwd(), help="Directory to save results (default: current directory)")
     parser.add_argument("-t", "--threshold", type=float, default=0.40, help="Similarity threshold (default: 0.40)")
     parser.add_argument("-k", "--top_k", type=int, default=TOP_K, help="Number of top results to return (default: TOP_K)")
+    parser.add_argument("-F", "--filters", type=str, default=None, help='Structured facet filters as JSON, e.g. \'[{"facet":"paperType","op":"in","values":["Antrag"]}]\'' )
+    parser.add_argument("-F", "--filters", type=str, default=None, help='Structured facet filters as JSON, e.g. \'[{"facet":"paperType","op":"in","values":["Antrag"]}]\'' )
     args = parser.parse_args()
-    main(args.directory, args.threshold, args.top_k)
+    main(args.directory, args.threshold, args.top_k, args.filters)
