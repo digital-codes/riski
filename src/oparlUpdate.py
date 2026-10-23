@@ -24,7 +24,6 @@ SYSTEM_URL = "https://web1.karlsruhe.de/ris/oparl"
 OUTPUT_FOLDER = "/mnt_ai/data/odd26/ris/ko"
 OUTPUT_PDF_FOLDER = "/mnt_ai/data/odd26/ris/ko_pdf"
 LOG_FILENAME = "ko_update_crawl.log"
-LAST_RUN_FILE = "last_run.txt"          # stores the most recent ISO‑timestamp
 
 logging.basicConfig(
     level=logging.INFO,
@@ -165,27 +164,6 @@ def save_json(data, url: str):
 # ----------------------------------------------------------------------
 # TIMESTAMP HELPERS (new)
 # ----------------------------------------------------------------------
-def load_last_run() -> str:
-    """Read the stored timestamp from ``LAST_RUN_FILE``.
-
-    Returns an ISO‑8601 string. If the file does not exist, the epoch
-    ``1970-01-01T00:00:00Z`` is returned so that the first crawl fetches all
-    resources.
-    """
-    if not os.path.exists(LAST_RUN_FILE):
-        return "1970-01-01T00:00:00Z"
-    with open(LAST_RUN_FILE, "r", encoding="utf-8") as f:
-        return f.readline().strip() or "1970-01-01T00:00:00Z"
-
-def save_last_run(ts: str):
-    """Persist the newest timestamp processed to ``LAST_RUN_FILE``.
-
-    ``ts`` must be an ISO‑8601 string. The file is overwritten each time, so the
-    crawl always starts from the most recent successful timestamp.
-    """
-    with open(LAST_RUN_FILE, "w", encoding="utf-8") as f:
-        f.write(ts + "\n")
-
 def iso_to_dt(iso: str) -> datetime:
     """Convert an ISO‑8601 timestamp to a ``datetime`` object.
 
@@ -295,9 +273,27 @@ def extract_links(obj) -> list:
                 found.update(extract_links(item))
     return list(found)
 
-def process_resource(data, url: str) -> list:
+def process_resource(data, url: str, recorder=None) -> list:
+    """Save *data* if newer than the stored copy and record the change.
+
+    The file-level semantics of ``should_save`` determine the tracked status:
+    a resource with no existing output file is ``new``, a resource replacing
+    an older stored copy is ``modified``.
+    """
     if should_save(data, url):
+        path = os.path.join(OUTPUT_FOLDER, generate_descriptive_filename(data, url))
+        is_new = not os.path.exists(path)
         save_json(data, url)
+        if recorder is not None and isinstance(data, dict):
+            element_type = parse_resource_type(data)
+            oparl_id = data.get("id") if isinstance(data, dict) else None
+            oparl_key = str(oparl_id).rstrip("/").split("/")[-1] if oparl_id else None
+            recorder.record_item(
+                element_type or "Unknown",
+                oparl_id or url,
+                oparl_key,
+                "new" if is_new else "modified",
+            )
     else:
         logging.info("Skipping unchanged resource: %s", url)
     return extract_links(data)
@@ -305,13 +301,14 @@ def process_resource(data, url: str) -> list:
 # ----------------------------------------------------------------------
 # CRAWL (updated for incremental start)
 # ----------------------------------------------------------------------
-def crawl_oparl(root_url: str, start_from: str):
+def crawl_oparl(root_url: str, start_from: str, recorder=None):
     """Breadth‑first crawl of the OParl system starting from ``start_from``.
 
     ``start_from`` is an ISO‑8601 timestamp used to request only resources that
     have been created or modified after that moment. The function respects the
     same pagination mechanism as the original fetch script and continues even
-    when individual requests fail.
+    when individual requests fail. When *recorder* is given, every new or
+    modified resource is logged and the run is finalised at the end.
     """
     visited = set()
     collections = [
@@ -327,6 +324,8 @@ def crawl_oparl(root_url: str, start_from: str):
     # Keep the latest timestamp seen during this run – start with the provided
     # baseline so that we only ever move forward.
     latest_ts = iso_to_dt(start_from)
+    if recorder is not None:
+        recorder.start(start_from)
 
     while queue:
         current_url = queue.popleft()
@@ -360,14 +359,20 @@ def crawl_oparl(root_url: str, start_from: str):
         data = fetch_json(current_url)
         if not data:
             logging.warning("No data for %s; skipping.", current_url)
+            if recorder is not None:
+                recorder.record_error()
             continue
 
-        sub_links = process_resource(data, current_url)
+        sub_links = process_resource(data, current_url, recorder=recorder)
 
         # Extract timestamp safely – ``get_resource_timestamp`` returns a datetime
-        # for both dicts and list fallbacks.
+        # for both dicts and list fallbacks. Normalise to naive UTC: resources
+        # carry mixed offsets (``Z`` vs ``+02:00``) and ``latest_ts`` (from the
+        # baseline) is naive, so an aware timestamp would raise on comparison.
         try:
             ts_dt = get_resource_timestamp(data)
+            if ts_dt.tzinfo is not None:
+                ts_dt = ts_dt.astimezone(timezone.utc).replace(tzinfo=None)
             if ts_dt > latest_ts:
                 latest_ts = ts_dt
         except Exception as e:
@@ -377,8 +382,10 @@ def crawl_oparl(root_url: str, start_from: str):
             if link not in visited:
                 queue.append(link)
 
-    # Persist the newest timestamp after the crawl finishes.
-    save_last_run(latest_ts.isoformat())
+    # The tracking table is the source of truth for the next run baseline.
+    if recorder is not None:
+        recorder.set_end_state(latest_ts.isoformat())
+        recorder.finish(success=True)
 
 # ----------------------------------------------------------------------
 # MAIN
@@ -386,47 +393,58 @@ def crawl_oparl(root_url: str, start_from: str):
 def main():
     """Entry point for the incremental OParl crawl.
 
-    Sets up logging, loads the last run timestamp, and invokes ``crawl_oparl``.
-    A ``KeyboardInterrupt`` (Ctrl‑C) is caught to allow a graceful shutdown – the
-    latest processed timestamp is still persisted before exiting.
+    Resolves the crawl baseline (``--last-date`` override > latest row in
+    the tracking table > epoch), records the run in the database, and invokes
+    ``crawl_oparl``. A ``KeyboardInterrupt`` (Ctrl‑C) is caught to allow a
+    graceful shutdown – the run is recorded with ``success=false`` and the
+    items collected so far. ``last_run.txt`` is ignored completely.
     """
     import argparse
-    global SYSTEM_URL, OUTPUT_FOLDER, OUTPUT_PDF_FOLDER, LAST_RUN_FILE
+    from src.oparlRunLog import RunRecorder, resolve_baseline
+
+    global SYSTEM_URL, OUTPUT_FOLDER, OUTPUT_PDF_FOLDER
     parser = argparse.ArgumentParser(description="Incremental OParl crawler for Karlsruhe RIS.")
     parser.add_argument("--system-url", default=SYSTEM_URL, help="Base URL of the OParl system (default: %(default)s)")
     parser.add_argument("--output-folder", default=OUTPUT_FOLDER, help="Folder to save JSON files (default: %(default)s)")
     parser.add_argument("--output-pdf-folder", default=OUTPUT_PDF_FOLDER, help="Folder to save PDF files (default: %(default)s)")
-    parser.add_argument("--last-run-file", default=LAST_RUN_FILE, help="File to store the last run timestamp (default: %(default)s)")   
-    parser.add_argument("--last-date", default=(datetime.now(timezone.utc) - timedelta(days=365 * 2)).replace(microsecond=0).isoformat(), help="Optional ISO timestamp to override the last run file (default: %(default)s)")
+    parser.add_argument("--last-date", default=None, help="ISO timestamp overriding the tracked baseline (default: latest tracked run)")
     args = parser.parse_args()
     SYSTEM_URL = args.system_url
     OUTPUT_FOLDER = args.output_folder
     OUTPUT_PDF_FOLDER = args.output_pdf_folder
-    LAST_RUN_FILE = args.last_run_file
 
     logging.info("Starting OParl incremental crawl at %s", SYSTEM_URL)
-    last_ts = load_last_run()
+
+    recorder = RunRecorder()
     if args.last_date:
         last_ts = args.last_date
-    logging.info("Last run timestamp: %s", last_ts)
+        baseline_source = "--last-date override"
+    else:
+        last_ts, baseline_source = resolve_baseline(engine=recorder._engine)
+    logging.info("Crawl baseline (%s): %s", baseline_source, last_ts)
+
+    success = True
     try:
-        crawl_oparl(SYSTEM_URL, last_ts)
+        crawl_oparl(SYSTEM_URL, last_ts, recorder=recorder)
     except KeyboardInterrupt:
-        logging.warning("Crawl interrupted by user (Ctrl‑C). Saving progress and exiting.")
+        success = False
+        logging.warning("Crawl interrupted by user (Ctrl‑C). Recording partial run and exiting.")
     except Exception as ex:
+        success = False
         logging.exception("Unexpected error during crawl: %s", ex)
     finally:
-        # Ensure the latest timestamp is saved (crawl_oparl already does this,
-        # but we call it again to be safe in case of early interruption.)
-        try:
-            # ``load_last_run`` returns the timestamp we persisted before; if the
-            # crawl was interrupted before any update, this is a no‑op.
-            latest = load_last_run()
-            logging.info("Final timestamp stored: %s", latest)
-        except Exception:
+        if success and recorder.available and recorder.run_id is not None:
+            # normal path: crawl_oparl already finished the run
             pass
-        logging.info("Done! JSON → %s, PDFs → %s, last timestamp saved to %s",
-                     OUTPUT_FOLDER, OUTPUT_PDF_FOLDER, LAST_RUN_FILE)
+        else:
+            recorder.finish(success=success)
+        if not recorder.available:
+            logging.error(
+                "Run tracking was unavailable (%s); the baseline for the next "
+                "crawl could NOT be advanced in the tracking table.",
+                recorder.last_error,
+            )
+        logging.info("Done! JSON → %s, PDFs → %s", OUTPUT_FOLDER, OUTPUT_PDF_FOLDER)
 
 if __name__ == "__main__":
     main()

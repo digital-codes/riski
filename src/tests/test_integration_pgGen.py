@@ -61,6 +61,9 @@ class TestEnsureProjectSchema:
             "District",
             "Streets_items_AgendaItems",
             "Districts_items_AgendaItems",
+            "oparlUpdateRuns",
+            "oparlUpdateRunItems",
+            "oparlUpdateRunTypeCounts",
         ):
             assert required in names
 

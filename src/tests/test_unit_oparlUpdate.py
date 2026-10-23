@@ -66,26 +66,16 @@ class TestFilenames:
 
 
 # ---------------------------------------------------------------------------
-# Run-state bookkeeping
+# Run-state bookkeeping (no file-based state; tracking table is the only source)
 # ---------------------------------------------------------------------------
 
 
 class TestRunState:
-    def test_missing_file_returns_epoch(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(ou, "LAST_RUN_FILE", str(tmp_path / "last_run.txt"))
-        assert ou.load_last_run() == "1970-01-01T00:00:00Z"
-
-    def test_save_and_load_roundtrip(self, tmp_path, monkeypatch):
-        path = tmp_path / "last_run.txt"
-        monkeypatch.setattr(ou, "LAST_RUN_FILE", str(path))
-        ou.save_last_run("2026-10-23T12:00:00+00:00")
-        assert ou.load_last_run() == "2026-10-23T12:00:00+00:00"
-
-    def test_empty_file_returns_epoch(self, tmp_path, monkeypatch):
-        path = tmp_path / "last_run.txt"
-        path.write_text("\n")
-        monkeypatch.setattr(ou, "LAST_RUN_FILE", str(path))
-        assert ou.load_last_run() == "1970-01-01T00:00:00Z"
+    def test_no_file_based_state_exists(self):
+        """last_run.txt support must be fully removed from the crawler."""
+        assert not hasattr(ou, "load_last_run")
+        assert not hasattr(ou, "save_last_run")
+        assert not hasattr(ou, "LAST_RUN_FILE")
 
     def test_get_resource_timestamp_fields(self):
         assert ou.get_resource_timestamp({"modified": "2024-01-02T03:04:05Z"}).year == 2024
@@ -106,9 +96,36 @@ class TestRunState:
         assert ou.should_save(newer, "https://x/1") is True
 
 
-# ---------------------------------------------------------------------------
-# Crawling with stubbed HTTP
-# ---------------------------------------------------------------------------
+class _FakeRecorder:
+    """Minimal recorder capturing all interactions (no DB)."""
+
+    def __init__(self):
+        self.started = None
+        self.end_state = None
+        self.finished = None
+        self.items = []
+        self.errors = 0
+        self.available = True
+
+    def start(self, baseline):
+        self.started = baseline
+
+    def record_item(self, element_type, oparl_id, oparl_key=None, status="modified"):
+        self.items.append({
+            "element_type": element_type,
+            "oparl_id": oparl_id,
+            "oparl_key": oparl_key,
+            "status": status,
+        })
+
+    def record_error(self):
+        self.errors += 1
+
+    def set_end_state(self, state):
+        self.end_state = state
+
+    def finish(self, success=True):
+        self.finished = success
 
 
 class TestCrawlIncremental:
@@ -116,12 +133,12 @@ class TestCrawlIncremental:
     def crawl_env(self, tmp_path, monkeypatch):
         monkeypatch.setattr(ou, "OUTPUT_FOLDER", str(tmp_path / "json"))
         monkeypatch.setattr(ou, "OUTPUT_PDF_FOLDER", str(tmp_path / "pdf"))
-        monkeypatch.setattr(ou, "LAST_RUN_FILE", str(tmp_path / "last_run.txt"))
         requested = []
-        return requested
+        return requested, tmp_path
 
     def test_first_run_crawls_and_records_state(self, crawl_env, monkeypatch, tmp_path):
-        requested = crawl_env
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
         body = {"id": "https://x/body/1", "type": "https://schema.oparl.org/1.1/Body",
                 "modified": "2026-10-23T10:00:00Z"}
 
@@ -134,11 +151,12 @@ class TestCrawlIncremental:
             return _json_response({"data": [], "links": {}})
 
         monkeypatch.setattr(ou.requests, "get", fake_get)
-        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z")
-        # the run state advanced beyond the baseline (collection wrappers
-        # without timestamps fall back to 'now', which still moves forward)
-        assert ou.load_last_run() != "2026-10-01T00:00:00"
-        assert ou.load_last_run().startswith("2026-10-23")
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        # run recorded: baseline, end state, success
+        assert recorder.started == "2026-10-01T00:00:00Z"
+        assert recorder.end_state is not None and recorder.end_state != "2026-10-01T00:00:00"
+        assert recorder.end_state.startswith("2026-10-2") or recorder.end_state.startswith("2026-10-23T10")
+        assert recorder.finished is True
         # the createdSince parameter contained the initial baseline
         assert any("createdSince=2026-10-01T00%3A00%3A00Z" in u for u in requested)
         # collection response was saved (body arrives inside the wrapper)
@@ -146,22 +164,50 @@ class TestCrawlIncremental:
         assert saved
         assert all(f.suffix == ".json" for f in saved)
 
-    def test_second_run_requests_from_last_state(self, crawl_env, monkeypatch):
-        requested = crawl_env
-        ou.save_last_run("2026-10-20T00:00:00+00:00")
+    def test_second_run_uses_end_state_as_baseline(self, crawl_env, monkeypatch):
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+        recorder.end_state = "2026-10-20T00:00:00"
 
         def fake_get(url, timeout=None):
             requested.append(url)
             return _json_response({"data": [], "links": {}})
 
         monkeypatch.setattr(ou.requests, "get", fake_get)
-        ou.crawl_oparl("https://x/oparl", ou.load_last_run())
-        # the incremental query uses the stored run state, not the epoch
-        assert any("createdSince=2026-10-20T00%3A00%3A00%2B00%3A00" in u for u in requested)
+        ou.crawl_oparl("https://x/oparl", recorder.end_state, recorder=recorder)
+        # the incremental query uses the tracked end state, not the epoch
+        assert any("createdSince=2026-10-20T00%3A00%3A00" in u for u in requested)
         assert not any("1970" in u for u in requested)
 
+    def test_epoch_baseline_fetches_everything(self, crawl_env, monkeypatch):
+        """With no tracked state the baseline is the epoch (fetch everything)."""
+        from src.oparlRunLog import resolve_baseline
+
+        requested, _ = crawl_env
+
+        class NoRows:
+            """Engine whose baseline query finds no rows."""
+
+            def connect(self):
+                raise RuntimeError("no rows")
+
+        baseline, source = resolve_baseline(engine=NoRows())
+        assert source == "epoch"
+        assert baseline.startswith("1970-01-01")
+        # the crawl receives the epoch baseline -> createdSince contains it
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", baseline, recorder=recorder)
+        assert any("createdSince=1970-01-01T00%3A00%3A00Z" in u for u in requested)
+        assert recorder.started == baseline
+
     def test_network_error_does_not_crash_crawl(self, crawl_env, monkeypatch):
-        requested = crawl_env
+        requested, _ = crawl_env
 
         def fake_get(url, timeout=None):
             requested.append(url)
@@ -173,17 +219,65 @@ class TestCrawlIncremental:
         ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z")  # must not raise
         assert requested  # it still tried
 
-    def test_failed_fetch_does_not_advance_state(self, crawl_env, monkeypatch):
-        requested = crawl_env
+    def test_failed_fetch_recorded_as_error(self, crawl_env, monkeypatch):
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
 
         def fake_get(url, timeout=None):
             raise requests.ConnectionError("down")
 
         monkeypatch.setattr(ou.requests, "get", fake_get)
-        # fetch_json swallows network errors -> crawl completes without raising
-        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z")
-        # state stays at the baseline (no newer timestamps were seen)
-        assert ou.load_last_run() == "2026-10-01T00:00:00"
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        # state stays at the baseline (no newer timestamps were seen) and the
+        # fetch failures are visible in the run record
+        assert recorder.end_state == "2026-10-01T00:00:00"
+        assert recorder.errors > 0
+        assert recorder.finished is True
+
+    def test_process_resource_records_new_vs_modified(self, crawl_env, monkeypatch, tmp_path):
+        _, tmp_path = crawl_env
+        recorder = _FakeRecorder()
+        base = {"id": "https://x/meetings/7", "type": "https://schema.oparl.org/1.1/Meeting",
+                "name": "Rat", "date": "2024-07-23T18:00:00",
+                "modified": "2025-01-01T00:00:00Z"}
+
+        # first save: file does not exist -> 'new'
+        ou.process_resource(base, "https://x/meetings/7", recorder=recorder)
+        assert recorder.items == [{
+            "element_type": "Meeting",
+            "oparl_id": "https://x/meetings/7",
+            "oparl_key": "7",
+            "status": "new",
+        }]
+
+        # unchanged resource: skipped, not recorded
+        ou.process_resource(base, "https://x/meetings/7", recorder=recorder)
+        assert len(recorder.items) == 1
+
+        # newer version replaces the stored copy -> 'modified'
+        newer = dict(base, modified="2026-01-01T00:00:00Z")
+        ou.process_resource(newer, "https://x/meetings/7", recorder=recorder)
+        assert len(recorder.items) == 2
+        assert recorder.items[1]["status"] == "modified"
+
+    def test_mixed_offset_timestamps_do_not_raise(self, crawl_env, monkeypatch):
+        """Resources with '+02:00' offsets must not break baseline comparison
+        against the naive epoch baseline (pre-existing bug, now fixed)."""
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            return _json_response({
+                "data": [],
+                "links": {},
+                "modified": "2026-10-23T10:00:00+02:00",
+            })
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "1970-01-01T00:00:00Z", recorder=recorder)
+        # end state advanced past the epoch despite the mixed offsets
+        assert recorder.end_state.startswith("2026-10-23")
 
 
 class _JsonResponse:

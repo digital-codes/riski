@@ -383,6 +383,11 @@ def ensure_project_schema(engine) -> None:
     """Add RIS-KI-owned OParl extensions/tables/indexes without destructive rebuilds."""
     md = MetaData()
 
+    # OParl crawl run tracking tables (additive; see src/oparlRunLog.py).
+    from src.oparlRunLog import ensure_tables as ensure_run_log_tables
+
+    ensure_run_log_tables(engine)
+
     # Local geography tables are part of the canonical schema but populated separately.
     street = Table(
         "Street", md,
