@@ -9,9 +9,9 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00636459.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/636459",
       "date": "2022-03-11 00:00:00",
-      "distance": 0.3114,
+      "distance": 0.3115,
       "match": {
-        "content": 0.3114
+        "content": 0.3115
       }
     },
     {
@@ -22,9 +22,9 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00663776.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/663776",
       "date": "2024-12-17 00:00:00",
-      "distance": 0.3317,
+      "distance": 0.3319,
       "match": {
-        "content": 0.3317
+        "content": 0.3319
       }
     },
     {
@@ -48,9 +48,9 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635289.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635289",
       "date": "2022-01-17 00:00:00",
-      "distance": 0.3406,
+      "distance": 0.3407,
       "match": {
-        "content": 0.3406
+        "content": 0.3407
       }
     },
     {
@@ -61,9 +61,9 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635290.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635290",
       "date": "2022-01-17 00:00:00",
-      "distance": 0.341,
+      "distance": 0.3412,
       "match": {
-        "content": 0.341
+        "content": 0.3412
       }
     },
     {
@@ -74,9 +74,9 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647527.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647527",
       "date": "2023-05-23 00:00:00",
-      "distance": 0.3423,
+      "distance": 0.3424,
       "match": {
-        "content": 0.3423
+        "content": 0.3424
       }
     },
     {
@@ -87,9 +87,9 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647667.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647667",
       "date": "2023-05-26 00:00:00",
-      "distance": 0.3457,
+      "distance": 0.3458,
       "match": {
-        "content": 0.3457
+        "content": 0.3458
       }
     },
     {
@@ -100,9 +100,9 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00645440.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/645440",
       "date": "2023-03-02 00:00:00",
-      "distance": 0.3522,
+      "distance": 0.3524,
       "match": {
-        "content": 0.3522
+        "content": 0.3524
       }
     },
     {
@@ -113,9 +113,9 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00603787.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/603787",
       "date": "2018-06-22 00:00:00",
-      "distance": 0.3569,
+      "distance": 0.357,
       "match": {
-        "content": 0.3569
+        "content": 0.357
       }
     },
     {
@@ -791,9 +791,9 @@
         "date": "2022-03-11 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/636459",
         "attrs": {
-          "distance": 0.3114,
+          "distance": 0.3115,
           "match": {
-            "content": 0.3114
+            "content": 0.3115
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00636459.pdf",
           "fileName": "00636459.pdf"
@@ -806,9 +806,9 @@
         "date": "2024-12-17 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/663776",
         "attrs": {
-          "distance": 0.3317,
+          "distance": 0.3319,
           "match": {
-            "content": 0.3317
+            "content": 0.3319
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00663776.pdf",
           "fileName": "00663776.pdf"
@@ -836,9 +836,9 @@
         "date": "2022-01-17 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635289",
         "attrs": {
-          "distance": 0.3406,
+          "distance": 0.3407,
           "match": {
-            "content": 0.3406
+            "content": 0.3407
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635289.pdf",
           "fileName": "00635289.pdf"
@@ -851,9 +851,9 @@
         "date": "2022-01-17 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/635290",
         "attrs": {
-          "distance": 0.341,
+          "distance": 0.3412,
           "match": {
-            "content": 0.341
+            "content": 0.3412
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00635290.pdf",
           "fileName": "00635290.pdf"
@@ -866,9 +866,9 @@
         "date": "2023-05-23 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647527",
         "attrs": {
-          "distance": 0.3423,
+          "distance": 0.3424,
           "match": {
-            "content": 0.3423
+            "content": 0.3424
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647527.pdf",
           "fileName": "00647527.pdf"
@@ -881,9 +881,9 @@
         "date": "2023-05-26 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/647667",
         "attrs": {
-          "distance": 0.3457,
+          "distance": 0.3458,
           "match": {
-            "content": 0.3457
+            "content": 0.3458
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00647667.pdf",
           "fileName": "00647667.pdf"
@@ -896,9 +896,9 @@
         "date": "2023-03-02 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/645440",
         "attrs": {
-          "distance": 0.3522,
+          "distance": 0.3524,
           "match": {
-            "content": 0.3522
+            "content": 0.3524
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00645440.pdf",
           "fileName": "00645440.pdf"
@@ -911,9 +911,9 @@
         "date": "2018-06-22 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/603787",
         "attrs": {
-          "distance": 0.3569,
+          "distance": 0.357,
           "match": {
-            "content": 0.3569
+            "content": 0.357
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00603787.pdf",
           "fileName": "00603787.pdf"
@@ -1836,7 +1836,7 @@
       "name": "Protokoll GR 22.02.2022 TOP 6",
       "score": 0.01639,
       "signals": {
-        "content": 0.3114
+        "content": 0.3115
       }
     },
     {
@@ -1850,13 +1850,13 @@
       }
     },
     {
-      "id": "AgendaItem_43836",
+      "id": "AgendaItem_99396",
       "type": "AgendaItem",
-      "oparlKey": "43836",
-      "name": "Wie ist die Ausstattung der Durlacher Schulen im Rahmen der Digitalisierung?",
+      "oparlKey": "99396",
+      "name": "Eine Stelle für digitale Souveränität",
       "score": 0.01639,
       "signals": {
-        "name": 0.4959
+        "name": 0.4029
       }
     },
     {
@@ -1866,7 +1866,7 @@
       "name": "Infoveranstaltung Haushalt",
       "score": 0.01639,
       "signals": {
-        "name": 0.6005
+        "name": 0.6006
       }
     },
     {
@@ -1876,17 +1876,17 @@
       "name": "Digitale Transformation von kommunalen Services",
       "score": 0.01613,
       "signals": {
-        "content": 0.3317
+        "content": 0.3319
       }
     },
     {
-      "id": "AgendaItem_69479",
+      "id": "AgendaItem_43836",
       "type": "AgendaItem",
-      "oparlKey": "69479",
-      "name": "Weiterentwicklung des digitalen Bürgerbüros",
+      "oparlKey": "43836",
+      "name": "Wie ist die Ausstattung der Durlacher Schulen im Rahmen der Digitalisierung?",
       "score": 0.01613,
       "signals": {
-        "name": 0.5082
+        "name": 0.4958
       }
     },
     {
@@ -1920,13 +1920,13 @@
       }
     },
     {
-      "id": "AgendaItem_72205",
+      "id": "AgendaItem_99393",
       "type": "AgendaItem",
-      "oparlKey": "72205",
-      "name": "Digitales Bürgerbüro nach Heidelberger Vorbild",
+      "oparlKey": "99393",
+      "name": "Verwaltungsmodernisierung in den Bergdörfern",
       "score": 0.01587,
       "signals": {
-        "name": 0.5158
+        "name": 0.4966
       }
     },
     {
@@ -1956,17 +1956,17 @@
       "name": "BV Digitalstrategie",
       "score": 0.01562,
       "signals": {
-        "content": 0.3406
+        "content": 0.3407
       }
     },
     {
-      "id": "AgendaItem_90945",
+      "id": "AgendaItem_69479",
       "type": "AgendaItem",
-      "oparlKey": "90945",
-      "name": "Steuerungskonzept für Dienstleistungen, Handel und Gastronomie in der Innenstadt",
+      "oparlKey": "69479",
+      "name": "Weiterentwicklung des digitalen Bürgerbüros",
       "score": 0.01562,
       "signals": {
-        "name": 0.5159
+        "name": 0.5082
       }
     },
     {
@@ -1996,17 +1996,17 @@
       "name": "Digitalstrategie ANLAGE",
       "score": 0.01538,
       "signals": {
-        "content": 0.341
+        "content": 0.3412
       }
     },
     {
-      "id": "AgendaItem_46242",
+      "id": "AgendaItem_36055",
       "type": "AgendaItem",
-      "oparlKey": "46242",
-      "name": "Vorrang für Open-Source-Lösungen bei der Stadtverwaltung",
+      "oparlKey": "36055",
+      "name": "Neuorganisation TechnologieRegion: Politische Gremien einbinden",
       "score": 0.01538,
       "signals": {
-        "name": 0.5172
+        "name": 0.5102
       }
     },
     {
@@ -2036,17 +2036,17 @@
       "name": "Anfrage",
       "score": 0.01515,
       "signals": {
-        "content": 0.3423
+        "content": 0.3424
       }
     },
     {
-      "id": "AgendaItem_94334",
+      "id": "AgendaItem_72205",
       "type": "AgendaItem",
-      "oparlKey": "94334",
-      "name": "Vorstellung des digitales Bauantrages",
+      "oparlKey": "72205",
+      "name": "Digitales Bürgerbüro nach Heidelberger Vorbild",
       "score": 0.01515,
       "signals": {
-        "name": 0.5197
+        "name": 0.5158
       }
     },
     {
@@ -2076,17 +2076,17 @@
       "name": "StN_Antrag_FDP_ITSM",
       "score": 0.01493,
       "signals": {
-        "content": 0.3457
+        "content": 0.3458
       }
     },
     {
-      "id": "AgendaItem_95141",
+      "id": "AgendaItem_90945",
       "type": "AgendaItem",
-      "oparlKey": "95141",
-      "name": "Beschaffung der Microsoft-Lizenzen für die Stadtverwaltung",
+      "oparlKey": "90945",
+      "name": "Steuerungskonzept für Dienstleistungen, Handel und Gastronomie in der Innenstadt",
       "score": 0.01493,
       "signals": {
-        "name": 0.5326
+        "name": 0.5159
       }
     },
     {
@@ -2116,17 +2116,17 @@
       "name": "Stellungnahme Antrag",
       "score": 0.01471,
       "signals": {
-        "content": 0.3522
+        "content": 0.3524
       }
     },
     {
-      "id": "AgendaItem_94864",
+      "id": "AgendaItem_46242",
       "type": "AgendaItem",
-      "oparlKey": "94864",
-      "name": "Beschaffung der Microsoft-Lizenzen für die Stadtverwaltung",
+      "oparlKey": "46242",
+      "name": "Vorrang für Open-Source-Lösungen bei der Stadtverwaltung",
       "score": 0.01471,
       "signals": {
-        "name": 0.5326
+        "name": 0.5173
       }
     },
     {
@@ -2156,17 +2156,17 @@
       "name": "IT-moderne Schule",
       "score": 0.01449,
       "signals": {
-        "content": 0.3569
+        "content": 0.357
       }
     },
     {
-      "id": "AgendaItem_55709",
+      "id": "AgendaItem_94334",
       "type": "AgendaItem",
-      "oparlKey": "55709",
-      "name": "THH 1700: Informationstechnik und Digitalisierung",
+      "oparlKey": "94334",
+      "name": "Vorstellung des digitales Bauantrages",
       "score": 0.01449,
       "signals": {
-        "name": 0.535
+        "name": 0.5197
       }
     },
     {
@@ -2200,13 +2200,13 @@
       }
     },
     {
-      "id": "AgendaItem_94600",
+      "id": "AgendaItem_60438",
       "type": "AgendaItem",
-      "oparlKey": "94600",
-      "name": "Transparente Kommunalpolitik durch Chatbots und maschinenlesbare Dokumente",
+      "oparlKey": "60438",
+      "name": "digital@KA: Gründung einer virtuellen öffentlichen Einrichtung für den Betrieb der Multifunktions-App",
       "score": 0.01429,
       "signals": {
-        "name": 0.5396
+        "name": 0.5202
       }
     },
     {
@@ -2236,17 +2236,17 @@
       "name": "Antrag",
       "score": 0.01408,
       "signals": {
-        "content": 0.3624
+        "content": 0.3625
       }
     },
     {
-      "id": "AgendaItem_72747",
+      "id": "AgendaItem_60270",
       "type": "AgendaItem",
-      "oparlKey": "72747",
-      "name": "Frauen in Führungsebenen fördern",
+      "oparlKey": "60270",
+      "name": "digital@KA: Gründung einer virtuellen öffentlichen Einrichtung für den Betrieb der Multifunktions-App",
       "score": 0.01408,
       "signals": {
-        "name": 0.5441
+        "name": 0.5202
       }
     },
     {
@@ -2266,7 +2266,7 @@
       "name": "Steuerungskonzept für Dienstleistungen, Handel und Gastronomie in der Innenstadt",
       "score": 0.01389,
       "signals": {
-        "name": 0.5159
+        "name": 0.516
       }
     },
     {
@@ -2276,17 +2276,17 @@
       "name": "Antrag",
       "score": 0.01389,
       "signals": {
-        "content": 0.3674
+        "content": 0.3676
       }
     },
     {
-      "id": "AgendaItem_36789",
+      "id": "AgendaItem_60478",
       "type": "AgendaItem",
-      "oparlKey": "36789",
-      "name": "Recycling von elektronischen und IT-Geräten bei der Stadtverwaltung",
+      "oparlKey": "60478",
+      "name": "Digitale Kluft in Kinder- & Jugendhäusern überwinden",
       "score": 0.01389,
       "signals": {
-        "name": 0.5476
+        "name": 0.5266
       }
     },
     {
@@ -2316,17 +2316,17 @@
       "name": "GR-Vorlage Bildung Kommission IT und Digitalisierung neu",
       "score": 0.0137,
       "signals": {
-        "content": 0.3686
+        "content": 0.3688
       }
     },
     {
-      "id": "AgendaItem_49983",
+      "id": "AgendaItem_95141",
       "type": "AgendaItem",
-      "oparlKey": "49983",
-      "name": "Änderung der Besetzung der IT-Kommission",
+      "oparlKey": "95141",
+      "name": "Beschaffung der Microsoft-Lizenzen für die Stadtverwaltung",
       "score": 0.0137,
       "signals": {
-        "name": 0.55
+        "name": 0.5327
       }
     },
     {
@@ -2356,17 +2356,17 @@
       "name": "Protokoll TOP 39",
       "score": 0.01351,
       "signals": {
-        "content": 0.3692
+        "content": 0.3694
       }
     },
     {
-      "id": "AgendaItem_76823",
+      "id": "AgendaItem_94864",
       "type": "AgendaItem",
-      "oparlKey": "76823",
-      "name": "Digitale Sofortlösungen bei den Bürger*innenservices",
+      "oparlKey": "94864",
+      "name": "Beschaffung der Microsoft-Lizenzen für die Stadtverwaltung",
       "score": 0.01351,
       "signals": {
-        "name": 0.5501
+        "name": 0.5327
       }
     },
     {
@@ -2396,23 +2396,23 @@
       "name": "Antrag",
       "score": 0.01333,
       "signals": {
-        "content": 0.3695
+        "content": 0.3697
       }
     },
     {
-      "id": "AgendaItem_67049",
+      "id": "AgendaItem_55709",
       "type": "AgendaItem",
-      "oparlKey": "67049",
-      "name": "THH 1000: Hauptverwaltung",
+      "oparlKey": "55709",
+      "name": "THH 1700: Informationstechnik und Digitalisierung",
       "score": 0.01333,
       "signals": {
-        "name": 0.5509
+        "name": 0.5351
       }
     },
     {
-      "id": "Meeting_3167",
+      "id": "Meeting_3159",
       "type": "Meeting",
-      "oparlKey": "3167",
+      "oparlKey": "3159",
       "name": "Gemeinderat",
       "score": 0.01333,
       "signals": {
@@ -2426,7 +2426,7 @@
       "name": "Gültige Bebauungspläne digital erreichen",
       "score": 0.01316,
       "signals": {
-        "name": 0.5257
+        "name": 0.5258
       }
     },
     {
@@ -2436,23 +2436,23 @@
       "name": "Protokoll TOP 14",
       "score": 0.01316,
       "signals": {
-        "content": 0.3709
+        "content": 0.3711
       }
     },
     {
-      "id": "AgendaItem_72732",
+      "id": "AgendaItem_94600",
       "type": "AgendaItem",
-      "oparlKey": "72732",
-      "name": "Digitales Parkraum-Management für Karlsruhe",
+      "oparlKey": "94600",
+      "name": "Transparente Kommunalpolitik durch Chatbots und maschinenlesbare Dokumente",
       "score": 0.01316,
       "signals": {
-        "name": 0.5579
+        "name": 0.5397
       }
     },
     {
-      "id": "Meeting_3159",
+      "id": "Meeting_3100",
       "type": "Meeting",
-      "oparlKey": "3159",
+      "oparlKey": "3100",
       "name": "Gemeinderat",
       "score": 0.01316,
       "signals": {
@@ -2476,23 +2476,23 @@
       "name": "Stellungnahme TOP 28",
       "score": 0.01299,
       "signals": {
-        "content": 0.3726
+        "content": 0.3727
       }
     },
     {
-      "id": "AgendaItem_91134",
+      "id": "AgendaItem_72747",
       "type": "AgendaItem",
-      "oparlKey": "91134",
-      "name": "Vorstellung der neuen Organisation der Abteilung „Bürgerservice“",
+      "oparlKey": "72747",
+      "name": "Frauen in Führungsebenen fördern",
       "score": 0.01299,
       "signals": {
-        "name": 0.5587
+        "name": 0.5441
       }
     },
     {
-      "id": "Meeting_3182",
+      "id": "Meeting_3167",
       "type": "Meeting",
-      "oparlKey": "3182",
+      "oparlKey": "3167",
       "name": "Gemeinderat",
       "score": 0.01299,
       "signals": {
@@ -2506,7 +2506,7 @@
       "name": "Prüfung der Einführung eines Eigenbetriebs für IT-Dienstleistungen - insbesondere zur digitalen Betreuung von Schulen",
       "score": 0.01282,
       "signals": {
-        "name": 0.5317
+        "name": 0.5318
       }
     },
     {
@@ -2516,23 +2516,23 @@
       "name": "Antrag Nr. 7 SPD - Digitalisierung Verwaltung",
       "score": 0.01282,
       "signals": {
-        "content": 0.3733
+        "content": 0.3734
       }
     },
     {
-      "id": "AgendaItem_42800",
+      "id": "AgendaItem_92704",
       "type": "AgendaItem",
-      "oparlKey": "42800",
-      "name": "Digitalisierung in Karlsruhe/Ausbau KA-WLAN",
+      "oparlKey": "92704",
+      "name": "Vorstellung des digitalen Bauantrages durch die Leiterin des Bauordnungsamtes und Vorstellung des für Neureut zuständigen neuen Leiters vom Baubezirk 2",
       "score": 0.01282,
       "signals": {
-        "name": 0.5589
+        "name": 0.5451
       }
     },
     {
-      "id": "Meeting_3024",
+      "id": "Meeting_3003",
       "type": "Meeting",
-      "oparlKey": "3024",
+      "oparlKey": "3003",
       "name": "Gemeinderat",
       "score": 0.01282,
       "signals": {
@@ -2546,7 +2546,7 @@
       "name": "Beschaffung der Microsoft-Lizenzen für die Stadtverwaltung",
       "score": 0.01266,
       "signals": {
-        "name": 0.5326
+        "name": 0.5327
       }
     },
     {
@@ -2556,17 +2556,17 @@
       "name": "FDP Breitbandversorgung",
       "score": 0.01266,
       "signals": {
-        "content": 0.3742
+        "content": 0.3743
       }
     },
     {
-      "id": "AgendaItem_69289",
+      "id": "AgendaItem_36789",
       "type": "AgendaItem",
-      "oparlKey": "69289",
-      "name": "Stand der Umsetzung des Antrags \"Demokratie stärken - Live-Übertragung von Gemeinderatssitzungen im Internet\"",
+      "oparlKey": "36789",
+      "name": "Recycling von elektronischen und IT-Geräten bei der Stadtverwaltung",
       "score": 0.01266,
       "signals": {
-        "name": 0.5594
+        "name": 0.5476
       }
     },
     {
@@ -2586,7 +2586,7 @@
       "name": "Beschaffung der Microsoft-Lizenzen für die Stadtverwaltung",
       "score": 0.0125,
       "signals": {
-        "name": 0.5326
+        "name": 0.5327
       }
     },
     {
@@ -2596,23 +2596,23 @@
       "name": "Stellungnahme TOP 14",
       "score": 0.0125,
       "signals": {
-        "content": 0.3748
+        "content": 0.375
       }
     },
     {
-      "id": "AgendaItem_33833",
+      "id": "AgendaItem_36054",
       "type": "AgendaItem",
-      "oparlKey": "33833",
-      "name": "Einrichtung einer zentralen Anlaufstelle für europäische Fördermittel",
+      "oparlKey": "36054",
+      "name": "Strategie zu Open Government/Informationsfreiheitssatzung",
       "score": 0.0125,
       "signals": {
-        "name": 0.5606
+        "name": 0.5486
       }
     },
     {
-      "id": "Meeting_3100",
+      "id": "Meeting_3024",
       "type": "Meeting",
-      "oparlKey": "3100",
+      "oparlKey": "3024",
       "name": "Gemeinderat",
       "score": 0.0125,
       "signals": {
@@ -2636,23 +2636,23 @@
       "name": "Protokoll GR 21.07.20 TOP 20",
       "score": 0.01235,
       "signals": {
-        "content": 0.3756
+        "content": 0.3757
       }
     },
     {
-      "id": "AgendaItem_93111",
+      "id": "AgendaItem_76319",
       "type": "AgendaItem",
-      "oparlKey": "93111",
-      "name": "Nutzung von Künstlicher Intelligenz (KI) zur Optimierung von Prozessen in der Stadtverwaltung",
+      "oparlKey": "76319",
+      "name": "Digitale Sofortlösungen bei den Bürger*innenservices",
       "score": 0.01235,
       "signals": {
-        "name": 0.5623
+        "name": 0.5501
       }
     },
     {
-      "id": "Meeting_3198",
+      "id": "Meeting_3182",
       "type": "Meeting",
-      "oparlKey": "3198",
+      "oparlKey": "3182",
       "name": "Gemeinderat",
       "score": 0.01235,
       "signals": {
@@ -2666,7 +2666,7 @@
       "name": "THH 1700: Informationstechnik und Digitalisierung",
       "score": 0.0122,
       "signals": {
-        "name": 0.535
+        "name": 0.5351
       }
     },
     {
@@ -2676,17 +2676,17 @@
       "name": "Stellungnahme Anfrage",
       "score": 0.0122,
       "signals": {
-        "content": 0.3764
+        "content": 0.3765
       }
     },
     {
-      "id": "AgendaItem_67040",
+      "id": "AgendaItem_49983",
       "type": "AgendaItem",
-      "oparlKey": "67040",
-      "name": "Klärwerk Karlsruhe, Digitalisierung Betriebsfunk",
+      "oparlKey": "49983",
+      "name": "Änderung der Besetzung der IT-Kommission",
       "score": 0.0122,
       "signals": {
-        "name": 0.5638
+        "name": 0.5501
       }
     },
     {
@@ -2706,7 +2706,7 @@
       "name": "Vollständige Umsetzung einer zentralen städtischen IT-Zuständigkeitsstelle",
       "score": 0.01205,
       "signals": {
-        "name": 0.539
+        "name": 0.5391
       }
     },
     {
@@ -2716,17 +2716,17 @@
       "name": "Protokoll Sitzungseröffnung und TOP 1 HA_09.05.2023",
       "score": 0.01205,
       "signals": {
-        "content": 0.3767
+        "content": 0.3768
       }
     },
     {
-      "id": "AgendaItem_72892",
+      "id": "AgendaItem_76823",
       "type": "AgendaItem",
-      "oparlKey": "72892",
-      "name": "Neufassung der Geschäftsordnung für die Tätigkeit des Gestaltungsbeirats",
+      "oparlKey": "76823",
+      "name": "Digitale Sofortlösungen bei den Bürger*innenservices",
       "score": 0.01205,
       "signals": {
-        "name": 0.5683
+        "name": 0.5501
       }
     },
     {
@@ -2746,7 +2746,7 @@
       "name": "Transparente Kommunalpolitik durch Chatbots und maschinenlesbare Dokumente",
       "score": 0.0119,
       "signals": {
-        "name": 0.5395
+        "name": 0.5396
       }
     },
     {
@@ -2756,17 +2756,17 @@
       "name": "Anlage CIMA IQ-Leitprojekt Korridorthema Innenstadt Einzelhandelsgutachten Synopse",
       "score": 0.0119,
       "signals": {
-        "content": 0.3774
+        "content": 0.3775
       }
     },
     {
-      "id": "AgendaItem_85740",
+      "id": "AgendaItem_67049",
       "type": "AgendaItem",
-      "oparlKey": "85740",
-      "name": "Zentrale Ansprechperson für gemeinschaftliche Bau- bzw. Wohnprojekte bei der Verwaltung",
+      "oparlKey": "67049",
+      "name": "THH 1000: Hauptverwaltung",
       "score": 0.0119,
       "signals": {
-        "name": 0.5688
+        "name": 0.5509
       }
     },
     {
@@ -2796,17 +2796,17 @@
       "name": "TOp 17",
       "score": 0.01176,
       "signals": {
-        "content": 0.379
+        "content": 0.3791
       }
     },
     {
-      "id": "AgendaItem_54980",
+      "id": "AgendaItem_52690",
       "type": "AgendaItem",
-      "oparlKey": "54980",
-      "name": "Abruf von Fördermitteln zur Digitalisierung der Schulen in Karlsruhe",
+      "oparlKey": "52690",
+      "name": "Demokratie stärken - Live-Übertragung von Gemeinderatssitzungen im Internet und in den öffentlichen Raum",
       "score": 0.01176,
       "signals": {
-        "name": 0.5758
+        "name": 0.5559
       }
     },
     {
@@ -2826,7 +2826,7 @@
       "name": "Umbesetzung in der IT-Kommission",
       "score": 0.01163,
       "signals": {
-        "name": 0.5428
+        "name": 0.5429
       }
     },
     {
@@ -2840,13 +2840,13 @@
       }
     },
     {
-      "id": "AgendaItem_84119",
+      "id": "AgendaItem_72732",
       "type": "AgendaItem",
-      "oparlKey": "84119",
-      "name": "Intelligentes Strommanagementsystem für Karlsruhe",
+      "oparlKey": "72732",
+      "name": "Digitales Parkraum-Management für Karlsruhe",
       "score": 0.01163,
       "signals": {
-        "name": 0.5763
+        "name": 0.5579
       }
     },
     {
@@ -2876,17 +2876,17 @@
       "name": "Anlage 8, IT-Kommission",
       "score": 0.01149,
       "signals": {
-        "content": 0.3792
+        "content": 0.3793
       }
     },
     {
-      "id": "AgendaItem_60553",
+      "id": "AgendaItem_91134",
       "type": "AgendaItem",
-      "oparlKey": "60553",
-      "name": "Steuerungskonzept Vergnügungsstätten",
+      "oparlKey": "91134",
+      "name": "Vorstellung der neuen Organisation der Abteilung „Bürgerservice“",
       "score": 0.01149,
       "signals": {
-        "name": 0.5766
+        "name": 0.5588
       }
     },
     {
@@ -2920,13 +2920,13 @@
       }
     },
     {
-      "id": "AgendaItem_54529",
+      "id": "AgendaItem_42800",
       "type": "AgendaItem",
-      "oparlKey": "54529",
-      "name": "Beitritt der Stadt Karlsruhe zur \"Cities coalition for digital rights\"",
+      "oparlKey": "42800",
+      "name": "Digitalisierung in Karlsruhe/Ausbau KA-WLAN",
       "score": 0.01136,
       "signals": {
-        "name": 0.5795
+        "name": 0.5588
       }
     },
     {
@@ -2950,23 +2950,23 @@
       }
     },
     {
-      "id": "File_609178",
+      "id": "File_648766",
       "type": "File",
-      "oparlKey": "609178",
-      "name": "Anlage 2 CIMA-Gutachten",
+      "oparlKey": "648766",
+      "name": "Stellungnahme Anfrage",
       "score": 0.01124,
       "signals": {
-        "content": 0.3811
+        "content": 0.3812
       }
     },
     {
-      "id": "AgendaItem_39743",
+      "id": "AgendaItem_69289",
       "type": "AgendaItem",
-      "oparlKey": "39743",
-      "name": "Verwaltungsgebäude Kaiserallee 8, Ordnungs- und Bürgeramt Vergabe von Nieder- und Mittelspannungsanlagen bis 36 kV - Datenverkabelung",
+      "oparlKey": "69289",
+      "name": "Stand der Umsetzung des Antrags \"Demokratie stärken - Live-Übertragung von Gemeinderatssitzungen im Internet\"",
       "score": 0.01124,
       "signals": {
-        "name": 0.5798
+        "name": 0.5593
       }
     },
     {
@@ -2986,27 +2986,27 @@
       "name": "Strategie zu Open Government/Informationsfreiheitssatzung",
       "score": 0.01111,
       "signals": {
-        "name": 0.5485
+        "name": 0.5486
       }
     },
     {
-      "id": "File_648766",
+      "id": "File_609178",
       "type": "File",
-      "oparlKey": "648766",
-      "name": "Stellungnahme Anfrage",
+      "oparlKey": "609178",
+      "name": "Anlage 2 CIMA-Gutachten",
       "score": 0.01111,
       "signals": {
         "content": 0.3812
       }
     },
     {
-      "id": "AgendaItem_56650",
+      "id": "AgendaItem_33833",
       "type": "AgendaItem",
-      "oparlKey": "56650",
-      "name": "Regulierung von E-Scootern",
+      "oparlKey": "33833",
+      "name": "Einrichtung einer zentralen Anlaufstelle für europäische Fördermittel",
       "score": 0.01111,
       "signals": {
-        "name": 0.582
+        "name": 0.5607
       }
     },
     {
@@ -3036,23 +3036,23 @@
       "name": "Stellungnahme TOP 30",
       "score": 0.01099,
       "signals": {
-        "content": 0.3812
+        "content": 0.3813
       }
     },
     {
-      "id": "AgendaItem_42119",
+      "id": "AgendaItem_93111",
       "type": "AgendaItem",
-      "oparlKey": "42119",
-      "name": "IT-moderne Schule: Konzept zur Digitalisierung der Karlsruher Schulen",
+      "oparlKey": "93111",
+      "name": "Nutzung von Künstlicher Intelligenz (KI) zur Optimierung von Prozessen in der Stadtverwaltung",
       "score": 0.01099,
       "signals": {
-        "name": 0.5821
+        "name": 0.5624
       }
     },
     {
-      "id": "Meeting_2256",
+      "id": "Meeting_2949",
       "type": "Meeting",
-      "oparlKey": "2256",
+      "oparlKey": "2949",
       "name": "Gemeinderat",
       "score": 0.01099,
       "signals": {
@@ -3076,23 +3076,23 @@
       "name": "Anlage ka-digital Thesenpapier nö",
       "score": 0.01087,
       "signals": {
-        "content": 0.3818
+        "content": 0.3819
       }
     },
     {
-      "id": "AgendaItem_70624",
+      "id": "AgendaItem_67683",
       "type": "AgendaItem",
-      "oparlKey": "70624",
-      "name": "Vorlagen der Verwaltung",
+      "oparlKey": "67683",
+      "name": "Digitalstrategie der Stadtverwaltung Karlsruhe",
       "score": 0.01087,
       "signals": {
-        "name": 0.5821
+        "name": 0.5634
       }
     },
     {
-      "id": "Meeting_2258",
+      "id": "Meeting_2256",
       "type": "Meeting",
-      "oparlKey": "2258",
+      "oparlKey": "2256",
       "name": "Gemeinderat",
       "score": 0.01087,
       "signals": {
@@ -3120,13 +3120,13 @@
       }
     },
     {
-      "id": "AgendaItem_33524",
+      "id": "AgendaItem_67040",
       "type": "AgendaItem",
-      "oparlKey": "33524",
-      "name": "Aufwertung der online-gestützten Bürgerbeteiligung in Karlsruhe",
+      "oparlKey": "67040",
+      "name": "Klärwerk Karlsruhe, Digitalisierung Betriebsfunk",
       "score": 0.01075,
       "signals": {
-        "name": 0.5825
+        "name": 0.5638
       }
     },
     {
@@ -3146,7 +3146,7 @@
       "name": "Änderung der Besetzung der IT-Kommission",
       "score": 0.01064,
       "signals": {
-        "name": 0.55
+        "name": 0.5501
       }
     },
     {
@@ -3156,23 +3156,23 @@
       "name": "Stellungnahme TOP Cities coalition for digital rights",
       "score": 0.01064,
       "signals": {
-        "content": 0.3827
+        "content": 0.3829
       }
     },
     {
-      "id": "AgendaItem_90815",
+      "id": "AgendaItem_99363",
       "type": "AgendaItem",
-      "oparlKey": "90815",
-      "name": "Einrichtung von zeitversetzten Übertragungen der Gemeinderatssitzungen",
+      "oparlKey": "99363",
+      "name": "Optimierungen im Personalbereich",
       "score": 0.01064,
       "signals": {
-        "name": 0.5846
+        "name": 0.5658
       }
     },
     {
-      "id": "Meeting_2949",
+      "id": "Meeting_2925",
       "type": "Meeting",
-      "oparlKey": "2949",
+      "oparlKey": "2925",
       "name": "Gemeinderat",
       "score": 0.01064,
       "signals": {
@@ -3196,17 +3196,17 @@
       "name": "Stellungnahme TOP 46",
       "score": 0.01053,
       "signals": {
-        "content": 0.3833
+        "content": 0.3834
       }
     },
     {
-      "id": "AgendaItem_84901",
+      "id": "AgendaItem_72892",
       "type": "AgendaItem",
-      "oparlKey": "84901",
-      "name": "Intelligentes Strommanagementsystem, Versorgungssicherheit und Blackouts in Karlsruhe",
+      "oparlKey": "72892",
+      "name": "Neufassung der Geschäftsordnung für die Tätigkeit des Gestaltungsbeirats",
       "score": 0.01053,
       "signals": {
-        "name": 0.5854
+        "name": 0.5684
       }
     },
     {
@@ -3220,10 +3220,10 @@
       }
     },
     {
-      "id": "Paper_35109",
+      "id": "Paper_49006",
       "type": "Paper",
-      "oparlKey": "35109",
-      "name": "THH 1000: Hauptverwaltung",
+      "oparlKey": "49006",
+      "name": "Aktueller Sachstandsbericht des Amts für Informationstechnik und Digitalisierung zum Haushaltssicherungsprozess Teil 2",
       "score": 0.01042,
       "signals": {
         "name": 0.551
@@ -3236,17 +3236,17 @@
       "name": "Protokoll GR TOP 20",
       "score": 0.01042,
       "signals": {
-        "content": 0.3839
+        "content": 0.384
       }
     },
     {
-      "id": "AgendaItem_91614",
+      "id": "AgendaItem_72878",
       "type": "AgendaItem",
-      "oparlKey": "91614",
-      "name": "Änderung der Geschäftsordnung",
+      "oparlKey": "72878",
+      "name": "Neufassung der Geschäftsordnung für die Tätigkeit des Gestaltungsbeirats",
       "score": 0.01042,
       "signals": {
-        "name": 0.5858
+        "name": 0.5684
       }
     },
     {
@@ -3260,10 +3260,10 @@
       }
     },
     {
-      "id": "Paper_49006",
+      "id": "Paper_35109",
       "type": "Paper",
-      "oparlKey": "49006",
-      "name": "Aktueller Sachstandsbericht des Amts für Informationstechnik und Digitalisierung zum Haushaltssicherungsprozess Teil 2",
+      "oparlKey": "35109",
+      "name": "THH 1000: Hauptverwaltung",
       "score": 0.01031,
       "signals": {
         "name": 0.551
@@ -3276,17 +3276,17 @@
       "name": "Protokoll TOP 4",
       "score": 0.01031,
       "signals": {
-        "content": 0.3841
+        "content": 0.3842
       }
     },
     {
-      "id": "AgendaItem_25905",
+      "id": "AgendaItem_85740",
       "type": "AgendaItem",
-      "oparlKey": "25905",
-      "name": "Antrag GRÜNE: Gemeinderatsdebatten im Internet",
+      "oparlKey": "85740",
+      "name": "Zentrale Ansprechperson für gemeinschaftliche Bau- bzw. Wohnprojekte bei der Verwaltung",
       "score": 0.01031,
       "signals": {
-        "name": 0.589
+        "name": 0.5689
       }
     },
     {
@@ -3316,17 +3316,17 @@
       "name": "Stellungnahme TOP 20",
       "score": 0.0102,
       "signals": {
-        "content": 0.3847
+        "content": 0.3848
       }
     },
     {
-      "id": "AgendaItem_49444",
+      "id": "AgendaItem_49837",
       "type": "AgendaItem",
-      "oparlKey": "49444",
-      "name": "Die Verwaltung schafft einen neuen Medienbus an",
+      "oparlKey": "49837",
+      "name": "IQ-Korridorthema Moderne Verwaltung: IQ-Leitprojekt \"karlsruhe.de - Weiterentwicklung und Modernisierung\" Vergabegegenstand, -verfahren und weitere Beteiligung",
       "score": 0.0102,
       "signals": {
-        "name": 0.5901
+        "name": 0.57
       }
     },
     {
@@ -3356,17 +3356,17 @@
       "name": "GRÜNE-Breitbandversorgung in Karlsruhe",
       "score": 0.0101,
       "signals": {
-        "content": 0.3866
+        "content": 0.3867
       }
     },
     {
-      "id": "AgendaItem_29565",
+      "id": "AgendaItem_36068",
       "type": "AgendaItem",
-      "oparlKey": "29565",
-      "name": "Umbesetzung des Ausschusses für Finanzen, Verwaltung und Wirtschaft",
+      "oparlKey": "36068",
+      "name": "Leistungen aus dem Bildungs- und Teilhabepaket schneller bearbeiten",
       "score": 0.0101,
       "signals": {
-        "name": 0.5904
+        "name": 0.5747
       }
     },
     {
@@ -3396,17 +3396,17 @@
       "name": "Anlage neu Aktionsplan City 2020-2026",
       "score": 0.01,
       "signals": {
-        "content": 0.3888
+        "content": 0.3889
       }
     },
     {
-      "id": "AgendaItem_99514",
+      "id": "AgendaItem_54980",
       "type": "AgendaItem",
-      "oparlKey": "99514",
-      "name": "Institutionalisierte Trägertische für begleitendes Monitoring zu den Auswirkungen der Haushaltskürzungen bei der Sozial- und Jugendbehörde",
+      "oparlKey": "54980",
+      "name": "Abruf von Fördermitteln zur Digitalisierung der Schulen in Karlsruhe",
       "score": 0.01,
       "signals": {
-        "name": 0.591
+        "name": 0.5758
       }
     },
     {
@@ -3426,7 +3426,7 @@
       "name": "Livestream Gemeinderat",
       "score": 0.0099,
       "signals": {
-        "name": 0.552
+        "name": 0.5521
       }
     },
     {
@@ -3436,17 +3436,17 @@
       "name": "Anfrage",
       "score": 0.0099,
       "signals": {
-        "content": 0.389
+        "content": 0.3891
       }
     },
     {
-      "id": "AgendaItem_22564",
+      "id": "AgendaItem_84119",
       "type": "AgendaItem",
-      "oparlKey": "22564",
-      "name": "Antrag CDU: Internetauftritt der Ortsverwaltung",
+      "oparlKey": "84119",
+      "name": "Intelligentes Strommanagementsystem für Karlsruhe",
       "score": 0.0099,
       "signals": {
-        "name": 0.5911
+        "name": 0.5763
       }
     },
     {
@@ -3480,19 +3480,19 @@
       }
     },
     {
-      "id": "AgendaItem_94900",
+      "id": "AgendaItem_60553",
       "type": "AgendaItem",
-      "oparlKey": "94900",
-      "name": "Digitaler Impuls für die Städtepartnerschaft mit Winnyzja",
+      "oparlKey": "60553",
+      "name": "Steuerungskonzept Vergnügungsstätten",
       "score": 0.0098,
       "signals": {
-        "name": 0.5913
+        "name": 0.5767
       }
     },
     {
-      "id": "Meeting_2915",
+      "id": "Meeting_2746",
       "type": "Meeting",
-      "oparlKey": "2915",
+      "oparlKey": "2746",
       "name": "Gemeinderat",
       "score": 0.0098,
       "signals": {
@@ -3506,7 +3506,7 @@
       "name": "Supervision in Behörden",
       "score": 0.00971,
       "signals": {
-        "name": 0.5533
+        "name": 0.5534
       }
     },
     {
@@ -3516,17 +3516,17 @@
       "name": "IT-moderne Schule",
       "score": 0.00971,
       "signals": {
-        "content": 0.3902
+        "content": 0.3903
       }
     },
     {
-      "id": "AgendaItem_92377",
+      "id": "AgendaItem_60446",
       "type": "AgendaItem",
-      "oparlKey": "92377",
-      "name": "Recht auf analoges Leben",
+      "oparlKey": "60446",
+      "name": "Steuerungskonzept Vergnügungsstätten",
       "score": 0.00971,
       "signals": {
-        "name": 0.5916
+        "name": 0.5768
       }
     },
     {
@@ -3546,7 +3546,7 @@
       "name": "Fusion der Rechenzentren",
       "score": 0.00962,
       "signals": {
-        "name": 0.5545
+        "name": 0.5547
       }
     },
     {
@@ -3556,17 +3556,17 @@
       "name": "Anlage Stellungnahme TechnologieRegion",
       "score": 0.00962,
       "signals": {
-        "content": 0.3906
+        "content": 0.3907
       }
     },
     {
-      "id": "AgendaItem_92850",
+      "id": "AgendaItem_52741",
       "type": "AgendaItem",
-      "oparlKey": "92850",
-      "name": "Recht auf analoges Leben",
+      "oparlKey": "52741",
+      "name": "Stand des Breitbandausbaus im Stadtgebiet",
       "score": 0.00962,
       "signals": {
-        "name": 0.5916
+        "name": 0.5769
       }
     },
     {
@@ -3586,7 +3586,7 @@
       "name": "Neue Hallenverwaltungssoftware",
       "score": 0.00952,
       "signals": {
-        "name": 0.5554
+        "name": 0.5555
       }
     },
     {
@@ -3596,17 +3596,17 @@
       "name": "Änderung_Dezernatsverteilungsplan",
       "score": 0.00952,
       "signals": {
-        "content": 0.3913
+        "content": 0.3914
       }
     },
     {
-      "id": "AgendaItem_91328",
+      "id": "AgendaItem_27551",
       "type": "AgendaItem",
-      "oparlKey": "91328",
-      "name": "Recht auf analoges Leben",
+      "oparlKey": "27551",
+      "name": "Antrag GRÜNE: Quote in kommunalen Führungspositionen",
       "score": 0.00952,
       "signals": {
-        "name": 0.5916
+        "name": 0.5776
       }
     },
     {
@@ -3626,7 +3626,7 @@
       "name": "Demokratie stärken - Live-Übertragung von Gemeinderatssitzungen im Internet und in den öffentlichen Raum",
       "score": 0.00943,
       "signals": {
-        "name": 0.556
+        "name": 0.5559
       }
     },
     {
@@ -3636,23 +3636,23 @@
       "name": "GRÜNE-Online-gestützte Bürgerbeteiligung",
       "score": 0.00943,
       "signals": {
-        "content": 0.3914
+        "content": 0.3915
       }
     },
     {
-      "id": "AgendaItem_94030",
+      "id": "AgendaItem_52708",
       "type": "AgendaItem",
-      "oparlKey": "94030",
-      "name": "Belegung von Ladezonen digital erfassen – Missbrauch verhindern",
+      "oparlKey": "52708",
+      "name": "Beitritt der Stadt Karlsruhe zur \"Cities coalition for digital rights\"",
       "score": 0.00943,
       "signals": {
-        "name": 0.5927
+        "name": 0.5794
       }
     },
     {
-      "id": "Meeting_2699",
+      "id": "Meeting_2258",
       "type": "Meeting",
-      "oparlKey": "2699",
+      "oparlKey": "2258",
       "name": "Gemeinderat",
       "score": 0.00943,
       "signals": {
@@ -3676,17 +3676,17 @@
       "name": "Protokoll GR TOP 9",
       "score": 0.00935,
       "signals": {
-        "content": 0.3914
+        "content": 0.3915
       }
     },
     {
-      "id": "AgendaItem_95002",
+      "id": "AgendaItem_54529",
       "type": "AgendaItem",
-      "oparlKey": "95002",
-      "name": "Belegung von Ladezonen digital erfassen – Missbrauch verhindern",
+      "oparlKey": "54529",
+      "name": "Beitritt der Stadt Karlsruhe zur \"Cities coalition for digital rights\"",
       "score": 0.00935,
       "signals": {
-        "name": 0.5927
+        "name": 0.5795
       }
     },
     {
@@ -3720,13 +3720,13 @@
       }
     },
     {
-      "id": "AgendaItem_54660",
+      "id": "AgendaItem_74278",
       "type": "AgendaItem",
-      "oparlKey": "54660",
-      "name": "Neufassung der Geschäftsordnung des Gemeinderates",
+      "oparlKey": "74278",
+      "name": "Transparenz bei institutionellen und Projektförderungen im Kulturbereich",
       "score": 0.00926,
       "signals": {
-        "name": 0.595
+        "name": 0.5796
       }
     },
     {
@@ -3756,17 +3756,17 @@
       "name": "Anlage IQ-Zwischenbericht Bürgerservice",
       "score": 0.00917,
       "signals": {
-        "content": 0.3919
+        "content": 0.392
       }
     },
     {
-      "id": "AgendaItem_54938",
+      "id": "AgendaItem_39743",
       "type": "AgendaItem",
-      "oparlKey": "54938",
-      "name": "Neufassung der Geschäftsordnung des Gemeinderates",
+      "oparlKey": "39743",
+      "name": "Verwaltungsgebäude Kaiserallee 8, Ordnungs- und Bürgeramt Vergabe von Nieder- und Mittelspannungsanlagen bis 36 kV - Datenverkabelung",
       "score": 0.00917,
       "signals": {
-        "name": 0.595
+        "name": 0.5799
       }
     },
     {
@@ -3780,10 +3780,10 @@
       }
     },
     {
-      "id": "Paper_51267",
+      "id": "Paper_36286",
       "type": "Paper",
-      "oparlKey": "51267",
-      "name": "Vorstellung der neuen Organisation der Abteilung „Bürgerservice“",
+      "oparlKey": "36286",
+      "name": "Digitalisierung in Karlsruhe/Ausbau KA-WLAN",
       "score": 0.00909,
       "signals": {
         "name": 0.5587
@@ -3796,17 +3796,17 @@
       "name": "FDP Ausbau KA-WLAN",
       "score": 0.00909,
       "signals": {
-        "content": 0.3921
+        "content": 0.3922
       }
     },
     {
-      "id": "AgendaItem_51575",
+      "id": "AgendaItem_42119",
       "type": "AgendaItem",
-      "oparlKey": "51575",
-      "name": "Zukunft der Bildungsakademie der Handwerkskammer Karlsruhe - detaillierte Nachfragen zur Verwaltungsantwort zur Sitzung vom 24.03.2020",
+      "oparlKey": "42119",
+      "name": "IT-moderne Schule: Konzept zur Digitalisierung der Karlsruher Schulen",
       "score": 0.00909,
       "signals": {
-        "name": 0.5963
+        "name": 0.582
       }
     },
     {
@@ -4063,5 +4063,5 @@
       "AuxFile": 27
     }
   },
-  "summary": "Hier ist eine prägnante Zusammenfassung der fünf Dokumente zur Digitalisierung der Stadtverwaltung Karlsruhe:\n\n---\n\n### **Zusammenfassung: Digitalisierung in der Stadtverwaltung Karlsruhe**\n\n#### **1. Digitalstrategie (2022) – Beschluss und Grundlagen**\nAm **22. Februar 2022** beschloss der Gemeinderat einstimmig die **Digitalstrategie der Stadtverwaltung Karlsruhe**, die von Bürgermeister Dr. Käuflein und dem Amt für Informationstechnik (Leitung: Markus Losert) vorbereitet wurde. Kernziele sind:\n- **Effizienzsteigerung** durch Digitalisierung von Arbeitsabläufen und Vernetzung von **400 Fachanwendungen** (Priorisierung über gemeinsame Datenschnittstellen).\n- **Dreisäuliger Bürgerservice**: Persönlich, telefonisch **und** digital – ohne Ersatz, aber mit Fokus auf Nutzerfreundlichkeit.\n- **IT-Sicherheit, Nachhaltigkeit und OpenID-Vault** als Prioritäten.\n- **Mehrwert für Bürger:innen, Verwaltung und Rat** durch schnellere Prozesse und bessere Services.\n- **Jährliche Digital Agenda** als operative Umsetzung mit konkreten Projekten und Prioritäten.\n\nKarlsruhe wurde bereits als **„smarteste Verwaltung Deutschlands“** (Bitkom) ausgezeichnet, doch es besteht Handlungsdruck durch Ungeduld bei Akteuren.\n\n---\n\n#### **2. Digitale Transformation kommunaler Services (2024)**\nBasierend auf dem **E-Government-Monitor 2024** analysiert dieser Bericht (IT-Kollegium, Dezember 2022) **Barrieren und Treiber** digitaler Verwaltungsdienste:\n- **Haupthemmnisse**:\n  - Fehlender Zugang zu digitalen Diensten (57 % in DE, BW besser als Durchschnitt).\n  - Mangelnde digitale Identität (52 %) und analoge Gewohnheiten.\n- **Lösungsansätze Karlsruhe**:\n  - **Benutzerzentriertes Design** und Prozessvereinfachung.\n  - **Transparente Kommunikation** (z. B. Informationsveranstaltungen) und Förderung mobiler Apps.\n  - **Zentrale Serviceplattform** für gemeinsame digitale Dienste (Beteiligung an bundesweiten Initiativen).\n- **Zukunftsmaßnahmen**:\n  - **Innovationen** wie KI, Chatbots und Videokommunikation.\n  - **Regionale Kooperationen** (z. B. modernisierte Registrierung).\n\n---\n#### **3. Open Government-Strategie (2014/2015)**\nDie **Open-Government-Strategie** (beschlossen 2015) zielt auf **Transparenz, Partizipation und Innovation** ab. Kernprojekte:\n1. **Informationsfreiheitsregister** und **Open-Data-Portal**.\n2. **Bürgerbeteiligungsportal** und **„Gemeinderat Live“** (Streaming von Sitzungen).\n3. **„Große-Vorhaben“-Portal** für offene Projektinformationen.\n4. **Offener Haushalt** (finanzielle Transparenz).\n- **Umsetzung**: Vor dem Doppelhaushalt 2015/2016, mit zusätzlichem Personal- und Budgetbedarf.\n- **Anerkennung**: Anhörung im Ortschaftsrat und Abstimmung mit städtischen Gesellschaften erfolgten.\n\n---\n#### **4. Digitalstrategie (Vorlage des Oberbürgermeisters, 2022)**\nDie Strategie (Dezember 2021) definiert **Gestaltungsprinzipien** und **Handlungsfelder**:\n- **Prinzipien**:\n  - Nutzer- und bedarfsorientiert, effizient, digital souverän (unabhängig von Anbietern).\n  - Offenheit (Open Government), Innovation (z. B. DigitalLab), Sicherheit (ISO 27001).\n  - Nachhaltigkeit (CO₂-Reduktion durch digitale Prozesse).\n- **Handlungsfelder**:\n  - Moderne IT-Arbeitsplätze (Glasfaser, E-Akte), integrierte Plattformen.\n  - Bürgerservice, Open Data, Kulturwandel (Fortbildungen, DCA-Berater).\n- **Organisation**:\n  - Projekt-Management-Office, IT-Kommission, IT-Beirat.\n- **Beschluss**: Gemeinderat verabschiedete die Strategie und beauftragte die Umsetzung durch das Amt für Digitalisierung.\n\n---\n#### **5. Anlage zur Digitalstrategie (Dezember 2021)**\nDer Bericht von **Markus Losert** (Direktor Digitalisierung) konkretisiert die Strategie:\n- **Schwerpunkte**:\n  - **Nutzerzentrierung** (Bürger:innen und Mitarbeitende).\n  - **Technische Infrastruktur**: Glasfaser, WLAN, E-Akte.\n  - **Open Government**: Transparenz durch offene Daten und Partizipation (Karlsruhe.App).\n  - **Sicherheit**: IT-Compliance-Team nach BSI-Standards.\n- **Umsetzung**:\n  - **Digitale Agenda 2022** als operative Fortführung mit Projektpriorisierung.\n  - **Kulturwandel**: Schulungen, Innovationsformate (DigitalLab).\n\n---\n### **Gesamtfazit**\nKarlsruhe verfolgt einen **ganzheitlichen Digitalisierungsansatz**, der **Effizienz, Transparenz und Bürgerorientierung** verbindet. Die Strategie ist in **konkrete Projekte** (z. B. Open Data, KI-Einsatz) und eine **jährliche Agenda** überführt. Schwerpunkte liegen auf:\n- **Technischer Modernisierung** (Vernetzung, Sicherheit).\n- **Partizipation** (Bürgerbeteiligung, offene Daten).\n- **Nachhaltigkeit** (Klimaschutz durch digitale Prozesse).\n\nDie Umsetzung wird durch das **Amt für Digitalisierung** koordiniert, mit regelmäßiger Anpassung an neue Anforderungen."
+  "summary": "Hier ist eine prägnante Zusammenfassung der fünf Dokumente zur Digitalisierung der Stadtverwaltung Karlsruhe:\n\n---\n\n### **Zusammenfassung der Digitalisierungsstrategien der Stadt Karlsruhe**\n\n#### **1. Digitalstrategie der Stadtverwaltung (2022)**\n- **Beschluss:** Der Gemeinderat verabschiedete am 22. Februar 2022 einstimmig die Digitalstrategie, die auf drei Säulen des Bürgerservice (persönlich, telefonisch, digital) basiert. Die Strategie soll Arbeitsabläufe optimieren, Ressourcen sparen und den Service verbessern.\n- **Schwerpunkte:**\n  - **IT-Sicherheit, Nachhaltigkeit und OpenID-Vault** als Prioritäten.\n  - Digitalisierung von **400 Fachanwendungen** mit Fokus auf gemeinsame Datenschnittstellen.\n  - **Mehrwert für Verwaltung, Bürger:innen und Gemeinderat** durch effizientere Prozesse.\n- **Umsetzung:** Das Amt für Informationstechnik und Digitalisierung koordiniert die Strategie, die jährlich in eine **digitale Agenda** mit konkreten Projekten überführt wird.\n\n---\n\n#### **2. Digitale Transformation kommunaler Services (2024)**\n- **Grundlage:** Ergebnisse des **E-Government-Monitors 2024** und Analyse der Barrieren (z. B. fehlende digitale Identität, analoge Gewohnheiten).\n- **Maßnahmen:**\n  - **Benutzerzentriertes Design** und Vereinfachung von Prozessen zur Überwindung von Barrieren.\n  - **Zentrale Serviceplattform** für digitale Dienste, unterstützt durch mobile Apps und Videokommunikation.\n  - **Transparenz** durch Informationsveranstaltungen und partizipative Formate.\n- **Ziele:** Förderung von **Innovationen** (z. B. KI, Chatbots) und regionale Kooperationen.\n\n---\n\n#### **3. Open Government-Strategie (2014/2015)**\n- **Ziele:** Mehr **Transparenz, Partizipation und Zusammenarbeit** zwischen Verwaltung, Bürgern und Wirtschaft.\n- **Projekte:**\n  - Aufbau eines **Open-Data-Portals** und **Informationsfreiheitsregisters**.\n  - **Bürgerbeteiligungsportal** und Live-Übertragungen des Gemeinderats („Gemeinderat Live“).\n  - **Offener Haushalt** und Portal für große Vorhaben.\n- **Umsetzung:** Beschlossen im Februar 2015, mit Fokus auf **Transparenz und Bürgerbeteiligung**.\n\n---\n\n#### **4. Digitalstrategie (Vorlage des Oberbürgermeisters, 2022)**\n- **Gestaltungsprinzipien:**\n  - **Nutzerorientierung, Effizienz, digitale Souveränität, Offenheit, Innovation** und **Nachhaltigkeit**.\n  - **IT-Sicherheit** (BSI-Standards) und **Datenschutz** als zentrale Kriterien.\n- **Handlungsfelder:**\n  - Moderner IT-Arbeitsplatz, Infrastruktur (Glasfaser, E-Akte), Fachanwendungen, Bürgerservice und Open Government.\n  - **Kulturwandel** durch Fortbildungen (z. B. DigitalLab) und neue Organisationsstrukturen.\n- **Finanzen:** Kosten werden durch Effizienzgewinne und Budgetumschichtungen gedeckt.\n\n---\n\n#### **5. Anlage zur Digitalstrategie (Dezember 2021)**\n- **Kernaussagen:**\n  - **Strategischer Rahmen** für die Digitalisierung der Verwaltung, vorgelegt von Markus Losert (Amt für IT und Digitalisierung).\n  - **Sechs Prinzipien:** Nutzerzentrierung, Effizienz, digitale Souveränität, Offenheit, Innovation und Sicherheit.\n  - **Organisation:** Neue Aufbauorganisation mit IT-Kommission, IT-Beirat und Projektmanagement.\n  - **Umsetzung:** **Digitale Agenda 2022** als Leitfaden für konkrete Projekte und Priorisierungen.\n\n---\n### **Gesamtfazit**\nKarlsruhe verfolgt einen **ganzheitlichen Digitalisierungsansatz**, der **Effizienz, Transparenz und Bürgerorientierung** verbindet. Die Strategien umfassen:\n- **Technische Modernisierung** (IT-Infrastruktur, Fachanwendungen),\n- **Partizipation** (Open Government, Bürgerbeteiligung),\n- **Nachhaltigkeit** (Klimaschutz durch digitale Prozesse) und\n- **Sicherheit** (Datenschutz, IT-Compliance).\n\nDie Umsetzung erfolgt **schrittweise** über eine jährliche **Digitale Agenda**, die Projekte priorisiert und Ressourcen bündelt. Der Gemeinderat unterstützt die Maßnahmen einstimmig, wobei die **Zusammenarbeit mit Bürgern, Wirtschaft und regionalen Partnern** zentral ist."
 }

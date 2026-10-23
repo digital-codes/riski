@@ -1038,6 +1038,36 @@ def search_and_build_timeline(
         }
     }
 
+def search_and_summarize(
+    session,
+    query: str,
+    top_k: int = TOP_K,
+    threshold: float = 0.40,
+    hybrid: bool = True,
+    filters: Optional[List[Dict[str, Any]]] = None,
+    signals: Optional[Dict[str, bool]] = None,
+    summarize: bool = True,
+) -> Dict[str, Any]:
+    """Convenience wrapper: hybrid search + German summary of the top files.
+
+    Calls :func:`search_and_build_timeline` and — unless *summarize* is
+    False or no chat model is configured — runs
+    ``src.pgResultSummarizer.ResultSummarizer`` over the result, adding
+    ``result["summary"]`` (the field the web app's SummaryCard renders).
+    This is the recommended entry point for non-interactive consumers
+    (regeneration scripts, the future /search API endpoint).
+    """
+    result = search_and_build_timeline(
+        session, query, top_k=top_k, threshold=threshold,
+        hybrid=hybrid, filters=filters, signals=signals,
+    )
+    if summarize:
+        from src.pgResultSummarizer import ResultSummarizer
+
+        ResultSummarizer(session).summarize(result)
+    return result
+
+
 def main(directory: str, threshold: float = .40, top_k: int = TOP_K, filters: Optional[str] = None) -> None:
     """Main entry point for the script."""
     global EMBEDDING_API_KEY, EMBEDDING_API_URL, EMBEDDING_MODEL
@@ -1076,32 +1106,10 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K, filters: Op
                         print(f"   Download URL: {file['downloadurl']}")
                         print(f"   Date: {file['date']}")
 
-                    # generate a summary of the top files if summary model configured
-                    if SUMMARY_API_URL and SUMMARY_MODEL:
-                        summary = "\nSummary of Top Files:\n"
-                        # get the content of the top files via their oparlKey.
-                        for i, file in enumerate(results['top_files'][:5], 1):
-                            file_content = session.query(File.content).filter(File.oparlKey == file['oparlKey']).first()
-                            if file_content and file_content[0]:
-                                summary += f"\nFile {i}: {file['name']} ({file['fileName']})\n"
-                                summary += f"Content: {file_content[0][:5000]}...\n"  # Show first 5000 chars
-                            else:
-                                summary += f"\nFile {i}: {file['name']} ({file['fileName']})\n"
-                                summary += "Content: Not available\n"
-                        # Call summary model via the shared chat client
-                        summary_response = remote.chat(
-                            [
-                                {"role": "system", "content": "You are a helpful assistant that summarizes German text. Respond in German. stay below 500 words. no emojis."},
-                                {"role": "user", "content": summary},
-                            ],
-                            model=SUMMARY_MODEL,
-                            temperature=0.1,
-                        )
-                        summary_text = summary_response.get("content", "")
-                        if summary_text and summary_text != "[dummy response]":
-                            print(f"\nSummary of Top Files:\n{summary_text}")
-                            # append summary to results for saving
-                            results['summary'] = summary_text
+                    # generate a summary of the top files via the result summarizer
+                    from src.pgResultSummarizer import ResultSummarizer
+
+                    ResultSummarizer(session).summarize(results, force=True)
                 else:
                     print("No top files found above the similarity threshold.")
 
