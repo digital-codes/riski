@@ -15,8 +15,13 @@
     <p v-if="error" class="api-error">{{ error }}</p>
   </div>
 
-  <div class="wrapper" v-if="rawData">
-    <TimeLine :search-data="rawData" :loading="loading" />
+  <div class="wrapper" v-if="rawData || loading">
+    <header class="query-header">
+      <h2>
+        {{ (rawData && rawData.query) || query }}
+        <span v-if="loading" class="header-spinner" title="Suche läuft…"></span>
+      </h2>
+    </header>
   </div>
   <div class="wrapper">
     <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph" @select="onSelect" />
@@ -31,6 +36,9 @@
   />
   <div class="wrapper">
     <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" />
+  </div>
+  <div class="wrapper" v-if="rawData">
+    <TimeLine :search-data="rawData" />
   </div>
 </template>
 
@@ -212,6 +220,46 @@ html, body {
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.88rem;
+}
+
+/* Query header (moved from TimeLine.vue — sits above all result panes) */
+.query-header {
+  margin-bottom: 0;
+  padding: 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px;
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.query-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  word-break: break-word;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-spinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 3px solid rgba(255, 255, 255, 0.35);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .query-header h2 {
+    font-size: 1rem;
+  }
 }
 
 /* Mobile Responsive */

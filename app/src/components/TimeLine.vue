@@ -1,13 +1,5 @@
 <template>
   <div v-if="searchData" class="search-results-container">
-    <!-- Header: Query String -->
-    <header class="query-header">
-      <h2>
-        {{ query }}
-        <span v-if="loading" class="header-spinner" title="Suche läuft…"></span>
-      </h2>
-    </header>
-
     <!-- Card 1: Files (First 3 visible, rest collapsed) -->
     <section class="card files-card">
       <h3 class="card-title">Dateien ({{ files.length }})</h3>
@@ -90,10 +82,6 @@ const props = defineProps({
   searchData: {
     type: Object,
     required: true
-  },
-  loading: {
-    type: Boolean,
-    default: false
   }
 });
 
@@ -205,40 +193,6 @@ onUnmounted(() => {
   margin: 0 auto;
   padding: 20px;
   font-family: system-ui, -apple-system, sans-serif;
-}
-
-/* Header */
-.query-header {
-  margin-bottom: 24px;
-  padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px;
-  color: white;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.query-header h2 {
-  margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  word-break: break-word;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.header-spinner {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  border: 3px solid rgba(255, 255, 255, 0.35);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 /* Cards */
@@ -520,10 +474,6 @@ onUnmounted(() => {
 
   .card {
     padding: 16px;
-  }
-
-  .query-header h2 {
-    font-size: 1rem;
   }
 
   .timeline-controls {
