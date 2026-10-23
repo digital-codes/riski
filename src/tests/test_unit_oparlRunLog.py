@@ -186,3 +186,80 @@ class TestFlushBatching:
         # more after the threshold - at least one flush must have happened
         assert counter["flushes"] >= 1
         assert len(recorder._items) == orl.RunRecorder.FLUSH_EVERY + 1
+
+
+class TestFullFetchesMarker:
+    """Task 1.3: full_fetches marker on the run row."""
+
+    def test_column_present(self):
+        cols = {c.name for c in orl.OparlUpdateRun.__table__.columns}
+        assert "full_fetches" in cols
+
+    def test_ensure_tables_adds_missing_column(self, monkeypatch):
+        """The ALTER TABLE migration runs for pre-existing tables."""
+        executed = []
+
+        class FakeConn:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def execute(self, stmt):
+                executed.append(str(stmt))
+
+        class FakeEngine:
+            def begin(self):
+                return FakeConn()
+
+        monkeypatch.setattr(orl, "get_engine", lambda: FakeEngine())
+        monkeypatch.setattr(orl.Base.metadata, "create_all", lambda *a, **k: None)
+        orl.ensure_tables(engine=FakeEngine())
+        assert any("ADD COLUMN IF NOT EXISTS" in s and "full_fetches" in s
+                   for s in executed)
+
+    def test_record_full_fetch_dedupes(self, monkeypatch):
+        recorder = orl.RunRecorder.__new__(orl.RunRecorder)
+        recorder._available = False
+        recorder._full_fetches = []
+        recorder.record_full_fetch("papers")
+        recorder.record_full_fetch("papers")
+        recorder.record_full_fetch("meetings")
+        assert recorder._full_fetches == ["papers", "meetings"]
+
+    def test_finish_writes_comma_separated_marker(self, monkeypatch):
+        """finish() persists the collected full-fetch types (NULL when none)."""
+        captured = {}
+
+        class FakeConn:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+            def execute(self, stmt):
+                captured["values"] = stmt.compile().params
+
+        class FakeEngine:
+            def begin(self):
+                return FakeConn()
+
+        recorder = orl.RunRecorder.__new__(orl.RunRecorder)
+        recorder._engine = FakeEngine()
+        recorder._available = True
+        recorder.run_id = 1
+        recorder._run_timestamp = orl._now()
+        recorder._baseline = "2026-01-01T00:00:00Z"
+        recorder._end_state = "2026-01-02T00:00:00Z"
+        recorder._full_fetches = []
+        recorder._items = []
+        recorder._pending = []
+        recorder._errors = 0
+        recorder.finish(success=True)
+        assert captured["values"]["full_fetches"] is None
+
+        recorder._full_fetches = ["papers", "meetings"]
+        recorder.finish(success=True)
+        assert captured["values"]["full_fetches"] == "papers,meetings"
