@@ -85,14 +85,19 @@ def _strip_code_fence(summary: str) -> str:
     return cleaned
 
 
-def _run_summarizer() -> None:
-    md_files = sorted([f for f in SRC_DIR.iterdir() if f.suffix == ".md" and f.is_file()])
+def _run_summarizer(src_dir: Path | None = None, dst_dir: Path | None = None) -> None:
+    src_dir = src_dir or SRC_DIR
+    dst_dir = dst_dir or DST_DIR
+    md_files = sorted([f for f in src_dir.iterdir() if f.suffix == ".md" and f.is_file()])
     print(len(md_files), md_files[:10])
 
-    # Load file contents
-    md_contents = {f.name: f.read_text(encoding="utf-8") for f in md_files}
-    md_lengths = [len(md_contents[f.name]) for f in md_files]
-    md_lines = [md_contents[f.name].count("\n") + 1 for f in md_files]
+    # Collect lengths/lines only — contents are read lazily per file below
+    # (loading ~130k markdown files into memory at once is unnecessary).
+    md_lengths, md_lines = [], []
+    for f in md_files:
+        text = f.read_text(encoding="utf-8", errors="replace")
+        md_lengths.append(len(text))
+        md_lines.append(text.count("\n") + 1)
 
     df = pd.DataFrame(
         {"file": [f.name for f in md_files], "length": md_lengths, "lines": md_lines}
@@ -120,15 +125,18 @@ def _run_summarizer() -> None:
     df_small = df_q98[df_q98.length <= 10000]
     print("DF small:", df_small.describe())
 
-    os.makedirs(DST_DIR, exist_ok=True)
+    os.makedirs(dst_dir, exist_ok=True)
+
+    def read_source(name: str) -> str:
+        return (src_dir / name).read_text(encoding="utf-8", errors="replace")
 
     # Small files – copy unchanged
     small_names = df_small["file"].values
     print("Small files:", len(small_names))
     for d in small_names:
-        content = md_contents[d].strip()
+        content = read_source(d).strip()
         print("Processing file:", d)
-        out_path = DST_DIR / d
+        out_path = dst_dir / d
         if out_path.exists():
             print("Skipping existing file:", d)
             continue
@@ -138,9 +146,9 @@ def _run_summarizer() -> None:
     large_names = df_large["file"].values
     print("Large files:", len(large_names))
     for d in large_names:
-        content = md_contents[d]
+        content = read_source(d)
         print("Processing file:", d)
-        out_path = DST_DIR / d
+        out_path = dst_dir / d
         if out_path.exists():
             print("Skipping existing file:", d)
             continue
@@ -154,4 +162,10 @@ def _run_summarizer() -> None:
 
 
 if __name__ == "__main__":
-    _run_summarizer()
+    import argparse
+
+    ap = argparse.ArgumentParser(description="Summarise oversized markdown files into ko_sums")
+    ap.add_argument("--src-dir", default=str(SRC_DIR), help="Directory with extracted markdown")
+    ap.add_argument("--dst-dir", default=str(DST_DIR), help="Directory for (summarised) outputs")
+    args = ap.parse_args()
+    _run_summarizer(src_dir=Path(args.src_dir), dst_dir=Path(args.dst_dir))
