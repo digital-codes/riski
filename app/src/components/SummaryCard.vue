@@ -2,6 +2,9 @@
 	<section class="summary-card">
 		<header class="summary-header">
 			<h2>Summary</h2>
+			<button type="button" class="pdf-btn" @click="downloadPdf" title="Zusammenfassung drucken oder als PDF speichern">
+				Als PDF speichern
+			</button>
 		</header>
 
 		<div class="summary-body" v-html="renderedSummary"></div>
@@ -36,6 +39,29 @@ const summaryText = computed(() => {
 });
 
 const renderedSummary = computed(() => md.render(summaryText.value));
+
+// Opens a print-styled window with the rendered markdown and triggers the
+// browser's print dialog — "Save as PDF" is a native target there. This
+// keeps formatting (headings, bold, lists, umlauts) without a PDF library.
+const downloadPdf = () => {
+	const win = window.open('', '_blank', 'noopener,width=820,height=940');
+	if (!win) return; // popup blocked
+	const css = `
+		body { font-family: system-ui, -apple-system, sans-serif; color: #1f2937;
+		       max-width: 720px; margin: 2.5rem auto; line-height: 1.6; }
+		h1, h2, h3 { color: #111827; margin: 0.8em 0 0.4em; }
+		code { background: #f1f5f9; padding: 0.1rem 0.35rem; border-radius: 4px; }
+		pre { background: #0b1220; color: #e5e7eb; padding: 0.8rem; border-radius: 8px;
+		      white-space: pre-wrap; }
+	`;
+	win.document.write(
+		`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">` +
+		`<title>RISKI Zusammenfassung</title><style>${css}</style></head><body>` +
+		`<h1>RISKI Zusammenfassung</h1>${renderedSummary.value}` +
+		`<script>window.onload=function(){setTimeout(function(){window.print()},150)}<\/script></body></html>`
+	);
+	win.document.close();
+};
 </script>
 
 <style scoped>
@@ -52,6 +78,26 @@ const renderedSummary = computed(() => md.render(summaryText.value));
 
 .summary-header {
 	margin: 0 0 16px 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.pdf-btn {
+	background: #667eea;
+	color: white;
+	border: none;
+	padding: 8px 16px;
+	border-radius: 6px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.2s ease;
+	white-space: nowrap;
+}
+
+.pdf-btn:hover {
+	background: #5a6fd6;
 }
 
 .summary-header h2 {
