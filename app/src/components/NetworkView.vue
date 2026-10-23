@@ -111,12 +111,17 @@ const visibleNodes = computed(() => {
   return props.graph.nodes.filter((n) => connected.has(n.id) || (n.type === 'File' && n.attrs?.match));
 });
 
-// keep filter sets in sync when the data changes (new search)
+// keep filter sets in sync when data changes (search/expand): ADD new
+// types/relations enabled, but preserve the user's manual toggles
 watch(
   () => props.graph,
   () => {
-    enabledTypes.value = new Set(allTypes.value);
-    enabledRelations.value = new Set(allRelations.value);
+    const nextTypes = new Set(enabledTypes.value);
+    for (const t of allTypes.value) nextTypes.add(t);
+    const nextRels = new Set(enabledRelations.value);
+    for (const r of allRelations.value) nextRels.add(r);
+    enabledTypes.value = nextTypes;
+    enabledRelations.value = nextRels;
   },
   { immediate: true }
 );

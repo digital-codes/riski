@@ -21,6 +21,9 @@
         <a v-if="oparlId" :href="oparlId" target="_blank" rel="noopener" class="action-btn">
           OParl-Datensatz öffnen
         </a>
+        <button v-if="node" type="button" class="action-btn" :disabled="expanding" @click="$emit('expand', node.id)">
+          {{ expanding ? 'Lade Nachbarn…' : `Nachbarn laden` }}
+        </button>
       </div>
 
       <section v-if="related.length" class="panel-related">
@@ -44,9 +47,10 @@ const props = defineProps({
   selection: { type: Object, default: null }, // {kind: 'node'|'edge', data}
   graph: { type: Object, default: null },
   isMobile: { type: Boolean, default: false },
+  expanding: { type: Boolean, default: false },
 });
 
-defineEmits(['close']);
+defineEmits(['close', 'expand']);
 
 const TYPE_LABELS = {
   File: 'Datei', AuxFile: 'Anlage', Paper: 'Dokument', AgendaItem: 'TOP',
