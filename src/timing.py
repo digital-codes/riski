@@ -11,7 +11,10 @@
           ...
 
 Output goes to stdout as ``[timing] <label>: <seconds>s`` (the codebase
-logs via print). For deeper analysis the stdlib's cProfile stays available.
+logs via print). Enable/disable via the ``RISKI_TIMING`` environment
+variable — instrumentation is ON by default; set ``RISKI_TIMING=0``
+(also: false/no/off) to silence it entirely. For deeper analysis the
+stdlib's cProfile stays available.
 """
 
 # Dual-mode import support.
@@ -21,12 +24,21 @@ except ImportError:
     pass
 
 import functools
+import os
 import time
 from contextlib import contextmanager
 
+_TRUTHY_OFF = {"0", "false", "no", "off", ""}
+
+
+def enabled() -> bool:
+    """Whether timing output is on (env ``RISKI_TIMING``, default: on)."""
+    return os.getenv("RISKI_TIMING", "1").strip().lower() not in _TRUTHY_OFF
+
 
 def _report(label: str, seconds: float) -> None:
-    print(f"[timing] {label}: {seconds:.3f}s")
+    if enabled():
+        print(f"[timing] {label}: {seconds:.3f}s")
 
 
 def timed(func=None, *, label: str | None = None):
