@@ -94,9 +94,35 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         "query": req.query,
         "filters": req.filters or [],
         "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
+        "result": result,  # kept for the async /summarize step
     }
     result["sessionId"] = session_id
     return result
+
+
+class SummarizeRequest(BaseModel):
+    session_id: str = Field(min_length=1)
+
+
+@app.post("/summarize")
+def summarize(req: SummarizeRequest) -> Dict[str, Any]:
+    """Async summary step: run the (teaser-based) summarizer over the
+    stored search result of a session. Lets clients render search results
+    immediately and fill the summary in when it arrives."""
+    sess = _sessions.get(req.session_id)
+    if sess is None or "result" not in sess:
+        raise HTTPException(status_code=404, detail="unknown session")
+    result = sess["result"]
+    if result.get("summary"):
+        return {"summary": result["summary"]}
+    db_session = get_db_session()
+    try:
+        from src.pgResultSummarizer import ResultSummarizer
+
+        ResultSummarizer(db_session).summarize(result)
+    finally:
+        db_session.close()
+    return {"summary": result.get("summary")}
 
 
 @app.post("/expand")

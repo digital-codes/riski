@@ -22,8 +22,12 @@ async function post(path, body) {
 	return res.json();
 }
 
-export async function search(query, { topK = 10, filters, signals, summarize = true } = {}) {
+export async function search(query, { topK = 10, filters, signals, summarize = false } = {}) {
 	return post('/search', { query, top_k: topK, filters, signals, summarize });
+}
+
+export async function summarize(sessionId) {
+	return post('/summarize', { session_id: sessionId });
 }
 
 export async function expand(nodeId, limitPerRelation = 25) {

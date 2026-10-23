@@ -39,7 +39,7 @@ import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue
 import TimeLine from './components/TimeLine.vue';
 import SummaryCard from './components/SummaryCard.vue';
 import DetailPanel from './components/DetailPanel.vue';
-import { search as apiSearch, expand as apiExpand } from './api.js';
+import { search as apiSearch, summarize as apiSummarize, expand as apiExpand } from './api.js';
 // lazy: keeps echarts (large) out of the main bundle until the graph exists
 const NetworkView = defineAsyncComponent(() => import('./components/NetworkView.vue'));
 
@@ -68,9 +68,16 @@ async function runSearch() {
   if (!q || loading.value) return;
   loading.value = true;
   error.value = null;
+  summary.value = null;
   try {
-    const result = await apiSearch(q, { topK: 10 });
+    // render results immediately; the summary arrives asynchronously
+    const result = await apiSearch(q, { topK: 10, summarize: false });
     applyResult(result);
+    if (result.sessionId) {
+      apiSummarize(result.sessionId)
+        .then((res) => { if (res.summary) summary.value = res.summary; })
+        .catch(() => { /* summary is optional — ignore failures */ });
+    }
   } catch (e) {
     error.value = `Suche fehlgeschlagen (${e.message}). Läuft der API-Server? (uvicorn src.apiServer:app --port 8000)`;
   } finally {

@@ -9,21 +9,21 @@ from src.pgResultSummarizer import ResultSummarizer
 
 
 class FakeSession:
-    """Minimal stand-in: File.content lookup by oparlKey."""
+    """Minimal stand-in: File (teaser, content) lookup by oparlKey."""
 
     def __init__(self, contents: dict):
-        self._contents = contents
+        self._contents = contents  # oparlKey -> (teaser, content)
 
     def execute(self, stmt, params=None):
         key = params["k"]
 
         class R:
             def first(self):
-                content = self._c
-                return [content] if content else None
+                teaser, content = self._c
+                return [teaser, content] if teaser or content else None
 
         r = R()
-        r._c = self._contents.get(key)
+        r._c = self._contents.get(key, (None, None))
         return r
 
 
@@ -43,7 +43,7 @@ def summarizer(monkeypatch):
     monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
     monkeypatch.setattr(pc.remote, "CHAT_MODEL", "test-model")
     monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Zusammenfassung."})
-    return ResultSummarizer(FakeSession({"111": "Inhalt A", "222": None}))
+    return ResultSummarizer(FakeSession({"111": ("Teaser A", "Inhalt A"), "222": (None, None)}))
 
 
 class TestSummarize:
@@ -85,8 +85,26 @@ class TestSummarize:
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
         summarizer.content_chars = 10
         summarizer.summarize(result)
-        assert "Inhalt A" in seen["prompt"] and "..." in seen["prompt"]
+        # teaser layer preferred over content
+        assert "Teaser A" in seen["prompt"]
+        assert "Inhalt A" not in seen["prompt"]
+        assert "..." in seen["prompt"]
         assert "Not available" in seen["prompt"]
+
+    def test_content_fallback_when_no_teaser(self, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen["prompt"] = messages[1]["content"]
+            return {"content": "S."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        session = FakeSession({"333": (None, "Voller Inhalt")})
+        res = {"query": "t", "top_files": [{"oparlKey": "333", "name": "C", "fileName": "c.pdf"}]}
+        ResultSummarizer(session).summarize(res)
+        assert "Voller Inhalt" in seen["prompt"]
 
 
 class TestSearchAndSummarize:

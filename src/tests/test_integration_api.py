@@ -61,6 +61,22 @@ class TestSearch:
         assert r.json()["applied_filters"] == filters
 
 
+class TestSummarize:
+    def test_summarize_after_search(self, client):
+        r = client.post("/search", json={"query": "Digitalstrategie der Stadt Karlsruhe",
+                                         "top_k": 3, "summarize": False})
+        assert r.status_code == 200
+        body = r.json()
+        assert "summary" not in body  # async path: search returns without summary
+        r2 = client.post("/summarize", json={"session_id": body["sessionId"]})
+        assert r2.status_code == 200
+        assert r2.json()["summary"]
+
+    def test_summarize_unknown_session_404(self, client):
+        r = client.post("/summarize", json={"session_id": "does-not-exist"})
+        assert r.status_code == 404
+
+
 class TestExpand:
     def test_expand_known_node(self, client):
         r = client.post("/expand", json={"node_id": "Paper_46236"})
