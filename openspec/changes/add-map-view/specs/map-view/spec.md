@@ -4,9 +4,17 @@
 
 ### Requirement: Georeference collection for an answer set
 The system SHALL collect streets and districts linked (via the existing
-street/district ↔ agenda-item association tables) to the agenda items of
-a search result's answer set, and SHALL report their presence with a
-`geo_available` flag on the search result.
+street/district ↔ agenda-item and street/district ↔ file association
+tables) to the graph-connected answer set — the seed files and the
+entities reached through the OParl traversal. The hybrid recall long tail
+(matched entities not connected to the graph) SHALL NOT contribute to the
+map, so weak matches do not flood it with unrelated streets. Presence
+SHALL be reported with a `geo_available` flag on the search result.
+
+#### Scenario: Recall tail excluded from the map
+- **WHEN** hybrid recall returns weakly matching files (rank > top_k)
+  that are linked to unrelated streets
+- **THEN** those streets do not appear in the map's FeatureCollection
 
 #### Scenario: Street named in a query
 - **WHEN** a search returns agenda items linked to the street

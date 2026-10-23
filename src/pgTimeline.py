@@ -1045,13 +1045,14 @@ def search_and_build_timeline(
     from src.graphModel import build_graph
     graph = build_graph(related_objects, related_objects.pop("edges", []), top_files)
 
-    # georeferences: streets/districts linked to the answer set's agenda
-    # items AND files (file matching via name/teaser, pgAddFileGeoRefs)
+    # georeferences: streets/districts linked to the GRAPH-connected answer
+    # set (seed files + traversal). Deliberately NOT the matched_entities
+    # long tail — weak recall matches (rank 11+) drag in unrelated streets
+    # and flood the map (analysis: query "rückbau herrenalber strasse":
+    # graph scope = 175 features/13 streets, tail scope = 1475/65).
     from src.pgGeo import geo_available_for_keys
     agenda_item_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] == "AgendaItem"]
-    agenda_item_keys += [m["oparlKey"] for m in matched_entities if m["type"] == "AgendaItem"]
     file_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] in ("File", "AuxFile")]
-    file_keys += [m["oparlKey"] for m in matched_entities if m["type"] == "File"]
     file_keys = [k for k in file_keys if k]
     geo_available = geo_available_for_keys(session.get_bind(), agenda_item_keys, file_keys)
 

@@ -1,5 +1,5 @@
 {
-  "query": "wie stehts mit dem Rückbau der Herrenalber Straße",
+  "query": "rückbau herrenalber strasse",
   "top_files": [
     {
       "sid": 41126,
@@ -9,71 +9,11 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00001087.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/1087",
       "date": "2013-08-15 00:00:00",
-      "distance": 0.3538,
+      "distance": 0.4432,
       "match": {
         "lexical": true,
-        "name": 0.2619,
-        "content": 0.3538
-      }
-    },
-    {
-      "sid": 1742,
-      "oparlKey": "618429",
-      "name": "Stellungnahme Herrenalber Straße",
-      "fileName": "00618429.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618429.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618429",
-      "date": "2020-06-24 00:00:00",
-      "distance": 0.3399,
-      "match": {
-        "lexical": true,
-        "name": 0.3488,
-        "content": 0.3399
-      }
-    },
-    {
-      "sid": 45139,
-      "oparlKey": "620145",
-      "name": "TOP 6 - Umbau Herrenalber Straße",
-      "fileName": "00620145.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620145.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620145",
-      "date": "2020-10-12 00:00:00",
-      "distance": 0.3964,
-      "match": {
-        "lexical": true,
-        "name": 0.3255,
-        "content": 0.3964
-      }
-    },
-    {
-      "sid": 29697,
-      "oparlKey": "616652",
-      "name": "Herrenalber Straße",
-      "fileName": "00616652.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00616652.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616652",
-      "date": "2020-03-23 00:00:00",
-      "distance": 0.4774,
-      "match": {
-        "lexical": true,
-        "name": 0.2941,
-        "content": 0.4774
-      }
-    },
-    {
-      "sid": 4256,
-      "oparlKey": "585346",
-      "name": "OZ 173-174: GRÜNE, KULT: Umbau Herrenalber Straße",
-      "fileName": "00585346.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00585346.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585346",
-      "date": "2015-02-16 00:00:00",
-      "distance": 0.3463,
-      "match": {
-        "lexical": true,
-        "name": 0.3756,
-        "content": 0.3463
+        "name": 0.3751,
+        "content": 0.4432
       }
     },
     {
@@ -84,26 +24,86 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00015722.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/15722",
       "date": "2013-08-15 00:00:00",
-      "distance": 0.391,
+      "distance": 0.4457,
       "match": {
         "lexical": true,
-        "name": 0.4846,
-        "content": 0.391
+        "name": 0.4053,
+        "content": 0.4457
       }
     },
     {
-      "sid": 16097,
-      "oparlKey": "614954",
-      "name": "BPlan Herrenalber Straße",
-      "fileName": "00614954.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00614954.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/614954",
-      "date": "2020-02-14 00:00:00",
-      "distance": 0.4436,
+      "sid": 35461,
+      "oparlKey": "39524",
+      "name": "GRÜNE-Lärmschutz.Herrenalber Straße",
+      "fileName": "00039524.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00039524.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/39524",
+      "date": "2013-08-15 00:00:00",
+      "distance": 0.4567,
       "match": {
         "lexical": true,
-        "name": 0.3806,
-        "content": 0.4436
+        "name": 0.3934,
+        "content": 0.4567
+      }
+    },
+    {
+      "sid": 45139,
+      "oparlKey": "620145",
+      "name": "TOP 6 - Umbau Herrenalber Straße",
+      "fileName": "00620145.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620145.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620145",
+      "date": "2020-10-12 00:00:00",
+      "distance": 0.453,
+      "match": {
+        "lexical": true,
+        "name": 0.4175,
+        "content": 0.453
+      }
+    },
+    {
+      "sid": 4256,
+      "oparlKey": "585346",
+      "name": "OZ 173-174: GRÜNE, KULT: Umbau Herrenalber Straße",
+      "fileName": "00585346.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00585346.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585346",
+      "date": "2015-02-16 00:00:00",
+      "distance": 0.4283,
+      "match": {
+        "lexical": true,
+        "name": 0.4182,
+        "content": 0.4283
+      }
+    },
+    {
+      "sid": 1742,
+      "oparlKey": "618429",
+      "name": "Stellungnahme Herrenalber Straße",
+      "fileName": "00618429.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618429.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618429",
+      "date": "2020-06-24 00:00:00",
+      "distance": 0.4617,
+      "match": {
+        "lexical": true,
+        "name": 0.3982,
+        "content": 0.4617
+      }
+    },
+    {
+      "sid": 29696,
+      "oparlKey": "20919",
+      "name": "Tischvorlage_Herrenalber_Straße",
+      "fileName": "00020919.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00020919.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20919",
+      "date": "2014-01-29 00:00:00",
+      "distance": 0.459,
+      "match": {
+        "lexical": true,
+        "name": 0.4139,
+        "content": 0.459
       }
     },
     {
@@ -114,41 +114,40 @@
       "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00594253.pdf",
       "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594253",
       "date": "2016-10-28 00:00:00",
-      "distance": 0.3814,
+      "distance": 0.4178,
       "match": {
         "lexical": true,
-        "name": 0.4448,
-        "content": 0.3814
+        "name": 0.4554,
+        "content": 0.4178
       }
     },
     {
-      "sid": 25986,
-      "oparlKey": "20064",
-      "name": "Verkehrsversuch Herrenalber Straße",
-      "fileName": "00020064.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00020064.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20064",
-      "date": "2013-08-15 00:00:00",
-      "distance": 0.4602,
+      "sid": 16097,
+      "oparlKey": "614954",
+      "name": "BPlan Herrenalber Straße",
+      "fileName": "00614954.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00614954.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/614954",
+      "date": "2020-02-14 00:00:00",
+      "distance": 0.4923,
       "match": {
         "lexical": true,
-        "name": 0.3838,
-        "content": 0.4602
+        "name": 0.4239,
+        "content": 0.4923
       }
     },
     {
-      "sid": 23421,
-      "oparlKey": "6914",
-      "name": "FW-BBPlan Herrenalber Straße",
-      "fileName": "00006914.pdf",
-      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00006914.pdf",
-      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6914",
-      "date": "2013-08-15 00:00:00",
-      "distance": 0.4608,
+      "sid": 29697,
+      "oparlKey": "616652",
+      "name": "Herrenalber Straße",
+      "fileName": "00616652.pdf",
+      "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00616652.pdf",
+      "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616652",
+      "date": "2020-03-23 00:00:00",
+      "distance": null,
       "match": {
         "lexical": true,
-        "name": 0.4073,
-        "content": 0.4608
+        "name": 0.3803
       }
     }
   ],
@@ -175,23 +174,23 @@
       ]
     },
     {
-      "start_date": "2010-09-17 00:00:00",
+      "start_date": "2010-09-13 00:00:00",
       "end_date": "2010-09-21 15:30:00",
       "events": [
         {
           "type": "Paper",
-          "id": 25551,
-          "oparlKey": "25551",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/25551",
-          "name": "Änderungsantrag StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Bürgerversammlung",
-          "date": "2010-09-17 00:00:00",
+          "id": 25506,
+          "oparlKey": "25506",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/25506",
+          "name": "Antrag GRÜNE: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Lärmschutz Herrenalber Straße",
+          "date": "2010-09-13 00:00:00",
           "details": {
-            "sid": 6640,
-            "id": 25551,
-            "oparlKey": "25551",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/25551",
-            "name": "Änderungsantrag StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Bürgerversammlung",
-            "reference": "25551",
+            "sid": 6622,
+            "id": 25506,
+            "oparlKey": "25506",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/25506",
+            "name": "Antrag GRÜNE: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Lärmschutz Herrenalber Straße",
+            "reference": "25506",
             "paperType": "Beschlussvorlage",
             "bodySid": 1
           }
@@ -236,24 +235,6 @@
           }
         },
         {
-          "type": "Paper",
-          "id": 26145,
-          "oparlKey": "26145",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/26145",
-          "name": "Verkehrsversuch Herrenalber Straße",
-          "date": "2010-12-06 00:00:00",
-          "details": {
-            "sid": 12096,
-            "id": 26145,
-            "oparlKey": "26145",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/26145",
-            "name": "Verkehrsversuch Herrenalber Straße",
-            "reference": "26145",
-            "paperType": "Beschlussvorlage",
-            "bodySid": 1
-          }
-        },
-        {
           "type": "Meeting",
           "id": 2268,
           "oparlKey": "2268",
@@ -293,17 +274,17 @@
         {
           "type": "AuxFile",
           "id": null,
-          "oparlKey": "6914",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6914",
-          "name": "FW-BBPlan Herrenalber Straße",
+          "oparlKey": "39524",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/39524",
+          "name": "GRÜNE-Lärmschutz.Herrenalber Straße",
           "date": "2013-08-15 00:00:00",
           "details": {
-            "sid": 23421,
-            "oparlKey": "6914",
-            "name": "FW-BBPlan Herrenalber Straße",
-            "fileName": "00006914.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6914",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00006914.pdf"
+            "sid": 35461,
+            "oparlKey": "39524",
+            "name": "GRÜNE-Lärmschutz.Herrenalber Straße",
+            "fileName": "00039524.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/39524",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00039524.pdf"
           }
         },
         {
@@ -337,22 +318,6 @@
             "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/15722",
             "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00015722.pdf"
           }
-        },
-        {
-          "type": "AuxFile",
-          "id": null,
-          "oparlKey": "20064",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20064",
-          "name": "Verkehrsversuch Herrenalber Straße",
-          "date": "2013-08-15 00:00:00",
-          "details": {
-            "sid": 25986,
-            "oparlKey": "20064",
-            "name": "Verkehrsversuch Herrenalber Straße",
-            "fileName": "00020064.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20064",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00020064.pdf"
-          }
         }
       ]
     },
@@ -379,17 +344,17 @@
         {
           "type": "AuxFile",
           "id": null,
-          "oparlKey": "6915",
-          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6915",
-          "name": "TOP 4 FW",
+          "oparlKey": "39525",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/39525",
+          "name": "TOP 4 a+b",
           "date": "2014-01-29 00:00:00",
           "details": {
-            "sid": 17236,
-            "oparlKey": "6915",
-            "name": "TOP 4 FW",
-            "fileName": "00006915.pdf",
-            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6915",
-            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00006915.pdf"
+            "sid": 35462,
+            "oparlKey": "39525",
+            "name": "TOP 4 a+b",
+            "fileName": "00039525.pdf",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/39525",
+            "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00039525.pdf"
           }
         },
         {
@@ -1065,6 +1030,24 @@
           }
         },
         {
+          "type": "Paper",
+          "id": 24528,
+          "oparlKey": "24528",
+          "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/24528",
+          "name": "Vorhabenbezogener Bebauungsplan mit Vorhaben- und Erschließungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Einleitungs- und Auslegungsbeschluss gem. § 12 Abs. 2 und § 3 Abs. 2 des Baugesetzbuches",
+          "date": "2020-03-23 00:00:00",
+          "details": {
+            "sid": 5181,
+            "id": 24528,
+            "oparlKey": "24528",
+            "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/24528",
+            "name": "Vorhabenbezogener Bebauungsplan mit Vorhaben- und Erschließungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Einleitungs- und Auslegungsbeschluss gem. § 12 Abs. 2 und § 3 Abs. 2 des Baugesetzbuches",
+            "reference": "24528",
+            "paperType": "Beschlussvorlage",
+            "bodySid": 1
+          }
+        },
+        {
           "type": "AuxFile",
           "id": null,
           "oparlKey": "616654",
@@ -1491,86 +1474,14 @@
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/1087",
         "attrs": {
-          "distance": 0.3538,
+          "distance": 0.4432,
           "match": {
             "lexical": true,
-            "name": 0.2619,
-            "content": 0.3538
+            "name": 0.3751,
+            "content": 0.4432
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00001087.pdf",
           "fileName": "00001087.pdf"
-        }
-      },
-      {
-        "id": "File_618429",
-        "type": "File",
-        "oparlKey": "618429",
-        "name": "Stellungnahme Herrenalber Straße",
-        "date": "2020-06-24 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618429",
-        "attrs": {
-          "distance": 0.3399,
-          "match": {
-            "lexical": true,
-            "name": 0.3488,
-            "content": 0.3399
-          },
-          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618429.pdf",
-          "fileName": "00618429.pdf"
-        }
-      },
-      {
-        "id": "File_620145",
-        "type": "File",
-        "oparlKey": "620145",
-        "name": "TOP 6 - Umbau Herrenalber Straße",
-        "date": "2020-10-12 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620145",
-        "attrs": {
-          "distance": 0.3964,
-          "match": {
-            "lexical": true,
-            "name": 0.3255,
-            "content": 0.3964
-          },
-          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620145.pdf",
-          "fileName": "00620145.pdf"
-        }
-      },
-      {
-        "id": "File_616652",
-        "type": "File",
-        "oparlKey": "616652",
-        "name": "Herrenalber Straße",
-        "date": "2020-03-23 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616652",
-        "attrs": {
-          "distance": 0.4774,
-          "match": {
-            "lexical": true,
-            "name": 0.2941,
-            "content": 0.4774
-          },
-          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00616652.pdf",
-          "fileName": "00616652.pdf"
-        }
-      },
-      {
-        "id": "File_585346",
-        "type": "File",
-        "oparlKey": "585346",
-        "name": "OZ 173-174: GRÜNE, KULT: Umbau Herrenalber Straße",
-        "date": "2015-02-16 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585346",
-        "attrs": {
-          "distance": 0.3463,
-          "match": {
-            "lexical": true,
-            "name": 0.3756,
-            "content": 0.3463
-          },
-          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00585346.pdf",
-          "fileName": "00585346.pdf"
         }
       },
       {
@@ -1581,32 +1492,104 @@
         "date": "2013-08-15 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/15722",
         "attrs": {
-          "distance": 0.391,
+          "distance": 0.4457,
           "match": {
             "lexical": true,
-            "name": 0.4846,
-            "content": 0.391
+            "name": 0.4053,
+            "content": 0.4457
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00015722.pdf",
           "fileName": "00015722.pdf"
         }
       },
       {
-        "id": "File_614954",
+        "id": "File_39524",
         "type": "File",
-        "oparlKey": "614954",
-        "name": "BPlan Herrenalber Straße",
-        "date": "2020-02-14 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/614954",
+        "oparlKey": "39524",
+        "name": "GRÜNE-Lärmschutz.Herrenalber Straße",
+        "date": "2013-08-15 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/39524",
         "attrs": {
-          "distance": 0.4436,
+          "distance": 0.4567,
           "match": {
             "lexical": true,
-            "name": 0.3806,
-            "content": 0.4436
+            "name": 0.3934,
+            "content": 0.4567
           },
-          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00614954.pdf",
-          "fileName": "00614954.pdf"
+          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00039524.pdf",
+          "fileName": "00039524.pdf"
+        }
+      },
+      {
+        "id": "File_620145",
+        "type": "File",
+        "oparlKey": "620145",
+        "name": "TOP 6 - Umbau Herrenalber Straße",
+        "date": "2020-10-12 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/620145",
+        "attrs": {
+          "distance": 0.453,
+          "match": {
+            "lexical": true,
+            "name": 0.4175,
+            "content": 0.453
+          },
+          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00620145.pdf",
+          "fileName": "00620145.pdf"
+        }
+      },
+      {
+        "id": "File_585346",
+        "type": "File",
+        "oparlKey": "585346",
+        "name": "OZ 173-174: GRÜNE, KULT: Umbau Herrenalber Straße",
+        "date": "2015-02-16 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/585346",
+        "attrs": {
+          "distance": 0.4283,
+          "match": {
+            "lexical": true,
+            "name": 0.4182,
+            "content": 0.4283
+          },
+          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00585346.pdf",
+          "fileName": "00585346.pdf"
+        }
+      },
+      {
+        "id": "File_618429",
+        "type": "File",
+        "oparlKey": "618429",
+        "name": "Stellungnahme Herrenalber Straße",
+        "date": "2020-06-24 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/618429",
+        "attrs": {
+          "distance": 0.4617,
+          "match": {
+            "lexical": true,
+            "name": 0.3982,
+            "content": 0.4617
+          },
+          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00618429.pdf",
+          "fileName": "00618429.pdf"
+        }
+      },
+      {
+        "id": "File_20919",
+        "type": "File",
+        "oparlKey": "20919",
+        "name": "Tischvorlage_Herrenalber_Straße",
+        "date": "2014-01-29 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20919",
+        "attrs": {
+          "distance": 0.459,
+          "match": {
+            "lexical": true,
+            "name": 0.4139,
+            "content": 0.459
+          },
+          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00020919.pdf",
+          "fileName": "00020919.pdf"
         }
       },
       {
@@ -1617,50 +1600,48 @@
         "date": "2016-10-28 00:00:00",
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/594253",
         "attrs": {
-          "distance": 0.3814,
+          "distance": 0.4178,
           "match": {
             "lexical": true,
-            "name": 0.4448,
-            "content": 0.3814
+            "name": 0.4554,
+            "content": 0.4178
           },
           "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00594253.pdf",
           "fileName": "00594253.pdf"
         }
       },
       {
-        "id": "File_20064",
+        "id": "File_614954",
         "type": "File",
-        "oparlKey": "20064",
-        "name": "Verkehrsversuch Herrenalber Straße",
-        "date": "2013-08-15 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20064",
+        "oparlKey": "614954",
+        "name": "BPlan Herrenalber Straße",
+        "date": "2020-02-14 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/614954",
         "attrs": {
-          "distance": 0.4602,
+          "distance": 0.4923,
           "match": {
             "lexical": true,
-            "name": 0.3838,
-            "content": 0.4602
+            "name": 0.4239,
+            "content": 0.4923
           },
-          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00020064.pdf",
-          "fileName": "00020064.pdf"
+          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00614954.pdf",
+          "fileName": "00614954.pdf"
         }
       },
       {
-        "id": "File_6914",
+        "id": "File_616652",
         "type": "File",
-        "oparlKey": "6914",
-        "name": "FW-BBPlan Herrenalber Straße",
-        "date": "2013-08-15 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6914",
+        "oparlKey": "616652",
+        "name": "Herrenalber Straße",
+        "date": "2020-03-23 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/616652",
         "attrs": {
-          "distance": 0.4608,
           "match": {
             "lexical": true,
-            "name": 0.4073,
-            "content": 0.4608
+            "name": 0.3803
           },
-          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00006914.pdf",
-          "fileName": "00006914.pdf"
+          "downloadurl": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/00616652.pdf",
+          "fileName": "00616652.pdf"
         }
       },
       {
@@ -1700,14 +1681,14 @@
         }
       },
       {
-        "id": "Paper_25551",
+        "id": "Paper_25506",
         "type": "Paper",
-        "oparlKey": "25551",
-        "name": "Änderungsantrag StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Bürgerversammlung",
-        "date": "2010-09-17 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/25551",
+        "oparlKey": "25506",
+        "name": "Antrag GRÜNE: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Lärmschutz Herrenalber Straße",
+        "date": "2010-09-13 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/25506",
         "attrs": {
-          "reference": "25551",
+          "reference": "25506",
           "paperType": "Beschlussvorlage"
         }
       },
@@ -1744,18 +1725,6 @@
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/26146",
         "attrs": {
           "reference": "26146",
-          "paperType": "Beschlussvorlage"
-        }
-      },
-      {
-        "id": "Paper_26145",
-        "type": "Paper",
-        "oparlKey": "26145",
-        "name": "Verkehrsversuch Herrenalber Straße",
-        "date": "2010-12-06 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/papers/vo/26145",
-        "attrs": {
-          "reference": "26145",
           "paperType": "Beschlussvorlage"
         }
       },
@@ -1873,12 +1842,12 @@
         }
       },
       {
-        "id": "Consultation_6974",
+        "id": "Consultation_6942",
         "type": "Consultation",
-        "oparlKey": "6974",
-        "name": "Consultation 6974",
+        "oparlKey": "6942",
+        "name": "Consultation 6942",
         "date": null,
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/6974",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/6942",
         "attrs": {
           "role": "unbekannt",
           "webUrl": "https://sitzungskalender.karlsruhe.de/db/ratsinformation/termin-2262"
@@ -1928,18 +1897,6 @@
         "name": "Consultation 7331",
         "date": null,
         "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/7331",
-        "attrs": {
-          "role": "unbekannt",
-          "webUrl": "https://sitzungskalender.karlsruhe.de/db/ratsinformation/termin-2268"
-        }
-      },
-      {
-        "id": "Consultation_7330",
-        "type": "Consultation",
-        "oparlKey": "7330",
-        "name": "Consultation 7330",
-        "date": null,
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/consultations/7330",
         "attrs": {
           "role": "unbekannt",
           "webUrl": "https://sitzungskalender.karlsruhe.de/db/ratsinformation/termin-2268"
@@ -2530,25 +2487,25 @@
         }
       },
       {
-        "id": "AuxFile_6915",
+        "id": "AuxFile_39524",
         "type": "AuxFile",
-        "oparlKey": "6915",
-        "name": "TOP 4 FW",
-        "date": "2014-01-29 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6915",
+        "oparlKey": "39524",
+        "name": "GRÜNE-Lärmschutz.Herrenalber Straße",
+        "date": "2013-08-15 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/39524",
         "attrs": {
-          "fileName": "00006915.pdf"
+          "fileName": "00039524.pdf"
         }
       },
       {
-        "id": "AuxFile_6914",
+        "id": "AuxFile_39525",
         "type": "AuxFile",
-        "oparlKey": "6914",
-        "name": "FW-BBPlan Herrenalber Straße",
-        "date": "2013-08-15 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/6914",
+        "oparlKey": "39525",
+        "name": "TOP 4 a+b",
+        "date": "2014-01-29 00:00:00",
+        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/39525",
         "attrs": {
-          "fileName": "00006914.pdf"
+          "fileName": "00039525.pdf"
         }
       },
       {
@@ -2660,17 +2617,6 @@
         "attrs": {
           "fileName": "00015723.pdf"
         }
-      },
-      {
-        "id": "AuxFile_20064",
-        "type": "AuxFile",
-        "oparlKey": "20064",
-        "name": "Verkehrsversuch Herrenalber Straße",
-        "date": "2013-08-15 00:00:00",
-        "oparlId": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/20064",
-        "attrs": {
-          "fileName": "00020064.pdf"
-        }
       }
     ],
     "edges": [
@@ -2688,13 +2634,19 @@
       },
       {
         "source": "Paper_24528",
+        "target": "File_20919",
+        "relation": "auxiliaryFile",
+        "via": "Paper__auxiliaryFile__File"
+      },
+      {
+        "source": "Paper_24528",
         "target": "File_616652",
         "relation": "auxiliaryFile",
         "via": "Paper__auxiliaryFile__File"
       },
       {
-        "source": "Paper_25551",
-        "target": "File_6914",
+        "source": "Paper_25506",
+        "target": "File_39524",
         "relation": "auxiliaryFile",
         "via": "Paper__auxiliaryFile__File"
       },
@@ -2719,12 +2671,6 @@
       {
         "source": "Paper_26146",
         "target": "File_15722",
-        "relation": "auxiliaryFile",
-        "via": "Paper__auxiliaryFile__File"
-      },
-      {
-        "source": "Paper_26145",
-        "target": "File_20064",
         "relation": "auxiliaryFile",
         "via": "Paper__auxiliaryFile__File"
       },
@@ -3017,14 +2963,14 @@
         "via": "Paper__auxiliaryFile__File"
       },
       {
-        "source": "Paper_25551",
-        "target": "AuxFile_6915",
+        "source": "Paper_25506",
+        "target": "AuxFile_39524",
         "relation": "auxiliaryFile",
         "via": "Paper__auxiliaryFile__File"
       },
       {
-        "source": "Paper_25551",
-        "target": "AuxFile_6914",
+        "source": "Paper_25506",
+        "target": "AuxFile_39525",
         "relation": "auxiliaryFile",
         "via": "Paper__auxiliaryFile__File"
       },
@@ -3089,12 +3035,6 @@
         "via": "Paper__auxiliaryFile__File"
       },
       {
-        "source": "Paper_26145",
-        "target": "AuxFile_20064",
-        "relation": "auxiliaryFile",
-        "via": "Paper__auxiliaryFile__File"
-      },
-      {
         "source": "Paper_33874",
         "target": "Consultation_12221",
         "relation": "consultation",
@@ -3113,8 +3053,8 @@
         "via": "Paper__consultation__Consultation"
       },
       {
-        "source": "Paper_25551",
-        "target": "Consultation_6974",
+        "source": "Paper_25506",
+        "target": "Consultation_6942",
         "relation": "consultation",
         "via": "Paper__consultation__Consultation"
       },
@@ -3139,12 +3079,6 @@
       {
         "source": "Paper_26146",
         "target": "Consultation_7331",
-        "relation": "consultation",
-        "via": "Paper__consultation__Consultation"
-      },
-      {
-        "source": "Paper_26145",
-        "target": "Consultation_7330",
         "relation": "consultation",
         "via": "Paper__consultation__Consultation"
       },
@@ -3191,13 +3125,7 @@
         "via": "Consultation__organization__Organization"
       },
       {
-        "source": "Consultation_6974",
-        "target": "Organization_32130",
-        "relation": "organization",
-        "via": "Consultation__organization__Organization"
-      },
-      {
-        "source": "Consultation_7330",
+        "source": "Consultation_6942",
         "target": "Organization_32130",
         "relation": "organization",
         "via": "Consultation__organization__Organization"
@@ -3221,7 +3149,7 @@
         "via": "Paper__underDirectionOf__Organization"
       },
       {
-        "source": "Paper_25551",
+        "source": "Paper_25506",
         "target": "Organization_882950",
         "relation": "underDirectionOf",
         "via": "Paper__underDirectionOf__Organization"
@@ -3240,12 +3168,6 @@
       },
       {
         "source": "Paper_26146",
-        "target": "Organization_882950",
-        "relation": "underDirectionOf",
-        "via": "Paper__underDirectionOf__Organization"
-      },
-      {
-        "source": "Paper_26145",
         "target": "Organization_882950",
         "relation": "underDirectionOf",
         "via": "Paper__underDirectionOf__Organization"
@@ -3287,14 +3209,14 @@
         "via": "FK:Consultation.paperSid"
       },
       {
-        "source": "Consultation_6974",
+        "source": "Consultation_6942",
         "target": "Meeting_2262",
         "relation": "meeting",
         "via": "FK:Consultation.meetingSid"
       },
       {
-        "source": "Consultation_6974",
-        "target": "Paper_25551",
+        "source": "Consultation_6942",
+        "target": "Paper_25506",
         "relation": "paper",
         "via": "FK:Consultation.paperSid"
       },
@@ -3345,18 +3267,6 @@
         "target": "Paper_26146",
         "relation": "paper",
         "via": "FK:Consultation.paperSid"
-      },
-      {
-        "source": "Consultation_7330",
-        "target": "Meeting_2268",
-        "relation": "meeting",
-        "via": "FK:Consultation.meetingSid"
-      },
-      {
-        "source": "Consultation_7330",
-        "target": "Paper_26145",
-        "relation": "paper",
-        "via": "FK:Consultation.paperSid"
       }
     ]
   },
@@ -3367,59 +3277,11 @@
       "type": "File",
       "oparlKey": "1087",
       "name": "TOP 12: Antrag GRÜNE: Rückbau Herrenalber Straße",
-      "score": 0.04815,
+      "score": 0.04414,
       "signals": {
         "lexical": true,
-        "name": 0.2619,
-        "content": 0.3538
-      }
-    },
-    {
-      "id": "File_618429",
-      "type": "File",
-      "oparlKey": "618429",
-      "name": "Stellungnahme Herrenalber Straße",
-      "score": 0.04383,
-      "signals": {
-        "lexical": true,
-        "name": 0.3488,
-        "content": 0.3399
-      }
-    },
-    {
-      "id": "File_620145",
-      "type": "File",
-      "oparlKey": "620145",
-      "name": "TOP 6 - Umbau Herrenalber Straße",
-      "score": 0.04346,
-      "signals": {
-        "lexical": true,
-        "name": 0.3255,
-        "content": 0.3964
-      }
-    },
-    {
-      "id": "File_616652",
-      "type": "File",
-      "oparlKey": "616652",
-      "name": "Herrenalber Straße",
-      "score": 0.04262,
-      "signals": {
-        "lexical": true,
-        "name": 0.2941,
-        "content": 0.4774
-      }
-    },
-    {
-      "id": "File_585346",
-      "type": "File",
-      "oparlKey": "585346",
-      "name": "OZ 173-174: GRÜNE, KULT: Umbau Herrenalber Straße",
-      "score": 0.04147,
-      "signals": {
-        "lexical": true,
-        "name": 0.3756,
-        "content": 0.3463
+        "name": 0.3751,
+        "content": 0.4432
       }
     },
     {
@@ -3427,59 +3289,11 @@
       "type": "File",
       "oparlKey": "15722",
       "name": "INTER-Herrenalber Straße",
-      "score": 0.03842,
+      "score": 0.04128,
       "signals": {
         "lexical": true,
-        "name": 0.4846,
-        "content": 0.391
-      }
-    },
-    {
-      "id": "File_614954",
-      "type": "File",
-      "oparlKey": "614954",
-      "name": "BPlan Herrenalber Straße",
-      "score": 0.03798,
-      "signals": {
-        "lexical": true,
-        "name": 0.3806,
-        "content": 0.4436
-      }
-    },
-    {
-      "id": "File_594253",
-      "type": "File",
-      "oparlKey": "594253",
-      "name": "Antrag 147 GRÜNE Herrenalber Straße",
-      "score": 0.03666,
-      "signals": {
-        "lexical": true,
-        "name": 0.4448,
-        "content": 0.3814
-      }
-    },
-    {
-      "id": "File_20064",
-      "type": "File",
-      "oparlKey": "20064",
-      "name": "Verkehrsversuch Herrenalber Straße",
-      "score": 0.03606,
-      "signals": {
-        "lexical": true,
-        "name": 0.3838,
-        "content": 0.4602
-      }
-    },
-    {
-      "id": "File_6914",
-      "type": "File",
-      "oparlKey": "6914",
-      "name": "FW-BBPlan Herrenalber Straße",
-      "score": 0.03518,
-      "signals": {
-        "lexical": true,
-        "name": 0.4073,
-        "content": 0.4608
+        "name": 0.4053,
+        "content": 0.4457
       }
     },
     {
@@ -3487,35 +3301,47 @@
       "type": "File",
       "oparlKey": "39524",
       "name": "GRÜNE-Lärmschutz.Herrenalber Straße",
-      "score": 0.03411,
+      "score": 0.03996,
       "signals": {
         "lexical": true,
-        "name": 0.4888,
-        "content": 0.4163
+        "name": 0.3934,
+        "content": 0.4567
       }
     },
     {
-      "id": "File_616662",
+      "id": "File_620145",
       "type": "File",
-      "oparlKey": "616662",
-      "name": "Herrenalber Straße10",
-      "score": 0.03365,
+      "oparlKey": "620145",
+      "name": "TOP 6 - Umbau Herrenalber Straße",
+      "score": 0.03993,
       "signals": {
         "lexical": true,
-        "name": 0.4114,
-        "content": 0.4925
+        "name": 0.4175,
+        "content": 0.453
       }
     },
     {
-      "id": "File_587718",
+      "id": "File_585346",
       "type": "File",
-      "oparlKey": "587718",
-      "name": "GfK-Busverkehr Herrenalber Straße",
-      "score": 0.03359,
+      "oparlKey": "585346",
+      "name": "OZ 173-174: GRÜNE, KULT: Umbau Herrenalber Straße",
+      "score": 0.03966,
       "signals": {
         "lexical": true,
-        "name": 0.4335,
-        "content": 0.4464
+        "name": 0.4182,
+        "content": 0.4283
+      }
+    },
+    {
+      "id": "File_618429",
+      "type": "File",
+      "oparlKey": "618429",
+      "name": "Stellungnahme Herrenalber Straße",
+      "score": 0.03953,
+      "signals": {
+        "lexical": true,
+        "name": 0.3982,
+        "content": 0.4617
       }
     },
     {
@@ -3523,11 +3349,35 @@
       "type": "File",
       "oparlKey": "20919",
       "name": "Tischvorlage_Herrenalber_Straße",
-      "score": 0.03344,
+      "score": 0.03877,
       "signals": {
         "lexical": true,
-        "name": 0.4876,
-        "content": 0.4353
+        "name": 0.4139,
+        "content": 0.459
+      }
+    },
+    {
+      "id": "File_594253",
+      "type": "File",
+      "oparlKey": "594253",
+      "name": "Antrag 147 GRÜNE Herrenalber Straße",
+      "score": 0.0373,
+      "signals": {
+        "lexical": true,
+        "name": 0.4554,
+        "content": 0.4178
+      }
+    },
+    {
+      "id": "File_614954",
+      "type": "File",
+      "oparlKey": "614954",
+      "name": "BPlan Herrenalber Straße",
+      "score": 0.03379,
+      "signals": {
+        "lexical": true,
+        "name": 0.4239,
+        "content": 0.4923
       }
     },
     {
@@ -3538,64 +3388,18 @@
       "score": 0.03279,
       "signals": {
         "lexical": true,
-        "name": 0.2037
+        "name": 0.3138
       }
     },
     {
-      "id": "File_614955",
+      "id": "File_616652",
       "type": "File",
-      "oparlKey": "614955",
-      "name": "Anlage 2 Herrenalber Straße",
-      "score": 0.03267,
-      "signals": {
-        "lexical": true,
-        "name": 0.4291,
-        "content": 0.4791
-      }
-    },
-    {
-      "id": "Paper_34189",
-      "type": "Paper",
-      "oparlKey": "34189",
-      "name": "Busverkehr auf der Herrenalber Straße",
+      "oparlKey": "616652",
+      "name": "Herrenalber Straße",
       "score": 0.03252,
       "signals": {
         "lexical": true,
-        "name": 0.2947
-      }
-    },
-    {
-      "id": "File_614953",
-      "type": "File",
-      "oparlKey": "614953",
-      "name": "Anlage 1 Herrenalber Straße",
-      "score": 0.03227,
-      "signals": {
-        "lexical": true,
-        "name": 0.4612,
-        "content": 0.4825
-      }
-    },
-    {
-      "id": "Paper_39857",
-      "type": "Paper",
-      "oparlKey": "39857",
-      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
-      "score": 0.03202,
-      "signals": {
-        "lexical": true,
-        "name": 0.2811
-      }
-    },
-    {
-      "id": "AgendaItem_36936",
-      "type": "AgendaItem",
-      "oparlKey": "36936",
-      "name": "Busverkehr auf der Herrenalber Straße",
-      "score": 0.03128,
-      "signals": {
-        "lexical": true,
-        "name": 0.2947
+        "name": 0.3803
       }
     },
     {
@@ -3603,10 +3407,10 @@
       "type": "Paper",
       "oparlKey": "46733",
       "name": "Verkehrsversuch Herrenalber Straße",
-      "score": 0.03105,
+      "score": 0.03178,
       "signals": {
         "lexical": true,
-        "name": 0.384
+        "name": 0.4258
       }
     },
     {
@@ -3614,87 +3418,10 @@
       "type": "Paper",
       "oparlKey": "26145",
       "name": "Verkehrsversuch Herrenalber Straße",
-      "score": 0.03102,
+      "score": 0.03175,
       "signals": {
         "lexical": true,
-        "name": 0.384
-      }
-    },
-    {
-      "id": "AgendaItem_53776",
-      "type": "AgendaItem",
-      "oparlKey": "53776",
-      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
-      "score": 0.03102,
-      "signals": {
-        "lexical": true,
-        "name": 0.2811
-      }
-    },
-    {
-      "id": "Paper_17552",
-      "type": "Paper",
-      "oparlKey": "17552",
-      "name": "Antrag SPD: Verkehrsversuch in der Herrenalber Straße",
-      "score": 0.03101,
-      "signals": {
-        "lexical": true,
-        "name": 0.3518
-      }
-    },
-    {
-      "id": "AgendaItem_53599",
-      "type": "AgendaItem",
-      "oparlKey": "53599",
-      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
-      "score": 0.03083,
-      "signals": {
-        "lexical": true,
-        "name": 0.2811
-      }
-    },
-    {
-      "id": "AgendaItem_54280",
-      "type": "AgendaItem",
-      "oparlKey": "54280",
-      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
-      "score": 0.03077,
-      "signals": {
-        "lexical": true,
-        "name": 0.2812
-      }
-    },
-    {
-      "id": "File_616654",
-      "type": "File",
-      "oparlKey": "616654",
-      "name": "Herrenalber Straße2",
-      "score": 0.03055,
-      "signals": {
-        "lexical": true,
-        "name": 0.3691
-      }
-    },
-    {
-      "id": "AgendaItem_52729",
-      "type": "AgendaItem",
-      "oparlKey": "52729",
-      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
-      "score": 0.03055,
-      "signals": {
-        "lexical": true,
-        "name": 0.2812
-      }
-    },
-    {
-      "id": "File_616655",
-      "type": "File",
-      "oparlKey": "616655",
-      "name": "Herrenalber Straße3",
-      "score": 0.03008,
-      "signals": {
-        "lexical": true,
-        "name": 0.3666
+        "name": 0.4257
       }
     },
     {
@@ -3702,10 +3429,21 @@
       "type": "AgendaItem",
       "oparlKey": "73917",
       "name": "Verkehrsversuch Herrenalber Straße",
-      "score": 0.02976,
+      "score": 0.03083,
       "signals": {
         "lexical": true,
-        "name": 0.384
+        "name": 0.4257
+      }
+    },
+    {
+      "id": "Paper_34189",
+      "type": "Paper",
+      "oparlKey": "34189",
+      "name": "Busverkehr auf der Herrenalber Straße",
+      "score": 0.0308,
+      "signals": {
+        "lexical": true,
+        "name": 0.4472
       }
     },
     {
@@ -3713,43 +3451,43 @@
       "type": "AgendaItem",
       "oparlKey": "26145",
       "name": "Verkehrsversuch Herrenalber Straße",
+      "score": 0.03037,
+      "signals": {
+        "lexical": true,
+        "name": 0.4257
+      }
+    },
+    {
+      "id": "File_616655",
+      "type": "File",
+      "oparlKey": "616655",
+      "name": "Herrenalber Straße3",
+      "score": 0.02985,
+      "signals": {
+        "lexical": true,
+        "name": 0.3978
+      }
+    },
+    {
+      "id": "AgendaItem_36936",
+      "type": "AgendaItem",
+      "oparlKey": "36936",
+      "name": "Busverkehr auf der Herrenalber Straße",
       "score": 0.02971,
       "signals": {
         "lexical": true,
-        "name": 0.384
+        "name": 0.4472
       }
     },
     {
-      "id": "AgendaItem_17552",
-      "type": "AgendaItem",
-      "oparlKey": "17552",
-      "name": "Antrag SPD: Verkehrsversuch in der Herrenalber Straße",
-      "score": 0.0292,
-      "signals": {
-        "lexical": true,
-        "name": 0.3518
-      }
-    },
-    {
-      "id": "File_616659",
+      "id": "File_616654",
       "type": "File",
-      "oparlKey": "616659",
-      "name": "Herrenalber Straße7",
-      "score": 0.02878,
+      "oparlKey": "616654",
+      "name": "Herrenalber Straße2",
+      "score": 0.02967,
       "signals": {
         "lexical": true,
-        "name": 0.3804
-      }
-    },
-    {
-      "id": "File_616656",
-      "type": "File",
-      "oparlKey": "616656",
-      "name": "Herrenalber Straße4",
-      "score": 0.02872,
-      "signals": {
-        "lexical": true,
-        "name": 0.3986
+        "name": 0.394
       }
     },
     {
@@ -3757,10 +3495,10 @@
       "type": "File",
       "oparlKey": "616653",
       "name": "Herrenalber Straße1",
-      "score": 0.02867,
+      "score": 0.02964,
       "signals": {
         "lexical": true,
-        "name": 0.3965
+        "name": 0.3946
       }
     },
     {
@@ -3768,54 +3506,21 @@
       "type": "File",
       "oparlKey": "616660",
       "name": "Herrenalber Straße8",
-      "score": 0.02748,
+      "score": 0.02947,
       "signals": {
         "lexical": true,
-        "name": 0.4066
+        "name": 0.412
       }
     },
     {
-      "id": "File_637446",
+      "id": "File_616656",
       "type": "File",
-      "oparlKey": "637446",
-      "name": "Lageplan Herrenalber Straße",
-      "score": 0.02739,
+      "oparlKey": "616656",
+      "name": "Herrenalber Straße4",
+      "score": 0.02929,
       "signals": {
         "lexical": true,
-        "name": 0.3462
-      }
-    },
-    {
-      "id": "File_38345",
-      "type": "File",
-      "oparlKey": "38345",
-      "name": "KAL-Herrenalber Straße Sonnengrün",
-      "score": 0.02711,
-      "signals": {
-        "lexical": true,
-        "content": 0.3476
-      }
-    },
-    {
-      "id": "File_616657",
-      "type": "File",
-      "oparlKey": "616657",
-      "name": "Herrenalber Straße5",
-      "score": 0.02661,
-      "signals": {
-        "lexical": true,
-        "name": 0.4117
-      }
-    },
-    {
-      "id": "File_616661",
-      "type": "File",
-      "oparlKey": "616661",
-      "name": "Herrenalber Straße9",
-      "score": 0.02655,
-      "signals": {
-        "lexical": true,
-        "name": 0.4092
+        "name": 0.4192
       }
     },
     {
@@ -3823,21 +3528,54 @@
       "type": "File",
       "oparlKey": "22509",
       "name": "FW-Herrenalber Straße",
-      "score": 0.02651,
+      "score": 0.02853,
       "signals": {
         "lexical": true,
-        "name": 0.464
+        "name": 0.3905
       }
     },
     {
-      "id": "File_616666",
+      "id": "File_616661",
       "type": "File",
-      "oparlKey": "616666",
-      "name": "Herrenalber Straße14",
-      "score": 0.02632,
+      "oparlKey": "616661",
+      "name": "Herrenalber Straße9",
+      "score": 0.02822,
       "signals": {
         "lexical": true,
-        "name": 0.4062
+        "name": 0.4246
+      }
+    },
+    {
+      "id": "File_616657",
+      "type": "File",
+      "oparlKey": "616657",
+      "name": "Herrenalber Straße5",
+      "score": 0.02814,
+      "signals": {
+        "lexical": true,
+        "name": 0.4203
+      }
+    },
+    {
+      "id": "File_616659",
+      "type": "File",
+      "oparlKey": "616659",
+      "name": "Herrenalber Straße7",
+      "score": 0.02804,
+      "signals": {
+        "lexical": true,
+        "name": 0.4189
+      }
+    },
+    {
+      "id": "File_38345",
+      "type": "File",
+      "oparlKey": "38345",
+      "name": "KAL-Herrenalber Straße Sonnengrün",
+      "score": 0.0265,
+      "signals": {
+        "lexical": true,
+        "content": 0.4306
       }
     },
     {
@@ -3845,43 +3583,32 @@
       "type": "File",
       "oparlKey": "616658",
       "name": "Herrenalber Straße6",
-      "score": 0.02545,
+      "score": 0.02638,
       "signals": {
         "lexical": true,
-        "name": 0.4237
+        "name": 0.448
       }
     },
     {
-      "id": "File_616665",
+      "id": "File_616662",
       "type": "File",
-      "oparlKey": "616665",
-      "name": "Herrenalber Straße13",
-      "score": 0.02532,
+      "oparlKey": "616662",
+      "name": "Herrenalber Straße10",
+      "score": 0.02581,
       "signals": {
         "lexical": true,
-        "name": 0.4098
+        "name": 0.4206
       }
     },
     {
-      "id": "File_616668",
+      "id": "File_616666",
       "type": "File",
-      "oparlKey": "616668",
-      "name": "Herrenalber Straße16",
-      "score": 0.02518,
+      "oparlKey": "616666",
+      "name": "Herrenalber Straße14",
+      "score": 0.02571,
       "signals": {
         "lexical": true,
-        "name": 0.4107
-      }
-    },
-    {
-      "id": "File_616663",
-      "type": "File",
-      "oparlKey": "616663",
-      "name": "Herrenalber Straße11",
-      "score": 0.02496,
-      "signals": {
-        "lexical": true,
-        "name": 0.4126
+        "name": 0.4377
       }
     },
     {
@@ -3889,43 +3616,10 @@
       "type": "File",
       "oparlKey": "616664",
       "name": "Herrenalber Straße12",
-      "score": 0.02485,
+      "score": 0.02565,
       "signals": {
         "lexical": true,
-        "name": 0.4105
-      }
-    },
-    {
-      "id": "File_616667",
-      "type": "File",
-      "oparlKey": "616667",
-      "name": "Herrenalber Straße15",
-      "score": 0.02442,
-      "signals": {
-        "lexical": true,
-        "name": 0.4124
-      }
-    },
-    {
-      "id": "File_503761",
-      "type": "File",
-      "oparlKey": "503761",
-      "name": "Vorlage TOP 16: Antrag SPD: Verkehrsversuch in der Herrenalber Straße",
-      "score": 0.0242,
-      "signals": {
-        "name": 0.3906,
-        "content": 0.4737
-      }
-    },
-    {
-      "id": "File_637962",
-      "type": "File",
-      "oparlKey": "637962",
-      "name": "Beschlussvorlage Verkehrsversuch Herrenalber Straße",
-      "score": 0.02381,
-      "signals": {
-        "name": 0.4443,
-        "content": 0.4223
+        "name": 0.433
       }
     },
     {
@@ -3933,52 +3627,180 @@
       "type": "File",
       "oparlKey": "594252",
       "name": "Antrag 146 SPD Verlegung Rasengleis Herrenalber Straße",
-      "score": 0.02312,
+      "score": 0.02545,
       "signals": {
-        "name": 0.4223,
-        "content": 0.4362
+        "name": 0.4412,
+        "content": 0.4496
       }
     },
     {
-      "id": "File_32512",
+      "id": "File_616665",
       "type": "File",
-      "oparlKey": "32512",
-      "name": "SatzBeschluss HerrenalberStr",
-      "score": 0.02295,
+      "oparlKey": "616665",
+      "name": "Herrenalber Straße13",
+      "score": 0.02542,
       "signals": {
-        "name": 0.5356,
-        "content": 0.413
+        "lexical": true,
+        "name": 0.4307
       }
     },
     {
-      "id": "File_628373",
+      "id": "File_616667",
       "type": "File",
-      "oparlKey": "628373",
-      "name": "TOP 2 Informationsvorlage_Verkehrsversuch Herrenalber Straße",
-      "score": 0.0197,
+      "oparlKey": "616667",
+      "name": "Herrenalber Straße15",
+      "score": 0.02521,
       "signals": {
-        "name": 0.4693,
-        "content": 0.4949
+        "lexical": true,
+        "name": 0.4272
       }
     },
     {
-      "id": "Meeting_2947",
-      "type": "Meeting",
-      "oparlKey": "2947",
-      "name": "Bauausschuss",
+      "id": "File_637446",
+      "type": "File",
+      "oparlKey": "637446",
+      "name": "Lageplan Herrenalber Straße",
+      "score": 0.02471,
+      "signals": {
+        "lexical": true,
+        "name": 0.4213
+      }
+    },
+    {
+      "id": "File_616663",
+      "type": "File",
+      "oparlKey": "616663",
+      "name": "Herrenalber Straße11",
+      "score": 0.02457,
+      "signals": {
+        "lexical": true,
+        "name": 0.4425
+      }
+    },
+    {
+      "id": "File_616668",
+      "type": "File",
+      "oparlKey": "616668",
+      "name": "Herrenalber Straße16",
+      "score": 0.02434,
+      "signals": {
+        "lexical": true,
+        "name": 0.4504
+      }
+    },
+    {
+      "id": "File_20064",
+      "type": "File",
+      "oparlKey": "20064",
+      "name": "Verkehrsversuch Herrenalber Straße",
+      "score": 0.02318,
+      "signals": {
+        "lexical": true,
+        "name": 0.4257
+      }
+    },
+    {
+      "id": "File_614955",
+      "type": "File",
+      "oparlKey": "614955",
+      "name": "Anlage 2 Herrenalber Straße",
+      "score": 0.02277,
+      "signals": {
+        "lexical": true,
+        "name": 0.4469
+      }
+    },
+    {
+      "id": "File_6914",
+      "type": "File",
+      "oparlKey": "6914",
+      "name": "FW-BBPlan Herrenalber Straße",
+      "score": 0.02262,
+      "signals": {
+        "lexical": true,
+        "name": 0.4451
+      }
+    },
+    {
+      "id": "File_614953",
+      "type": "File",
+      "oparlKey": "614953",
+      "name": "Anlage 1 Herrenalber Straße",
+      "score": 0.02229,
+      "signals": {
+        "lexical": true,
+        "name": 0.4504
+      }
+    },
+    {
+      "id": "File_587718",
+      "type": "File",
+      "oparlKey": "587718",
+      "name": "GfK-Busverkehr Herrenalber Straße",
+      "score": 0.02048,
+      "signals": {
+        "lexical": true,
+        "name": 0.4724
+      }
+    },
+    {
+      "id": "Paper_39857",
+      "type": "Paper",
+      "oparlKey": "39857",
+      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
       "score": 0.01639,
       "signals": {
-        "name": 0.5958
+        "name": 0.3906
       }
     },
     {
-      "id": "Meeting_2910",
+      "id": "File_585347",
+      "type": "File",
+      "oparlKey": "585347",
+      "name": "OZ 173-174: Stellungnahme",
+      "score": 0.01639,
+      "signals": {
+        "content": 0.4078
+      }
+    },
+    {
+      "id": "Meeting_3067",
       "type": "Meeting",
-      "oparlKey": "2910",
-      "name": "Bauausschuss",
+      "oparlKey": "3067",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01639,
+      "signals": {
+        "name": 0.5752
+      }
+    },
+    {
+      "id": "Paper_26146",
+      "type": "Paper",
+      "oparlKey": "26146",
+      "name": "Antrag GRÜNE, SPD: Weiterführung Verkehrsversuch Herrenalber Straße",
       "score": 0.01613,
       "signals": {
-        "name": 0.5958
+        "name": 0.4074
+      }
+    },
+    {
+      "id": "AgendaItem_52729",
+      "type": "AgendaItem",
+      "oparlKey": "52729",
+      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
+      "score": 0.01613,
+      "signals": {
+        "name": 0.3906
+      }
+    },
+    {
+      "id": "Meeting_1975",
+      "type": "Meeting",
+      "oparlKey": "1975",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01613,
+      "signals": {
+        "name": 0.5753
       }
     },
     {
@@ -3988,77 +3810,117 @@
       "name": "Umgestaltung Herrenalber Straße – Überarbeitete Planung aus dem Jahr 2012",
       "score": 0.01587,
       "signals": {
-        "name": 0.3401
+        "name": 0.4142
       }
     },
     {
-      "id": "Meeting_2739",
-      "type": "Meeting",
-      "oparlKey": "2739",
-      "name": "Bauausschuss",
+      "id": "File_39525",
+      "type": "File",
+      "oparlKey": "39525",
+      "name": "TOP 4 a+b",
       "score": 0.01587,
       "signals": {
-        "name": 0.5958
+        "content": 0.4268
       }
     },
     {
-      "id": "Meeting_2992",
+      "id": "AgendaItem_53776",
+      "type": "AgendaItem",
+      "oparlKey": "53776",
+      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
+      "score": 0.01587,
+      "signals": {
+        "name": 0.3906
+      }
+    },
+    {
+      "id": "Meeting_3059",
       "type": "Meeting",
-      "oparlKey": "2992",
-      "name": "Bauausschuss",
+      "oparlKey": "3059",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01587,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "AgendaItem_53599",
+      "type": "AgendaItem",
+      "oparlKey": "53599",
+      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
       "score": 0.01562,
       "signals": {
-        "name": 0.5958
+        "name": 0.3906
       }
     },
     {
-      "id": "Paper_26146",
+      "id": "Meeting_3349",
+      "type": "Meeting",
+      "oparlKey": "3349",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01562,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "AgendaItem_54280",
+      "type": "AgendaItem",
+      "oparlKey": "54280",
+      "name": "Umbau der Herrenalber Straße zur Förderung des Fuß- und Radverkehrs",
+      "score": 0.01538,
+      "signals": {
+        "name": 0.3907
+      }
+    },
+    {
+      "id": "Meeting_2513",
+      "type": "Meeting",
+      "oparlKey": "2513",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01538,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_17552",
       "type": "Paper",
+      "oparlKey": "17552",
+      "name": "Antrag SPD: Verkehrsversuch in der Herrenalber Straße",
+      "score": 0.01515,
+      "signals": {
+        "name": 0.4434
+      }
+    },
+    {
+      "id": "File_38346",
+      "type": "File",
+      "oparlKey": "38346",
+      "name": "TOP 4 a+b",
+      "score": 0.01515,
+      "signals": {
+        "content": 0.4311
+      }
+    },
+    {
+      "id": "AgendaItem_26146",
+      "type": "AgendaItem",
       "oparlKey": "26146",
       "name": "Antrag GRÜNE, SPD: Weiterführung Verkehrsversuch Herrenalber Straße",
-      "score": 0.01538,
-      "signals": {
-        "name": 0.3597
-      }
-    },
-    {
-      "id": "File_585347",
-      "type": "File",
-      "oparlKey": "585347",
-      "name": "OZ 173-174: Stellungnahme",
-      "score": 0.01538,
-      "signals": {
-        "content": 0.3802
-      }
-    },
-    {
-      "id": "Meeting_3217",
-      "type": "Meeting",
-      "oparlKey": "3217",
-      "name": "Bauausschuss",
-      "score": 0.01538,
-      "signals": {
-        "name": 0.5958
-      }
-    },
-    {
-      "id": "File_637854",
-      "type": "File",
-      "oparlKey": "637854",
-      "name": "Beschlussvorlage",
       "score": 0.01515,
       "signals": {
-        "content": 0.3812
+        "name": 0.4074
       }
     },
     {
-      "id": "Meeting_2934",
+      "id": "Meeting_2801",
       "type": "Meeting",
-      "oparlKey": "2934",
-      "name": "Bauausschuss",
+      "oparlKey": "2801",
+      "name": "Ortschaftsrat Hohenwettersbach",
       "score": 0.01515,
       "signals": {
-        "name": 0.5958
+        "name": 0.5753
       }
     },
     {
@@ -4068,27 +3930,27 @@
       "name": "Umgestaltung Herrenalber Straße – Überarbeitete Planung aus dem Jahr 2012",
       "score": 0.01493,
       "signals": {
-        "name": 0.3401
+        "name": 0.4142
       }
     },
     {
-      "id": "Meeting_3164",
+      "id": "Meeting_3061",
       "type": "Meeting",
-      "oparlKey": "3164",
-      "name": "Bauausschuss",
+      "oparlKey": "3061",
+      "name": "Ortschaftsrat Hohenwettersbach",
       "score": 0.01493,
       "signals": {
-        "name": 0.5958
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_41698",
+      "id": "Paper_50406",
       "type": "Paper",
-      "oparlKey": "41698",
-      "name": "„Klima Mobil Maßnahme: Verkehrsversuch Herrenalber Straße“",
+      "oparlKey": "50406",
+      "name": "Umgestaltung Neugrabenstraße",
       "score": 0.01471,
       "signals": {
-        "name": 0.4341
+        "name": 0.4503
       }
     },
     {
@@ -4098,57 +3960,57 @@
       "name": "Protokollauszug Anträge Nr.  146 - 147",
       "score": 0.01471,
       "signals": {
-        "content": 0.3819
+        "content": 0.4452
       }
     },
     {
-      "id": "Meeting_3176",
+      "id": "Meeting_1927",
       "type": "Meeting",
-      "oparlKey": "3176",
-      "name": "Bauausschuss",
+      "oparlKey": "1927",
+      "name": "Ortschaftsrat Hohenwettersbach",
       "score": 0.01471,
       "signals": {
-        "name": 0.5959
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_25507",
+      "id": "Paper_33341",
       "type": "Paper",
-      "oparlKey": "25507",
-      "name": "Antrag KAL: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Umplanung der Herrenalber Straße zwischen Battstraße und Ostendorfplatz/Aussetzen der Entscheidung zum vorhabenbezogenen Bebauungsplan \"Sonnengrün\"",
+      "oparlKey": "33341",
+      "name": "Wiederaufnahme des Bebauungsplanverfahrens „Kaiserallee, Goethe-, Scheffel- und Schillerstraße“",
       "score": 0.01449,
       "signals": {
-        "name": 0.4408
+        "name": 0.457
       }
     },
     {
-      "id": "AgendaItem_26146",
-      "type": "AgendaItem",
-      "oparlKey": "26146",
-      "name": "Antrag GRÜNE, SPD: Weiterführung Verkehrsversuch Herrenalber Straße",
+      "id": "File_617593",
+      "type": "File",
+      "oparlKey": "617593",
+      "name": "Umbau Herderstraße",
       "score": 0.01449,
       "signals": {
-        "name": 0.3597
+        "name": 0.4027
       }
     },
     {
-      "id": "Meeting_2620",
+      "id": "Meeting_2807",
       "type": "Meeting",
-      "oparlKey": "2620",
-      "name": "Bauausschuss",
+      "oparlKey": "2807",
+      "name": "Ortschaftsrat Hohenwettersbach",
       "score": 0.01449,
       "signals": {
-        "name": 0.5959
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_21258",
+      "id": "Paper_46211",
       "type": "Paper",
-      "oparlKey": "21258",
-      "name": "Antrag SPD: Erarbeitung eines Gestaltungskonzeptes für Herrenstraße",
+      "oparlKey": "46211",
+      "name": "Gemeindestraßen, Umbau der Händelstraße",
       "score": 0.01429,
       "signals": {
-        "name": 0.4658
+        "name": 0.4585
       }
     },
     {
@@ -4158,7 +4020,147 @@
       "name": "Antrag",
       "score": 0.01429,
       "signals": {
-        "content": 0.392
+        "content": 0.4478
+      }
+    },
+    {
+      "id": "AgendaItem_17552",
+      "type": "AgendaItem",
+      "oparlKey": "17552",
+      "name": "Antrag SPD: Verkehrsversuch in der Herrenalber Straße",
+      "score": 0.01429,
+      "signals": {
+        "name": 0.4434
+      }
+    },
+    {
+      "id": "Meeting_1956",
+      "type": "Meeting",
+      "oparlKey": "1956",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01429,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_44028",
+      "type": "Paper",
+      "oparlKey": "44028",
+      "name": "Gemeindestraßen, Umbau der Händelstraße",
+      "score": 0.01408,
+      "signals": {
+        "name": 0.4586
+      }
+    },
+    {
+      "id": "Meeting_1858",
+      "type": "Meeting",
+      "oparlKey": "1858",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01408,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_39983",
+      "type": "Paper",
+      "oparlKey": "39983",
+      "name": "Wiederaufstellung des sogenannten \"Stundenbrunnens\"",
+      "score": 0.01389,
+      "signals": {
+        "name": 0.4594
+      }
+    },
+    {
+      "id": "AgendaItem_34749",
+      "type": "AgendaItem",
+      "oparlKey": "34749",
+      "name": "Wiederaufnahme des Bebauungsplanverfahrens „Kaiserallee, Goethe-, Scheffel- und Schillerstraße“",
+      "score": 0.01389,
+      "signals": {
+        "name": 0.457
+      }
+    },
+    {
+      "id": "Meeting_2510",
+      "type": "Meeting",
+      "oparlKey": "2510",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01389,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_48901",
+      "type": "Paper",
+      "oparlKey": "48901",
+      "name": "Straßensanierungsarbeiten",
+      "score": 0.0137,
+      "signals": {
+        "name": 0.4631
+      }
+    },
+    {
+      "id": "AgendaItem_67247",
+      "type": "AgendaItem",
+      "oparlKey": "67247",
+      "name": "Gemeindestraßen, Umbau der Händelstraße",
+      "score": 0.0137,
+      "signals": {
+        "name": 0.4585
+      }
+    },
+    {
+      "id": "Meeting_2798",
+      "type": "Meeting",
+      "oparlKey": "2798",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.0137,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_47425",
+      "type": "Paper",
+      "oparlKey": "47425",
+      "name": "Umbau Eggensteiner Straße",
+      "score": 0.01351,
+      "signals": {
+        "name": 0.4637
+      }
+    },
+    {
+      "id": "AgendaItem_65626",
+      "type": "AgendaItem",
+      "oparlKey": "65626",
+      "name": "Gemeindestraßen, Umbau der Händelstraße",
+      "score": 0.01351,
+      "signals": {
+        "name": 0.4586
+      }
+    },
+    {
+      "id": "Meeting_3346",
+      "type": "Meeting",
+      "oparlKey": "3346",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01351,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_18559",
+      "type": "Paper",
+      "oparlKey": "18559",
+      "name": "Änderungsantrag SPD: Vorhabenbezogener Bebauungsplan \"Am Storrenacker/Herdeweg - 2. Ergänzung\"",
+      "score": 0.01333,
+      "signals": {
+        "name": 0.475
       }
     },
     {
@@ -4166,289 +4168,139 @@
       "type": "AgendaItem",
       "oparlKey": "73916",
       "name": "Verkehrsversuch Herrenalber Straße - abgesetzt",
-      "score": 0.01429,
+      "score": 0.01333,
       "signals": {
-        "name": 0.3636
+        "name": 0.4588
       }
     },
     {
-      "id": "Meeting_2638",
+      "id": "Meeting_1901",
       "type": "Meeting",
-      "oparlKey": "2638",
-      "name": "Bauausschuss",
-      "score": 0.01429,
+      "oparlKey": "1901",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01333,
       "signals": {
-        "name": 0.5959
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_38454",
+      "id": "Paper_29437",
       "type": "Paper",
-      "oparlKey": "38454",
-      "name": "Spielplatz zwischen Heinrich-Heine-Ring und Herrenalber Straße ertüchtigen",
-      "score": 0.01408,
+      "oparlKey": "29437",
+      "name": "Umbau Alte Weingartener Straße",
+      "score": 0.01316,
       "signals": {
-        "name": 0.4733
+        "name": 0.4771
       }
     },
     {
-      "id": "File_667219",
+      "id": "File_637854",
       "type": "File",
-      "oparlKey": "667219",
-      "name": "20250516-Ergänzende Informationen nach Vorberatung",
-      "score": 0.01408,
+      "oparlKey": "637854",
+      "name": "Beschlussvorlage",
+      "score": 0.01316,
       "signals": {
-        "content": 0.394
+        "content": 0.4665
       }
     },
     {
-      "id": "Meeting_3001",
-      "type": "Meeting",
-      "oparlKey": "3001",
-      "name": "Bauausschuss",
-      "score": 0.01408,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_25508",
-      "type": "Paper",
-      "oparlKey": "25508",
-      "name": "Anfrage StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: \"Sonnengrün\": Bürgerversammlung und erneute Ausschreibung",
-      "score": 0.01389,
-      "signals": {
-        "name": 0.492
-      }
-    },
-    {
-      "id": "Meeting_1852",
-      "type": "Meeting",
-      "oparlKey": "1852",
-      "name": "Bauausschuss",
-      "score": 0.01389,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_25506",
-      "type": "Paper",
-      "oparlKey": "25506",
-      "name": "Antrag GRÜNE: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Lärmschutz Herrenalber Straße",
-      "score": 0.0137,
-      "signals": {
-        "name": 0.4975
-      }
-    },
-    {
-      "id": "File_503762",
-      "type": "File",
-      "oparlKey": "503762",
-      "name": "Vorlage TOP 16: Antrag SPD: Verkehrsversuch in der Herrenalber Straße",
-      "score": 0.0137,
-      "signals": {
-        "name": 0.3907
-      }
-    },
-    {
-      "id": "File_37830",
-      "type": "File",
-      "oparlKey": "37830",
-      "name": "TOP 11",
-      "score": 0.0137,
-      "signals": {
-        "content": 0.3982
-      }
-    },
-    {
-      "id": "AgendaItem_60798",
+      "id": "AgendaItem_53255",
       "type": "AgendaItem",
-      "oparlKey": "60798",
+      "oparlKey": "53255",
+      "name": "Wiederaufstellung des sogenannten \"Stundenbrunnens\"",
+      "score": 0.01316,
+      "signals": {
+        "name": 0.4594
+      }
+    },
+    {
+      "id": "Meeting_2134",
+      "type": "Meeting",
+      "oparlKey": "2134",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01316,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_37001",
+      "type": "Paper",
+      "oparlKey": "37001",
+      "name": "Höherlegung der Hermann-Schneider-Allee durch Aufständerung",
+      "score": 0.01299,
+      "signals": {
+        "name": 0.4771
+      }
+    },
+    {
+      "id": "File_652081",
+      "type": "File",
+      "oparlKey": "652081",
+      "name": "Antrag Interfrak_007",
+      "score": 0.01299,
+      "signals": {
+        "content": 0.4672
+      }
+    },
+    {
+      "id": "AgendaItem_78214",
+      "type": "AgendaItem",
+      "oparlKey": "78214",
+      "name": "Sanierung der Karlsbader Straße",
+      "score": 0.01299,
+      "signals": {
+        "name": 0.4612
+      }
+    },
+    {
+      "id": "Meeting_2177",
+      "type": "Meeting",
+      "oparlKey": "2177",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01299,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_41698",
+      "type": "Paper",
+      "oparlKey": "41698",
       "name": "„Klima Mobil Maßnahme: Verkehrsversuch Herrenalber Straße“",
-      "score": 0.0137,
+      "score": 0.01282,
       "signals": {
-        "name": 0.4342
+        "name": 0.4792
       }
     },
     {
-      "id": "Meeting_2725",
-      "type": "Meeting",
-      "oparlKey": "2725",
-      "name": "Bauausschuss",
-      "score": 0.0137,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_24488",
-      "type": "Paper",
-      "oparlKey": "24488",
-      "name": "Anfrage FDP: Nachpflanzung der Bäume am \"Herrenweg\" im Stadtteil Wolfartsweier",
-      "score": 0.01351,
-      "signals": {
-        "name": 0.4997
-      }
-    },
-    {
-      "id": "File_587719",
+      "id": "File_634322",
       "type": "File",
-      "oparlKey": "587719",
-      "name": "Stellungnahme TOP 30",
-      "score": 0.01351,
-      "signals": {
-        "content": 0.403
-      }
-    },
-    {
-      "id": "AgendaItem_25507",
-      "type": "AgendaItem",
-      "oparlKey": "25507",
-      "name": "Antrag KAL: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Umplanung der Herrenalber Straße zwischen Battstraße und Ostendorfplatz/Aussetzen der Entscheidung zum vorhabenbezogenen Bebauungsplan \"Sonnengrün\"",
-      "score": 0.01351,
-      "signals": {
-        "name": 0.4406
-      }
-    },
-    {
-      "id": "Meeting_3019",
-      "type": "Meeting",
-      "oparlKey": "3019",
-      "name": "Bauausschuss",
-      "score": 0.01351,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_50804",
-      "type": "Paper",
-      "oparlKey": "50804",
-      "name": "Wie sieht der aktuelle Zeitplan zur Fertigstellung des Bernhardusplatzes aus?",
-      "score": 0.01333,
-      "signals": {
-        "name": 0.5031
-      }
-    },
-    {
-      "id": "AgendaItem_21258",
-      "type": "AgendaItem",
-      "oparlKey": "21258",
-      "name": "Antrag SPD: Erarbeitung eines Gestaltungskonzeptes für Herrenstraße",
-      "score": 0.01333,
-      "signals": {
-        "name": 0.4657
-      }
-    },
-    {
-      "id": "Meeting_3434",
-      "type": "Meeting",
-      "oparlKey": "3434",
-      "name": "Bauausschuss",
-      "score": 0.01333,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_28866",
-      "type": "Paper",
-      "oparlKey": "28866",
-      "name": "Anfrage CDU: Rückbau des Asphaltbelags bei der Autobahn-Behelfsausfahrt",
-      "score": 0.01316,
-      "signals": {
-        "name": 0.5127
-      }
-    },
-    {
-      "id": "AgendaItem_50059",
-      "type": "AgendaItem",
-      "oparlKey": "50059",
-      "name": "Spielplatz zwischen Heinrich-Heine-Ring und Herrenalber Straße ertüchtigen",
-      "score": 0.01316,
-      "signals": {
-        "name": 0.4734
-      }
-    },
-    {
-      "id": "Meeting_2025",
-      "type": "Meeting",
-      "oparlKey": "2025",
-      "name": "Bauausschuss",
-      "score": 0.01316,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_40293",
-      "type": "Paper",
-      "oparlKey": "40293",
-      "name": "Kein Kapazitätsrückbau auf wichtigen Verkehrswegen der Stadt",
-      "score": 0.01299,
-      "signals": {
-        "name": 0.5141
-      }
-    },
-    {
-      "id": "File_619587",
-      "type": "File",
-      "oparlKey": "619587",
-      "name": "Protokoll GR TOP 4",
-      "score": 0.01299,
-      "signals": {
-        "content": 0.4201
-      }
-    },
-    {
-      "id": "AgendaItem_25508",
-      "type": "AgendaItem",
-      "oparlKey": "25508",
-      "name": "Anfrage StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: \"Sonnengrün\": Bürgerversammlung und erneute Ausschreibung",
-      "score": 0.01299,
-      "signals": {
-        "name": 0.492
-      }
-    },
-    {
-      "id": "Meeting_2669",
-      "type": "Meeting",
-      "oparlKey": "2669",
-      "name": "Bauausschuss",
-      "score": 0.01299,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_25551",
-      "type": "Paper",
-      "oparlKey": "25551",
-      "name": "Änderungsantrag StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Bürgerversammlung",
+      "oparlKey": "634322",
+      "name": "BA Händelstraße Tischvorlage",
       "score": 0.01282,
       "signals": {
-        "name": 0.5143
+        "content": 0.4675
       }
     },
     {
-      "id": "AgendaItem_25506",
+      "id": "AgendaItem_29644",
       "type": "AgendaItem",
-      "oparlKey": "25506",
-      "name": "Antrag GRÜNE: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Lärmschutz Herrenalber Straße",
+      "oparlKey": "29644",
+      "name": "Umbau der Röntgenstraße, Vergabe von Straßenbauarbeiten",
       "score": 0.01282,
       "signals": {
-        "name": 0.4975
+        "name": 0.4624
       }
     },
     {
-      "id": "Meeting_2652",
+      "id": "Meeting_2135",
       "type": "Meeting",
-      "oparlKey": "2652",
-      "name": "Bauausschuss",
+      "oparlKey": "2135",
+      "name": "Ortschaftsrat Hohenwettersbach",
       "score": 0.01282,
       "signals": {
-        "name": 0.5959
+        "name": 0.5753
       }
     },
     {
@@ -4458,87 +4310,7 @@
       "name": "Antrag CDU: Wiederaufstellung des Handwerkerbaumes",
       "score": 0.01266,
       "signals": {
-        "name": 0.5299
-      }
-    },
-    {
-      "id": "File_508460",
-      "type": "File",
-      "oparlKey": "508460",
-      "name": "Vorlage TOP 11: Antrag CDU: Fußgängerüberweg an der Battstraße",
-      "score": 0.01266,
-      "signals": {
-        "content": 0.4224
-      }
-    },
-    {
-      "id": "AgendaItem_24488",
-      "type": "AgendaItem",
-      "oparlKey": "24488",
-      "name": "Anfrage FDP: Nachpflanzung der Bäume am \"Herrenweg\" im Stadtteil Wolfartsweier",
-      "score": 0.01266,
-      "signals": {
-        "name": 0.4997
-      }
-    },
-    {
-      "id": "Meeting_2978",
-      "type": "Meeting",
-      "oparlKey": "2978",
-      "name": "Bauausschuss",
-      "score": 0.01266,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_39864",
-      "type": "Paper",
-      "oparlKey": "39864",
-      "name": "Stand des Breitbandausbaus im Stadtgebiet",
-      "score": 0.0125,
-      "signals": {
-        "name": 0.5369
-      }
-    },
-    {
-      "id": "File_586472",
-      "type": "File",
-      "oparlKey": "586472",
-      "name": "Protokoll Antrag 171",
-      "score": 0.0125,
-      "signals": {
-        "content": 0.4264
-      }
-    },
-    {
-      "id": "AgendaItem_89768",
-      "type": "AgendaItem",
-      "oparlKey": "89768",
-      "name": "Wie sieht der aktuelle Zeitplan zur Fertigstellung des Bernhardusplatzes aus?",
-      "score": 0.0125,
-      "signals": {
-        "name": 0.5032
-      }
-    },
-    {
-      "id": "Meeting_2899",
-      "type": "Meeting",
-      "oparlKey": "2899",
-      "name": "Bauausschuss",
-      "score": 0.0125,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_35743",
-      "type": "Paper",
-      "oparlKey": "35743",
-      "name": "Handwerkerhof / derzeitiger Stand mögliche Entwicklung",
-      "score": 0.01235,
-      "signals": {
-        "name": 0.5395
+        "name": 0.4817
       }
     },
     {
@@ -4546,119 +4318,39 @@
       "type": "File",
       "oparlKey": "671064",
       "name": "Anlage 2  Tabelle Sammel-Baubeschluss_THH7400",
-      "score": 0.01235,
+      "score": 0.01266,
       "signals": {
-        "content": 0.4268
+        "content": 0.4699
       }
     },
     {
-      "id": "AgendaItem_28866",
+      "id": "AgendaItem_78831",
       "type": "AgendaItem",
-      "oparlKey": "28866",
-      "name": "Anfrage CDU: Rückbau des Asphaltbelags bei der Autobahn-Behelfsausfahrt",
-      "score": 0.01235,
+      "oparlKey": "78831",
+      "name": "Straßensanierungsarbeiten",
+      "score": 0.01266,
       "signals": {
-        "name": 0.5127
+        "name": 0.4631
       }
     },
     {
-      "id": "Meeting_3189",
+      "id": "Meeting_1907",
       "type": "Meeting",
-      "oparlKey": "3189",
-      "name": "Bauausschuss",
-      "score": 0.01235,
+      "oparlKey": "1907",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01266,
       "signals": {
-        "name": 0.5959
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_47940",
+      "id": "Paper_36316",
       "type": "Paper",
-      "oparlKey": "47940",
-      "name": "Umbau der Kaiserstraße verschieben und Planung unter anderem zum Erhalt der Platanen überarbeiten",
-      "score": 0.0122,
+      "oparlKey": "36316",
+      "name": "Polderbau Bellenkopf/Rappenwört - Hinterfragung der Höherlegung der Hermann-Schneider-Allee",
+      "score": 0.0125,
       "signals": {
-        "name": 0.5412
-      }
-    },
-    {
-      "id": "File_39525",
-      "type": "File",
-      "oparlKey": "39525",
-      "name": "TOP 4 a+b",
-      "score": 0.0122,
-      "signals": {
-        "content": 0.4278
-      }
-    },
-    {
-      "id": "AgendaItem_55899",
-      "type": "AgendaItem",
-      "oparlKey": "55899",
-      "name": "Kein Kapazitätsrückbau auf wichtigen Verkehrswegen der Stadt",
-      "score": 0.0122,
-      "signals": {
-        "name": 0.5141
-      }
-    },
-    {
-      "id": "Meeting_3140",
-      "type": "Meeting",
-      "oparlKey": "3140",
-      "name": "Bauausschuss",
-      "score": 0.0122,
-      "signals": {
-        "name": 0.5959
-      }
-    },
-    {
-      "id": "Paper_41522",
-      "type": "Paper",
-      "oparlKey": "41522",
-      "name": "Geplante Sanierung der bestehenden Pflanzfläche am Bärenweg",
-      "score": 0.01205,
-      "signals": {
-        "name": 0.5424
-      }
-    },
-    {
-      "id": "File_38346",
-      "type": "File",
-      "oparlKey": "38346",
-      "name": "TOP 4 a+b",
-      "score": 0.01205,
-      "signals": {
-        "content": 0.4282
-      }
-    },
-    {
-      "id": "AgendaItem_56309",
-      "type": "AgendaItem",
-      "oparlKey": "56309",
-      "name": "Kein Kapazitätsrückbau auf wichtigen Verkehrswegen der Stadt",
-      "score": 0.01205,
-      "signals": {
-        "name": 0.5141
-      }
-    },
-    {
-      "id": "Meeting_5184",
-      "type": "Meeting",
-      "oparlKey": "5184",
-      "name": "Bauausschuss öffentlich",
-      "score": 0.01205,
-      "signals": {
-        "name": 0.6131
-      }
-    },
-    {
-      "id": "Paper_35403",
-      "type": "Paper",
-      "oparlKey": "35403",
-      "name": "Wiederherstellung des Naherholungswertes des Stadtteilparks Jägerhausseen",
-      "score": 0.0119,
-      "signals": {
-        "name": 0.5456
+        "name": 0.4829
       }
     },
     {
@@ -4666,69 +4358,249 @@
       "type": "File",
       "oparlKey": "15723",
       "name": "TOP 22",
-      "score": 0.0119,
+      "score": 0.0125,
       "signals": {
-        "content": 0.4332
+        "content": 0.4703
       }
     },
     {
-      "id": "AgendaItem_55218",
+      "id": "AgendaItem_74302",
       "type": "AgendaItem",
-      "oparlKey": "55218",
-      "name": "Kein Kapazitätsrückbau auf wichtigen Verkehrswegen der Stadt",
-      "score": 0.0119,
+      "oparlKey": "74302",
+      "name": "Umbau Eggensteiner Straße",
+      "score": 0.0125,
       "signals": {
-        "name": 0.5141
+        "name": 0.4636
       }
     },
     {
-      "id": "Meeting_5286",
+      "id": "Meeting_2138",
       "type": "Meeting",
-      "oparlKey": "5286",
-      "name": "Hauptausschuss, gemeinsam mit Bauausschuss (TOP 3) (öffentlich/nicht öffentlich)",
+      "oparlKey": "2138",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.0125,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_46924",
+      "type": "Paper",
+      "oparlKey": "46924",
+      "name": "Beschränkungsfreien Grünpfeil rückbauen",
+      "score": 0.01235,
+      "signals": {
+        "name": 0.4832
+      }
+    },
+    {
+      "id": "File_671089",
+      "type": "File",
+      "oparlKey": "671089",
+      "name": "zu Anlage 4 Maßnahme Nr. 3  Sammel-Baubeschluss Bannwaldallee_Plan 1 THH 6600",
+      "score": 0.01235,
+      "signals": {
+        "content": 0.4743
+      }
+    },
+    {
+      "id": "AgendaItem_75238",
+      "type": "AgendaItem",
+      "oparlKey": "75238",
+      "name": "Umbau Eggensteiner Straße",
+      "score": 0.01235,
+      "signals": {
+        "name": 0.4637
+      }
+    },
+    {
+      "id": "Meeting_2806",
+      "type": "Meeting",
+      "oparlKey": "2806",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01235,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_30583",
+      "type": "Paper",
+      "oparlKey": "30583",
+      "name": "Umbau Hermann-Ringwald-Halle, Anfrage Bauausschuss",
+      "score": 0.0122,
+      "signals": {
+        "name": 0.4834
+      }
+    },
+    {
+      "id": "File_590341",
+      "type": "File",
+      "oparlKey": "590341",
+      "name": "KULT-Anbindung dm-Zentrale",
+      "score": 0.0122,
+      "signals": {
+        "content": 0.4746
+      }
+    },
+    {
+      "id": "AgendaItem_76786",
+      "type": "AgendaItem",
+      "oparlKey": "76786",
+      "name": "Umbau Eggensteiner Straße",
+      "score": 0.0122,
+      "signals": {
+        "name": 0.4637
+      }
+    },
+    {
+      "id": "Meeting_3348",
+      "type": "Meeting",
+      "oparlKey": "3348",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.0122,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_52556",
+      "type": "Paper",
+      "oparlKey": "52556",
+      "name": "Sanierung der Wettersteinstraße",
+      "score": 0.01205,
+      "signals": {
+        "name": 0.4845
+      }
+    },
+    {
+      "id": "File_591856",
+      "type": "File",
+      "oparlKey": "591856",
+      "name": "KULT-Fahrbahnerneuerung Adenauerring",
+      "score": 0.01205,
+      "signals": {
+        "content": 0.4778
+      }
+    },
+    {
+      "id": "AgendaItem_18559",
+      "type": "AgendaItem",
+      "oparlKey": "18559",
+      "name": "Änderungsantrag SPD: Vorhabenbezogener Bebauungsplan \"Am Storrenacker/Herdeweg - 2. Ergänzung\"",
+      "score": 0.01205,
+      "signals": {
+        "name": 0.475
+      }
+    },
+    {
+      "id": "Meeting_3350",
+      "type": "Meeting",
+      "oparlKey": "3350",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01205,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_48301",
+      "type": "Paper",
+      "oparlKey": "48301",
+      "name": "Neubelebung des Formats \"STADTBAUFORUM\"",
       "score": 0.0119,
       "signals": {
-        "name": 0.6343
+        "name": 0.4846
       }
     },
     {
-      "id": "Paper_48628",
-      "type": "Paper",
-      "oparlKey": "48628",
-      "name": "Stagniert der Ausbau Karlsruhes zur fahrradfreundlichen Stadt?",
-      "score": 0.01176,
+      "id": "File_41803",
+      "type": "File",
+      "oparlKey": "41803",
+      "name": "FW-Sonnenstrahl",
+      "score": 0.0119,
       "signals": {
-        "name": 0.5489
+        "content": 0.4804
       }
     },
     {
-      "id": "AgendaItem_25551",
+      "id": "AgendaItem_29437",
       "type": "AgendaItem",
+      "oparlKey": "29437",
+      "name": "Umbau Alte Weingartener Straße",
+      "score": 0.0119,
+      "signals": {
+        "name": 0.4771
+      }
+    },
+    {
+      "id": "Meeting_2800",
+      "type": "Meeting",
+      "oparlKey": "2800",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.0119,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_25551",
+      "type": "Paper",
       "oparlKey": "25551",
       "name": "Änderungsantrag StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Bürgerversammlung",
       "score": 0.01176,
       "signals": {
-        "name": 0.5144
+        "name": 0.4859
       }
     },
     {
-      "id": "Meeting_6543",
-      "type": "Meeting",
-      "oparlKey": "6543",
-      "name": "Bürgerforum",
+      "id": "File_657614",
+      "type": "File",
+      "oparlKey": "657614",
+      "name": "Informationsvorlage (04/2024)",
       "score": 0.01176,
       "signals": {
-        "name": 0.6351
+        "content": 0.4812
       }
     },
     {
-      "id": "Paper_49978",
+      "id": "AgendaItem_60798",
+      "type": "AgendaItem",
+      "oparlKey": "60798",
+      "name": "„Klima Mobil Maßnahme: Verkehrsversuch Herrenalber Straße“",
+      "score": 0.01176,
+      "signals": {
+        "name": 0.4792
+      }
+    },
+    {
+      "id": "Meeting_2799",
+      "type": "Meeting",
+      "oparlKey": "2799",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01176,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_21258",
       "type": "Paper",
-      "oparlKey": "49978",
-      "name": "Fragen zum geplanten Umbau Kriegsstraße/Haltestelle Hübschstraße",
+      "oparlKey": "21258",
+      "name": "Antrag SPD: Erarbeitung eines Gestaltungskonzeptes für Herrenstraße",
       "score": 0.01163,
       "signals": {
-        "name": 0.5496
+        "name": 0.4883
+      }
+    },
+    {
+      "id": "File_586226",
+      "type": "File",
+      "oparlKey": "586226",
+      "name": "Protokoll TOP 4.2",
+      "score": 0.01163,
+      "signals": {
+        "content": 0.4813
       }
     },
     {
@@ -4738,127 +4610,117 @@
       "name": "Antrag CDU: Wiederaufstellung des Handwerkerbaumes",
       "score": 0.01163,
       "signals": {
-        "name": 0.5299
+        "name": 0.4817
       }
     },
     {
-      "id": "Meeting_2945",
+      "id": "Meeting_3062",
       "type": "Meeting",
-      "oparlKey": "2945",
-      "name": "Planungsausschuss",
+      "oparlKey": "3062",
+      "name": "Ortschaftsrat Hohenwettersbach",
       "score": 0.01163,
       "signals": {
-        "name": 0.6473
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_21762",
+      "id": "Paper_24488",
       "type": "Paper",
-      "oparlKey": "21762",
-      "name": "Antrag SPD: Bildung eines Bauausschusses zur Instandsetzung der Hermann-Ringwald-Halle",
+      "oparlKey": "24488",
+      "name": "Anfrage FDP: Nachpflanzung der Bäume am \"Herrenweg\" im Stadtteil Wolfartsweier",
       "score": 0.01149,
       "signals": {
-        "name": 0.5501
+        "name": 0.4886
       }
     },
     {
-      "id": "AgendaItem_52741",
-      "type": "AgendaItem",
-      "oparlKey": "52741",
-      "name": "Stand des Breitbandausbaus im Stadtgebiet",
-      "score": 0.01149,
-      "signals": {
-        "name": 0.5369
-      }
-    },
-    {
-      "id": "Meeting_1755",
-      "type": "Meeting",
-      "oparlKey": "1755",
-      "name": "Planungsausschuss",
-      "score": 0.01149,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_26753",
-      "type": "Paper",
-      "oparlKey": "26753",
-      "name": "Sachstand der Planungen \"Aussegnungshalle Friedhof Mergeläcker\" - Anfrage der SPD-Fraktion",
-      "score": 0.01136,
-      "signals": {
-        "name": 0.5504
-      }
-    },
-    {
-      "id": "AgendaItem_41141",
-      "type": "AgendaItem",
-      "oparlKey": "41141",
-      "name": "Handwerkerhof / derzeitiger Stand mögliche Entwicklung",
-      "score": 0.01136,
-      "signals": {
-        "name": 0.5396
-      }
-    },
-    {
-      "id": "Meeting_2640",
-      "type": "Meeting",
-      "oparlKey": "2640",
-      "name": "Planungsausschuss",
-      "score": 0.01136,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_37132",
-      "type": "Paper",
-      "oparlKey": "37132",
-      "name": "Krise bei der Stadthallensanierung",
-      "score": 0.01124,
-      "signals": {
-        "name": 0.5513
-      }
-    },
-    {
-      "id": "File_506778",
+      "id": "File_637962",
       "type": "File",
-      "oparlKey": "506778",
-      "name": "Vorlage TOP 24: Anfrage SPD: Ebenerdiger Fußgängerübergang an der Battstraße",
-      "score": 0.01124,
+      "oparlKey": "637962",
+      "name": "Beschlussvorlage Verkehrsversuch Herrenalber Straße",
+      "score": 0.01149,
       "signals": {
-        "content": 0.4523
+        "name": 0.4404
       }
     },
     {
-      "id": "AgendaItem_74729",
+      "id": "File_597354",
+      "type": "File",
+      "oparlKey": "597354",
+      "name": "TOP 8 ANTRAG B90_DieGrünen-Fraktion - Wiederherstellung Gehweg Reichardtstraße",
+      "score": 0.01149,
+      "signals": {
+        "content": 0.4823
+      }
+    },
+    {
+      "id": "AgendaItem_42925",
       "type": "AgendaItem",
-      "oparlKey": "74729",
-      "name": "Umbau der Kaiserstraße verschieben und Planung unter anderem zum Erhalt der Platanen überarbeiten",
-      "score": 0.01124,
+      "oparlKey": "42925",
+      "name": "Polderbau Bellenkopf/Rappenwört - Hinterfragung der Höherlegung der Hermann-Schneider-Allee",
+      "score": 0.01149,
       "signals": {
-        "name": 0.5412
+        "name": 0.4828
       }
     },
     {
-      "id": "Meeting_3180",
+      "id": "Meeting_1687",
       "type": "Meeting",
-      "oparlKey": "3180",
-      "name": "Planungsausschuss",
-      "score": 0.01124,
+      "oparlKey": "1687",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01149,
       "signals": {
-        "name": 0.6473
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_29437",
+      "id": "Paper_25508",
       "type": "Paper",
-      "oparlKey": "29437",
-      "name": "Umbau Alte Weingartener Straße",
-      "score": 0.01111,
+      "oparlKey": "25508",
+      "name": "Anfrage StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: \"Sonnengrün\": Bürgerversammlung und erneute Ausschreibung",
+      "score": 0.01136,
       "signals": {
-        "name": 0.5522
+        "name": 0.4887
+      }
+    },
+    {
+      "id": "File_597862",
+      "type": "File",
+      "oparlKey": "597862",
+      "name": "TOP 7 ANTRAG FDP-OR-Fraktion - Neubau Dienerbau II",
+      "score": 0.01136,
+      "signals": {
+        "content": 0.4834
+      }
+    },
+    {
+      "id": "AgendaItem_72728",
+      "type": "AgendaItem",
+      "oparlKey": "72728",
+      "name": "Beschränkungsfreien Grünpfeil rückbauen",
+      "score": 0.01136,
+      "signals": {
+        "name": 0.4831
+      }
+    },
+    {
+      "id": "Meeting_3063",
+      "type": "Meeting",
+      "oparlKey": "3063",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01136,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_317",
+      "type": "Paper",
+      "oparlKey": "317",
+      "name": "Änderungsantrag GRÜNE: Polderbau Bellenkopf/Rappenwört: Hinterfragung der Höherlegung der Hermann-Schneider-Allee",
+      "score": 0.01124,
+      "signals": {
+        "name": 0.4889
       }
     },
     {
@@ -4866,369 +4728,49 @@
       "type": "File",
       "oparlKey": "20918",
       "name": "AuslegBeschl-Herrenalber Str",
-      "score": 0.01111,
+      "score": 0.01124,
       "signals": {
-        "content": 0.455
+        "lexical": true
       }
     },
     {
-      "id": "AgendaItem_59591",
-      "type": "AgendaItem",
-      "oparlKey": "59591",
-      "name": "Geplante Sanierung der bestehenden Pflanzfläche am Bärenweg",
-      "score": 0.01111,
-      "signals": {
-        "name": 0.5422
-      }
-    },
-    {
-      "id": "Meeting_2529",
-      "type": "Meeting",
-      "oparlKey": "2529",
-      "name": "Planungsausschuss",
-      "score": 0.01111,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_48901",
-      "type": "Paper",
-      "oparlKey": "48901",
-      "name": "Straßensanierungsarbeiten",
-      "score": 0.01099,
-      "signals": {
-        "name": 0.5538
-      }
-    },
-    {
-      "id": "AgendaItem_40257",
-      "type": "AgendaItem",
-      "oparlKey": "40257",
-      "name": "Wiederherstellung des Naherholungswertes des Stadtteilparks Jägerhausseen",
-      "score": 0.01099,
-      "signals": {
-        "name": 0.5456
-      }
-    },
-    {
-      "id": "Meeting_2971",
-      "type": "Meeting",
-      "oparlKey": "2971",
-      "name": "Planungsausschuss",
-      "score": 0.01099,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_49318",
-      "type": "Paper",
-      "oparlKey": "49318",
-      "name": "HHSM - Rückbau der Wildgehege stoppen",
-      "score": 0.01087,
-      "signals": {
-        "name": 0.5545
-      }
-    },
-    {
-      "id": "AgendaItem_78002",
-      "type": "AgendaItem",
-      "oparlKey": "78002",
-      "name": "Stagniert der Ausbau Karlsruhes zur fahrradfreundlichen Stadt?",
-      "score": 0.01087,
-      "signals": {
-        "name": 0.5489
-      }
-    },
-    {
-      "id": "Meeting_3160",
-      "type": "Meeting",
-      "oparlKey": "3160",
-      "name": "Planungsausschuss",
-      "score": 0.01087,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_26770",
-      "type": "Paper",
-      "oparlKey": "26770",
-      "name": "Umbau der Helmholtzstraße, Vergabe von Tiefbauarbeiten",
-      "score": 0.01075,
-      "signals": {
-        "name": 0.5546
-      }
-    },
-    {
-      "id": "File_501253",
+      "id": "File_506178",
       "type": "File",
-      "oparlKey": "501253",
-      "name": "Vorlage TOP 21: Antrag SPD: Festschreibung der Kleingartenanlage \"Seewiesen\" als Dauerkleingartenanlage",
-      "score": 0.01075,
+      "oparlKey": "506178",
+      "name": "Vorlage TOP 24: Antrag KAL: Kostenkontrollierte Planung Unterführung Hirschstraße/Kriegsstraße",
+      "score": 0.01124,
       "signals": {
-        "content": 0.4616
+        "content": 0.4834
       }
     },
     {
-      "id": "AgendaItem_84580",
+      "id": "AgendaItem_70554",
       "type": "AgendaItem",
-      "oparlKey": "84580",
+      "oparlKey": "70554",
+      "name": "Beschränkungsfreien Grünpfeil rückbauen",
+      "score": 0.01124,
+      "signals": {
+        "name": 0.4831
+      }
+    },
+    {
+      "id": "Meeting_3345",
+      "type": "Meeting",
+      "oparlKey": "3345",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01124,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_49978",
+      "type": "Paper",
+      "oparlKey": "49978",
       "name": "Fragen zum geplanten Umbau Kriegsstraße/Haltestelle Hübschstraße",
-      "score": 0.01075,
+      "score": 0.01111,
       "signals": {
-        "name": 0.5496
-      }
-    },
-    {
-      "id": "Meeting_1520",
-      "type": "Meeting",
-      "oparlKey": "1520",
-      "name": "Planungsausschuss",
-      "score": 0.01075,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_37688",
-      "type": "Paper",
-      "oparlKey": "37688",
-      "name": "Masterplan für den Waldumbau und den Erhalt der Straßenbäume",
-      "score": 0.01064,
-      "signals": {
-        "name": 0.5547
-      }
-    },
-    {
-      "id": "File_615534",
-      "type": "File",
-      "oparlKey": "615534",
-      "name": "Stellungnahme TOP 54",
-      "score": 0.01064,
-      "signals": {
-        "content": 0.4616
-      }
-    },
-    {
-      "id": "AgendaItem_84582",
-      "type": "AgendaItem",
-      "oparlKey": "84582",
-      "name": "Fragen zum geplanten Umbau Kriegsstraße/Haltestelle Hübschstraße",
-      "score": 0.01064,
-      "signals": {
-        "name": 0.5497
-      }
-    },
-    {
-      "id": "Meeting_1123",
-      "type": "Meeting",
-      "oparlKey": "1123",
-      "name": "Planungsausschuss",
-      "score": 0.01064,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_29554",
-      "type": "Paper",
-      "oparlKey": "29554",
-      "name": "Antrag CDU: Umbau Alte Weingartener Straße",
-      "score": 0.01053,
-      "signals": {
-        "name": 0.5548
-      }
-    },
-    {
-      "id": "File_619699",
-      "type": "File",
-      "oparlKey": "619699",
-      "name": "Antrag",
-      "score": 0.01053,
-      "signals": {
-        "content": 0.4641
-      }
-    },
-    {
-      "id": "AgendaItem_21762",
-      "type": "AgendaItem",
-      "oparlKey": "21762",
-      "name": "Antrag SPD: Bildung eines Bauausschusses zur Instandsetzung der Hermann-Ringwald-Halle",
-      "score": 0.01053,
-      "signals": {
-        "name": 0.5501
-      }
-    },
-    {
-      "id": "Meeting_2424",
-      "type": "Meeting",
-      "oparlKey": "2424",
-      "name": "Planungsausschuss",
-      "score": 0.01053,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_34861",
-      "type": "Paper",
-      "oparlKey": "34861",
-      "name": "Stand der Planungen und Umsetzung eines Fahrradparkkonzeptes",
-      "score": 0.01042,
-      "signals": {
-        "name": 0.5567
-      }
-    },
-    {
-      "id": "File_17411",
-      "type": "File",
-      "oparlKey": "17411",
-      "name": "TOP 16",
-      "score": 0.01042,
-      "signals": {
-        "content": 0.4694
-      }
-    },
-    {
-      "id": "AgendaItem_26753",
-      "type": "AgendaItem",
-      "oparlKey": "26753",
-      "name": "Sachstand der Planungen \"Aussegnungshalle Friedhof Mergeläcker\" - Anfrage der SPD-Fraktion",
-      "score": 0.01042,
-      "signals": {
-        "name": 0.5505
-      }
-    },
-    {
-      "id": "Meeting_2431",
-      "type": "Meeting",
-      "oparlKey": "2431",
-      "name": "Planungsausschuss",
-      "score": 0.01042,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_47904",
-      "type": "Paper",
-      "oparlKey": "47904",
-      "name": "Stadtwald: Rückblick 2021, Situation 2022 und Planung 2023",
-      "score": 0.01031,
-      "signals": {
-        "name": 0.5569
-      }
-    },
-    {
-      "id": "AgendaItem_29644",
-      "type": "AgendaItem",
-      "oparlKey": "29644",
-      "name": "Umbau der Röntgenstraße, Vergabe von Straßenbauarbeiten",
-      "score": 0.01031,
-      "signals": {
-        "name": 0.5507
-      }
-    },
-    {
-      "id": "Meeting_2720",
-      "type": "Meeting",
-      "oparlKey": "2720",
-      "name": "Planungsausschuss",
-      "score": 0.01031,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_38062",
-      "type": "Paper",
-      "oparlKey": "38062",
-      "name": "Stand der Realisierung eines integrierten Rettungszentrums",
-      "score": 0.0102,
-      "signals": {
-        "name": 0.5579
-      }
-    },
-    {
-      "id": "File_655868",
-      "type": "File",
-      "oparlKey": "655868",
-      "name": "Anfrage Wolfartsweier",
-      "score": 0.0102,
-      "signals": {
-        "content": 0.4748
-      }
-    },
-    {
-      "id": "AgendaItem_32826",
-      "type": "AgendaItem",
-      "oparlKey": "32826",
-      "name": "Situation und mögliche Verbesserungen",
-      "score": 0.0102,
-      "signals": {
-        "name": 0.551
-      }
-    },
-    {
-      "id": "Meeting_2687",
-      "type": "Meeting",
-      "oparlKey": "2687",
-      "name": "Planungsausschuss",
-      "score": 0.0102,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_40117",
-      "type": "Paper",
-      "oparlKey": "40117",
-      "name": "Sachstand der Planungen für das Haus des Jugendrechts",
-      "score": 0.0101,
-      "signals": {
-        "name": 0.558
-      }
-    },
-    {
-      "id": "File_617593",
-      "type": "File",
-      "oparlKey": "617593",
-      "name": "Umbau Herderstraße",
-      "score": 0.0101,
-      "signals": {
-        "name": 0.4901
-      }
-    },
-    {
-      "id": "AgendaItem_45238",
-      "type": "AgendaItem",
-      "oparlKey": "45238",
-      "name": "Krise bei der Stadthallensanierung",
-      "score": 0.0101,
-      "signals": {
-        "name": 0.5513
-      }
-    },
-    {
-      "id": "Meeting_2429",
-      "type": "Meeting",
-      "oparlKey": "2429",
-      "name": "Planungsausschuss",
-      "score": 0.0101,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_29659",
-      "type": "Paper",
-      "oparlKey": "29659",
-      "name": "Anfrage CDU: Gestaltung des Gehwegbereiches nach dem Neubau des Hauses an der Straße Rehbuckel beim ehemaligen Standort des Kleidercontainers",
-      "score": 0.01,
-      "signals": {
-        "name": 0.5588
+        "name": 0.489
       }
     },
     {
@@ -5236,329 +4778,129 @@
       "type": "File",
       "oparlKey": "19389",
       "name": "SPD-Gestaltungskonzept Herrenstraße",
-      "score": 0.01,
+      "score": 0.01111,
       "signals": {
-        "name": 0.5036
+        "name": 0.4449
       }
     },
     {
-      "id": "File_19390",
+      "id": "File_617594",
       "type": "File",
-      "oparlKey": "19390",
-      "name": "TOP 8",
-      "score": 0.01,
+      "oparlKey": "617594",
+      "name": "Anlage Herderstraße",
+      "score": 0.01111,
       "signals": {
-        "content": 0.478
+        "content": 0.4836
       }
     },
     {
-      "id": "AgendaItem_29437",
+      "id": "AgendaItem_71285",
       "type": "AgendaItem",
-      "oparlKey": "29437",
-      "name": "Umbau Alte Weingartener Straße",
-      "score": 0.01,
+      "oparlKey": "71285",
+      "name": "Beschränkungsfreien Grünpfeil rückbauen",
+      "score": 0.01111,
       "signals": {
-        "name": 0.5522
+        "name": 0.4831
       }
     },
     {
-      "id": "Meeting_3187",
+      "id": "Meeting_3064",
       "type": "Meeting",
-      "oparlKey": "3187",
-      "name": "Planungsausschuss",
-      "score": 0.01,
+      "oparlKey": "3064",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01111,
       "signals": {
-        "name": 0.6473
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_49247",
+      "id": "Paper_25507",
       "type": "Paper",
-      "oparlKey": "49247",
-      "name": "Realisierung des Vorhabens Schwalbenhäuser in Hohenwettersbach zu errichten",
-      "score": 0.0099,
+      "oparlKey": "25507",
+      "name": "Antrag KAL: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Umplanung der Herrenalber Straße zwischen Battstraße und Ostendorfplatz/Aussetzen der Entscheidung zum vorhabenbezogenen Bebauungsplan \"Sonnengrün\"",
+      "score": 0.01099,
       "signals": {
-        "name": 0.5591
+        "name": 0.4894
       }
     },
     {
-      "id": "File_670697",
+      "id": "File_591615",
       "type": "File",
-      "oparlKey": "670697",
-      "name": "zu Anlage  2 Maßnahme Nr. 1 Sammel-Baubeschluss Herrenalber Straße -7-Anlage 2-3-2",
-      "score": 0.0099,
+      "oparlKey": "591615",
+      "name": "TOP5_Anlage_$NKPlan Umbau Hardtstraße",
+      "score": 0.01099,
       "signals": {
-        "name": 0.5259
+        "content": 0.4846
       }
     },
     {
-      "id": "File_506777",
-      "type": "File",
-      "oparlKey": "506777",
-      "name": "Vorlage TOP 24: Anfrage SPD: Ebenerdiger Fußgängerübergang an der Battstraße",
-      "score": 0.0099,
-      "signals": {
-        "content": 0.4791
-      }
-    },
-    {
-      "id": "AgendaItem_78831",
+      "id": "AgendaItem_70555",
       "type": "AgendaItem",
-      "oparlKey": "78831",
-      "name": "Straßensanierungsarbeiten",
-      "score": 0.0099,
+      "oparlKey": "70555",
+      "name": "Beschränkungsfreien Grünpfeil rückbauen",
+      "score": 0.01099,
       "signals": {
-        "name": 0.5537
+        "name": 0.4832
       }
     },
     {
-      "id": "Meeting_2657",
+      "id": "Meeting_3354",
       "type": "Meeting",
-      "oparlKey": "2657",
-      "name": "Planungsausschuss",
-      "score": 0.0099,
+      "oparlKey": "3354",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01099,
       "signals": {
-        "name": 0.6473
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_45036",
+      "id": "Paper_46671",
       "type": "Paper",
-      "oparlKey": "45036",
-      "name": "Stadtwald: Rückblick 2020, Situation 2021 und Planung 2022",
-      "score": 0.0098,
+      "oparlKey": "46671",
+      "name": "Weitere Maßnahmen für den Werderplatz",
+      "score": 0.01087,
       "signals": {
-        "name": 0.5597
+        "name": 0.4898
       }
     },
     {
-      "id": "File_671099",
+      "id": "File_633842",
       "type": "File",
-      "oparlKey": "671099",
-      "name": "zu Anlage 4 Maßnahme Nr. 5 Sammel-Baubeschluss Herrenalber Str. Plan 2 THH 6600",
-      "score": 0.0098,
+      "oparlKey": "633842",
+      "name": "OZ 153 StN Kaiserstraße - Patina erhalten! Neugestaltung verschieben - Baukosten einsparen",
+      "score": 0.01087,
       "signals": {
-        "name": 0.526
+        "content": 0.4847
       }
     },
     {
-      "id": "AgendaItem_82953",
+      "id": "AgendaItem_30583",
       "type": "AgendaItem",
-      "oparlKey": "82953",
-      "name": "HHSM - Rückbau der Wildgehege stoppen",
-      "score": 0.0098,
+      "oparlKey": "30583",
+      "name": "Umbau Hermann-Ringwald-Halle, Anfrage Bauausschuss",
+      "score": 0.01087,
       "signals": {
-        "name": 0.5545
+        "name": 0.4834
       }
     },
     {
-      "id": "Meeting_2418",
+      "id": "Meeting_1668",
       "type": "Meeting",
-      "oparlKey": "2418",
-      "name": "Planungsausschuss",
-      "score": 0.0098,
+      "oparlKey": "1668",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01087,
       "signals": {
-        "name": 0.6473
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_37133",
+      "id": "Paper_46847",
       "type": "Paper",
-      "oparlKey": "37133",
-      "name": "Rücknahme der Klage gegen die zweite Rheinbrücke",
-      "score": 0.00971,
+      "oparlKey": "46847",
+      "name": "Weitere Maßnahmen für den Werderplatz",
+      "score": 0.01075,
       "signals": {
-        "name": 0.5605
-      }
-    },
-    {
-      "id": "File_671098",
-      "type": "File",
-      "oparlKey": "671098",
-      "name": "zu Anlage 4 Maßnahme Nr. 5 Sammel-Baubeschlusss Herrenalber Str. Plan 1 THH 6600",
-      "score": 0.00971,
-      "signals": {
-        "name": 0.5318
-      }
-    },
-    {
-      "id": "File_16699",
-      "type": "File",
-      "oparlKey": "16699",
-      "name": "TOP 02",
-      "score": 0.00971,
-      "signals": {
-        "content": 0.4805
-      }
-    },
-    {
-      "id": "AgendaItem_26770",
-      "type": "AgendaItem",
-      "oparlKey": "26770",
-      "name": "Umbau der Helmholtzstraße, Vergabe von Tiefbauarbeiten",
-      "score": 0.00971,
-      "signals": {
-        "name": 0.5546
-      }
-    },
-    {
-      "id": "Meeting_2421",
-      "type": "Meeting",
-      "oparlKey": "2421",
-      "name": "Planungsausschuss",
-      "score": 0.00971,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_46756",
-      "type": "Paper",
-      "oparlKey": "46756",
-      "name": "Sachstand - Festplatz Rüppurr sowie Neubebauung der Grundstücke Herrenalber Straße 22/Rastatter Straße 19a",
-      "score": 0.00962,
-      "signals": {
-        "name": 0.5606
-      }
-    },
-    {
-      "id": "AgendaItem_46700",
-      "type": "AgendaItem",
-      "oparlKey": "46700",
-      "name": "Masterplan für den Waldumbau und den Erhalt der Straßenbäume",
-      "score": 0.00962,
-      "signals": {
-        "name": 0.5548
-      }
-    },
-    {
-      "id": "Meeting_2425",
-      "type": "Meeting",
-      "oparlKey": "2425",
-      "name": "Planungsausschuss",
-      "score": 0.00962,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_33462",
-      "type": "Paper",
-      "oparlKey": "33462",
-      "name": "Hinausschieben des Eintritts in den Ruhestand von Herrn Bürgermeister Jäger",
-      "score": 0.00952,
-      "signals": {
-        "name": 0.5607
-      }
-    },
-    {
-      "id": "File_588548",
-      "type": "File",
-      "oparlKey": "588548",
-      "name": "TOP 2: Zustand des Gehweges im Rosengarten",
-      "score": 0.00952,
-      "signals": {
-        "name": 0.5384
-      }
-    },
-    {
-      "id": "File_508461",
-      "type": "File",
-      "oparlKey": "508461",
-      "name": "Vorlage TOP 11: Antrag CDU: Fußgängerüberweg an der Battstraße",
-      "score": 0.00952,
-      "signals": {
-        "content": 0.4852
-      }
-    },
-    {
-      "id": "AgendaItem_29554",
-      "type": "AgendaItem",
-      "oparlKey": "29554",
-      "name": "Antrag CDU: Umbau Alte Weingartener Straße",
-      "score": 0.00952,
-      "signals": {
-        "name": 0.5548
-      }
-    },
-    {
-      "id": "Meeting_3155",
-      "type": "Meeting",
-      "oparlKey": "3155",
-      "name": "Planungsausschuss",
-      "score": 0.00952,
-      "signals": {
-        "name": 0.6473
-      }
-    },
-    {
-      "id": "Paper_24528",
-      "type": "Paper",
-      "oparlKey": "24528",
-      "name": "Vorhabenbezogener Bebauungsplan mit Vorhaben- und Erschließungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Einleitungs- und Auslegungsbeschluss gem. § 12 Abs. 2 und § 3 Abs. 2 des Baugesetzbuches",
-      "score": 0.00943,
-      "signals": {
-        "name": 0.5607
-      }
-    },
-    {
-      "id": "File_591500",
-      "type": "File",
-      "oparlKey": "591500",
-      "name": "TOP 2: Umbau der Alten Friedrichstraße",
-      "score": 0.00943,
-      "signals": {
-        "name": 0.5419
-      }
-    },
-    {
-      "id": "File_22510",
-      "type": "File",
-      "oparlKey": "22510",
-      "name": "TOP 4 c",
-      "score": 0.00943,
-      "signals": {
-        "content": 0.4852
-      }
-    },
-    {
-      "id": "AgendaItem_39164",
-      "type": "AgendaItem",
-      "oparlKey": "39164",
-      "name": "Stand der Planungen und Umsetzung eines Fahrradparkkonzeptes",
-      "score": 0.00943,
-      "signals": {
-        "name": 0.5568
-      }
-    },
-    {
-      "id": "Meeting_3169",
-      "type": "Meeting",
-      "oparlKey": "3169",
-      "name": "Planungsausschuss",
-      "score": 0.00943,
-      "signals": {
-        "name": 0.6474
-      }
-    },
-    {
-      "id": "Paper_36650",
-      "type": "Paper",
-      "oparlKey": "36650",
-      "name": "Entwicklung Stuttgarter Straße",
-      "score": 0.00935,
-      "signals": {
-        "name": 0.5611
-      }
-    },
-    {
-      "id": "File_14157",
-      "type": "File",
-      "oparlKey": "14157",
-      "name": "TOP 3 - Umbau der Helmholtzstraße",
-      "score": 0.00935,
-      "signals": {
-        "name": 0.5437
+        "name": 0.4898
       }
     },
     {
@@ -5566,119 +4908,159 @@
       "type": "File",
       "oparlKey": "6915",
       "name": "TOP 4 FW",
-      "score": 0.00935,
+      "score": 0.01075,
       "signals": {
-        "content": 0.4907
+        "content": 0.4857
       }
     },
     {
-      "id": "AgendaItem_75101",
+      "id": "AgendaItem_76687",
       "type": "AgendaItem",
-      "oparlKey": "75101",
-      "name": "Stadtwald: Rückblick 2021, Situation 2022 und Planung 2023",
-      "score": 0.00935,
+      "oparlKey": "76687",
+      "name": "Neubelebung des Formats \"STADTBAUFORUM\"",
+      "score": 0.01075,
       "signals": {
-        "name": 0.557
+        "name": 0.4845
       }
     },
     {
-      "id": "Meeting_6559",
+      "id": "Meeting_2512",
       "type": "Meeting",
-      "oparlKey": "6559",
-      "name": "Bauausschuss - HH (öffentlich/nicht öffentlich)",
-      "score": 0.00935,
+      "oparlKey": "2512",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01075,
       "signals": {
-        "name": 0.6682
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_34005",
+      "id": "Paper_46815",
       "type": "Paper",
-      "oparlKey": "34005",
-      "name": "Raumnot in der Gartenschule beheben - Wann schafft die Stadtverwaltung Abhilfe?",
-      "score": 0.00926,
+      "oparlKey": "46815",
+      "name": "Weitere Maßnahmen für den Werderplatz",
+      "score": 0.01064,
       "signals": {
-        "name": 0.5643
+        "name": 0.4898
       }
     },
     {
-      "id": "File_670699",
+      "id": "File_593095",
       "type": "File",
-      "oparlKey": "670699",
-      "name": "zu Anlage 2 Maßnahme Nr. 1 Sammel-Baubeschluss Herrenalber-Straße-7-Anlage2-3-4",
-      "score": 0.00926,
+      "oparlKey": "593095",
+      "name": "Protokoll TOP 19",
+      "score": 0.01064,
       "signals": {
-        "name": 0.5467
+        "content": 0.4857
       }
     },
     {
-      "id": "AgendaItem_48167",
+      "id": "AgendaItem_76556",
       "type": "AgendaItem",
-      "oparlKey": "48167",
-      "name": "Stand der Realisierung eines integrierten Rettungszentrums",
-      "score": 0.00926,
+      "oparlKey": "76556",
+      "name": "Neubelebung des Formats \"STADTBAUFORUM\"",
+      "score": 0.01064,
       "signals": {
-        "name": 0.5579
+        "name": 0.4846
       }
     },
     {
-      "id": "Meeting_5575",
+      "id": "Meeting_2516",
       "type": "Meeting",
-      "oparlKey": "5575",
-      "name": "Planungsausschuss - Sondersitzung (nicht öffentlich)",
-      "score": 0.00926,
+      "oparlKey": "2516",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01064,
       "signals": {
-        "name": 0.6696
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_25552",
+      "id": "Paper_54267",
       "type": "Paper",
-      "oparlKey": "25552",
-      "name": "Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Satzungsbeschluss gemäß § 10 des Baugesetzbuches (BauGB)",
-      "score": 0.00917,
+      "oparlKey": "54267",
+      "name": "Instandsetzung Steinkreuzstraße",
+      "score": 0.01053,
       "signals": {
-        "name": 0.5643
+        "name": 0.4905
       }
     },
     {
-      "id": "File_670698",
+      "id": "File_37830",
       "type": "File",
-      "oparlKey": "670698",
-      "name": "zu Anlage 2 Maßnahme  Nr. 1 Sammel-Baubeschluss Herrenalber-Straße-7-Anlage2-3-3",
-      "score": 0.00917,
+      "oparlKey": "37830",
+      "name": "TOP 11",
+      "score": 0.01053,
       "signals": {
-        "name": 0.5491
+        "content": 0.4857
       }
     },
     {
-      "id": "AgendaItem_54180",
+      "id": "AgendaItem_97248",
       "type": "AgendaItem",
-      "oparlKey": "54180",
-      "name": "Sachstand der Planungen für das Haus des Jugendrechts",
-      "score": 0.00917,
+      "oparlKey": "97248",
+      "name": "Sanierung der Wettersteinstraße",
+      "score": 0.01053,
       "signals": {
-        "name": 0.5581
+        "name": 0.4847
       }
     },
     {
-      "id": "Meeting_3451",
+      "id": "Meeting_3060",
       "type": "Meeting",
-      "oparlKey": "3451",
-      "name": "Bauausschuss (öffentlich/nichtöffentlich)",
-      "score": 0.00917,
+      "oparlKey": "3060",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01053,
       "signals": {
-        "name": 0.67
+        "name": 0.5753
       }
     },
     {
-      "id": "Paper_51169",
+      "id": "Paper_36509",
       "type": "Paper",
-      "oparlKey": "51169",
-      "name": "Stadtwald: Rückblick 2023, Situation 2024 und Planung 2025",
-      "score": 0.00909,
+      "oparlKey": "36509",
+      "name": "Wiederaufbau des Ludwigsbrunnens auf dem Marktplatz",
+      "score": 0.01042,
       "signals": {
-        "name": 0.5648
+        "name": 0.4906
+      }
+    },
+    {
+      "id": "File_672360",
+      "type": "File",
+      "oparlKey": "672360",
+      "name": "Antrag SR Kalmbach_002",
+      "score": 0.01042,
+      "signals": {
+        "content": 0.4872
+      }
+    },
+    {
+      "id": "AgendaItem_25551",
+      "type": "AgendaItem",
+      "oparlKey": "25551",
+      "name": "Änderungsantrag StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Bürgerversammlung",
+      "score": 0.01042,
+      "signals": {
+        "name": 0.4859
+      }
+    },
+    {
+      "id": "Meeting_2415",
+      "type": "Meeting",
+      "oparlKey": "2415",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01042,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_51878",
+      "type": "Paper",
+      "oparlKey": "51878",
+      "name": "Verkehrssichernde Maßnahmen an der Kreuzung Rehbuckel / Tiefentalstrasse",
+      "score": 0.01031,
+      "signals": {
+        "name": 0.4908
       }
     },
     {
@@ -5686,39 +5068,669 @@
       "type": "File",
       "oparlKey": "585647",
       "name": "TOP1_Umbau Breslauer Straße",
-      "score": 0.00909,
+      "score": 0.01031,
       "signals": {
-        "name": 0.5493
+        "name": 0.4596
       }
     },
     {
-      "id": "File_588015",
+      "id": "File_587853",
       "type": "File",
-      "oparlKey": "588015",
-      "name": "Protokoll TOP 30",
-      "score": 0.00909,
+      "oparlKey": "587853",
+      "name": "Protokoll TOP 20",
+      "score": 0.01031,
       "signals": {
-        "content": 0.4996
+        "content": 0.488
       }
     },
     {
-      "id": "AgendaItem_29659",
+      "id": "AgendaItem_86449",
       "type": "AgendaItem",
-      "oparlKey": "29659",
-      "name": "Anfrage CDU: Gestaltung des Gehwegbereiches nach dem Neubau des Hauses an der Straße Rehbuckel beim ehemaligen Standort des Kleidercontainers",
-      "score": 0.00909,
+      "oparlKey": "86449",
+      "name": "Umgestaltung Neugrabenstraße Süd",
+      "score": 0.01031,
       "signals": {
-        "name": 0.5588
+        "name": 0.4874
       }
     },
     {
-      "id": "Meeting_9124",
+      "id": "Meeting_2514",
       "type": "Meeting",
-      "oparlKey": "9124",
-      "name": "Bauausschuss (öffentlich/nicht öffentlich)",
+      "oparlKey": "2514",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.01031,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_51201",
+      "type": "Paper",
+      "oparlKey": "51201",
+      "name": "Verkehrssichernde Maßnahmen an der Kreuzung Rehbuckel / Tiefentalstrasse",
+      "score": 0.0102,
+      "signals": {
+        "name": 0.4908
+      }
+    },
+    {
+      "id": "File_636930",
+      "type": "File",
+      "oparlKey": "636930",
+      "name": "Uebertragung_Ritterstrasse",
+      "score": 0.0102,
+      "signals": {
+        "name": 0.4616
+      }
+    },
+    {
+      "id": "File_37638",
+      "type": "File",
+      "oparlKey": "37638",
+      "name": "SPD-Trasse Waldstadt",
+      "score": 0.0102,
+      "signals": {
+        "content": 0.4881
+      }
+    },
+    {
+      "id": "AgendaItem_21258",
+      "type": "AgendaItem",
+      "oparlKey": "21258",
+      "name": "Antrag SPD: Erarbeitung eines Gestaltungskonzeptes für Herrenstraße",
+      "score": 0.0102,
+      "signals": {
+        "name": 0.4884
+      }
+    },
+    {
+      "id": "Meeting_2511",
+      "type": "Meeting",
+      "oparlKey": "2511",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.0102,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_39757",
+      "type": "Paper",
+      "oparlKey": "39757",
+      "name": "SSP Mühlburg, Umbau der Herderstraße zwischen Sophienstraße und Kaiserallee",
+      "score": 0.0101,
+      "signals": {
+        "name": 0.4909
+      }
+    },
+    {
+      "id": "File_503761",
+      "type": "File",
+      "oparlKey": "503761",
+      "name": "Vorlage TOP 16: Antrag SPD: Verkehrsversuch in der Herrenalber Straße",
+      "score": 0.0101,
+      "signals": {
+        "name": 0.4622
+      }
+    },
+    {
+      "id": "File_657093",
+      "type": "File",
+      "oparlKey": "657093",
+      "name": "TBA PPP Zennerklamm",
+      "score": 0.0101,
+      "signals": {
+        "content": 0.4881
+      }
+    },
+    {
+      "id": "AgendaItem_74007",
+      "type": "AgendaItem",
+      "oparlKey": "74007",
+      "name": "Neugestaltung Kaiserstraße",
+      "score": 0.0101,
+      "signals": {
+        "name": 0.4885
+      }
+    },
+    {
+      "id": "Meeting_2518",
+      "type": "Meeting",
+      "oparlKey": "2518",
+      "name": "Ortschaftsrat Hohenwettersbach",
+      "score": 0.0101,
+      "signals": {
+        "name": 0.5753
+      }
+    },
+    {
+      "id": "Paper_52799",
+      "type": "Paper",
+      "oparlKey": "52799",
+      "name": "Hebelstraße 13 verkaufen",
+      "score": 0.01,
+      "signals": {
+        "name": 0.491
+      }
+    },
+    {
+      "id": "File_503762",
+      "type": "File",
+      "oparlKey": "503762",
+      "name": "Vorlage TOP 16: Antrag SPD: Verkehrsversuch in der Herrenalber Straße",
+      "score": 0.01,
+      "signals": {
+        "name": 0.4622
+      }
+    },
+    {
+      "id": "File_606587",
+      "type": "File",
+      "oparlKey": "606587",
+      "name": "TOP 7 ANTRAG B_90 - Fahrradstraße Untere Hub",
+      "score": 0.01,
+      "signals": {
+        "content": 0.4898
+      }
+    },
+    {
+      "id": "AgendaItem_24488",
+      "type": "AgendaItem",
+      "oparlKey": "24488",
+      "name": "Anfrage FDP: Nachpflanzung der Bäume am \"Herrenweg\" im Stadtteil Wolfartsweier",
+      "score": 0.01,
+      "signals": {
+        "name": 0.4886
+      }
+    },
+    {
+      "id": "Meeting_6559",
+      "type": "Meeting",
+      "oparlKey": "6559",
+      "name": "Bauausschuss - HH (öffentlich/nicht öffentlich)",
+      "score": 0.01,
+      "signals": {
+        "name": 0.5815
+      }
+    },
+    {
+      "id": "Paper_52964",
+      "type": "Paper",
+      "oparlKey": "52964",
+      "name": "HHS4_GR49 - Jazzclub - Rücknahme der Kürzung",
+      "score": 0.0099,
+      "signals": {
+        "name": 0.4918
+      }
+    },
+    {
+      "id": "File_634319",
+      "type": "File",
+      "oparlKey": "634319",
+      "name": "Plan Händelstraße BA 10.01.2022",
+      "score": 0.0099,
+      "signals": {
+        "name": 0.4699
+      }
+    },
+    {
+      "id": "File_633915",
+      "type": "File",
+      "oparlKey": "633915",
+      "name": "OZ 64 Antrag AfD Klimaschutzkonzept 2030 - Forcierung des Umbaus zur Fahrradstadt - Zusatzmittel Realisierung Fahrradstraße Nördliche Hildapromenade",
+      "score": 0.0099,
+      "signals": {
+        "content": 0.4902
+      }
+    },
+    {
+      "id": "AgendaItem_25508",
+      "type": "AgendaItem",
+      "oparlKey": "25508",
+      "name": "Anfrage StR Mossuto, StR Wenzel (FW): Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: \"Sonnengrün\": Bürgerversammlung und erneute Ausschreibung",
+      "score": 0.0099,
+      "signals": {
+        "name": 0.4887
+      }
+    },
+    {
+      "id": "Meeting_5335",
+      "type": "Meeting",
+      "oparlKey": "5335",
+      "name": "Stadtwahlausschuss (öffentlich)",
+      "score": 0.0099,
+      "signals": {
+        "name": 0.5834
+      }
+    },
+    {
+      "id": "Paper_49863",
+      "type": "Paper",
+      "oparlKey": "49863",
+      "name": "Antrag der CDU Ortschaftsratsfraktion: Restauration/Renovierung des Schriftzuges an der Badnerlandhalle",
+      "score": 0.0098,
+      "signals": {
+        "name": 0.4924
+      }
+    },
+    {
+      "id": "File_585648",
+      "type": "File",
+      "oparlKey": "585648",
+      "name": "TOP1_Umbau Breslauer Straße_Plan",
+      "score": 0.0098,
+      "signals": {
+        "name": 0.4704
+      }
+    },
+    {
+      "id": "File_506777",
+      "type": "File",
+      "oparlKey": "506777",
+      "name": "Vorlage TOP 24: Anfrage SPD: Ebenerdiger Fußgängerübergang an der Battstraße",
+      "score": 0.0098,
+      "signals": {
+        "content": 0.4904
+      }
+    },
+    {
+      "id": "AgendaItem_42994",
+      "type": "AgendaItem",
+      "oparlKey": "42994",
+      "name": "Änderungsantrag GRÜNE: Polderbau Bellenkopf/Rappenwört: Hinterfragung der Höherlegung der Hermann-Schneider-Allee",
+      "score": 0.0098,
+      "signals": {
+        "name": 0.4889
+      }
+    },
+    {
+      "id": "Meeting_2571",
+      "type": "Meeting",
+      "oparlKey": "2571",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.0098,
+      "signals": {
+        "name": 0.5845
+      }
+    },
+    {
+      "id": "Paper_48182",
+      "type": "Paper",
+      "oparlKey": "48182",
+      "name": "Neugestaltung der Kaiserstraße",
+      "score": 0.00971,
+      "signals": {
+        "name": 0.4937
+      }
+    },
+    {
+      "id": "File_671099",
+      "type": "File",
+      "oparlKey": "671099",
+      "name": "zu Anlage 4 Maßnahme Nr. 5 Sammel-Baubeschluss Herrenalber Str. Plan 2 THH 6600",
+      "score": 0.00971,
+      "signals": {
+        "name": 0.4708
+      }
+    },
+    {
+      "id": "File_19390",
+      "type": "File",
+      "oparlKey": "19390",
+      "name": "TOP 8",
+      "score": 0.00971,
+      "signals": {
+        "content": 0.4906
+      }
+    },
+    {
+      "id": "AgendaItem_84580",
+      "type": "AgendaItem",
+      "oparlKey": "84580",
+      "name": "Fragen zum geplanten Umbau Kriegsstraße/Haltestelle Hübschstraße",
+      "score": 0.00971,
+      "signals": {
+        "name": 0.4891
+      }
+    },
+    {
+      "id": "Meeting_1977",
+      "type": "Meeting",
+      "oparlKey": "1977",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.00971,
+      "signals": {
+        "name": 0.5845
+      }
+    },
+    {
+      "id": "Paper_50405",
+      "type": "Paper",
+      "oparlKey": "50405",
+      "name": "Umgestaltung Tullastraße",
+      "score": 0.00962,
+      "signals": {
+        "name": 0.4944
+      }
+    },
+    {
+      "id": "File_667219",
+      "type": "File",
+      "oparlKey": "667219",
+      "name": "20250516-Ergänzende Informationen nach Vorberatung",
+      "score": 0.00962,
+      "signals": {
+        "content": 0.4908
+      }
+    },
+    {
+      "id": "AgendaItem_84582",
+      "type": "AgendaItem",
+      "oparlKey": "84582",
+      "name": "Fragen zum geplanten Umbau Kriegsstraße/Haltestelle Hübschstraße",
+      "score": 0.00962,
+      "signals": {
+        "name": 0.4891
+      }
+    },
+    {
+      "id": "Meeting_1972",
+      "type": "Meeting",
+      "oparlKey": "1972",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.00962,
+      "signals": {
+        "name": 0.5845
+      }
+    },
+    {
+      "id": "Paper_25506",
+      "type": "Paper",
+      "oparlKey": "25506",
+      "name": "Antrag GRÜNE: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Lärmschutz Herrenalber Straße",
+      "score": 0.00952,
+      "signals": {
+        "name": 0.4951
+      }
+    },
+    {
+      "id": "File_32512",
+      "type": "File",
+      "oparlKey": "32512",
+      "name": "SatzBeschluss HerrenalberStr",
+      "score": 0.00952,
+      "signals": {
+        "name": 0.4725
+      }
+    },
+    {
+      "id": "File_597863",
+      "type": "File",
+      "oparlKey": "597863",
+      "name": "TOP 7 STELLUNGNAHME zum ANTRAG FDP, Neuau des Dienerbaus",
+      "score": 0.00952,
+      "signals": {
+        "content": 0.4909
+      }
+    },
+    {
+      "id": "AgendaItem_25507",
+      "type": "AgendaItem",
+      "oparlKey": "25507",
+      "name": "Antrag KAL: Vorhabenbezogener Bebauungsplan \"Herrenalber Straße 25 - 39\", Karlsruhe-Rüppurr: Umplanung der Herrenalber Straße zwischen Battstraße und Ostendorfplatz/Aussetzen der Entscheidung zum vorhabenbezogenen Bebauungsplan \"Sonnengrün\"",
+      "score": 0.00952,
+      "signals": {
+        "name": 0.4893
+      }
+    },
+    {
+      "id": "Meeting_2003",
+      "type": "Meeting",
+      "oparlKey": "2003",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.00952,
+      "signals": {
+        "name": 0.5846
+      }
+    },
+    {
+      "id": "Paper_35403",
+      "type": "Paper",
+      "oparlKey": "35403",
+      "name": "Wiederherstellung des Naherholungswertes des Stadtteilparks Jägerhausseen",
+      "score": 0.00943,
+      "signals": {
+        "name": 0.4962
+      }
+    },
+    {
+      "id": "File_31905",
+      "type": "File",
+      "oparlKey": "31905",
+      "name": "TOP 1 - Umbau Teutschneureuter Stra¯e.doc",
+      "score": 0.00943,
+      "signals": {
+        "name": 0.4747
+      }
+    },
+    {
+      "id": "File_662807",
+      "type": "File",
+      "oparlKey": "662807",
+      "name": "Stellungnahme Antrag",
+      "score": 0.00943,
+      "signals": {
+        "content": 0.491
+      }
+    },
+    {
+      "id": "AgendaItem_70109",
+      "type": "AgendaItem",
+      "oparlKey": "70109",
+      "name": "Weitere Maßnahmen für den Werderplatz",
+      "score": 0.00943,
+      "signals": {
+        "name": 0.4898
+      }
+    },
+    {
+      "id": "Meeting_2887",
+      "type": "Meeting",
+      "oparlKey": "2887",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.00943,
+      "signals": {
+        "name": 0.5846
+      }
+    },
+    {
+      "id": "Paper_53968",
+      "type": "Paper",
+      "oparlKey": "53968",
+      "name": "HHS4_GR49 - Rücknahme der Kürzung - Badischer Kunstverein e. V.",
+      "score": 0.00935,
+      "signals": {
+        "name": 0.4967
+      }
+    },
+    {
+      "id": "File_671098",
+      "type": "File",
+      "oparlKey": "671098",
+      "name": "zu Anlage 4 Maßnahme Nr. 5 Sammel-Baubeschlusss Herrenalber Str. Plan 1 THH 6600",
+      "score": 0.00935,
+      "signals": {
+        "name": 0.4759
+      }
+    },
+    {
+      "id": "File_655868",
+      "type": "File",
+      "oparlKey": "655868",
+      "name": "Anfrage Wolfartsweier",
+      "score": 0.00935,
+      "signals": {
+        "content": 0.4911
+      }
+    },
+    {
+      "id": "AgendaItem_69461",
+      "type": "AgendaItem",
+      "oparlKey": "69461",
+      "name": "Weitere Maßnahmen für den Werderplatz",
+      "score": 0.00935,
+      "signals": {
+        "name": 0.4898
+      }
+    },
+    {
+      "id": "Meeting_2443",
+      "type": "Meeting",
+      "oparlKey": "2443",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.00935,
+      "signals": {
+        "name": 0.5846
+      }
+    },
+    {
+      "id": "Paper_49318",
+      "type": "Paper",
+      "oparlKey": "49318",
+      "name": "HHSM - Rückbau der Wildgehege stoppen",
+      "score": 0.00926,
+      "signals": {
+        "name": 0.4971
+      }
+    },
+    {
+      "id": "File_614639",
+      "type": "File",
+      "oparlKey": "614639",
+      "name": "Stuttgarter Straße neu",
+      "score": 0.00926,
+      "signals": {
+        "name": 0.476
+      }
+    },
+    {
+      "id": "File_615534",
+      "type": "File",
+      "oparlKey": "615534",
+      "name": "Stellungnahme TOP 54",
+      "score": 0.00926,
+      "signals": {
+        "content": 0.4911
+      }
+    },
+    {
+      "id": "AgendaItem_69585",
+      "type": "AgendaItem",
+      "oparlKey": "69585",
+      "name": "Weitere Maßnahmen für den Werderplatz",
+      "score": 0.00926,
+      "signals": {
+        "name": 0.4898
+      }
+    },
+    {
+      "id": "Meeting_2092",
+      "type": "Meeting",
+      "oparlKey": "2092",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.00926,
+      "signals": {
+        "name": 0.5846
+      }
+    },
+    {
+      "id": "Paper_27895",
+      "type": "Paper",
+      "oparlKey": "27895",
+      "name": "Umbau Killisfeldstraße",
+      "score": 0.00917,
+      "signals": {
+        "name": 0.4997
+      }
+    },
+    {
+      "id": "File_633191",
+      "type": "File",
+      "oparlKey": "633191",
+      "name": "BA Gemeindestraßen_Umbau der Händelstraße_ohne Beschluss",
+      "score": 0.00917,
+      "signals": {
+        "name": 0.478
+      }
+    },
+    {
+      "id": "File_658209",
+      "type": "File",
+      "oparlKey": "658209",
+      "name": "Skizze Neugrabenstraße",
+      "score": 0.00917,
+      "signals": {
+        "content": 0.4919
+      }
+    },
+    {
+      "id": "AgendaItem_70003",
+      "type": "AgendaItem",
+      "oparlKey": "70003",
+      "name": "Weitere Maßnahmen für den Werderplatz",
+      "score": 0.00917,
+      "signals": {
+        "name": 0.4898
+      }
+    },
+    {
+      "id": "Meeting_1373",
+      "type": "Meeting",
+      "oparlKey": "1373",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.00917,
+      "signals": {
+        "name": 0.5846
+      }
+    },
+    {
+      "id": "Paper_40593",
+      "type": "Paper",
+      "oparlKey": "40593",
+      "name": "Städtebauliche Neuordnung südlich der Stuttgarter Straße zwischen Mittelbruchstraße",
       "score": 0.00909,
       "signals": {
-        "name": 0.6733
+        "name": 0.5001
+      }
+    },
+    {
+      "id": "File_631121",
+      "type": "File",
+      "oparlKey": "631121",
+      "name": "BA Händelstraße Plan",
+      "score": 0.00909,
+      "signals": {
+        "name": 0.4795
+      }
+    },
+    {
+      "id": "AgendaItem_43784",
+      "type": "AgendaItem",
+      "oparlKey": "43784",
+      "name": "Wiederaufbau des Ludwigsbrunnens auf dem Marktplatz",
+      "score": 0.00909,
+      "signals": {
+        "name": 0.4904
+      }
+    },
+    {
+      "id": "Meeting_2838",
+      "type": "Meeting",
+      "oparlKey": "2838",
+      "name": "Verbandsversammlung des Nachbarschaftsverbandes Karlsruhe",
+      "score": 0.00909,
+      "signals": {
+        "name": 0.5846
       }
     }
   ],
@@ -5957,13 +5969,13 @@
   "applied_filters": [],
   "stats": {
     "total_files": 10,
-    "total_events": 77,
+    "total_events": 76,
     "event_types": {
       "Paper": 9,
       "Meeting": 7,
-      "Consultation": 9,
-      "Organization": 12,
-      "AuxFile": 61
+      "Consultation": 8,
+      "Organization": 11,
+      "AuxFile": 60
     }
   }
 }

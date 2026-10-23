@@ -111,11 +111,11 @@ def geo(session_id: str) -> Dict[str, Any]:
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
+    # map scope = the graph-connected answer set (not the matched_entities
+    # long tail — weak recall matches drag in unrelated streets)
     keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", []) if n.get("type") == "AgendaItem"]
-    keys += [m["oparlKey"] for m in result.get("matched_entities", []) if m.get("type") == "AgendaItem"]
     file_keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", [])
                  if n.get("type") in ("File", "AuxFile")]
-    file_keys += [m["oparlKey"] for m in result.get("matched_entities", []) if m.get("type") == "File"]
     engine = get_engine(readonly=True)
     return collect_geo(engine, keys, file_keys)
 
