@@ -202,28 +202,22 @@ archived change `track-oparl-update-runs`).
 | Planned | Status in the current code |
 |---|---|
 | Timestamp cursor tracking | ✅ Superseded and better: the `oparlUpdateRuns` table stores each run's baseline and end state in the database (DB is the sole source; `last_run.txt` was removed entirely). |
-| `?createdSince=<timestamp>` queries | ⚠️ Partial: `oparlUpdate` applies `createdSince` only to the `bodies/0001` collection. All other collections (papers, agendaItems, meetings, people, consultations) are always fetched in full — unchanged resources are only skipped when writing files, which makes each run re-validate the whole graph. |
+| `?createdSince=<timestamp>` queries | ✅ Done: every collection (papers, agendaItems, meetings, people, consultations) is requested with `modifiedSince` first (captures modified-after-creation entities); `createdSince` is the fallback when `modifiedSince` is unsupported. The body resource keeps `createdSince`. |
+| Endpoint-capability detection and fallback | ✅ Done: when an endpoint provably ignores a filter (older resources returned) or rejects it (HTTP error), the crawler falls back — first to the other parameter, then to a full fetch with a warning. Fallback usage is visible in the run row (`oparlUpdateRuns.full_fetches`). |
+| Cover *modified* records, not only created ones | ✅ Done via `modifiedSince`-first (see above). |
+| One-command synchronisation | ✅ Done: `src/syncIncremental.py` runs the incremental crawl and then `pgGen`'s import against the crawl output. The run row is finalised (and the baseline advanced) only after a successful import; on failure the baseline is reset to the pre-crawl window. |
 | Idempotent upsert (`ON CONFLICT DO UPDATE`) | ✅ `pgGen.insert_all` upserts on `oparlId`, updating only when the incoming `modified` timestamp is newer. |
 | Graceful shutdown / cursor persistence | ✅ `SIGINT` is caught; the run is recorded with `success=false` and the items collected so far are persisted. |
 | Timestamp validation | ✅ Superseded: the cursor lives in typed DB columns, not a text file. |
-| Unit tests (timestamps, shutdown) + mocked integration tests | ✅ `src/tests/test_unit_oparlUpdate.py`, `src/tests/test_unit_oparlRunLog.py`, `src/tests/test_integration_oparlRunLog.py` (rollback-only DB writes). |
+| Unit tests (timestamps, shutdown) + mocked integration tests | ✅ `src/tests/test_unit_oparlUpdate.py`, `src/tests/test_unit_oparlRunLog.py`, `src/tests/test_unit_syncIncremental.py`, `src/tests/test_integration_oparlRunLog.py`, `src/tests/test_integration_syncIncremental.py` (rollback-only DB writes). |
 | README documentation | ✅ This section. |
 
-**Still to be done:**
+**Remaining:**
 
-- **Extend `createdSince` to all collections** (papers, agendaItems, meetings, people,
-  consultations) so runs only fetch what actually changed instead of re-validating
-  everything — this is why a full crawl currently takes hours.
-- **Endpoint-capability detection and fallback**: no logic exists to detect that an
-  endpoint ignores `createdSince`; those endpoints should fall back to a full fetch
-  with a warning (planned task 3.1).
-- **Cover *modified* records, not only created ones.** OParl's `createdSince` only
-  matches entity creation dates; entities modified after creation can be missed.
-  Either use `modifiedSince` where the API supports it, or compare `modified`
-  timestamps against the tracked baseline during import.
-- **Direct-to-DB incremental sync is still two-phase.** The crawler only writes JSON
-  files; updating PostgreSQL requires running `pgGen` separately. A single command
-  that crawls *and* imports incrementally (or scheduling both together) does not exist.
+- **Real-run verification** (`openspec/changes/incremental-oparl-sync` task 4.1): one
+  live `syncIncremental` run to confirm the Karlsruhe API honours `modifiedSince`
+  (the fallback ensures correctness either way) and that typical runs finish in
+  minutes.
 
 ## Potential improvements
 
@@ -253,5 +247,3 @@ API, and query-guided async summaries.
 - **contentEmbeddings coverage** — 93.7% → 100% (files without embeddings).
 - **Full text in Postgres** — raw text lives on disk only; a bounded
   `fulltext` column + tsvector would enable FTS beyond name trigrams.
-- **Extend `createdSince` to all collections** in `oparlUpdate` (see the
-  incremental-update section above) — the biggest crawl-time win.
