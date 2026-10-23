@@ -79,6 +79,10 @@ def run(pdf_dir: Path, md_dir: Path, limit: int | None = None,
 
     for i, pdf_path in enumerate(missing, 1):
         out_path = out_dir / (pdf_path.stem + ".md")
+        if out_path.exists():
+            # Already OCR'd in a previous run (e.g. into a separate out_dir).
+            stats["missing"] -= 1
+            continue
         if dry_run:
             print(f"[dry-run] would OCR {pdf_path.name} -> {out_path.name}")
             continue
