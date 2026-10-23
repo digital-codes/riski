@@ -1,9 +1,14 @@
-"""Result summarizer (change: categorization-indexing follow-up).
+"""Result summarizer (change: query-guided-summary).
 
 Consumes a search result as produced by
-``src.pgTimeline.search_and_build_timeline`` and adds a German summary of
-the top files' content under ``result["summary"]`` — the field the web
-app's SummaryCard renders.
+``src.pgTimeline.search_and_build_timeline`` and adds a German summary
+under ``result["summary"]`` — the field the web app's SummaryCard renders.
+
+The summary is QUERY-GUIDED: the search query is part of the LLM prompt
+and the model condenses the document teasers with respect to the
+question, naming the key documents — not a neutral corpus summary.
+Context covers ALL files the search step fetched (``top_files``), not a
+subset.
 
 Usage — two equivalent ways:
 
@@ -34,26 +39,29 @@ from src import remote
 from src.timing import timed
 
 _MAX_CONTENT_CHARS = 5000
+# Query-guided instruction: condense the documents IN VIEW OF the question,
+# naming the key documents — not a neutral corpus summary.
 _SYSTEM_PROMPT = (
-    "You are a helpful assistant that summarizes German text. "
-    "Respond in German. stay below 500 words. no emojis."
+    "Du bist ein Assistent für das Ratsinformationssystem. Fasse die "
+    "vorgelegten Dokumente auf Deutsch zusammen — in Hinblick auf die "
+    "gestellte Frage. Nenne die für die Frage wichtigsten Dokumente und "
+    "Ergebnisse. Bleibe unter 500 Wörtern. Keine Emojis. Antworte nur mit "
+    "der Zusammenfassung."
 )
 
 
 class ResultSummarizer:
-    """Add a German summary of the top files' content to a search result.
+    """Add a query-guided German summary to a search result.
 
     The LLM context uses each file's ``teaser`` (the ~1k-char compressed
-    layer) when available, falling back to ``content`` — an order of
-    magnitude fewer input tokens than full content, so the summary call
-    returns in a fraction of the time. The number of files is unaffected
-    (``top``, default 5).
+    layer) when available, falling back to ``content``. Context covers
+    ALL files in ``result["top_files"]`` — the answer-set size is decided
+    by the search step (``top_k``), not here.
     """
 
-    def __init__(self, session, top: int = 10, model: str | None = None,
+    def __init__(self, session, model: str | None = None,
                  temperature: float = 0.1, content_chars: int = _MAX_CONTENT_CHARS) -> None:
         self._session = session
-        self.top = top
         self.model = model or remote.CHAT_MODEL
         self.temperature = temperature
         self.content_chars = content_chars
@@ -88,14 +96,18 @@ class ResultSummarizer:
             print("Summary model not configured, skipping summarization")
             return result
 
-        prompt = "\nSummary of Top Files:\n"
-        for i, file in enumerate(top_files[: self.top], 1):
+        query = (result.get("query") or "").strip()
+        if query:
+            prompt = f"Frage: {query}\n\nDokumente (Teaser):\n"
+        else:  # defensive: no query in the result — generic shape
+            prompt = "\nDokumente (Teaser):\n"
+        for i, file in enumerate(top_files, 1):
             text_ = self._file_text(file["oparlKey"])
-            prompt += f"\nFile {i}: {file['name']} ({file['fileName']})\n"
+            prompt += f"\nDatei {i}: {file['name']} ({file['fileName']})\n"
             if text_:
-                prompt += f"Content: {text_[: self.content_chars]}...\n"
+                prompt += f"Inhalt: {text_[: self.content_chars]}\n"
             else:
-                prompt += "Content: Not available\n"
+                prompt += "Inhalt: Not available\n"
 
         response = remote.chat(
             [
@@ -108,5 +120,5 @@ class ResultSummarizer:
         summary = response.get("content", "")
         if summary and summary != "[dummy response]":
             result["summary"] = summary
-            print(f"\nSummary of Top Files:\n{summary}")
+            print(f"\nSummary (query-guided):\n{summary}")
         return result

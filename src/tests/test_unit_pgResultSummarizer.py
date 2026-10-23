@@ -27,13 +27,12 @@ class FakeSession:
         return r
 
 
-@pytest.fixture()
-def result():
+def make_result(n: int = 2, query: str = "Was macht die Digitalstrategie?") -> dict:
     return {
-        "query": "test",
+        "query": query,
         "top_files": [
-            {"oparlKey": "111", "name": "File A", "fileName": "a.pdf"},
-            {"oparlKey": "222", "name": "File B", "fileName": "b.pdf"},
+            {"oparlKey": str(100 + i), "name": f"File {i}", "fileName": f"f{i}.pdf"}
+            for i in range(n)
         ],
     }
 
@@ -43,21 +42,121 @@ def summarizer(monkeypatch):
     monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
     monkeypatch.setattr(pc.remote, "CHAT_MODEL", "test-model")
     monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Zusammenfassung."})
-    return ResultSummarizer(FakeSession({"111": ("Teaser A", "Inhalt A"), "222": (None, None)}))
+    return ResultSummarizer(FakeSession({}))
 
 
-class TestSummarize:
-    def test_sets_summary(self, summarizer, result):
+@pytest.fixture()
+def result():
+    return make_result(2)
+
+
+class TestQueryGuidedPrompt:
+    def test_prompt_carries_query(self, summarizer, result, monkeypatch):
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen["system"], seen["user"] = messages[0]["content"], messages[1]["content"]
+            return {"content": "S."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
         summarizer.summarize(result)
-        assert result["summary"] == "Zusammenfassung."
+        assert "Was macht die Digitalstrategie?" in seen["user"]
+        assert seen["user"].startswith("Frage: ")
+        # guided instruction: summarize in view of the question
+        assert "in Hinblick auf die" in seen["system"]
+        assert "gestellte Frage" in seen["system"]
 
-    def test_skips_existing_summary_unless_forced(self, summarizer, result):
-        result["summary"] = "vorhanden"
+    def test_generic_fallback_without_query(self, summarizer, monkeypatch):
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen["user"] = messages[1]["content"]
+            return {"content": "S."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        res = make_result(1)
+        res["query"] = ""
+        summarizer.summarize(res)
+        assert not seen["user"].startswith("Frage:")
+
+
+class TestFullCoverage:
+    def test_all_files_included_no_truncation(self, summarizer, monkeypatch):
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen["user"] = messages[1]["content"]
+            return {"content": "S."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        res = make_result(10)
+        summarizer.summarize(res)
+        for i in range(10):
+            assert f"Datei {i + 1}:" in seen["user"]
+            assert f"File {i}" in seen["user"]
+        assert "Datei 11:" not in seen["user"]
+
+    def test_missing_text_marked(self, summarizer, result, monkeypatch):
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen["user"] = messages[1]["content"]
+            return {"content": "S."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        summarizer._session = FakeSession({"100": ("Teaser", "Inhalt")})  # 101 empty
         summarizer.summarize(result)
-        assert result["summary"] == "vorhanden"
-        summarizer.summarize(result, force=True)
-        assert result["summary"] == "Zusammenfassung."
+        assert "Not available" in seen["user"]
 
+
+class TestTeaserLayer:
+    def test_teaser_preferred_over_content(self, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen["user"] = messages[1]["content"]
+            return {"content": "S."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        session = FakeSession({"100": ("Teaser A", "Inhalt A")})
+        ResultSummarizer(session).summarize(result)
+        assert "Teaser A" in seen["user"]
+        assert "Inhalt A" not in seen["user"]
+
+    def test_content_fallback_when_no_teaser(self, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen["user"] = messages[1]["content"]
+            return {"content": "S."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        session = FakeSession({"100": (None, "Voller Inhalt")})
+        ResultSummarizer(session).summarize(result)
+        assert "Voller Inhalt" in seen["user"]
+
+    def test_per_file_cap(self, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen["user"] = messages[1]["content"]
+            return {"content": "S."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        long_teaser = "X" * 500
+        session = FakeSession({"100": (long_teaser, None)})
+        s = ResultSummarizer(session, content_chars=10)
+        s.summarize(result)
+        assert long_teaser not in seen["user"]
+
+
+class TestSkipConditions:
     def test_no_top_files_noop(self, summarizer):
         res = {"query": "x", "top_files": []}
         summarizer.summarize(res)
@@ -68,6 +167,13 @@ class TestSummarize:
         res = ResultSummarizer(FakeSession({})).summarize(result)
         assert "summary" not in res
 
+    def test_existing_summary_skipped_unless_forced(self, summarizer, result):
+        result["summary"] = "vorhanden"
+        summarizer.summarize(result)
+        assert result["summary"] == "vorhanden"
+        summarizer.summarize(result, force=True)
+        assert result["summary"] == "Zusammenfassung."
+
     def test_dummy_response_ignored(self, result, monkeypatch):
         monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
         monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
@@ -75,39 +181,8 @@ class TestSummarize:
         ResultSummarizer(FakeSession({})).summarize(result)
         assert "summary" not in result
 
-    def test_content_truncated_and_missing_content_marked(self, summarizer, result, monkeypatch):
-        seen = {}
 
-        def fake_chat(messages, **kwargs):
-            seen["prompt"] = messages[1]["content"]
-            return {"content": "S."}
-
-        monkeypatch.setattr(pc.remote, "chat", fake_chat)
-        summarizer.content_chars = 10
-        summarizer.summarize(result)
-        # teaser layer preferred over content
-        assert "Teaser A" in seen["prompt"]
-        assert "Inhalt A" not in seen["prompt"]
-        assert "..." in seen["prompt"]
-        assert "Not available" in seen["prompt"]
-
-    def test_content_fallback_when_no_teaser(self, result, monkeypatch):
-        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
-        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
-        seen = {}
-
-        def fake_chat(messages, **kwargs):
-            seen["prompt"] = messages[1]["content"]
-            return {"content": "S."}
-
-        monkeypatch.setattr(pc.remote, "chat", fake_chat)
-        session = FakeSession({"333": (None, "Voller Inhalt")})
-        res = {"query": "t", "top_files": [{"oparlKey": "333", "name": "C", "fileName": "c.pdf"}]}
-        ResultSummarizer(session).summarize(res)
-        assert "Voller Inhalt" in seen["prompt"]
-
-
-class TestSearchAndSummarize:
+class TestSearchAndSummarizeWrapper:
     def test_wrapper_runs_both_steps(self, monkeypatch):
         import src.pgTimeline as tl
 
