@@ -104,7 +104,7 @@ def _linked_features(
 
     with engine.connect() as conn:
         rows = conn.execute(
-            select(entity.c.id, entity.c.name, entity.c.geo, agenda.c.oparlKey)
+            select(entity.c.id, entity.c.name, entity.c.geo, agenda.c.oparlKey, agenda.c.name)
             .select_from(
                 assoc.join(entity, assoc.c[f"{entity_type.lower()}_id"] == entity.c.id)
                 .join(agenda, assoc.c.agendaitem_id == agenda.c.sid)
@@ -115,10 +115,10 @@ def _linked_features(
     features: List[Dict[str, Any]] = []
     # group links per entity so agendaItems accumulate across agenda items
     per_entity: Dict[int, Dict[str, Any]] = {}
-    for entity_id, name, geo, agenda_key in rows:
-        entry = per_entity.setdefault(entity_id, {"name": name, "agendaItems": set(), "geo": geo})
+    for entity_id, name, geo, agenda_key, agenda_name in rows:
+        entry = per_entity.setdefault(entity_id, {"name": name, "agendaItems": {}, "geo": geo})
         if agenda_key:
-            entry["agendaItems"].add(agenda_key)
+            entry["agendaItems"][agenda_key] = agenda_name or agenda_key
 
     for entity_id, entry in per_entity.items():
         if not entry["geo"]:
@@ -132,6 +132,7 @@ def _linked_features(
             feature["properties"]["name"] = entry["name"]
             feature["properties"]["type"] = entity_type
             feature["properties"]["agendaItems"] = sorted(entry["agendaItems"])
+            feature["properties"]["agendaItemNames"] = [entry["agendaItems"][k] for k in sorted(entry["agendaItems"])]
             features.append(feature)
     return features
 
@@ -143,7 +144,10 @@ def _linked_file_features(
     entity_type: str,
     file_sids: set,
 ) -> List[Dict[str, Any]]:
-    """Features of streets/districts linked directly to Files."""
+    """Features of streets/districts linked directly to Files.
+
+    Properties carry the referencing documents (oparlKey + name) so the
+    map popups can show which document caused the reference."""
     if not file_sids:
         return []
     metadata = MetaData()
@@ -153,7 +157,7 @@ def _linked_file_features(
 
     with engine.connect() as conn:
         rows = conn.execute(
-            select(entity.c.id, entity.c.name, entity.c.geo, file_tbl.c.oparlKey)
+            select(entity.c.id, entity.c.name, entity.c.geo, file_tbl.c.oparlKey, file_tbl.c.name)
             .select_from(
                 assoc.join(entity, assoc.c[f"{entity_type.lower()}_id"] == entity.c.id)
                 .join(file_tbl, assoc.c.file_id == file_tbl.c.sid)
@@ -163,10 +167,10 @@ def _linked_file_features(
 
     features: List[Dict[str, Any]] = []
     per_entity: Dict[int, Dict[str, Any]] = {}
-    for entity_id, name, geo, file_key in rows:
-        entry = per_entity.setdefault(entity_id, {"name": name, "files": set(), "geo": geo})
+    for entity_id, name, geo, file_key, file_name in rows:
+        entry = per_entity.setdefault(entity_id, {"name": name, "files": {}, "geo": geo})
         if file_key:
-            entry["files"].add(file_key)
+            entry["files"][file_key] = file_name or file_key
 
     for entry in per_entity.values():
         if not entry["geo"]:
@@ -180,6 +184,7 @@ def _linked_file_features(
             feature["properties"]["name"] = entry["name"]
             feature["properties"]["type"] = entity_type
             feature["properties"]["files"] = sorted(entry["files"])
+            feature["properties"]["fileNames"] = [entry["files"][k] for k in sorted(entry["files"])]
             features.append(feature)
     return features
 

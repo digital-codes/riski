@@ -28,3 +28,10 @@
 - [x] 5.3 Extend `pgGeo` (`collect_geo`, `geo_available_for_keys`) to include file-linked georeferences (File nodes/entities of the answer set)
 - [x] 5.4 Run backfill + prune; verify file 614953 links to "Herrenalber Straße" and the street appears in the map for the street query  *(verified: street on map via 59 file references; top-10 files all Herrenalber Straße docs with lexical+name+content matches; `--rebuild` flag added to pgAddFileGeoRefs for clean re-runs)*
 - [x] 5.5 Geo scope restriction: map reflects the graph-connected answer set only; matched_entities long tail excluded (analysis: 1475 features/65 streets → 175/13 for the Herrenalber query)
+
+## 6. Document provenance + summarizer gating (added during review)
+
+- [x] 6.1 Feature provenance: GeoJSON properties carry the referencing documents (`files` + `fileNames` for file links, `agendaItems` + `agendaItemNames` for agenda links); map popups list them
+- [x] 6.2 Machine-readable relevance verdict: summarizer prompt lists refused documents by `Datei <Nummer>`; `_parse_refused` resolves them to `result["summary_refused"]` (oparlKey + name)
+- [x] 6.3 `/geo` gates file keys on the verdict (refused documents' georeferences excluded); frontend refetches `/geo` when the summary verdict arrives (map may load before the async summary)
+- [x] 6.4 GeoMap as pure renderer (FeatureCollection prop) + 4 new unit tests (verdict parsing); E2E live-verified: 4 documents refused, map gated accordingly

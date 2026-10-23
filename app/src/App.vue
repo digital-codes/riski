@@ -38,7 +38,7 @@
     <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" />
   </div>
   <div class="wrapper">
-    <GeoMap v-if="geoAvailable" :session-id="sessionId" />
+    <GeoMap v-if="geoAvailable && geoFC" :feature-collection="geoFC" />
   </div>
   <div class="wrapper" v-if="rawData">
     <TimeLine :search-data="rawData" />
@@ -50,7 +50,7 @@ import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue
 import TimeLine from './components/TimeLine.vue';
 import SummaryCard from './components/SummaryCard.vue';
 import DetailPanel from './components/DetailPanel.vue';
-import { search as apiSearch, summarize as apiSummarize, expand as apiExpand } from './api.js';
+import { search as apiSearch, summarize as apiSummarize, expand as apiExpand, geoUrl } from './api.js';
 // lazy: keeps echarts (large) out of the main bundle until the graph exists
 const NetworkView = defineAsyncComponent(() => import('./components/NetworkView.vue'));
 // lazy: keeps leaflet out until a georeferenced result arrives
@@ -67,6 +67,7 @@ const loading = ref(false);
 const expanding = ref(false);
 const summaryLoading = ref(false);
 const geoAvailable = ref(false);
+const geoFC = ref(null);
 const error = ref(null);
 const sessionId = ref(null);
 
@@ -89,6 +90,7 @@ async function runSearch() {
   summary.value = null;
   summaryLoading.value = false;
   geoAvailable.value = false;
+  geoFC.value = null;
   selection.value = null;
   try {
     // render results immediately; the summary arrives asynchronously
@@ -97,7 +99,11 @@ async function runSearch() {
     if (result.sessionId) {
       summaryLoading.value = true;
       apiSummarize(result.sessionId)
-        .then((res) => { if (res.summary) summary.value = res.summary; })
+        .then((res) => {
+          if (res.summary) summary.value = res.summary;
+          // the relevance verdict may gate the map — refresh it
+          if (geoAvailable.value) fetchGeo();
+        })
         .catch(() => { /* summary is optional — ignore failures */ })
         .finally(() => { summaryLoading.value = false; });
     }
@@ -114,6 +120,8 @@ function applyResult(result) {
   graph.value = result.graph || { nodes: [], edges: [] };
   sessionId.value = result.sessionId || null;
   geoAvailable.value = !!result.geo_available && !!result.sessionId;
+  geoFC.value = null;
+  if (geoAvailable.value) fetchGeo();
   selection.value = null;
 }
 
@@ -139,6 +147,17 @@ async function onExpand(nodeId) {
   } finally {
     expanding.value = false;
   }
+}
+
+// fetch the map FeatureCollection; re-fetched when the summary verdict
+// arrives (refused documents are then excluded from the map)
+async function fetchGeo() {
+  try {
+    const res = await fetch(geoUrl(sessionId.value));
+    if (!res.ok) return;
+    const fc = await res.json();
+    if (fc.features?.length) geoFC.value = fc;
+  } catch { /* map is optional */ }
 }
 
 // offline fallback: static sample so the app still renders without the API

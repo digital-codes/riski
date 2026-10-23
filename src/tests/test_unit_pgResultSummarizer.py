@@ -302,3 +302,48 @@ class TestSearchAndSummarizeWrapper:
         )
         res = tl.search_and_summarize(None, "q", summarize=False)
         assert "summary" not in res
+
+class TestRefusalParsing:
+    """The verdict is machine-parseable: refused Datei numbers resolve to
+    the fetched files (map gating consumes this)."""
+
+    def test_parse_refused_documents(self, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
+
+        def fake_chat(messages, **kwargs):
+            return {"content": (
+                "Zusammenfassung der relevanten Dokumente.\n\n"
+                "**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 2: File B\n"
+            )}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        summarizer = ResultSummarizer(FakeSession({}))
+        summarizer.summarize(result)
+        assert result["summary_refused"] == [{"oparlKey": "101", "name": "File 1"}]
+
+    def test_all_considered_no_refusals(self, summarizer, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": (
+            "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+            "Alle Dokumente wurden berücksichtigt.")})
+        summarizer.summarize(result)
+        assert result["summary_refused"] == []
+
+    def test_no_note_no_refusals(self, summarizer, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Zusammenfassung."})
+        summarizer.summarize(result)
+        assert result["summary_refused"] == []
+
+    def test_out_of_range_indices_ignored(self, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
+
+        def fake_chat(messages, **kwargs):
+            return {"content": (
+                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 99: Phantom\n- Datei 1: File A\n")}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(FakeSession({})).summarize(result)
+        assert result["summary_refused"] == [{"oparlKey": "100", "name": "File 0"}]

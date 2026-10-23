@@ -7,22 +7,25 @@
 
 <script setup>
 // Adapted from klimaDashboard's SimpleMap.vue (Leaflet + GeoJSON popups).
-// Our /geo endpoint serves WGS84 GeoJSON (spike 1.1), so no reprojection
+// The /geo endpoint serves WGS84 GeoJSON (spike 1.1), so no reprojection
 // is needed; streets arrive as LineStrings, districts as Polygons.
-import { onMounted, onUnmounted, ref } from 'vue';
+// The component is a pure renderer: the FeatureCollection comes in as a
+// prop (App.vue fetches it — and refetches when the summarizer's relevance
+// verdict arrives, so refused documents drop off the map).
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-import { geoUrl } from '../api.js';
 
 const props = defineProps({
-  sessionId: { type: String, required: true },
+  featureCollection: { type: Object, required: true },
 });
 
 const mapEl = ref(null);
 let map = null;
+let geoLayer = null;
 let resizeObserver = null;
 
 const STYLES = {
@@ -30,45 +33,48 @@ const STYLES = {
   district: { color: '#764ba2', weight: 2, fillOpacity: 0.15 },
 };
 
-onMounted(async () => {
+function popupHtml(p) {
+  const docs = [
+    ...(p.fileNames || []).map((n) => `Dokument: ${n}`),
+    ...(p.agendaItemNames || []).map((n) => `TOP: ${n}`),
+  ];
+  return (
+    `<b>${p.name || ''}</b><br>` +
+    `<em>${p.type === 'district' ? 'Stadtteil' : 'Straße'}</em><br>` +
+    (docs.length ? docs.map((d) => `${d}<br>`).join('') : '')
+  );
+}
+
+function render() {
+  if (!map) return;
+  if (geoLayer) {
+    map.removeLayer(geoLayer);
+    geoLayer = null;
+  }
+  const fc = props.featureCollection;
+  if (!fc?.features?.length) return;
+  geoLayer = L.geoJSON(fc, {
+    style: (f) => STYLES[f.properties?.type] || STYLES.street,
+    onEachFeature: (feature, l) => {
+      l.bindPopup(popupHtml(feature.properties || {}));
+    },
+  }).addTo(map);
+  map.fitBounds(geoLayer.getBounds(), { padding: [24, 24] });
+}
+
+onMounted(() => {
   delete L.Icon.Default.prototype._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: markerIcon2x,
     iconUrl: markerIcon,
     shadowUrl: markerShadow,
   });
-
   map = L.map(mapEl.value).setView([49.0069, 8.4037], 12); // Karlsruhe
   L.tileLayer('https://sgx.geodatenzentrum.de/wmts_basemapde/tile/1.0.0/de_basemapde_web_raster_farbe/default/GLOBAL_WEBMERCATOR/{z}/{y}/{x}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.bkg.bund.de" target="_blank">GeoBasis-DE/BKG</a> | <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a> | © OpenStreetMap contributors',
   }).addTo(map);
-
-  try {
-    const res = await fetch(geoUrl(props.sessionId));
-    if (!res.ok) return;
-    const fc = await res.json();
-    if (!fc.features?.length) return;
-
-    const layer = L.geoJSON(fc, {
-      style: (f) => STYLES[f.properties?.type] || STYLES.street,
-      onEachFeature: (feature, l) => {
-        const p = feature.properties || {};
-        const items = (p.agendaItems || []).map((k) =>
-          `<a href="https://web1.karlsruhe.de/oparl/bodies/0001/agendaitems/${k}" target="_blank" rel="noopener">${k}</a>`).join(', ');
-        l.bindPopup(
-          `<b>${p.name || ''}</b><br>` +
-          `<em>${p.type === 'district' ? 'Stadtteil' : 'Straße'}</em><br>` +
-          (items ? `TOPs: ${items}` : '')
-        );
-      },
-    }).addTo(map);
-
-    map.fitBounds(layer.getBounds(), { padding: [24, 24] });
-  } catch (e) {
-    console.warn('Karte konnte nicht geladen werden:', e);
-  }
-
+  render();
   resizeObserver = new ResizeObserver(() => map && map.invalidateSize());
   resizeObserver.observe(mapEl.value);
 });
@@ -78,6 +84,8 @@ onUnmounted(() => {
   if (map) map.remove();
   map = null;
 });
+
+watch(() => props.featureCollection, render, { deep: false });
 </script>
 
 <style scoped>

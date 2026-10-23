@@ -33,6 +33,8 @@ try:
 except ImportError:
     pass
 
+import re
+
 from sqlalchemy import text
 
 from src import remote
@@ -42,20 +44,23 @@ _MAX_CONTENT_CHARS = 5000
 # Query-guided instruction with relevance filtering: wide searches can
 # deliver documents that don't actually relate to the question, so the
 # model must judge each document first, summarize only the relevant ones,
-# and disclose the excluded ones in a trailing note.
+# and disclose the excluded ones in a trailing note — referencing them by
+# their Datei number so the verdict is machine-parseable (the map view
+# uses it to skip georeferences from refused documents).
 _SYSTEM_PROMPT = (
     "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine "
-    "Frage und eine Liste von Dokumenten (als Kurzfassungen/Teaser) "
-    "gegeben.\n"
+    "Frage und eine nummerierte Liste von Dokumenten (als "
+    "Kurzfassungen/Teaser) gegeben.\n"
     "1) Beurteile zunächst für jedes Dokument, ob es inhaltlich zur "
     "gestellten Frage beiträgt.\n"
     "2) Fasse NUR die relevanten Dokumente auf Deutsch zusammen — in "
     "Hinblick auf die Frage. Nenne die für die Frage wichtigsten "
     "Dokumente und Ergebnisse. Bleibe unter 500 Wörtern. Keine Emojis.\n"
     "3) Hänge an das Ende einen Abschnitt '**Nicht berücksichtigte "
-    "Dokumente:**' an, der die Titel aller als nicht relevant "
-    "eingestuften Dokumente auflistet — oder den Hinweis, dass alle "
-    "Dokumente berücksichtigt wurden.\n"
+    "Dokumente:**' an. Liste dort jede als nicht relevant eingestufte "
+    "Datei als eigene Zeile '- Datei <Nummer>: <Titel>' auf (Nummer = "
+    "Nummer aus der Dokumentenliste). Wenn alle Dokumente relevant waren, "
+    "schreibe dort 'Alle Dokumente wurden berücksichtigt.'\n"
     "Antworte nur mit der Zusammenfassung (inklusive dieses Abschnitts)."
 )
 
@@ -134,8 +139,36 @@ class ResultSummarizer:
             # is included in the PDF export
             footer = self._footer(response)
             result["summary"] = header + summary + footer
+            # machine-readable relevance verdict: the Datei numbers the
+            # model listed as refused, resolved back to the fetched files —
+            # consumers (map view) gate on this
+            result["summary_refused"] = self._parse_refused(summary, top_files)
             print(f"\nSummary (query-guided):\n{result['summary']}")
+            if result["summary_refused"]:
+                print("Refused documents:", [r["name"] for r in result["summary_refused"]])
         return result
+
+    def _parse_refused(self, summary: str, top_files: list[dict]) -> list[dict]:
+        """Extract the refused documents from the trailing note.
+
+        The note section lists lines '- Datei <Nummer>: <Titel>'. Returns
+        the refused files as {'oparlKey', 'name'}; best-effort — when the
+        section is absent or lists everything as considered, the result is
+        an empty list (no gating).
+        """
+        marker = summary.find("**Nicht berücksichtigte Dokumente:**")
+        if marker == -1:
+            return []
+        section = summary[marker:]
+        refused = []
+        for match in re.finditer(r"Datei\s+(\d+)", section):
+            idx = int(match.group(1)) - 1
+            if 0 <= idx < len(top_files):
+                f = top_files[idx]
+                entry = {"oparlKey": f["oparlKey"], "name": f["name"]}
+                if entry not in refused:
+                    refused.append(entry)
+        return refused
 
     def _footer(self, response: dict) -> str:
         """Markdown provenance footer: model, endpoint, token usage, and —

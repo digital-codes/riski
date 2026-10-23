@@ -116,6 +116,10 @@ def geo(session_id: str) -> Dict[str, Any]:
     keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", []) if n.get("type") == "AgendaItem"]
     file_keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", [])
                  if n.get("type") in ("File", "AuxFile")]
+    # gate on the summarizer's relevance verdict: georeferences from
+    # documents the summarizer refused are excluded from the map
+    refused = {r["oparlKey"] for r in result.get("summary_refused", [])}
+    file_keys = [k for k in file_keys if k not in refused]
     engine = get_engine(readonly=True)
     return collect_geo(engine, keys, file_keys)
 
