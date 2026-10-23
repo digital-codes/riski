@@ -43,6 +43,11 @@ def run_table(engine, table: str, count: int | None, pause: float, workers: int 
         existing = {r[0] for r in conn.execute(select(nv._vec_table.c.oparl_key))}
         rows = conn.execute(select(tbl.c.oparlKey, tbl.c.name).where(tbl.c.name.isnot(None))).all()
 
+    # Names are embedded RAW — the stop-term list must stay decoupled from
+    # stored vectors (changing the list must not invalidate embeddings).
+    # Non-discriminative terms are handled on the search side: the query
+    # is stripped before its vector is computed (see pgTimeline /
+    # pgHybridSearch design decision 6).
     todo = [(k, n) for k, n in rows if k not in existing]
     if count:
         todo = todo[:count]

@@ -780,13 +780,28 @@ def search_and_build_timeline(
     applied_filters: List[Dict[str, Any]] = []
 
     if hybrid:
-        from src.pgHybridSearch import facets as facet_listing
-        from src.pgHybridSearch import hybrid_candidates, parse_filters
+        from src.pgHybridSearch import (
+            _strip_terms_py,
+            facets as facet_listing,
+            hybrid_candidates,
+            load_stop_terms,
+            parse_filters,
+        )
 
         conn = session.connection()
         applied_filters = parse_filters(filters)
+        # Name vectors are embedded from stop-term-stripped names, so the
+        # query side of that signal must be stripped too (design decision 6).
+        stop_terms = load_stop_terms()
+        stripped_query = _strip_terms_py(query, stop_terms)
+        query_embedding_stripped = None
+        if stripped_query and stripped_query != query:
+            query_embedding_stripped = call_embedding_model(
+                stripped_query, EMBEDDING_API_URL, EMBEDDING_API_KEY, EMBEDDING_MODEL
+            )
         hyb = hybrid_candidates(
-            conn, query, query_embedding, top_k, filters=filters, signals=signals
+            conn, query, query_embedding, top_k, filters=filters, signals=signals,
+            query_embedding_stripped=query_embedding_stripped,
         )
         matched_entities = hyb["matched_entities"]
         candidates = hyb["file_candidates"]  # [(oparlKey, fused_score, content_distance)]

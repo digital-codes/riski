@@ -26,9 +26,14 @@ except ImportError:
 
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+import re
+
 import sqlalchemy as sa
 from sqlalchemy import Column, MetaData, Table, select
 from pgvector.sqlalchemy import Vector
+
+from src.db import _load_private
+import os
 
 # ----------------------------------------------------------------------
 # Configuration
@@ -51,6 +56,50 @@ TABLE_DATE_COL = {
     "Meeting": "start_date",
 }
 CANDIDATE_TABLES = ("Paper", "File", "AgendaItem", "Meeting")
+
+DEFAULT_STOP_TERMS_FILE = "config/lexical_stop_terms.txt"
+
+
+def load_stop_terms() -> List[str]:
+    """Load the lexical stop-term list (design decision 6).
+
+    Resolution order: path from private.py ``LEXICAL_STOP_TERMS_FILE`` or
+    env ``LEXICAL_STOP_TERMS_FILE``, else the shipped
+    ``config/lexical_stop_terms.txt``. A missing/unset file yields an empty
+    list (no stripping). The list itself lives in a separate file —
+    private.py only references it — so deployments differ without code
+    changes.
+    """
+    pr = _load_private()
+    path = None
+    if pr is not None:
+        path = getattr(pr, "LEXICAL_STOP_TERMS_FILE", None)
+    path = path or os.getenv("LEXICAL_STOP_TERMS_FILE") or DEFAULT_STOP_TERMS_FILE
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+    except OSError:
+        return []
+    return [ln.strip() for ln in lines if ln.strip() and not ln.strip().startswith("#")]
+
+
+def _pg_regex_escape(term: str) -> str:
+    """Escape a stop term for use inside a PostgreSQL regex alternation."""
+    return re.sub(r"([\\.^$|(){}\[\]*+?])", r"\\\1", term)
+
+
+def _strip_terms_py(text: str, terms: Sequence[str]) -> str:
+    """Remove stop terms from a query string (case-insensitive, word bounds)."""
+    if not terms:
+        return text
+    pattern = re.compile(r"\b(" + "|".join(_pg_regex_escape(t) for t in terms) + r")\b", re.IGNORECASE)
+    return re.sub(r"\s+", " ", pattern.sub("", text)).strip()
+
+
+def _strip_expr(name_col, terms: Sequence[str]):
+    """SQL expression stripping stop terms from a name column."""
+    pattern = r"\m(" + "|".join(_pg_regex_escape(t) for t in terms) + r")\M"
+    return sa.func.regexp_replace(sa.func.lower(name_col), pattern, "", "gi")
 
 
 # ----------------------------------------------------------------------
@@ -137,18 +186,28 @@ def lexical_candidates(
     limit: int = DEFAULT_CANDIDATES_PER_SIGNAL,
     threshold: float = LEXICAL_SIMILARITY_THRESHOLD,
     extra_where: Optional[List] = None,
+    stop_terms: Optional[Sequence[str]] = None,
 ) -> List[Tuple[str, str, float]]:
     """Trigram lexical candidates over the indexed name column.
 
-    ``tbl`` is a shared Table object. Returns ``(oparlKey, name,
+    ``tbl`` is a shared Table object. Both the query and the name column
+    are stripped of the configured stop terms (e.g. the city name) before
+    similarity — see design decision 6. Returns ``(oparlKey, name,
     similarity)`` ordered by descending similarity. At current corpus sizes
     an ordered scan is fast enough despite the GIN index only accelerating
     the % operator.
     """
+    terms = load_stop_terms() if stop_terms is None else list(stop_terms)
     name_col = getattr(tbl.c, TABLE_NAME_COL[tbl.name])
+    if terms:
+        compared = _strip_expr(name_col, terms)
+        compared_query = _strip_terms_py(query, terms)
+    else:
+        compared = sa.func.lower(name_col)
+        compared_query = query.lower()
     stmt = (
-        select(tbl.c.oparlKey, name_col, sa.func.similarity(name_col, query).label("sim"))
-        .where(sa.func.similarity(name_col, query) > threshold)
+        select(tbl.c.oparlKey, name_col, sa.func.similarity(compared, compared_query).label("sim"))
+        .where(sa.func.similarity(compared, compared_query) > threshold)
     )
     for f in extra_where or []:
         stmt = stmt.where(f)
@@ -402,8 +461,14 @@ def hybrid_candidates(
     filters: Optional[List[Dict[str, Any]]] = None,
     signals: Optional[Dict[str, bool]] = None,
     per_signal: int = DEFAULT_CANDIDATES_PER_SIGNAL,
+    query_embedding_stripped: Optional[Sequence[float]] = None,
 ) -> Dict[str, Any]:
     """Generate fused candidates per item table.
+
+    ``query_embedding_stripped`` is an embedding of the stop-term-stripped
+    query, used for the name-vector signal so both sides of the comparison
+    exclude the same non-discriminative terms (design decision 6). When
+    omitted, the main ``query_embedding`` is used as-is.
 
     Returns ``{
       "matched_entities": [{"id": "{Type}_{oparlKey}", "type": ..., "oparlKey": ...,
@@ -416,6 +481,8 @@ def hybrid_candidates(
     use_name_vecs = signals.get("name_vectors", True)
     use_content = signals.get("content_vectors", True)
     parsed = parse_filters(filters)
+    stop_terms = load_stop_terms()
+    nv_embedding = query_embedding_stripped if query_embedding_stripped is not None else query_embedding
 
     matched: List[Dict[str, Any]] = []
     file_fused: Dict[str, float] = {}
@@ -429,11 +496,11 @@ def hybrid_candidates(
         lex: List[str] = []
         if use_lexical:
             lex = [k for k, _n, _s in lexical_candidates(
-                conn, query, tbl, per_signal, extra_where=extra)]
+                conn, query, tbl, per_signal, extra_where=extra, stop_terms=stop_terms)]
         nv: List[str] = []
         nv_dist: Dict[str, float] = {}
         if use_name_vecs:
-            pairs = name_vector_candidates(conn, query_embedding, tbl, per_signal, extra_where=None)
+            pairs = name_vector_candidates(conn, nv_embedding, tbl, per_signal, extra_where=None)
             nv = [k for k, _d in pairs]
             nv_dist = dict(pairs)
         vc: List[str] = []

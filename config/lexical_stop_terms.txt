@@ -1,0 +1,14 @@
+# Lexical stop terms for hybrid search (categorization-indexing, design
+# decision 6). One term per line; blank lines and #-comments are ignored.
+# Matching is case-insensitive on word boundaries, applied to BOTH the
+# query and the document name before trigram similarity — so terms that
+# carry no discriminative power in this corpus (e.g. the city name) can
+# never produce lexical matches on their own, but remain harmless as
+# additional qualifiers.
+#
+# This file is deployment-specific: adjust it when porting to another city.
+# The path can be overridden in private.py via LEXICAL_STOP_TERMS_FILE.
+
+Karlsruhe
+Karlsruher
+Stadt

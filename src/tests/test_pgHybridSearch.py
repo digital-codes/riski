@@ -6,9 +6,32 @@ import pytest
 
 from src.pgHybridSearch import (
     FilterError,
+    _strip_terms_py,
+    load_stop_terms,
     parse_filters,
     rrf_fuse,
 )
+
+
+class TestStopTerms:
+    def test_shipped_list_loads(self):
+        # the committed config file has active Karlsruhe terms
+        terms = load_stop_terms()
+        assert "Karlsruhe" in terms and "Stadt" in terms
+
+    def test_strip_removes_terms_word_wise(self):
+        terms = ["Karlsruhe", "Karlsruher", "Stadt"]
+        assert _strip_terms_py("Digitalstrategie der Stadt Karlsruhe", terms) == "Digitalstrategie der"
+        assert _strip_terms_py("Karlsruher Pass", terms) == "Pass"
+
+    def test_strip_collapses_whitespace(self):
+        assert _strip_terms_py("Stadt   der  Karlsruhe", ["Karlsruhe", "Stadt"]) == "der"
+
+    def test_strip_case_insensitive(self):
+        assert _strip_terms_py("KARLSRUHE stuff", ["Karlsruhe"]) == "stuff"
+
+    def test_empty_terms_noop(self):
+        assert _strip_terms_py("Digitalstrategie", []) == "Digitalstrategie"
 
 
 class TestRrfFuse:
@@ -94,6 +117,19 @@ class TestHybridCandidatesIntegration:
         engine = get_engine()
         with engine.connect() as c:
             yield c
+
+    def test_lexical_recall_excludes_stop_term_only_matches(self, conn):
+        from src.pgHybridSearch import hybrid_candidates
+
+        # fake vector: name_vecs absent/empty → lexical does the work
+        hyb = hybrid_candidates(
+            conn, "Digitalstrategie der Stadt Karlsruhe", [0.01] * 1024, top_k=10,
+            signals={"lexical": True, "name_vectors": False, "content_vectors": False},
+        )
+        names = [str(m["name"]).lower() for m in hyb["matched_entities"]]
+        assert any("digitalstrategie" in n for n in names)
+        # generic city-name matches must not survive the stop-term stripping
+        assert not any("inklusionspreis" in n or "linke-kitas" in n for n in names)
 
     def test_lexical_recall_finds_exact_name(self, conn):
         from src.pgHybridSearch import hybrid_candidates
