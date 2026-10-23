@@ -36,6 +36,13 @@ import { CanvasRenderer } from 'echarts/renderers';
 
 echarts.use([GraphChart, LegendComponent, TooltipComponent, CanvasRenderer]);
 
+// on mobile, roam/drag must be off — otherwise the canvas swallows every
+// touch and the page cannot be scrolled past the chart
+const isMobile = ref(window.innerWidth <= 768);
+const onResize = () => {
+  isMobile.value = window.innerWidth <= 768;
+};
+
 const props = defineProps({
   graph: { type: Object, required: true },
 });
@@ -181,8 +188,8 @@ function toOption() {
         data: nodes,
         links,
         categories: categories.value,
-        roam: true,
-        draggable: true,
+        roam: !isMobile.value,
+        draggable: !isMobile.value,
         label: { show: true, position: 'right', fontSize: 10, formatter: (p) => p.name },
         emphasis: { focus: 'adjacency', lineStyle: { width: 3 } },
         force: {
@@ -202,6 +209,7 @@ function render() {
 }
 
 onMounted(() => {
+  window.addEventListener('resize', onResize);
   chart = echarts.init(chartEl.value);
   render();
   chart.on('click', (p) => {
@@ -213,10 +221,14 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener('resize', onResize);
   if (resizeObserver) resizeObserver.disconnect();
   if (chart) chart.dispose();
   chart = null;
 });
+
+// re-render when the roam mode flips (rotation across the breakpoint)
+watch(isMobile, () => render());
 
 watch(() => props.graph, render, { deep: true });
 </script>
@@ -302,8 +314,13 @@ watch(() => props.graph, render, { deep: true });
   .network-card {
     padding: 16px;
   }
+  /* let vertical swipes scroll the page instead of being eaten by the canvas */
   .chart {
     height: 380px;
+    touch-action: pan-y;
+  }
+  .network-card .filter-row .filter-label {
+    min-width: auto;
   }
 }
 </style>

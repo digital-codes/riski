@@ -21,10 +21,10 @@
 
 ## 3. Frontend: interaction
 
-- [ ] 3.1 Click handling: select node → emit to parent → DetailPanel shows type, name, date, OParl deep-link, PDF download (File/AuxFile), related entities list
-- [ ] 3.2 Create `DetailPanel.vue`: side pane on desktop (right), bottom sheet on mobile (≤768px), closable, consistent with `isMobile` pattern in `TimeLine.vue`
-- [ ] 3.3 Edge/relation filter UI: checkboxes per `relation` type, applied as graph display filter (data stays intact)
-- [ ] 3.4 Node-type filter + date-color gradient with time-range filter
+- [x] 3.1 Click handling: select node → emit to parent → DetailPanel shows type, name, date, OParl deep-link, PDF download (File/AuxFile), related entities list
+- [x] 3.2 Create `DetailPanel.vue`: side pane on desktop (right), bottom sheet on mobile (≤768px), closable, consistent with `isMobile` pattern in `TimeLine.vue`
+- [x] 3.3 Edge/relation filter UI: checkboxes per `relation` type, applied as graph display filter (data stays intact)
+- [x] 3.4 Node-type filter + date-color gradient with time-range filter
 - [ ] 3.5 Dynamic updates: watch-driven merge-by-id diff → `setOption` update (not replace); verify existing node positions are preserved when data grows
 
 ## 4. Enrichment (depends on categorization & indexing change)
