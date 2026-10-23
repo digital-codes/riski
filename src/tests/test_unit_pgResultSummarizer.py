@@ -197,7 +197,7 @@ class TestSkipConditions:
         assert result["summary"] == "vorhanden"
         summarizer.summarize(result, force=True)
         assert result["summary"].startswith("**Frage:** ")
-        assert result["summary"].endswith("Zusammenfassung.")
+        assert "Zusammenfassung." in result["summary"]
 
     def test_dummy_response_ignored(self, result, monkeypatch):
         monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
@@ -205,6 +205,67 @@ class TestSkipConditions:
         monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "[dummy response]"})
         ResultSummarizer(FakeSession({})).summarize(result)
         assert "summary" not in result
+
+
+class TestProvenanceFooter:
+    def test_footer_with_tokens_and_impact(self, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm:8000/v1")
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "mistral")
+
+        def fake_chat(messages, **kwargs):
+            return {
+                "content": "Zusammenfassung.",
+                "model": "served-model-name",
+                "usage": {"prompt_tokens": 1200, "completion_tokens": 300, "total_tokens": 1500},
+                "impact": {
+                    "inferenceTime": {"total": 9200, "unit": "ms"},
+                    "energy": {"total": 4500.0, "unit": "Wms"},
+                    "emissions": {"total": 87.5, "unit": "ugCO2e"},
+                },
+            }
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        summarizer = ResultSummarizer(FakeSession({"100": ("Teaser", "Inhalt")}))
+        summarizer.summarize(result)
+        s = result["summary"]
+        # footer comes after the summary content and contains provenance
+        assert s.find("Zusammenfassung.") < s.find("---")
+        assert "`served-model-name`" in s           # model from response
+        assert "`http://llm:8000/v1`" in s          # endpoint
+        assert "Tokens: 1200 / 300 (Prompt / Antwort, 1500 gesamt)" in s
+        assert "Inferenzzeit: 9200 ms" in s
+        assert "Energie: 4500 Wms" in s
+        assert "Emissionen: 87.5 µgCO₂e" in s
+
+    def test_footer_model_and_endpoint_even_without_usage(self, summarizer, result, monkeypatch):
+        """Model + endpoint are always stated; usage/impact only when present."""
+        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Zusammenfassung."})
+        summarizer.summarize(result)
+        s = result["summary"]
+        assert "`test-model`" in s and "`http://llm`" in s
+        assert "Tokens:" not in s and "Energie" not in s
+
+    def test_footer_absent_when_nothing_available(self, result, monkeypatch):
+        """With no model/url anywhere, no footer is emitted (direct _footer check)."""
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", None)
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", None)
+        summarizer = ResultSummarizer(FakeSession({}), model=None)
+        assert summarizer._footer({"content": "Zusammenfassung."}) == ""
+
+    def test_footer_present_in_stored_summary_for_pdf(self, result, monkeypatch):
+        """The footer is part of result["summary"] — the SummaryCard (and
+        thus the PDF export) renders it automatically."""
+        monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
+        monkeypatch.setattr(pc.remote, "CHAT_MODEL", "m")
+
+        def fake_chat(messages, **kwargs):
+            return {"content": "Zusammenfassung.",
+                    "usage": {"prompt_tokens": 50, "completion_tokens": 49, "total_tokens": 99}}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        s = ResultSummarizer(FakeSession({"100": ("Teaser", "Inhalt")}))
+        s.summarize(result)
+        assert "Tokens: 50 / 49 (Prompt / Antwort, 99 gesamt)" in result["summary"]
 
 
 class TestSearchAndSummarizeWrapper:

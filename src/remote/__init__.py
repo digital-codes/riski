@@ -159,6 +159,10 @@ def chat(
         "prompt_tokens": usage.get("prompt_tokens"),
         "completion_tokens": usage.get("completion_tokens"),
         "total_tokens": usage.get("total_tokens"),
+        # verbatim for provenance/footers; None when the endpoint omits them
+        "model": data.get("model"),
+        "usage": usage or None,
+        "impact": data.get("impact"),  # energy/emissions when the endpoint reports them
     }
 
 

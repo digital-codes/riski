@@ -132,6 +132,52 @@ class ResultSummarizer:
             # the summary must state the input query — prepended
             # deterministically, not left to the model
             header = f"**Frage:** {query}\n\n" if query else ""
-            result["summary"] = header + summary
+            # provenance footer (model, endpoint, tokens, energy/emissions
+            # when the endpoint reports them) — part of the summary, so it
+            # is included in the PDF export
+            footer = self._footer(response)
+            result["summary"] = header + summary + footer
             print(f"\nSummary (query-guided):\n{result['summary']}")
         return result
+
+    def _footer(self, response: dict) -> str:
+        """Markdown provenance footer: model, endpoint, token usage, and —
+        when the endpoint reports them — inference time, energy and
+        emissions. Empty string when nothing is available."""
+        parts: list[str] = []
+        model = response.get("model") or self.model
+        if model:
+            parts.append(f"Modell: `{model}`")
+        if remote.CHAT_BASE_URL:
+            parts.append(f"Endpunkt: `{remote.CHAT_BASE_URL}`")
+
+        usage = response.get("usage") or {}
+        p, c, t = usage.get("prompt_tokens"), usage.get("completion_tokens"), usage.get("total_tokens")
+        if t is not None:
+            if p is not None and c is not None:
+                parts.append(f"Tokens: {p} / {c} (Prompt / Antwort, {t} gesamt)")
+            else:
+                parts.append(f"Tokens: {t}")
+
+        impact = response.get("impact") or {}
+        inference = impact.get("inferenceTime") or {}
+        if inference.get("total") is not None:
+            parts.append(f"Inferenzzeit: {_fmt_num(inference['total'])} {inference.get('unit', 'ms')}")
+        energy = impact.get("energy") or {}
+        if energy.get("total") is not None:
+            parts.append(f"Energie: {_fmt_num(energy['total'])} {energy.get('unit', 'Wms')}")
+        emissions = impact.get("emissions") or {}
+        if emissions.get("total") is not None:
+            unit = {"ugCO2e": "µgCO₂e"}.get(emissions.get("unit", ""), emissions.get("unit", ""))
+            parts.append(f"Emissionen: {_fmt_num(emissions['total'])} {unit}".strip())
+
+        if not parts:
+            return ""
+        return "\n\n---\n\n*" + " · ".join(parts) + "*\n"
+
+
+def _fmt_num(value) -> str:
+    """Compact number formatting: 1234.0 → '1234', 1.5 stays '1.5'."""
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value)
