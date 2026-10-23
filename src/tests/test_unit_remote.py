@@ -110,6 +110,7 @@ def test_chat_success(monkeypatch):
         "model": None,
         "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
         "impact": None,
+        "endpoint": remote.CHAT_BASE_URL,
     }
 
 

@@ -47,6 +47,7 @@ OCR_KEY = _get("OCR_KEY", "OCR_KEY", "")
 OCR_MDL = _get("OCR_MDL", "OCR_MDL", "mistral-ocr-latest")
 
 
+
 def _make_logger() -> logging.Logger:
     logger = logging.getLogger(__name__)
     if not logger.handlers:
@@ -163,7 +164,9 @@ def chat(
         "model": data.get("model"),
         "usage": usage or None,
         "impact": data.get("impact"),  # energy/emissions when the endpoint reports them
+        "endpoint": CHAT_BASE_URL,
     }
+
 
 
 def embed(text: str, model: str | None = None, dimensions: int | None = None) -> np.ndarray:

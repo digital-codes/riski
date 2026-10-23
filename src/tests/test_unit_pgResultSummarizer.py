@@ -41,7 +41,7 @@ def make_result(n: int = 2, query: str = "Was macht die Digitalstrategie?") -> d
 def summarizer(monkeypatch):
     monkeypatch.setattr(pc.remote, "CHAT_BASE_URL", "http://llm")
     monkeypatch.setattr(pc.remote, "CHAT_MODEL", "test-model")
-    monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Zusammenfassung."})
+    monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Zusammenfassung.", "endpoint": "http://llm"})
     return ResultSummarizer(FakeSession({}))
 
 
@@ -239,7 +239,7 @@ class TestProvenanceFooter:
 
     def test_footer_model_and_endpoint_even_without_usage(self, summarizer, result, monkeypatch):
         """Model + endpoint are always stated; usage/impact only when present."""
-        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Zusammenfassung."})
+        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Zusammenfassung.", "endpoint": "http://llm"})
         summarizer.summarize(result)
         s = result["summary"]
         assert "`test-model`" in s and "`http://llm`" in s

@@ -119,14 +119,11 @@ class ResultSummarizer:
             else:
                 prompt += "Inhalt: Not available\n"
 
-        response = remote.chat(
-            [
-                {"role": "system", "content": _SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
-            model=self.model,
-            temperature=self.temperature,
-        )
+        messages = [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ]
+        response = remote.chat(messages, model=self.model, temperature=self.temperature)
         summary = response.get("content", "")
         if summary and summary != "[dummy response]":
             # the summary must state the input query — prepended
@@ -146,10 +143,11 @@ class ResultSummarizer:
         emissions. Empty string when nothing is available."""
         parts: list[str] = []
         model = response.get("model") or self.model
+        endpoint = response.get("endpoint") or remote.CHAT_BASE_URL
         if model:
             parts.append(f"Modell: `{model}`")
-        if remote.CHAT_BASE_URL:
-            parts.append(f"Endpunkt: `{remote.CHAT_BASE_URL}`")
+        if endpoint:
+            parts.append(f"Endpunkt: `{endpoint}`")
 
         usage = response.get("usage") or {}
         p, c, t = usage.get("prompt_tokens"), usage.get("completion_tokens"), usage.get("total_tokens")
