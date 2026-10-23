@@ -68,3 +68,18 @@ and must be serialized instead of inferred.
 - **Renderers**: 2D first is deliberate — 3D graphGL adds a large dependency
   and the ForceAtlas2 simulation has no "pin z-axis" option, so time-as-z
   smears unless layers are bucketed; decide after 2D UX settles.
+
+## Future Work (descoped during this change)
+
+- **Tag-scheme node attributes** — enrich node `attrs` with the full
+  canonical tag set (topic/district/submitter schemes from the
+  categorization-indexing tag tables) beyond the document-type attrs
+  already carried; filter chips for them.
+- **Person/Membership nodes and edges** — traversal extension via the
+  Membership junction (collapsed to typed edges); blocked in practice by
+  unpopulated OParl originator fields (see categorization-indexing spike).
+- **Semantic-similarity edges** — pairwise cosine over `contentEmbeddings`
+  within the answer set, thresholded, as `relation: "semanticSimilarity"`
+  with distance attrs; render as dashed "mesh" edges.
+- **graphGL 3D renderer** — time as z-axis/color behind a renderer toggle;
+  revisit only if the 2D view proves insufficient (it has not so far).
