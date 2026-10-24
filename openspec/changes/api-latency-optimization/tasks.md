@@ -24,5 +24,5 @@
 
 ## 5. Verification
 
-- [ ] 5.1 Full suite + `openspec validate api-latency-optimization`; verify: suite green, validation passes.
-- [ ] 5.2 Before/after measurement on the live DB: record RISKI_TIMING output for 3 real `/search` + 3 `/ask` queries against the current main and the optimized branch; record numbers in `docs/` (or the task output) — target: hybrid phase < 60% of baseline, repeat-query embedding ≈ 0; verify: recorded comparison shows improvement without result drift (top_files identical).
+- [x] 5.1 Full suite + `openspec validate api-latency-optimization`; verify: suite green, validation passes.
+- [x] 5.2 Before/after measurement on the live DB: record RISKI_TIMING output for 3 real `/search` + 3 `/ask` queries against the current main and the optimized branch; record numbers in `docs/` (or the task output) — target: hybrid phase < 60% of baseline, repeat-query embedding ≈ 0; verify: recorded comparison shows improvement without result drift (top_files identical). *(Results in docs/20261024-api-latency/before-after.md: hybrid 1.5–1.9s → 0.62–0.80s; /search ~2.5–3s → ~1s; parity harness green.)*
