@@ -86,6 +86,18 @@ pg_restore --list /mnt_ai/data/riski/snapshots/riski_agentic_*.dump   # verify
 #    import succeeds.
 python src/syncIncremental.py
 #    Two-phase alternative: python src/oparlUpdate.py  &&  python src/pgGen.py /mnt_ai/data/odd26/ris/ko
+#    Incremental mechanics (OParl 1.1 update mechanism): all 9 Karlsruhe
+#    collections are requested with modified_since=<baseline> (spec
+#    underscore spelling — the camelCase variant is silently ignored!),
+#    page size limit=1000, only pagination links and PDF downloads are
+#    followed (resource references are never dereferenced). Filter
+#    support is verified per collection via a future-baseline probe;
+#    collections failing the probe fall back to created_since, then to a
+#    full fetch (visible in oparlUpdateRuns.full_fetches). The same
+#    approach is used by the independent karlsruhe-oparl-syndication
+#    crawler (github.com/digital-codes/karlsruhe-oparl-syndication), which
+#    additionally reconciles fully every 7 days — a reasonable pattern to
+#    adopt via cron for this pipeline too.
 #    Note: pgGen must see the FULL ko/ directory (not just new files) —
 #    association URLs are resolved within the passed directory only.
 
@@ -297,9 +309,9 @@ source of truth, see the archived change `track-oparl-update-runs`).
 | Planned | Status in the current code |
 |---|---|
 | Timestamp cursor tracking | ✅ The `oparlUpdateRuns` table stores each run's baseline and end state in the database (DB is the sole source; `last_run.txt` was removed entirely). |
-| `?modifiedSince=`/`?createdSince=` queries | ✅ Every collection (papers, agendaItems, meetings, people, consultations) is requested with `modifiedSince` first (captures modified-after-creation entities); `createdSince` is the fallback when `modifiedSince` is unsupported. The body resource keeps `createdSince`. |
+| `?modified_since=`/`?created_since=` queries | ✅ Every collection (all 9 Karlsruhe types incl. files/memberships/organizations/locations) is requested with `modified_since` first (captures modified-after-creation entities); `created_since` is the fallback. NOTE: the parameters must use the underscore spelling from the OParl 1.1 spec — the API **silently ignores** the camelCase variant (`modifiedSince`), which an earlier version of this crawler used. Page size `limit=1000` cuts pagination requests ~100×. |
 | Endpoint-capability detection and fallback | ✅ When an endpoint provably ignores a filter (older resources returned) or rejects it (HTTP error), the crawler falls back — first to the other parameter, then to a full fetch with a warning. Fallback usage is visible in the run row (`oparlUpdateRuns.full_fetches`). |
-| Cover *modified* records, not only created ones | ✅ Via `modifiedSince`-first (see above). |
+| Cover *modified* records, not only created ones | ✅ Via `modified_since`-first (see above). |
 | One-command synchronisation | ✅ `src/syncIncremental.py` runs the incremental crawl and then `pgGen`'s import against the crawl output. The run row is finalised (and the baseline advanced) only after a successful import; on failure the baseline is reset to the pre-crawl window. |
 | Idempotent upsert (`ON CONFLICT DO UPDATE`) | ✅ `pgGen.insert_all` upserts on `oparlId`, updating only when the incoming `modified` timestamp is newer. |
 | Graceful shutdown / cursor persistence | ✅ `SIGINT` is caught; the run is recorded with `success=false` and the items collected so far are persisted. |
@@ -325,7 +337,7 @@ filters and match-type provenance, name vectors for all entity tables,
 the network graph view with OParl association edges, the FastAPI search
 API, and query-guided async summaries.
 
-**Recently implemented** (2026-10-24): `modifiedSince`-first incremental
+**Recently implemented** (2026-10-24): `modified_since`-first incremental
 crawling for all collections with capability fallback and run-row
 visibility (`oparlUpdateRuns.full_fetches`), one-command synchronisation
 (`syncIncremental`), batch PDF OCR (`pgOcr`, Mistral backend, first-12-pages
