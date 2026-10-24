@@ -35,7 +35,7 @@
     @expand="onExpand"
   />
   <div class="wrapper">
-    <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" :files="summaryFiles" :refining="refining" @refine="onRefine" @toggle-file="onToggleFile" />
+    <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" :files="summaryFiles" :refining="refining" :refined="summaryRefined" @refine="onRefine" @toggle-file="onToggleFile" />
   </div>
   <div class="wrapper">
     <GeoMap v-if="geoAvailable && geoFC" :feature-collection="geoFC" />
@@ -68,6 +68,7 @@ const expanding = ref(false);
 const summaryLoading = ref(false);
 const summaryFiles = ref([]);
 const refining = ref(false);
+const summaryRefined = ref(false);
 // per-session exclusions — applied to every subsequent summarize call
 const summaryExclude = ref([]);
 const geoAvailable = ref(false);
@@ -95,6 +96,7 @@ async function runSearch() {
   summaryLoading.value = false;
   summaryFiles.value = [];
   refining.value = false;
+  summaryRefined.value = false;
   summaryExclude.value = [];
   geoAvailable.value = false;
   geoFC.value = null;
@@ -109,6 +111,7 @@ async function runSearch() {
         .then((res) => {
           if (res.summary) summary.value = res.summary;
           summaryFiles.value = res.files || [];
+          summaryRefined.value = !!res.refined;
           summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
           // the relevance verdict may gate the map — refresh it
           if (geoAvailable.value) fetchGeo();
@@ -133,6 +136,7 @@ async function runSummarize({ refine = false, exclude = [] } = {}) {
     const res = await apiSummarize(sessionId.value, { refine, exclude });
     if (res.summary) summary.value = res.summary;
     summaryFiles.value = res.files || [];
+    summaryRefined.value = !!res.refined;
     summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
     if (geoAvailable.value) fetchGeo();
   } catch (e) { /* keep the previous summary on failure */ }

@@ -60,10 +60,16 @@ frontend renders comes from the structured response, not the markdown).
 
 **D5 — Structured response.** `/summarize` returns
 `{"summary": str, "files": [{oparlKey, name, fileName, downloadUrl, refused,
-excluded}]}`. `refused` from the last run; `excluded` from the session's
-exclusion set (refused files are auto-added to it on the first refine —
-spec: refused start excluded). downloadUrl comes from the File row (fetched
-in the same query as teaser/content — extend `_file_text`'s SELECT).
+excluded}], "refined": bool}`. `excluded` is the authoritative per-file
+state — the frontend renders the accepted/refused verdict from it. Refused
+files are auto-added to the exclusion set on the **automatic teaser pass**
+only (spec: refused start excluded); during a refinement the user's
+selection is authoritative — the model's fresh refusals stay display-only
+(`refused` flag + in-text note) and never change the file set (found in
+user testing: refine silently shrank the considered set). `refined`
+signals full-content mode: the frontend disables the refine button once it
+is set. downloadUrl comes from the File row (fetched in the same query as
+teaser/content — extend `_file_text`'s SELECT).
 
 **D6 — Frontend.** `SummaryCard.vue` gains: a "Verfeinern" button (visible
 when a summary exists) emitting `refine`, and a collapsible file list

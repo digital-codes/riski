@@ -433,6 +433,16 @@ class TestFullContentRefinement:
         assert "[File 0](https://dl/f0.pdf) — berücksichtigt" in summary
         assert "[File 1](https://dl/f1.pdf) — berücksichtigt" in summary
 
+    def test_file_list_marks_excluded_files(self, rich_session, result, monkeypatch):
+        """The list covers ALL fetched files; the verdict follows the
+        exclusion state (toggle = accepted/refused)."""
+        monkeypatch.setattr(pc.remote, "chat",
+                            lambda *a, **k: {"content": "Zusammenfassung."})
+        ResultSummarizer(rich_session).summarize(result, exclude={"101"})
+        summary = result["summary"]
+        assert "[File 0](https://dl/f0.pdf) — berücksichtigt" in summary
+        assert "[File 1](https://dl/f1.pdf) — nicht berücksichtigt" in summary
+
     def test_summary_files_metadata_refused_auto_excluded(self, rich_session, result, monkeypatch):
         def fake_chat(messages, **kwargs):
             return {"content": (
@@ -452,3 +462,45 @@ class TestFullContentRefinement:
         ResultSummarizer(rich_session).summarize(result, exclude={"100", "101"})
         assert calls == []
         assert result["summary_files"][0]["excluded"] is True
+
+    def test_refine_uses_user_set_model_refusal_display_only(self, rich_session, result, monkeypatch):
+        """A refinement must use exactly the user's set: the model's fresh
+        refusals never change the file set or the excluded flags (found in
+        user testing — refine silently shrank the considered set)."""
+        def fake_chat(messages, **kwargs):
+            # the model refuses File 1 during the refinement
+            return {"content": (
+                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 2: File 1\n")}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result, use_full_content=True)
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        # the model's refusal is visible as info ...
+        assert files["101"]["refused"] is True
+        # ... but the user's set is untouched: not excluded, still listed
+        # as berücksichtigt
+        assert files["101"]["excluded"] is False
+        assert result["summary_excluded"] == []
+        assert result["summary_refused"] == [{"oparlKey": "101", "name": "File 1"}]
+
+    def test_teaser_run_refusals_pre_exclude(self, rich_session, result, monkeypatch):
+        """On the automatic pass, refused files start excluded (so the
+        refine button uses the current considered set)."""
+        def fake_chat(messages, **kwargs):
+            return {"content": (
+                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 2: File 1\n")}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result)
+        assert result["summary_excluded"] == ["101"]
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["101"]["excluded"] is True
+
+    def test_refined_mode_marker(self, rich_session, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Z."})
+        ResultSummarizer(rich_session).summarize(result)
+        assert result["summary_refined"] is False
+        ResultSummarizer(rich_session).summarize(result, force=True, use_full_content=True)
+        assert result["summary_refined"] is True

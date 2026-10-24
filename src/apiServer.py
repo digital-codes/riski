@@ -147,12 +147,14 @@ def summarize(req: SummarizeRequest) -> Dict[str, Any]:
     result = sess["result"]
     if result.get("summary") and not req.refine:
         return {"summary": result["summary"],
-                "files": result.get("summary_files", [])}
+                "files": result.get("summary_files", []),
+                "refined": result.get("summary_refined", False)}
     if sess.get("summarizing"):
         # a refine is already in flight for this session — report the
         # current state instead of stacking another LLM call
         return {"summary": result.get("summary"),
                 "files": result.get("summary_files", []),
+                "refined": result.get("summary_refined", False),
                 "in_progress": True}
 
     # persist exclusions in the session so subsequent refinements honour
@@ -178,7 +180,8 @@ def summarize(req: SummarizeRequest) -> Dict[str, Any]:
         db_session.close()
         sess["summarizing"] = False
     return {"summary": result.get("summary"),
-            "files": result.get("summary_files", [])}
+            "files": result.get("summary_files", []),
+            "refined": result.get("summary_refined", False)}
 
 
 @app.post("/expand")

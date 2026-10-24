@@ -14,10 +14,13 @@
 				</span>
 			</h2>
 			<div class="header-actions">
-				<button v-if="!loading && summary && !refining" type="button" class="refine-btn"
+				<button v-if="!loading && summary" type="button" class="refine-btn"
+						:disabled="refining || refined"
 						@click="$emit('refine')"
-						title="Zusammenfassung mit dem Volltext der Dokumente neu erstellen (dauert etwas länger)">
-					Verfeinern
+						:title="refined
+							? 'Volltext-Zusammenfassung aktiv — Dokumente ein-/ausschließen für Änderungen'
+							: 'Zusammenfassung mit dem Volltext der Dokumente neu erstellen (dauert etwas länger)'">
+					{{ refining ? 'Verfeinere…' : 'Verfeinern' }}
 				</button>
 				<button v-if="!loading && summary" type="button" class="pdf-btn" @click="downloadPdf" title="Zusammenfassung drucken oder als PDF speichern">
 					Als PDF speichern
@@ -39,8 +42,8 @@
 							   @change="$emit('toggle-file', { oparlKey: f.oparlKey, excluded: !$event.target.checked })" />
 						<a v-if="f.downloadUrl" :href="f.downloadUrl" target="_blank" rel="noopener" class="file-name">{{ f.name }}</a>
 						<span v-else class="file-name">{{ f.name }}</span>
-						<span class="file-verdict" :class="f.refused ? 'refused' : 'used'">
-							{{ f.refused ? 'nicht berücksichtigt' : 'berücksichtigt' }}
+						<span class="file-verdict" :class="f.excluded ? 'refused' : 'used'">
+							{{ f.excluded ? 'nicht berücksichtigt' : 'berücksichtigt' }}
 						</span>
 					</label>
 				</li>
@@ -72,6 +75,11 @@ const props = defineProps({
 		default: () => []
 	},
 	refining: {
+		type: Boolean,
+		default: false
+	},
+	// full-content mode reached — refine button disabled (toggles still re-run)
+	refined: {
 		type: Boolean,
 		default: false
 	}

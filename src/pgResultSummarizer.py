@@ -173,30 +173,43 @@ class ResultSummarizer:
             # model listed as refused, resolved back to the fetched files —
             # consumers (map view) gate on this
             refused = self._parse_refused(summary, top_files)
+            refused_keys = {r["oparlKey"] for r in refused}
+            user_excluded = set(exclude or set())
+            if not use_full_content:
+                # automatic pass: the model's refusals pre-exclude files for
+                # the interactive list (refused files start excluded)
+                final_excluded = user_excluded | refused_keys
+            else:
+                # refinement: the user's selection is authoritative — the
+                # model's refusals are display-only and never change the set
+                final_excluded = user_excluded
+            result["summary_excluded"] = sorted(final_excluded)
+            # full-content mode marker: the frontend disables the refine
+            # button once the summary is already refined
+            result["summary_refined"] = use_full_content
             # provenance footer (model, endpoint, tokens, energy/emissions
             # when the endpoint reports them) — part of the summary, so it
             # is included in the PDF export; the download-URL file list is
-            # rendered above it (change: summary-refine-file-control)
+            # rendered above it (change: summary-refine-file-control) and
+            # lists ALL fetched files with the exclusion-state verdict
             footer = self._footer(response)
-            file_list = self._file_list_section(top_files, refused)
+            file_list = self._file_list_section(list(result.get("top_files") or []), final_excluded)
             result["summary"] = header + summary + file_list + footer
             result["summary_refused"] = refused
-            # structured per-file metadata for the interactive frontend;
-            # refused files are auto-excluded so a refinement does not
-            # silently re-include them
-            result["summary_files"] = self._summary_files(top_files, refused, exclude)
+            # structured per-file metadata for the interactive frontend
+            result["summary_files"] = self._summary_files(result.get("top_files") or [], refused, final_excluded)
             print(f"\nSummary (query-guided, {layer}):\n{result['summary']}")
             if result["summary_refused"]:
                 print("Refused documents:", [r["name"] for r in result["summary_refused"]])
         return result
 
     def _summary_files(self, top_files: list[dict], refused: list[dict],
-                       exclude: set | None) -> list[dict]:
+                       excluded: set) -> list[dict]:
         """Structured per-file metadata for the frontend (name, download
-        URL, refused/excluded flags). Download URLs may be missing when the
-        DB row is absent."""
+        URL, refused/excluded flags). ``excluded`` is the authoritative
+        set state — the frontend renders the verdict from it. Download
+        URLs may be missing when the DB row is absent."""
         refused_keys = {r["oparlKey"] for r in refused}
-        excluded = set(exclude or set()) | refused_keys
         files = []
         for f in top_files:
             _, download_url = self._file_text(f["oparlKey"])
@@ -210,15 +223,14 @@ class ResultSummarizer:
             })
         return files
 
-    def _file_list_section(self, top_files: list[dict], refused: list[dict]) -> str:
-        """Markdown list of all files of this run — number, name as
-        download-URL link, referenced/refused verdict — rendered above the
-        provenance footer (change: summary-refine-file-control)."""
-        refused_keys = {r["oparlKey"] for r in refused}
+    def _file_list_section(self, top_files: list[dict], excluded: set) -> str:
+        """Markdown list of ALL fetched files — number, name as
+        download-URL link, verdict from the exclusion state — rendered
+        above the provenance footer (change: summary-refine-file-control)."""
         lines = ["", "**Dokumente:**", ""]
         for i, f in enumerate(top_files, 1):
             _, download_url = self._file_text(f["oparlKey"])
-            verdict = "nicht berücksichtigt" if f["oparlKey"] in refused_keys else "berücksichtigt"
+            verdict = "nicht berücksichtigt" if f["oparlKey"] in excluded else "berücksichtigt"
             if download_url:
                 lines.append(f"- Datei {i}: [{f['name']}]({download_url}) — {verdict}")
             else:
