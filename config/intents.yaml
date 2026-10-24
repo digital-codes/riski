@@ -1,0 +1,96 @@
+# Intent configuration for the RISKI question router.
+#
+# One file serves two consumers:
+#   - the decoder test harness (utils/test_intent_decoder_extended.py):
+#     uses name / description / choices / negative
+#   - the production router (src/pgIntentRouter.py): additionally reads
+#     fallback, route and slots
+#
+# All matching happens in lowercase space: queries are lowercased before
+# the decoder call, vocabulary values are normalised (trim + lowercase).
+#
+# Intent fields:
+#   name         unique intent id (used as decoder answer key)
+#   description  German criterion the decision model matches against
+#   choices      example utterances (positive test cases)
+#   negative     utterances belonging to no intent (expected: fallback)
+#   fallback     true for the catch-all intent (exactly one)
+#   route        handler, answer_mode, structured filters
+#   slots        slot definitions with value sources (db + hard)
+
+intents:
+  - name: search_topic
+    fallback: true
+    description: "Allgemeine Frage nach einem Sachthema, Projekt oder Vorgang im Rat; keine Wann-Frage, keine Gremien-Sitzungsfrage"
+    route:
+      handler: search
+      answer_mode: summary
+    choices:
+      - "erzähl was zur theatersanierung"
+      - "was gibt es neues zum radweg am terrainkurweg"
+      - "platanen in der kaiserstrasse"
+      - "themen rund um die 2. rheinbrücke"
+    negative:
+      - "hallo"
+      - "wie wird das wetter morgen"
+
+  - name: ask_gremium_recent
+    description: "Fragt nach Themen oder Beschlüssen einer Sitzung eines Gremiums (Gemeinderat, Ortschaftsrat, Ausschuss) und deren Ergebnis; typisch 'was wurde im letzten <gremium> behandelt/beschlossen'"
+    slots:
+      gremium:
+        sources:
+          - db:
+              table: Organization
+              column: name
+              where_regex: "(?i)(ortschaftsrat|gemeinderat|ausschuss|beirat)"
+          - db:
+              table: Organization
+              column: shortname
+              where_regex: "(?i)(ortschaftsrat|gemeinderat|ausschuss|beirat)"
+          - hard:
+              - "Gemeinderat"
+              - "Ortschaftsrat"
+              - "Ausschuss"
+    groups:
+      gremium:
+        - primary: "Gemeinderat"
+          merged: ["Gemeinderat - Beratungen zum DHH"]
+    route:
+      handler: meeting_scoped_search
+      answer_mode: list_topics
+    choices:
+      - "was wurde im letzten ortschaftsrat beschlossen"
+      - "was wurde im letzten ortschaftsrat neureut beschlossen"
+      - "welche themen wurden im letzten gemeinderat besprochen"
+      - "themen der letzten sitzung des bauausschusses"
+      - "ergebnis der letzten gemeinderatssitzung"
+    negative:
+      - "wer hat für die 2. rheinbrücke gestimmt"
+
+  - name: ask_decision_date
+    description: "Fragt nach dem Zeitpunkt oder Datum, wann ein Beschluss gefasst wurde; typisch 'wann wurde X beschlossen/beschlossen/gebilligt'"
+    slots:
+      doc_type:
+        sources:
+          - db:
+              table: Paper
+              column: papertype
+              distinct: true
+              normalize: canonical_document_type
+          - hard:
+              - "Beschlüsse"
+              - "Beschlussvorlage"
+    route:
+      handler: search
+      answer_mode: date
+      filters:
+        - facet: tag
+          scheme: document-type
+          op: in
+          values: ["Beschlüsse", "Beschlussvorlage"]
+    choices:
+      - "wann wurde der rückbau der herrenalber strasse beschlossen"
+      - "wann wurde die theatersanierung beschlossen"
+      - "wann wurde der beschluss zum ausbau der kaiserstrasse gefasst"
+    negative:
+      - "was wurde im letzten gemeinderat beschlossen"

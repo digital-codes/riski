@@ -26,6 +26,12 @@ export async function search(query, { topK = 10, filters, signals, summarize = f
 	return post('/search', { query, top_k: topK, filters, signals, summarize });
 }
 
+// change: intent-router — routed question answering; same result contract
+// as /search plus intent/slots/applied_filters/fallback_notes
+export async function ask(query, { sessionId, topK = 10, signals, summarize = false } = {}) {
+	return post('/ask', { query, session_id: sessionId, top_k: topK, signals, summarize });
+}
+
 export async function summarize(sessionId, { refine = false, exclude = [] } = {}) {
 	// change: summary-refine-file-control — refine re-runs the summarizer
 	// with full content; exclude changes the session's document set

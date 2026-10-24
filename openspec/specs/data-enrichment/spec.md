@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Covers enrichment of imported OParl data: tag management with a full query/add/remove API, name-vector embeddings, content/summary loading, street and district loading plus geo reference matching, and tag analytics export.
+Covers enrichment of imported OParl data: tag management with a full query/add/remove API, name-vector embeddings, content/summary loading, street and district loading plus geo reference matching, organization classification enrichment, and tag analytics export.
 
 ## Requirements
 
@@ -153,3 +153,25 @@ Paper rows, persisting populated fields with their provenance recorded.
 - **WHEN** a probed field is empty across the corpus
 - **THEN** the spike report documents it as not populated and no
   association rows are created
+
+### Requirement: Organization classification backfill
+An enrichment pass SHALL derive and store `Organization.classification` for
+organizations where it is NULL, using name-regex rules (Ortschaftsrat,
+Ausschuss, Beirat, Eigenbetrieb, Amt, Fraktion, ...) in the same additive,
+idempotent, re-runnable style as the document-type categorisation pass. The
+pass SHALL NOT overwrite non-NULL classifications and SHALL trim surrounding
+whitespace from stored organization names.
+
+#### Scenario: NULL classifications derived
+- **WHEN** the pass runs on an organization named "Ortschaftsrat Neureut"
+  with NULL classification
+- **THEN** a gremium-type classification is written and the row is never
+  rewritten on re-runs
+
+#### Scenario: Existing classifications preserved
+- **WHEN** the pass runs where classification is already set
+- **THEN** the value is left untouched
+
+#### Scenario: Whitespace normalised
+- **WHEN** an organization name carries leading or trailing whitespace
+- **THEN** the stored name is trimmed (e.g. " CDU-Fraktion" → "CDU-Fraktion")

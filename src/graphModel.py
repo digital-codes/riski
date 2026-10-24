@@ -54,6 +54,10 @@ ADJACENCY: Dict[str, List[Dict[str, str]]] = {
         {"relation": "agendaItem", "target": "AgendaItem", "via": "Meeting__agendaItem__AgendaItem", "src_key": "srcSid", "tgt_key": "tgtSid"},
         {"relation": "auxiliaryFile", "target": "File", "via": "Meeting__auxiliaryFile__File", "src_key": "srcSid", "tgt_key": "tgtSid"},
         {"relation": "organization", "target": "Organization", "via": "Meeting__organization__Organization", "src_key": "srcSid", "tgt_key": "tgtSid"},
+        # files may link to their meeting from the File side (session
+        # documents like Tagesordnung/Protokoll); canonical direction stays
+        # File --meeting--> Meeting
+        {"relation": "meeting", "target": "File", "via": "File__meeting__Meeting", "src_key": "tgtSid", "tgt_key": "srcSid", "reverse": True},
     ],
     "AgendaItem": [
         {"relation": "auxiliaryFile", "target": "File", "via": "AgendaItem__auxiliaryFile__File", "src_key": "srcSid", "tgt_key": "tgtSid"},
@@ -84,6 +88,7 @@ _DATE_FIELDS = {
 # per-type attributes worth carrying onto nodes (kept small; additive)
 _ATTR_FIELDS = {
     "Paper": ("reference", "paperType"),
+    "File": ("fileName", "downloadurl"),
     "AgendaItem": ("number", "result"),
     "Consultation": ("role", "authoritative"),
     "Organization": ("classification", "shortName"),

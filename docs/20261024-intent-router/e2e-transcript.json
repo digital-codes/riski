@@ -1,0 +1,291 @@
+[
+  {
+    "query": "was wurde im letzten ortschaftsrat neureut beschlossen",
+    "status": 200,
+    "intent": "ask_gremium_recent",
+    "answer_mode": "list_topics",
+    "applied_filters": [
+      {
+        "facet": "organization",
+        "op": "in",
+        "values": [
+          "Ortschaftsrat Neureut"
+        ]
+      }
+    ],
+    "gremium": {
+      "orgs": [
+        "Ortschaftsrat Neureut"
+      ],
+      "meeting": {
+        "sid": 717,
+        "name": "Ortschaftsrat Neureut (öffentlich/nicht öffentlich)",
+        "start_date": "2026-09-15T19:00:00",
+        "oparlKey": "10750"
+      },
+      "note": ""
+    },
+    "graph": {
+      "node_types": {
+        "AgendaItem": 5,
+        "Organization": 3,
+        "Meeting": 1,
+        "Consultation": 11,
+        "File": 5,
+        "Paper": 2
+      },
+      "edges": 41
+    },
+    "top_files": [
+      "Präsentation_Sachstand_Glasfaserausbau",
+      "TOP_3_Beschl_Sportlerehrung_Kriterien",
+      "TOP_3_Beschl_Sportlerehrung",
+      "alt - Beschlussvorlage Nachhaltiges Parkraumkonzept Stadt Karlsruhe",
+      "Anlage 1 Nachhaltiges Parkraumkonzept Stadt Karlsruhe"
+    ],
+    "topics": [
+      {
+        "number": "1",
+        "name": "Sachstand Glasfaserausbau in Karlsruhe mit Blick auf Neureut",
+        "files": [
+          "Präsentation_Sachstand_Glasfaserausbau"
+        ]
+      },
+      {
+        "number": "2",
+        "name": "Nachhaltiges Parkraumkonzept Stadt Karlsruhe",
+        "files": [
+          "alt - Beschlussvorlage Nachhaltiges Parkraumkonzept Stadt Karlsruhe",
+          "Anlage 1 Nachhaltiges Parkraumkonzept Stadt Karlsruhe"
+        ]
+      },
+      {
+        "number": "3",
+        "name": "Antrag der FDP / FÜR KA – Ortschaftsratsfraktion, auf Einführung einer regelmäßigen Sportler- und Ehrenamtsehrung durch die Ortsverwaltung und den Ortschaftsrat im Sitzungssaal des Rathauses",
+        "files": [
+          "TOP_3_Beschl_Sportlerehrung_Kriterien",
+          "TOP_3_Beschl_Sportlerehrung"
+        ]
+      },
+      {
+        "number": "4",
+        "name": "Bekanntgaben",
+        "files": []
+      },
+      {
+        "number": "5",
+        "name": "Anfragen und Anregungen aus dem Ortschaftsrat",
+        "files": []
+      }
+    ],
+    "geo_available": null,
+    "fallback_notes": [],
+    "sessionId": "b7400ce456ed4ca9b8ea457554c81453"
+  },
+  {
+    "query": "welche themen wurden im letzten gemeinderat besprochen",
+    "status": 200,
+    "intent": "ask_gremium_recent",
+    "answer_mode": "list_topics",
+    "applied_filters": [
+      {
+        "facet": "organization",
+        "op": "in",
+        "values": [
+          "Gemeinderat",
+          "Gemeinderat - Beratungen zum DHH"
+        ]
+      }
+    ],
+    "gremium": {
+      "orgs": [
+        "Gemeinderat",
+        "Gemeinderat - Beratungen zum DHH"
+      ],
+      "meeting": {
+        "sid": 114,
+        "name": "Gemeinderat (öffentlich/nicht öffentlich)",
+        "start_date": "2026-10-20T15:30:00",
+        "oparlKey": "10588"
+      },
+      "note": ""
+    },
+    "graph": {
+      "node_types": {
+        "AgendaItem": 10,
+        "Organization": 10,
+        "File": 28,
+        "Meeting": 1,
+        "Consultation": 22,
+        "Paper": 9
+      },
+      "edges": 143
+    },
+    "top_files": [
+      "Anfrage",
+      "Stellungnahme Anfrage",
+      "alt - Beschlussvorlage Nachhaltiges Parkraumkonzept Stadt Karlsruhe",
+      "Anlage 1 Nachhaltiges Parkraumkonzept Stadt Karlsruhe",
+      "Stellungnahme Anfrage"
+    ],
+    "topics": [
+      {
+        "number": "3",
+        "name": "Bebauungsplan \"Michelinstraße 4 - Nutzungsartfestsetzung\", Karlsruhe-Grünwinkel; Satzungsbeschluss gemäß § 10 Baugesetzbuch (BauGB)",
+        "files": [
+          "BPlan Michelinstr 4_Festsetzungen",
+          "BPlan Michelinstr 4_Begründung",
+          "BPlan Michelinstr 4_Synopse TÖB Offenlage",
+          "BPlan Michelinstr 4_GR Vorlage Satzungsbeschluss",
+          "BPlan Michelinstr 4_Planzeichnung",
+          "Abstimmungsergebnis TOP 3"
+        ]
+      },
+      {
+        "number": "4",
+        "name": "Anpassung der Nutzungsentgelte für die durch die OV Stupferich zur Verfügung gestellten Räumlichkeiten im Gemeindezentrum Stupferich",
+        "files": [
+          "Beschlussvorlage",
+          "Anlage 1_Mietentgelte GMZ Stupferich ab 01.01.2027",
+          "Anlage 2_Kalkulation Entgelte für Sondertrauorte_Stand_08.07.2026",
+          "Abstimmungsergebnis TOP 4"
+        ]
+      },
+      {
+        "number": "5",
+        "name": "Amtsvormundschaften und Amtspflegschaften – Anpassung der Fallquote im Rahmen gesetzlicher Veränderungen",
+        "files": [
+          "Beschlussvorlage",
+          "Abstimmungsergebnis TOP 5"
+        ]
+      },
+      {
+        "number": "9",
+        "name": "Neuausrichtung des Förderprogramms \"KlimaBonus Karlsruhe\"",
+        "files": [
+          "Anlage: Richtlinien der Stadt Karlsruhe zum Förderprogramm \"KlimaBonus Karlsruhe\"",
+          "Beschlussvorlage",
+          "Präsentation Neuausrichtung KlimaBonus_30.09.2026",
+          "Abstimmungsergebnis TOP 9"
+        ]
+      },
+      {
+        "number": "10",
+        "name": "Nachhaltiges Parkraumkonzept Stadt Karlsruhe",
+        "files": [
+          "alt - Beschlussvorlage Nachhaltiges Parkraumkonzept Stadt Karlsruhe",
+          "Anlage 1 Nachhaltiges Parkraumkonzept Stadt Karlsruhe"
+        ]
+      },
+      {
+        "number": "18",
+        "name": "Wie gut gelingt die Umsetzung des Rechtsanspruchs auf Ganztagsbetreuung zu Beginn des Schuljahres 2026/27 in Karlsruhe",
+        "files": [
+          "Stellungnahme Anfrage",
+          "Anfrage"
+        ]
+      },
+      {
+        "number": "20",
+        "name": "Veröffentlichung Mietspiegel",
+        "files": [
+          "Anfrage",
+          "Stellungnahme Anfrage"
+        ]
+      },
+      {
+        "number": "",
+        "name": "ANFRAGEN",
+        "files": []
+      },
+      {
+        "number": "11.1",
+        "name": "Vergabe der Reinigungsleistungen für das Goethegymnasium (Renckstr. 2, 76133 Karlsruhe) und das Verwaltungsgebäude Amt für Hochbau und Gebäudewirtschaft (Zähringerstr.)",
+        "files": [
+          "Beschlussvorlage",
+          "Abstimmungsergebnis TOP 11.1",
+          "Protokoll HFA 13.10.2026 TOP 6"
+        ]
+      },
+      {
+        "number": "5.1",
+        "name": "Beschaffung von Servern für die Stadtverwaltung Karlsruhe",
+        "files": [
+          "Beschlussvorlage",
+          "Abstimmungsergebnis TOP 5.1"
+        ]
+      }
+    ],
+    "geo_available": null,
+    "fallback_notes": [],
+    "sessionId": "0ac1cf15c3f5431e93319489e2b0497e"
+  },
+  {
+    "query": "wann wurde der rückbau der herrenalber strasse beschlossen",
+    "status": 200,
+    "intent": "ask_decision_date",
+    "answer_mode": "date",
+    "applied_filters": [
+      {
+        "facet": "tag",
+        "scheme": "document-type",
+        "op": "in",
+        "values": [
+          "Beschlüsse",
+          "Beschlussvorlage"
+        ]
+      }
+    ],
+    "gremium": null,
+    "graph": {
+      "node_types": {
+        "File": 3,
+        "Paper": 3,
+        "Meeting": 2,
+        "Consultation": 3,
+        "Organization": 4,
+        "AuxFile": 5
+      },
+      "edges": 23
+    },
+    "top_files": [
+      "INTER-Herrenalber Straße",
+      "BA Gemeindestraßen_Umbau der Händelstraße_ohne Beschluss",
+      "Verkehrsversuch Herrenalber Straße"
+    ],
+    "topics": [],
+    "geo_available": true,
+    "fallback_notes": [],
+    "sessionId": "f61b3aa05a0840aab220a4893189ae7b"
+  },
+  {
+    "query": "erzähl was zur theatersanierung",
+    "status": 200,
+    "intent": "search_topic",
+    "answer_mode": "summary",
+    "applied_filters": [],
+    "gremium": null,
+    "graph": {
+      "node_types": {
+        "File": 5,
+        "Paper": 5,
+        "Meeting": 4,
+        "Consultation": 5,
+        "Organization": 5,
+        "AuxFile": 145
+      },
+      "edges": 175
+    },
+    "top_files": [
+      "Badisches Staatstheater - Sanierung und Erweiterung",
+      "Antrag 216 FÜR Ka Sanierung Badisches Staatstheater",
+      "Bad.Staatstheater",
+      "Antrag 69 AfD Einsparungen bei Theatern",
+      "GfK Einsparsumme Staatstheater"
+    ],
+    "topics": [],
+    "geo_available": true,
+    "fallback_notes": [],
+    "sessionId": "1c36f10ff49f45c9bdc8c96ceb3096e8"
+  }
+]

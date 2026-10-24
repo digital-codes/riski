@@ -1,9 +1,19 @@
-"""RISKI search API (change: api-search-expand).
+"""RISKI search API (change: api-search-expand + intent-router).
 
 Thin FastAPI layer over the search pipeline:
 
   POST /search   hybrid search (+ optional summary) -> full result incl.
                  timeline, graph, matched_entities, facets, applied_filters
+  POST /ask      intent-routed question answering: decodes the query via
+                 the SystemOne decision model (config/intents.yaml),
+                 derives structured filters (gremium meeting scope,
+                 decision-type documents), runs the search with an
+                 empty-result fallback ladder, and returns the search
+                 result contract plus intent, slots, applied_filters and
+                 fallback_notes. Falls back to plain search when the
+                 decision model is unreachable. Accepts an optional
+                 sessionId (context reserved for a follow-up conversation
+                 mode; recorded but not yet consulted).
   POST /expand   depth-1 neighborhood of a graph node (additive
                 nodes/edges for client-side merge-by-id)
   GET  /facets   facet listing for filter UIs
@@ -13,8 +23,8 @@ Run (dev):
     uvicorn src.apiServer:app --port 8000
 
 Interactive clients (the web app) may hold a ``sessionId`` for future
-contextual endpoints (/ask — follow-up questions — is drafted but not
-implemented); /search creates one. Sessions are in-memory only.
+contextual endpoints; /search and /ask create one. Sessions are
+in-memory only.
 """
 
 # Dual-mode import support.
@@ -93,6 +103,52 @@ def search(req: SearchRequest) -> Dict[str, Any]:
     _sessions[session_id] = {
         "query": req.query,
         "filters": req.filters or [],
+        "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
+        "result": result,  # kept for the async /summarize + /geo steps
+    }
+    result["sessionId"] = session_id
+    return result
+
+
+class AskRequest(BaseModel):
+    query: str = Field(min_length=1)
+    session_id: Optional[str] = None
+    top_k: int = Field(default=10, ge=1, le=100)
+    signals: Optional[Dict[str, bool]] = None
+    summarize: bool = True
+
+
+@app.post("/ask")
+def ask(req: AskRequest) -> Dict[str, Any]:
+    """Intent-routed question answering (change: intent-router).
+
+    Decodes the query via the SystemOne decision model, derives structured
+    filters, and runs the search with an empty-result fallback ladder.
+    Degrades to plain search (intent=search_topic) when the decision
+    model is unreachable."""
+    from src.pgIntentRouter import ask as route_ask
+
+    try:
+        session = get_db_session()
+    except Exception as exc:  # pragma: no cover - db down
+        raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
+
+    try:
+        result = route_ask(
+            session, req.query, top_k=req.top_k,
+            signals=req.signals, summarize=req.summarize,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        session.close()
+
+    session_id = req.session_id or uuid.uuid4().hex
+    _sessions[session_id] = {
+        "query": req.query,
+        "filters": result.get("applied_filters") or [],
+        "intent": result.get("intent"),
+        "slots": result.get("slots") or {},
         "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
         "result": result,  # kept for the async /summarize + /geo steps
     }
