@@ -35,7 +35,7 @@
     @expand="onExpand"
   />
   <div class="wrapper">
-    <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" />
+    <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" :files="summaryFiles" :refining="refining" @refine="onRefine" @toggle-file="onToggleFile" />
   </div>
   <div class="wrapper">
     <GeoMap v-if="geoAvailable && geoFC" :feature-collection="geoFC" />
@@ -66,6 +66,10 @@ const isMobile = ref(false);
 const loading = ref(false);
 const expanding = ref(false);
 const summaryLoading = ref(false);
+const summaryFiles = ref([]);
+const refining = ref(false);
+// per-session exclusions — applied to every subsequent summarize call
+const summaryExclude = ref([]);
 const geoAvailable = ref(false);
 const geoFC = ref(null);
 const error = ref(null);
@@ -89,6 +93,9 @@ async function runSearch() {
   graph.value = null;
   summary.value = null;
   summaryLoading.value = false;
+  summaryFiles.value = [];
+  refining.value = false;
+  summaryExclude.value = [];
   geoAvailable.value = false;
   geoFC.value = null;
   selection.value = null;
@@ -101,6 +108,8 @@ async function runSearch() {
       apiSummarize(result.sessionId)
         .then((res) => {
           if (res.summary) summary.value = res.summary;
+          summaryFiles.value = res.files || [];
+          summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
           // the relevance verdict may gate the map — refresh it
           if (geoAvailable.value) fetchGeo();
         })
@@ -113,6 +122,31 @@ async function runSearch() {
     loading.value = false;
   }
 }
+
+// change: summary-refine-file-control — user actions re-run the summarizer
+// with full content; the current summary stays visible until the new one
+// replaces it
+async function runSummarize({ refine = false, exclude = [] } = {}) {
+  if (refining.value || !sessionId.value) return;
+  refining.value = true;
+  try {
+    const res = await apiSummarize(sessionId.value, { refine, exclude });
+    if (res.summary) summary.value = res.summary;
+    summaryFiles.value = res.files || [];
+    summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
+    if (geoAvailable.value) fetchGeo();
+  } catch (e) { /* keep the previous summary on failure */ }
+  finally { refining.value = false; }
+}
+
+const onRefine = () => runSummarize({ refine: true, exclude: summaryExclude.value });
+
+const onToggleFile = ({ oparlKey, excluded }) => {
+  const current = new Set(summaryExclude.value);
+  if (excluded) current.add(oparlKey); else current.delete(oparlKey);
+  summaryExclude.value = [...current];
+  runSummarize({ refine: true, exclude: summaryExclude.value });
+};
 
 function applyResult(result) {
   rawData.value = result;
