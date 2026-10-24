@@ -145,25 +145,38 @@ def summarize(req: SummarizeRequest) -> Dict[str, Any]:
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
-    if result.get("summary") and not req.refine:
-        return {"summary": result["summary"],
-                "files": result.get("summary_files", []),
-                "refined": result.get("summary_refined", False)}
-    if sess.get("summarizing"):
-        # a refine is already in flight for this session — report the
-        # current state instead of stacking another LLM call
-        return {"summary": result.get("summary"),
-                "files": result.get("summary_files", []),
-                "refined": result.get("summary_refined", False),
-                "in_progress": True}
-
-    # persist exclusions in the session so subsequent refinements honour
-    # them without resending
+    # persist exclusions in the session FIRST (before the in-flight guard)
+    # so a toggle landing during a running refinement is never lost
     if req.exclude:
         merged = set(result.get("summary_excluded") or []) | set(req.exclude)
         result["summary_excluded"] = sorted(merged)
-    # refused files stay excluded across refinements
-    req_exclude = set(result.get("summary_excluded") or [])
+    # the flags in summary_files must always reflect the current exclusion
+    # set (a response built by an older run may be stale otherwise) — read
+    # at payload time, not snapshot time
+    excluded_set = set(result.get("summary_excluded") or [])
+
+    def _payload(in_progress: bool = False) -> Dict[str, Any]:
+        # read the exclusion set at payload time — the summarizer may have
+        # extended it (teaser run: refused files pre-excluded)
+        excluded_now = set(result.get("summary_excluded") or [])
+        files_payload = [
+            {**f, "excluded": f["oparlKey"] in excluded_now}
+            for f in result.get("summary_files", [])
+        ]
+        return {"summary": result.get("summary"),
+                "files": files_payload,
+                "refined": result.get("summary_refined", False),
+                **({"in_progress": True} if in_progress else {})}
+
+    if result.get("summary") and not req.refine:
+        return _payload()
+    if sess.get("summarizing"):
+        # a refine is already in flight for this session — report the
+        # current state (with the merged exclusions) instead of stacking
+        # another LLM call
+        return _payload(in_progress=True)
+
+    req_exclude = excluded_set
 
     sess["summarizing"] = True
     db_session = get_db_session()
@@ -179,9 +192,7 @@ def summarize(req: SummarizeRequest) -> Dict[str, Any]:
     finally:
         db_session.close()
         sess["summarizing"] = False
-    return {"summary": result.get("summary"),
-            "files": result.get("summary_files", []),
-            "refined": result.get("summary_refined", False)}
+    return _payload()
 
 
 @app.post("/expand")

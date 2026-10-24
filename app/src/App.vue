@@ -129,18 +129,31 @@ async function runSearch() {
 // change: summary-refine-file-control — user actions re-run the summarizer
 // with full content; the current summary stays visible until the new one
 // replaces it
+const lastSentExclude = ref([]);
+const excludeKey = (arr) => JSON.stringify([...arr].sort());
 async function runSummarize({ refine = false, exclude = [] } = {}) {
-  if (refining.value || !sessionId.value) return;
+  if (!sessionId.value) return;
+  if (refining.value) return;  // a toggle landed during the run is applied
+                               // by the re-check below (never dropped)
   refining.value = true;
+  lastSentExclude.value = [...exclude];
   try {
     const res = await apiSummarize(sessionId.value, { refine, exclude });
+    if (res.in_progress) return;  // another refine owns the session — its
+                                  // follow-up run applies our exclusions
     if (res.summary) summary.value = res.summary;
     summaryFiles.value = res.files || [];
     summaryRefined.value = !!res.refined;
     summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
     if (geoAvailable.value) fetchGeo();
   } catch (e) { /* keep the previous summary on failure */ }
-  finally { refining.value = false; }
+  finally {
+    refining.value = false;
+    // a toggle landed while this run was in flight — apply it now
+    if (excludeKey(summaryExclude.value) !== excludeKey(lastSentExclude.value)) {
+      runSummarize({ refine: true, exclude: summaryExclude.value });
+    }
+  }
 }
 
 const onRefine = () => runSummarize({ refine: true, exclude: summaryExclude.value });

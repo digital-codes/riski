@@ -155,12 +155,14 @@ class ResultSummarizer:
         """
         self.full_content_chars = self.content_chars * _FULL_CONTENT_FACTOR
         self._last_refused = []
-        top_files = list(result.get("top_files") or [])
+        all_files = list(result.get("top_files") or [])
+        top_files = all_files
         if exclude:
             top_files = [f for f in top_files if f.get("oparlKey") not in exclude]
         result["summary_excluded"] = sorted(exclude or set())
         if not top_files:
-            result["summary_files"] = self._summary_files(result.get("top_files") or [], set(), exclude)
+            result["summary_files"] = self._summary_files(result.get("top_files") or [], set(), exclude,
+                                                          {f["oparlKey"]: i for i, f in enumerate(result.get("top_files") or [], 1)})
             return result
         if result.get("summary") and not force:
             return result
@@ -169,14 +171,19 @@ class ResultSummarizer:
             return result
 
         layer = "Volltext" if use_full_content else "Teaser"
+        # stable numbering: files keep their FULL-list position so the
+        # model's "(Datei N)" references always match the document list the
+        # user sees (excluded positions are simply absent — renumbering the
+        # working set made the references point at different documents)
+        full_index = {f["oparlKey"]: i for i, f in enumerate(all_files, 1)}
         query = (result.get("query") or "").strip()
         if query:
             prompt = f"Frage: {query}\n\nDokumente ({layer}):\n"
         else:  # defensive: no query in the result — generic shape
             prompt = f"\nDokumente ({layer}):\n"
-        for i, file in enumerate(top_files, 1):
+        for file in top_files:
             text_, _url = self._file_text(file["oparlKey"], full=use_full_content)
-            prompt += f"\nDatei {i}: {file['name']} ({file['fileName']})\n"
+            prompt += f"\nDatei {full_index[file['oparlKey']]}: {file['name']} ({file['fileName']})\n"
             if text_:
                 cap = self.full_content_chars if use_full_content else self.content_chars
                 prompt += f"Inhalt: {text_[:cap]}\n"
@@ -198,7 +205,7 @@ class ResultSummarizer:
             # machine-readable relevance verdict: the Datei numbers the
             # model listed as refused, resolved back to the fetched files —
             # consumers (map view) gate on this
-            refused = self._parse_refused(summary, top_files)
+            refused = self._parse_refused(summary, all_files)
             # the model's note is redundant with our own document list
             # (which carries the verdict per file) — parse it, then strip
             # it from the displayed summary (change: summary-refine-file-control)
@@ -231,7 +238,7 @@ class ResultSummarizer:
             result["summary"] = header + summary + footer
             result["summary_refused"] = refused
             # structured per-file metadata for the interactive frontend
-            result["summary_files"] = self._summary_files(result.get("top_files") or [], refused, final_excluded)
+            result["summary_files"] = self._summary_files(result.get("top_files") or [], refused, final_excluded, full_index)
             print(f"\nSummary (query-guided, {layer}):\n{result['summary']}")
             if result["summary_refused"]:
                 print("Refused documents:", [r["name"] for r in result["summary_refused"]])
@@ -250,7 +257,7 @@ class ResultSummarizer:
         return summary[:marker].rstrip()
 
     def _summary_files(self, top_files: list[dict], refused: list[dict],
-                       excluded: set) -> list[dict]:
+                       excluded: set, full_index: dict) -> list[dict]:
         """Structured per-file metadata for the frontend (name, download
         URL, refused/excluded flags). ``excluded`` is the authoritative
         set state — the frontend renders the verdict from it. Download
@@ -261,6 +268,7 @@ class ResultSummarizer:
             _, download_url = self._file_text(f["oparlKey"])
             files.append({
                 "oparlKey": f["oparlKey"],
+                "index": full_index.get(f["oparlKey"]),
                 "name": f.get("name"),
                 "fileName": f.get("fileName"),
                 "downloadUrl": download_url,

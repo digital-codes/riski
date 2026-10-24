@@ -496,6 +496,25 @@ class TestFullContentRefinement:
         assert files["101"]["excluded"] is False and files["101"]["refused"] is False
         assert result["summary_refined"] is True
 
+    def test_prompt_numbering_follows_full_list(self, rich_session, result, monkeypatch):
+        """Files keep their FULL-list position in the prompt even when
+        other files are excluded — the model's "(Datei N)" references must
+        match the document list the user sees (user finding: after
+        excluding file 1 the text still referenced 'Datei 1', meaning
+        something else)."""
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        # exclude the FIRST file (full-list position 1): the remaining file
+        # keeps its position number 2
+        ResultSummarizer(rich_session).summarize(result, exclude={"100"})
+        assert "Datei 2: File 1 (f1.pdf)" in captured["prompt"]
+        assert "Datei 1:" not in captured["prompt"]
+
     def test_teaser_run_refusals_pre_exclude(self, rich_session, result, monkeypatch):
         """On the automatic pass, refused files start excluded (so the
         refine button uses the current considered set)."""
