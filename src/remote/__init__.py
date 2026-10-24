@@ -125,7 +125,33 @@ def _post(
             )
             time.sleep(delay)
 
-    raise RuntimeError(f"Remote request to {url} failed after {max_retries} attempts") from last_exc
+    # surface the endpoint's own error text — without it a 400 from
+    # ollama/llama.cpp is undebuggable (which field? why?)
+    detail = ""
+    response = getattr(last_exc, "response", None)
+    if response is not None:
+        try:
+            detail = f" | response: {response.text[:500]}"
+        except Exception:  # noqa: BLE001
+            pass
+    raise RuntimeError(
+        f"Remote request to {url} failed after {max_retries} attempts "
+        f"({last_exc}){detail}"
+    ) from last_exc
+
+
+def _coerce_temperature(value) -> float:
+    """Coerce *value* to a float for the chat payload.
+
+    Ollama (and strict OpenAI-compatible endpoints) reject the request with
+    a 400 when ``temperature`` arrives as a string — e.g. when it comes
+    from a string-typed config value. Garbage values fall back to 0.0
+    (deterministic) rather than failing the call."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        _logger.warning("Invalid temperature %r; falling back to 0.0", value)
+        return 0.0
 
 
 def chat(
@@ -142,7 +168,7 @@ def chat(
     """
     payload = {
         "model": model or CHAT_MODEL,
-        "temperature": temperature,
+        "temperature": _coerce_temperature(temperature),
         "messages": messages,
     }
     if thinking:
@@ -151,8 +177,23 @@ def chat(
     try:
         data = _post("chat/completions", payload)
     except RuntimeError as e:
-        _logger.warning("Chat request failed (%s); returning dummy response", e)
-        data = _DUMMY_CHAT_RESPONSE
+        # "think" is an ollama-native-API field; some OpenAI-compatible
+        # endpoints reject the whole request over it with a 400. Retry
+        # once without the optional field before giving up.
+        if thinking:
+            _logger.warning(
+                "Chat request failed with optional fields (%s); "
+                "retrying without 'think'", e,
+            )
+            payload.pop("think", None)
+            try:
+                data = _post("chat/completions", payload)
+            except RuntimeError as e2:
+                _logger.warning("Chat request failed (%s); returning dummy response", e2)
+                data = _DUMMY_CHAT_RESPONSE
+        else:
+            _logger.warning("Chat request failed (%s); returning dummy response", e)
+            data = _DUMMY_CHAT_RESPONSE
     content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
     usage = data.get("usage", {})
     return {

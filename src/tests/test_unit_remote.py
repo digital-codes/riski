@@ -238,3 +238,90 @@ class TestUrlComposition:
         monkeypatch.setattr(remote.requests, "post", ok)
         remote.chat([{"role": "user", "content": "hi"}])
         assert captured["url"] == "https://api.example.com/v1/chat/completions"
+
+
+class TestCoerceTemperature:
+    def test_string_coerced(self):
+        from src.remote import _coerce_temperature
+
+        assert _coerce_temperature("0.2") == 0.2
+
+    def test_float_passthrough(self):
+        from src.remote import _coerce_temperature
+
+        assert _coerce_temperature(0.1) == 0.1
+
+    def test_garbage_falls_back_to_zero(self, caplog):
+        from src.remote import _coerce_temperature
+
+        assert _coerce_temperature("nonsense") == 0.0
+        assert _coerce_temperature(None) == 0.0
+
+    def test_chat_payload_coerces_string_temperature(self, monkeypatch):
+        import src.remote as remote
+
+        captured = {}
+        monkeypatch.setattr(remote, "_post", lambda path, payload: captured.update(payload=payload) or remote._DUMMY_CHAT_RESPONSE)
+        remote.chat([{"role": "user", "content": "x"}], temperature="0.4")
+        assert captured["payload"]["temperature"] == 0.4
+        assert isinstance(captured["payload"]["temperature"], float)
+
+
+class TestChatCompat:
+    def test_error_includes_response_body(self, monkeypatch):
+        import requests as _rq
+
+        import src.remote as remote
+
+        class FakeResponse:
+            status_code = 400
+            text = '{"error":"\\"temperature\\" must be a float"}'
+            headers = {}
+
+            def raise_for_status(self):
+                raise _rq.HTTPError("400", response=self)
+
+        monkeypatch.setattr(remote.requests, "post", lambda *a, **k: FakeResponse())
+        try:
+            remote._post("chat/completions", {"model": "m", "messages": []})
+            raised = False
+        except RuntimeError as e:
+            raised = True
+            assert "must be a float" in str(e)  # endpoint error text surfaced
+        assert raised
+
+    def test_think_rejected_retries_without_it(self, monkeypatch):
+        import requests as _rq
+
+        import src.remote as remote
+
+        payloads = []
+
+        def flaky(path, payload):
+            payloads.append(payload)
+            if "think" in payload:
+                class FakeResponse:
+                    status_code = 400
+                    text = 'invalid field "think"'
+                    headers = {}
+
+                    def raise_for_status(self):
+                        raise _rq.HTTPError("400", response=self)
+
+                raise RuntimeError("400")
+
+            return remote._DUMMY_CHAT_RESPONSE
+
+        monkeypatch.setattr(remote, "_post", flaky)
+        out = remote.chat([{"role": "user", "content": "x"}], thinking=True)
+        assert len(payloads) == 2
+        assert "think" in payloads[0] and "think" not in payloads[1]
+        assert out["content"] == "[dummy response]"
+
+    def test_temperature_never_string_in_payload(self, monkeypatch):
+        import src.remote as remote
+
+        captured = {}
+        monkeypatch.setattr(remote, "_post", lambda path, payload: captured.update(p=payload) or remote._DUMMY_CHAT_RESPONSE)
+        remote.chat([{"role": "user", "content": "x"}], temperature="0.3")
+        assert isinstance(captured["p"]["temperature"], float)
