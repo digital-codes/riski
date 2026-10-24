@@ -285,6 +285,25 @@ class TestCrawlIncremental:
         # end state advanced past the epoch despite the mixed offsets
         assert recorder.end_state.startswith("2026-10-23")
 
+    def test_offset_aware_baseline_mixed_offsets_do_not_raise(self, crawl_env, monkeypatch):
+        """A baseline with a numeric offset (as stored in the tracking table,
+        e.g. '2026-02-19T00:00:00+01:00') must not crash timestamp extraction
+        when resources carry 'Z' timestamps (found in the first real sync run)."""
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            return _json_response({
+                "data": [],
+                "links": {},
+                "modified": "2026-10-24T08:00:00Z",
+            })
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-02-19T00:00:00+01:00", recorder=recorder)
+        assert recorder.end_state.startswith("2026-10-24")
+
 
 class TestCollectionFiltering:
     """Tasks 1.1/1.2: timestamp filter on every collection, with fallback."""

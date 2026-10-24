@@ -392,7 +392,11 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
 
     # Keep the latest timestamp seen during this run – start with the provided
     # baseline so that we only ever move forward.
-    latest_ts = baseline_dt
+    # Normalise the baseline to naive UTC: resources carry mixed offsets
+    # ("Z" vs "+02:00") and their timestamps are normalised below, so an
+    # offset-aware baseline (e.g. "2026-02-19T00:00:00+01:00" from the
+    # tracking table) would raise on comparison.
+    latest_ts = _normalise_ts(baseline_dt)
     if recorder is not None:
         recorder.start(start_from)
 
