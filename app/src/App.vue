@@ -149,6 +149,10 @@ const onToggleFile = ({ oparlKey, excluded }) => {
   const current = new Set(summaryExclude.value);
   if (excluded) current.add(oparlKey); else current.delete(oparlKey);
   summaryExclude.value = [...current];
+  // immediate verdict feedback — the label must not wait for the slow
+  // full-content re-run (user finding: label out of sync with the toggle)
+  summaryFiles.value = summaryFiles.value.map(f =>
+    f.oparlKey === oparlKey ? { ...f, excluded } : f);
   runSummarize({ refine: true, exclude: summaryExclude.value });
 };
 
