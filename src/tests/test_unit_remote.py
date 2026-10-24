@@ -298,7 +298,7 @@ class TestChatCompat:
         payloads = []
 
         def flaky(path, payload):
-            payloads.append(payload)
+            payloads.append(dict(payload))  # copy: chat pops "think" in place
             if "think" in payload:
                 class FakeResponse:
                     status_code = 400
