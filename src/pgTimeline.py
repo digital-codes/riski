@@ -30,6 +30,22 @@ import time
 # ----------------------------------------------------------------------
 from src.db import get_engine, _load_private
 from src.timing import timed
+
+log = None  # set by _ensure_log()
+
+
+def _ensure_log():
+    """Lazily create the module logger (debug chatter hidden by default)."""
+    global log
+    if log is None:
+        import logging
+        log = logging.getLogger("riski.timeline")
+        if not log.handlers:
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+            log.addHandler(handler)
+            log.setLevel(logging.WARNING)
+    return log
 from src import remote
 
 
@@ -79,14 +95,14 @@ def call_reranking_chat_model(query: str, content: str) -> float:
     Adjust based on your actual API endpoint
     """
     if RERANKING_API_URL == None:
-        print("Reranking API URL not configured, skipping reranking")
+        _ensure_log().debug("Reranking API URL not configured, skipping reranking")
         return 1.0  # If no reranking API is configured, return a default relevance score of 1.0 (keep all results)
     lang = "German"  # Assuming the content and query are in German
     headers = {"Authorization": f"Bearer {RERANKING_API_KEY}"} if RERANKING_API_KEY else {}
     rerank_prompt = f"You are a helpful assistant that scores the relevance of a {lang} text to a user's query in {lang}. Return a score between 0 and 1, where 1 means highly relevant and 0 means not relevant at all. Be strict and focus on meaning, not on word similarity."
     #rerank_query = f"Query: {query}\n\nFile content: {content}\n\nBased on the {lang} query and content, how relevant is this {lang} content to the query? Return only a single number between 0 and 1. Do not return any text other than the number."
     rerank_query = f"Query: {query}\n\nContent: {content}\n\nReturn only a single number between 0 and 1. Do not return any text other than the number."
-    print(f"Calling reranking model with query: {query} and content length: {len(content)}")  # Debugging line
+    _ensure_log().debug(f"Calling reranking model with query: {query} and content length: {len(content)}")  # Debugging line
     response = requests.post(
         RERANKING_API_URL,
         json={"model": RERANKING_MODEL,  "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
@@ -96,7 +112,7 @@ def call_reranking_chat_model(query: str, content: str) -> float:
     if response.status_code == 429:
         for attempt in range(5):  # Retry up to 5 times
             retry_after = int(response.headers.get("Retry-After", 5))
-            print(f"Reranking model rate limit exceeded. Retrying after {retry_after} seconds...")
+            _ensure_log().warning(f"Reranking model rate limited; retrying after {retry_after}s")
             time.sleep(retry_after)
             response = requests.post(
                 RERANKING_API_URL,
@@ -114,10 +130,10 @@ def call_reranking_chat_model(query: str, content: str) -> float:
             score = float(score_str.strip())
             return score
         except ValueError:
-            print(f"Could not parse relevance score from model response: '{score_str}'")
+            _ensure_log().debug(f"Could not parse relevance score from model response: '{score_str}'")
             return 0.0
     else:
-        print(f"Unexpected response format from reranking model: {result}")
+        _ensure_log().debug(f"Unexpected response format from reranking model: {result}")
         return 0.0 
 
 @timed
@@ -127,7 +143,7 @@ def call_reranking_model(query: str, content: list[str], top_n=0) -> list[float]
     Adjust based on your actual API endpoint
     """
     if RERANKING_API_URL == None:
-        print("Reranking API URL not configured, skipping reranking")
+        _ensure_log().debug("Reranking API URL not configured, skipping reranking")
         return [1.0 for x in content]  # If no reranking API is configured, return a default relevance score of 1.0 (keep all results)
     headers = {"Authorization": f"Bearer {RERANKING_API_KEY}"} if RERANKING_API_KEY else {}
     # adjust top_n if zero
@@ -147,7 +163,7 @@ def call_reranking_model(query: str, content: list[str], top_n=0) -> list[float]
     if response.status_code == 429:
         for attempt in range(5):  # Retry up to 5 times
             retry_after = int(response.headers.get("Retry-After", 5))
-            print(f"Reranking model rate limit exceeded. Retrying after {retry_after} seconds...")
+            _ensure_log().warning(f"Reranking model rate limited; retrying after {retry_after}s")
             time.sleep(retry_after)
             response = requests.post(
                 RERANKING_API_URL,
@@ -182,20 +198,20 @@ def call_reranking_model(query: str, content: list[str], top_n=0) -> list[float]
         # results are ordered by best relevance first, with index indicating the original index of the document in the input list
         # we need to reorder the scores to match the original order of the content list
         for item in result["results"]:
-            print(f"Reranking model item: {item}")  # Debugging line
+            _ensure_log().debug(f"Reranking model item: {item}")  # Debugging line
             try:
                 index = item.get("index")
                 score = 1.0 if item.get("relevance_score") is None else float(item.get("relevance_score", 1.0))
                 scores.append((index, score))
             except ValueError:
-                print(f"Could not parse relevance score from model response: '{item}'")
+                _ensure_log().debug(f"Could not parse relevance score from model response: '{item}'")
                 scores.append((index, 1.0))
-            print(f"Reranking model item: index={index}, score={score}")  # Debugging line
+            _ensure_log().debug(f"Reranking model item: index={index}, score={score}")  # Debugging line
         # reorder scores to match the original order of the content list
         scores.sort(key=lambda x: x[0])
         return [score for index, score in scores]
     else:
-        print(f"Unexpected response format from reranking model: {result}")
+        _ensure_log().debug(f"Unexpected response format from reranking model: {result}")
         return [1.0 for x in content]  # Return a list of default relevance scores if response format is unexpected
 
 
@@ -243,7 +259,7 @@ def call_embedding_model(text: str, api_url: str = None, api_key: str = None, mo
     else:
         vec = remote.embed(text)
     vector = vec.tolist()
-    print(f"Received vector of length {len(vector)}")  # Debug print to check vector length
+    _ensure_log().debug(f"Received vector of length {len(vector)}")  # Debug print to check vector length
     return vector
 
 # here, threshold is a distance threshold, so we want to keep vectors with distance <= threshold (i.e. similarity above a certain level)
@@ -387,7 +403,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
         log_edge("AgendaItem", row.oparlKey, "auxiliaryFile", "File",
                  sid_to_file_key.get(row.fileSid), "AgendaItem__auxiliaryFile__File")
 
-    print(f"Found {len(related_objects['AgendaItem'])} agenda items related to files")  # Debugging line
+    _ensure_log().debug(f"Found {len(related_objects['AgendaItem'])} agenda items related to files")  # Debugging line
 
     # 2. Find Papers connected to Files
     stmt = (
@@ -427,7 +443,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
         })
         log_edge("Paper", row.oparlKey, "auxiliaryFile", "File",
                  sid_to_file_key.get(row.fileSid), "Paper__auxiliaryFile__File")
-    print(f"Found {len(related_objects['Paper'])} papers related to files")  # Debugging line
+    _ensure_log().debug(f"Found {len(related_objects['Paper'])} papers related to files")  # Debugging line
 
     # 2.b when a paper is identified, we also want to get all associated files via pf_assoc_tbl, since the paper may have multiple files, and we want to include them in the timeline
     paper_sids = [p["sid"] for p in related_objects["Paper"]]
@@ -467,7 +483,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                 })
             log_edge("Paper", paper_sid_to_key.get(row.paperSid), "auxiliaryFile", "AuxFile",
                      row.oparlKey, "Paper__auxiliaryFile__File")
-        print(f"Found {len(related_objects['AuxFile'])} additional files related to papers")  # Debugging line
+        _ensure_log().debug(f"Found {len(related_objects['AuxFile'])} additional files related to papers")  # Debugging line
     
     # 3. Find Meetings connected to Files
     stmt = (
@@ -544,7 +560,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             })
             log_edge("Paper", paper_sid_to_key.get(row.paperSid), "consultation", "Consultation",
                      row.oparlKey, "Paper__consultation__Consultation")
-    print(f"Found {len(related_objects['Consultation'])} consultations related to papers")  # Debugging line
+    _ensure_log().debug(f"Found {len(related_objects['Consultation'])} consultations related to papers")  # Debugging line
 
     # 5. For Meetings, find related AgendaItems
     meeting_sids = [m["sid"] for m in related_objects["Meeting"]]
@@ -589,7 +605,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                 })
             log_edge("Meeting", meeting_sid_to_key.get(row.meetingSid), "agendaItem", "AgendaItem",
                      row.oparlKey, "Meeting__agendaItem__AgendaItem")
-    print(f"Found {len(related_objects['AgendaItem'])} agenda items related to meetings")  # Debugging line
+    _ensure_log().debug(f"Found {len(related_objects['AgendaItem'])} agenda items related to meetings")  # Debugging line
 
     # 6. For AgendaItems, find related Consultations
     agenda_item_sids = [ai["sid"] for ai in related_objects["AgendaItem"]]
@@ -655,7 +671,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                     "start_date": row.start_date,
                     "end_date": row.end_date,
                 })
-        print(f"Fetched {len(missing_meeting_sids)} additional meetings via consultations/agenda items")
+        _ensure_log().debug(f"Fetched {len(missing_meeting_sids)} additional meetings via consultations/agenda items")
 
     # 7. For Consultations, find related Organizations
     consultation_sids = [c["sid"] for c in related_objects["Consultation"]]
@@ -695,7 +711,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             log_edge("Consultation", consultation_sid_to_key.get(row.consultSid), "organization", "Organization",
                      row.oparlKey, "Consultation__organization__Organization")
 
-    print(f"Found {len(related_objects['Organization'])} organizations related to consultations")  # Debugging line
+    _ensure_log().debug(f"Found {len(related_objects['Organization'])} organizations related to consultations")  # Debugging line
 
     # 8. For Papers, find related Organizations (underDirectionOf)
     paper_sid_to_key = {p["sid"]: p["oparlKey"] for p in related_objects["Paper"]}
@@ -735,7 +751,7 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
             log_edge("Paper", paper_sid_to_key.get(row.paperSid), "underDirectionOf", "Organization",
                      row.oparlKey, "Paper__underDirectionOf__Organization")
 
-        print(f"Found {len(related_objects['Organization'])} organizations related to papers")  # Debugging line
+        _ensure_log().debug(f"Found {len(related_objects['Organization'])} organizations related to papers")  # Debugging line
 
     # 9. Direct-FK edges derivable from collected objects (no extra queries):
     #    Consultation.meetingSid/paperSid, AgendaItem.meetingSid
@@ -761,7 +777,7 @@ def build_timeline(related_objects: Dict[str, List[Dict]]) -> List[Dict]:
     """
     timeline_events = []
     for obj_type, objects in related_objects.items():
-        print(f"Processing {len(objects)} objects of type {obj_type} for timeline")  # Debugging line
+        _ensure_log().debug(f"Processing {len(objects)} objects of type {obj_type} for timeline")  # Debugging line
         for obj in objects:
             # Determine the best date field for this object type
             date_field = None
@@ -798,7 +814,7 @@ def build_timeline(related_objects: Dict[str, List[Dict]]) -> List[Dict]:
 
     # Sort by date
     timeline_events.sort(key=lambda x: x["date"] if x["date"] else datetime.max)
-    print(f"Built timeline with {len(timeline_events)} events after sorting")  # Debugging line
+    _ensure_log().debug(f"Built timeline with {len(timeline_events)} events after sorting")  # Debugging line
 
     return timeline_events
 
@@ -814,7 +830,7 @@ def group_timeline_events(timeline_events: List[Dict], window_days: int = TIMELI
     if not events_with_dates:
         return []
 
-    print(f"Grouping {len(events_with_dates)} timeline events with window of {window_days} days")  # Debugging line
+    _ensure_log().debug(f"Grouping {len(events_with_dates)} timeline events with window of {window_days} days")  # Debugging line
 
     grouped = []
     current_group = [events_with_dates[0][1]]
@@ -845,7 +861,7 @@ def group_timeline_events(timeline_events: List[Dict], window_days: int = TIMELI
             "events": current_group.copy()
         })
 
-    print(f"Grouped into {len(grouped)} event groups")  # Debugging line
+    _ensure_log().debug(f"Grouped into {len(grouped)} event groups")  # Debugging line
     return grouped
 
 @timed
@@ -878,7 +894,7 @@ def search_and_build_timeline(
     """
     # Generate embedding for the query
     query_embedding = call_embedding_model(query, EMBEDDING_API_URL, EMBEDDING_API_KEY, EMBEDDING_MODEL)
-    print(f"Generated embedding for query: {query_embedding[:5]}...")  # Debugging line
+    _ensure_log().debug(f"Generated embedding for query: {query_embedding[:5]}...")  # Debugging line
 
     matched_entities: List[Dict[str, Any]] = []
     facets_data: Dict[str, Any] = {}
@@ -917,7 +933,7 @@ def search_and_build_timeline(
             c["oparlKey"]: c["signals"].get("content") for c in candidates
         }
         hybrid_match_info = {c["oparlKey"]: c["signals"] for c in candidates}
-        print(f"Hybrid recall: {len(matched_entities)} entities, {len(candidates)} file candidates")
+        _ensure_log().debug(f"Hybrid recall: {len(matched_entities)} entities, {len(candidates)} file candidates")
         if not candidates:
             return {
                 "query": query,
@@ -937,39 +953,39 @@ def search_and_build_timeline(
         # legacy vector-only path
         # find similarities and get top-k files
         file_scores = query_vector_similarity(session, query_embedding, top_k)
-        print(f"Inital Top files: {file_scores}")  # Debugging line
+        _ensure_log().debug(f"Inital Top files: {file_scores}")  # Debugging line
 
-        print(f"Top files (before thresholding): {file_scores}")  # Debugging line
+        _ensure_log().debug(f"Top files (before thresholding): {file_scores}")  # Debugging line
         if not file_scores:
             return {"query": query, "results": [], "timeline": [], "graph": {"nodes": [], "edges": []}, "geo_available": False, "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files with embeddings found"}
 
         # filter by threshold
         top_scores = filter_by_threshold(file_scores, threshold=threshold)
-        print(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
+        _ensure_log().debug(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
         if not top_scores:
             return {"query": query, "top_files": [], "results": [], "timeline": [], "graph": {"nodes": [], "edges": []}, "geo_available": False, "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
 
     # run reranking on all files and append rerank score to file_score 
     top_scores_with_rerank = []
-    print(f"Running reranking on top {len(top_scores)} files")  # Debugging line
+    _ensure_log().debug(f"Running reranking on top {len(top_scores)} files")  # Debugging line
 
     if RERANK_MODE == "chat":
         for oparlKey, score in top_scores:
-            print(f"Processing file {oparlKey} with initial score {score:.4f}")  # Debugging line
+            _ensure_log().debug(f"Processing file {oparlKey} with initial score {score:.4f}")  # Debugging line
             # get file content for reranking
             file_content = session.query(File.content).filter(File.oparlKey == oparlKey).first()
             if file_content and file_content[0]:  # Check if content exists and is not None
                 rerank_score = call_reranking_chat_model(query, file_content[0])
-                print(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
+                _ensure_log().debug(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
                 if rerank_score is not None and isinstance(rerank_score, (int, float)) and rerank_score >= .8:
                     top_scores_with_rerank.append((oparlKey, score))
-                    print(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+                    _ensure_log().debug(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
                 else:
-                    print(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+                    _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
             else:
-                print(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
+                _ensure_log().debug(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
                 top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
-                print(f"No content for file {oparlKey}, keeping original score {score:.4f}")  # Debugging line
+                _ensure_log().debug(f"No content for file {oparlKey}, keeping original score {score:.4f}")  # Debugging line
 
         # update top_scores_with_rerank with rerank scores
         # top_scores_with_rerank = [(top_scores[i][0], rerank_scores[i]) for i in range(len(top_scores))]
@@ -981,28 +997,28 @@ def search_and_build_timeline(
             if file_content and file_content[0]:  # Check if content exists and is not None
                 documents.append(file_content[0])
             else:
-                print(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
+                _ensure_log().debug(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
                 documents.append("")  # Append empty string to maintain order
         rerank_scores = call_reranking_model(query, documents, top_n=len(documents))
-        print(f"Reranking scores: {rerank_scores}")  # Debugging line
+        _ensure_log().debug(f"Reranking scores: {rerank_scores}")  # Debugging line
         for i, rscore in enumerate(rerank_scores):
             oparlKey, score = top_scores[i]
             if rscore is None or not isinstance(rscore, (int, float)):
-                print(f"Invalid rerank score received: {rscore}, keep old score")  # Debugging line
+                _ensure_log().debug(f"Invalid rerank score received: {rscore}, keep old score")  # Debugging line
                 top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
             elif rscore >= .8:
                 top_scores_with_rerank.append((oparlKey, score * rscore))
-                print(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
+                _ensure_log().debug(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
             else:
-                print(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
+                _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
                 # reject reranked file. don't append
         
 
-    print(f"Top files after reranking: {top_scores_with_rerank}")  # Debugging line
+    _ensure_log().debug(f"Top files after reranking: {top_scores_with_rerank}")  # Debugging line
 
     # Get Keys of top files
     top_file_keys = [f[0] for f in top_scores_with_rerank]
-    print(f"Top file Keys: {top_file_keys}")
+    _ensure_log().debug(f"Top file Keys: {top_file_keys}")
     # keep the rerank/fusion ordering in the output (DB returns arbitrary order)
     key_rank = {k: i for i, k in enumerate(top_file_keys)}  # Debugging line
 
@@ -1031,15 +1047,15 @@ def search_and_build_timeline(
         "match": hybrid_match_info.get(row.oparlKey) if hybrid else None,
     } for row in result]
     top_files.sort(key=lambda f: key_rank.get(f["oparlKey"], len(key_rank)))
-    print(f"Top files details: {top_files}")  # Debugging line
+    _ensure_log().debug(f"Top files details: {top_files}")  # Debugging line
     
     file_sids = {item["oparlKey"]: item["sid"] for item in top_files}
-    print(f"Resolved file keys to sids: {file_sids}")  # Debugging line
+    _ensure_log().debug(f"Resolved file keys to sids: {file_sids}")  # Debugging line
 
     
     # Find all related OParl objects
     related_objects = find_related_objects(session, file_sids)
-    print(f"Related objects found: { {k: len(v) for k, v in related_objects.items()} }")  # Debugging line
+    _ensure_log().debug(f"Related objects found: { {k: len(v) for k, v in related_objects.items()} }")  # Debugging line
 
     # Serialize the traversed graph (nodes + typed edges, add-network-view)
     from src.graphModel import build_graph
@@ -1058,11 +1074,11 @@ def search_and_build_timeline(
 
     # Build timeline from all related objects
     timeline_events = build_timeline(related_objects)
-    print(f"Timeline events built: {len(timeline_events)}")  # Debugging line
+    _ensure_log().debug(f"Timeline events built: {len(timeline_events)}")  # Debugging line
 
     # Group timeline events
     grouped_timeline = group_timeline_events(timeline_events)
-    print(f"Grouped timeline events: {len(grouped_timeline)}")  # Debugging line
+    _ensure_log().debug(f"Grouped timeline events: {len(grouped_timeline)}")  # Debugging line
     #print(f"Timeline groups: {[{'start_date': g['start_date'], 'end_date': g['end_date'], 'event_count': len(g['events'])} for g in grouped_timeline]}")  # Debugging line
     #print(grouped_timeline)
 
@@ -1141,7 +1157,7 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K, filters: Op
                 break
 
             if not query:
-                print("Please enter a valid query.")
+                _ensure_log().debug("Please enter a valid query.")
                 continue
 
             try:
@@ -1149,44 +1165,44 @@ def main(directory: str, threshold: float = .40, top_k: int = TOP_K, filters: Op
                 results = search_and_build_timeline(session, query, top_k=top_k, threshold=threshold, filters=parsed_filters)
 
                 # Print results
-                print(f"\nQuery: {results['query']}")
-                print(f"Found {len(results['top_files'])} matching files")
+                _ensure_log().debug(f"\nQuery: {results['query']}")
+                _ensure_log().debug(f"Found {len(results['top_files'])} matching files")
 
                 if results['top_files']:
-                    print("\nTop Files:")
+                    _ensure_log().debug("\nTop Files:")
                     for i, file in enumerate(results['top_files'][:5], 1):
-                        print(f"{i}. {file['name']} ({file['fileName']})")
-                        print(f"   Distance: {file['distance']:.3f}")
-                        print(f"   OParl ID: {file['oparlId']}")
-                        print(f"   Download URL: {file['downloadurl']}")
-                        print(f"   Date: {file['date']}")
+                        _ensure_log().debug(f"{i}. {file['name']} ({file['fileName']})")
+                        _ensure_log().debug(f"   Distance: {file['distance']:.3f}")
+                        _ensure_log().debug(f"   OParl ID: {file['oparlId']}")
+                        _ensure_log().debug(f"   Download URL: {file['downloadurl']}")
+                        _ensure_log().debug(f"   Date: {file['date']}")
 
                     # generate a summary of the top files via the result summarizer
                     from src.pgResultSummarizer import ResultSummarizer
 
                     ResultSummarizer(session).summarize(results, force=True)
                 else:
-                    print("No top files found above the similarity threshold.")
+                    _ensure_log().debug("No top files found above the similarity threshold.")
 
                 if results['timeline']:
-                    print("\nTimeline of Related Events:")
+                    _ensure_log().debug("\nTimeline of Related Events:")
                     for i, group in enumerate(results['timeline'], 1):
-                        print(f"\nGroup {i}: {group['start_date']} to {group['end_date']}")
+                        _ensure_log().debug(f"\nGroup {i}: {group['start_date']} to {group['end_date']}")
                         for event in group['events']:
-                            print(f"  - {event['date']}: [{event['type']}] {event['name']} {event['oparlId']}")
+                            _ensure_log().debug(f"  - {event['date']}: [{event['type']}] {event['name']} {event['oparlId']}")
 
                 # Save results to file
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 save_path = os.path.join(directory, f"search_results_{timestamp}.json")
                 with open(save_path, 'w') as f:
                     json.dump(results, f, default=str, indent=2, ensure_ascii=False)
-                print(f"\nDetailed results saved to {save_path}")
+                _ensure_log().debug(f"\nDetailed results saved to {save_path}")
 
 
 
 
             except Exception as e:
-                print(f"Error processing query: {str(e)}")
+                _ensure_log().debug(f"Error processing query: {str(e)}")
 
     finally:
         session.close()

@@ -10,11 +10,10 @@
       with timed_block("hybrid.lexical"):
           ...
 
-Output goes to stdout as ``[timing] <label>: <seconds>s`` (the codebase
-logs via print). Enable/disable via the ``RISKI_TIMING`` environment
-variable — instrumentation is ON by default; set ``RISKI_TIMING=0``
-(also: false/no/off) to silence it entirely. For deeper analysis the
-stdlib's cProfile stays available.
+Output goes to the ``riski.timing`` logger as ``[timing] <label>:
+<seconds>s``. Instrumentation is OFF by default (production servers stay
+quiet); enable with ``RISKI_TIMING=1`` (also: true/yes/on). For deeper
+analysis the stdlib's cProfile stays available.
 """
 
 # Dual-mode import support.
@@ -24,21 +23,34 @@ except ImportError:
     pass
 
 import functools
+import logging
 import os
 import time
 from contextlib import contextmanager
 
-_TRUTHY_OFF = {"0", "false", "no", "off", ""}
+_TRUTHY_ON = {"1", "true", "yes", "on"}
+
+logger = logging.getLogger("riski.timing")
 
 
 def enabled() -> bool:
-    """Whether timing output is on (env ``RISKI_TIMING``, default: on)."""
-    return os.getenv("RISKI_TIMING", "1").strip().lower() not in _TRUTHY_OFF
+    """Whether timing output is on (env ``RISKI_TIMING``, default: off)."""
+    return os.getenv("RISKI_TIMING", "0").strip().lower() in _TRUTHY_ON
+
+
+def _ensure_handler() -> None:
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(asctime)s %(name)s: %(message)s"))
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+        logger.propagate = False  # stay independent of root-logger config
 
 
 def _report(label: str, seconds: float) -> None:
     if enabled():
-        print(f"[timing] {label}: {seconds:.3f}s")
+        _ensure_handler()
+        logger.info("[timing] %s: %.3fs", label, seconds)
 
 
 def timed(func=None, *, label: str | None = None):

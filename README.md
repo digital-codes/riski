@@ -373,9 +373,18 @@ session until the next search.
 ### Performance instrumentation
 
 `src/timing.py` provides `@timed` / `timed_block` (stdlib-only) used
-across the search pipeline, including per-signal hybrid timings. Output
-is `[timing] <label>: <seconds>s` on stdout; disable with
-`RISKI_TIMING=0`.
+across the search pipeline, including per-signal hybrid timings.
+Instrumentation is **off by default** (production servers stay quiet);
+enable with `RISKI_TIMING=1` — output goes to the `riski.timing` logger.
+Verbose pipeline diagnostics (hybrid recall, reranking details, timeline
+construction) log at DEBUG level under `riski.timeline` and are likewise
+hidden by default; raise the level to see them, e.g.:
+
+```bash
+RISKI_TIMING=1 uvicorn src.apiServer:app --port 8000 --log-level debug
+```
+
+For production, keep defaults and consider `--no-access-log --workers N`.
 
 ## Tests
 

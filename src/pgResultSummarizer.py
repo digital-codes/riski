@@ -33,12 +33,15 @@ try:
 except ImportError:
     pass
 
+import logging
 import re
 
 from sqlalchemy import text
 
 from src import remote
 from src.timing import timed
+
+log = logging.getLogger("riski.summarizer")
 
 _MAX_CONTENT_CHARS = 5000
 # Full-content refinement (user action): the per-file budget is a multiple
@@ -167,7 +170,7 @@ class ResultSummarizer:
         if result.get("summary") and not force:
             return result
         if not self._model_available():
-            print("Summary model not configured, skipping summarization")
+            log.warning("Summary model not configured, skipping summarization")
             return result
 
         layer = "Volltext" if use_full_content else "Teaser"
@@ -239,9 +242,9 @@ class ResultSummarizer:
             result["summary_refused"] = refused
             # structured per-file metadata for the interactive frontend
             result["summary_files"] = self._summary_files(result.get("top_files") or [], refused, final_excluded, full_index)
-            print(f"\nSummary (query-guided, {layer}):\n{result['summary']}")
+            log.debug("Summary (query-guided, %s): %s", layer, result["summary"])
             if result["summary_refused"]:
-                print("Refused documents:", [r["name"] for r in result["summary_refused"]])
+                log.debug("Refused documents: %s", [r["name"] for r in result["summary_refused"]])
         return result
 
     def _strip_refusal_note(self, summary: str) -> str:
