@@ -92,7 +92,7 @@ _ATTR_FIELDS = {
     "AgendaItem": ("number", "result"),
     "Consultation": ("role", "authoritative"),
     "Organization": ("classification", "shortName"),
-    "AuxFile": ("fileName",),
+    "AuxFile": ("fileName", "downloadurl"),
 }
 
 # Deployment-specific: public calendar page for meetings. The base URL
