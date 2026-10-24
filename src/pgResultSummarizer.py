@@ -174,6 +174,10 @@ class ResultSummarizer:
             # model listed as refused, resolved back to the fetched files —
             # consumers (map view) gate on this
             refused = self._parse_refused(summary, top_files)
+            # the model's note is redundant with our own document list
+            # (which carries the verdict per file) — parse it, then strip
+            # it from the displayed summary (change: summary-refine-file-control)
+            summary = self._strip_refusal_note(summary)
             self._last_refused = refused
             refused_keys = {r["oparlKey"] for r in refused}
             user_excluded = set(exclude or set())
@@ -205,6 +209,18 @@ class ResultSummarizer:
             if result["summary_refused"]:
                 print("Refused documents:", [r["name"] for r in result["summary_refused"]])
         return result
+
+    def _strip_refusal_note(self, summary: str) -> str:
+        """Remove the model's trailing refusal note from the summary text.
+
+        The verdicts are carried by our own document list (berücksichtigt /
+        nicht berücksichtigt per file) — the separate note is redundant and
+        could contradict the list's exclusion-state verdicts. Parsing
+        happens BEFORE stripping (map gating + pre-exclusion)."""
+        marker = summary.find("**Nicht berücksichtigte Dokumente:**")
+        if marker == -1:
+            return summary.rstrip()
+        return summary[:marker].rstrip()
 
     def _summary_files(self, top_files: list[dict], refused: list[dict],
                        excluded: set) -> list[dict]:

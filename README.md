@@ -270,9 +270,12 @@ teasers with respect to the question, states the question, and names the
 key documents. Teasers (not full text) keep the LLM call fast.
 
 Wide searches can fetch off-topic documents, so the summarizer first
-evaluates each document against the question, summarizes only the
-relevant ones, and appends a note listing the refused documents
-("Nicht berücksichtigte Dokumente"). A provenance footer states the
+evaluates each document against the question and summarizes only the
+relevant ones. The per-document verdict (berücksichtigt /
+nicht berücksichtigt) is rendered in the document list at the end of the
+summary — the model's own refusal note is parsed for the machine-readable
+verdict (map gating, pre-exclusion) but stripped from the displayed text,
+since the list already carries it. A provenance footer states the
 model, endpoint and token usage — plus inference time, energy and
 emissions when the endpoint reports them (`remote.chat` passes the
 `usage`/`impact` fields through). The footer is part of the stored

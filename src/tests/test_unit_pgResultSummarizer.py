@@ -73,17 +73,23 @@ class TestQueryGuidedPrompt:
         assert "Beurteile" in seen["system"] and "nicht relevant" in seen["system"]
         assert "Nicht berücksichtigte Dokumente" in seen["system"]
 
-    def test_refusal_note_stored_verbatim(self, summarizer, result, monkeypatch):
-        """The model's trailing note (refused documents) is part of the
-        stored summary — not stripped or re-written."""
+    def test_refusal_note_stripped_from_summary(self, summarizer, result, monkeypatch):
+        """The model's trailing note is parsed (summary_refused) but then
+        stripped — the verdicts live in our own document list, and a
+        separate note would be redundant/contradictory (user finding)."""
 
         def fake_chat(messages, **kwargs):
-            return {"content": "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n- File 1"}
+            return {"content": "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n- Datei 1: File 0"}
 
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
         summarizer.summarize(result)
-        assert "**Nicht berücksichtigte Dokumente:**" in result["summary"]
+        assert "**Nicht berücksichtigte Dokumente:**" not in result["summary"]
         assert result["summary"].startswith("**Frage:** ")
+        # still parsed before stripping: map gating + pre-exclusion work
+        assert result["summary_refused"] == [{"oparlKey": "100", "name": "File 0"}]
+        assert result["summary_excluded"] == ["100"]
+        # our own list carries the verdicts
+        assert "Datei 1:" in result["summary"] and "nicht berücksichtigt" in result["summary"]
 
     def test_summary_states_the_query(self, summarizer, result):
         summarizer.summarize(result)
