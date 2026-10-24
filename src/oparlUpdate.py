@@ -9,6 +9,7 @@ except ImportError:
 import os
 import re
 import json
+import time
 import hashlib
 import logging
 import requests
@@ -219,6 +220,45 @@ def should_save(data: dict, url: str) -> bool:
 # ----------------------------------------------------------------------
 # FETCH / PDF / LINK EXTRACTION (unchanged)
 # ----------------------------------------------------------------------
+# ----------------------------------------------------------------------
+# RATE LIMITING / RETRY (shared HTTP layer for fetch_json / fetch_pdf)
+# ----------------------------------------------------------------------
+# Politeness delay between consecutive API requests and 429 handling:
+# the earlier full-graph crawls produced thousands of HTTP 429 errors,
+# and every rate-limited resource was silently skipped ("No data").
+REQUEST_DELAY = 0.25  # seconds between requests
+MAX_RETRIES = 5       # 429 retries per request
+
+_last_request_time = [0.0]
+
+
+def _http_get(url: str, timeout: int = 15):
+    """GET with politeness delay and 429/Retry-After handling.
+
+    Honours the server's ``Retry-After`` header (exponential back-off up
+    to 60 s otherwise). Raises ``requests.HTTPError`` on persistent 429s;
+    other HTTP/network errors are left to the caller.
+    """
+    since = time.monotonic() - _last_request_time[0]
+    if 0.0 <= since < REQUEST_DELAY:
+        time.sleep(REQUEST_DELAY - since)
+    _last_request_time[0] = time.monotonic()
+
+    resp = requests.get(url, timeout=timeout)
+    attempt = 0
+    while resp.status_code == 429 and attempt < MAX_RETRIES:
+        retry_after = resp.headers.get("Retry-After")
+        delay = float(retry_after) if retry_after and str(retry_after).replace(".", "", 1).isdigit() \
+            else min(60.0, 2.0 ** attempt)
+        logging.warning("Rate limited (429) on %s; retry %d/%d in %.1fs",
+                        url, attempt + 1, MAX_RETRIES, delay)
+        time.sleep(delay)
+        _last_request_time[0] = time.monotonic()
+        resp = requests.get(url, timeout=timeout)
+        attempt += 1
+    return resp
+
+
 def fetch_json(url: str):
     """
     Fetch JSON from a URL. Catch network/HTTP errors and JSON decode errors.
@@ -227,7 +267,7 @@ def fetch_json(url: str):
     fixed_url = fix_karlsruhe_url(url)
     try:
         logging.info("Fetching: %s", fixed_url)
-        resp = requests.get(fixed_url, timeout=15)
+        resp = _http_get(fixed_url)
         resp.raise_for_status()
         data = resp.json()
         fix_urls_in_data(data)
@@ -246,7 +286,7 @@ def fetch_pdf(url: str):
     fixed_url = fix_karlsruhe_url(url)
     try:
         logging.info("Fetching: %s", fixed_url)
-        resp = requests.get(fixed_url, timeout=15)
+        resp = _http_get(fixed_url)
         resp.raise_for_status()
         return resp.content
     except requests.RequestException as e:

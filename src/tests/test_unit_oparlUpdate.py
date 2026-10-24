@@ -137,6 +137,7 @@ def crawl_env(tmp_path, monkeypatch):
     """Shared crawl environment: output folders in tmp_path, request log."""
     monkeypatch.setattr(ou, "OUTPUT_FOLDER", str(tmp_path / "json"))
     monkeypatch.setattr(ou, "OUTPUT_PDF_FOLDER", str(tmp_path / "pdf"))
+    monkeypatch.setattr(ou, "REQUEST_DELAY", 0.0)  # no politeness sleep in tests
     requested = []
     return requested, tmp_path
 
@@ -457,6 +458,79 @@ class TestCollectionFiltering:
         assert recorder.finished is None
 
 
+class TestRateLimiting:
+    """Shared HTTP layer: politeness delay + 429/Retry-After handling."""
+
+    class _Resp:
+        def __init__(self, status, headers=None):
+            self.status_code = status
+            self.headers = headers or {}
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                err = requests.HTTPError(f"{self.status_code}")
+                err.response = self
+                raise err
+
+    def test_429_honours_retry_after(self, monkeypatch):
+        calls = []
+        sleeps = []
+
+        def fake_get(url, timeout=None):
+            calls.append(url)
+            if len(calls) == 1:
+                return self._Resp(429, headers={"Retry-After": "3"})
+            return self._Resp(200)
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        monkeypatch.setattr(ou.time, "sleep", sleeps.append)
+        resp = ou._http_get("https://x/papers")
+        assert resp.status_code == 200
+        assert len(calls) == 2
+        assert 3 in sleeps
+
+    def test_429_gives_up_after_max_retries(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(ou.requests, "get",
+                            lambda url, timeout=None: calls.append(url) or self._Resp(429))
+        monkeypatch.setattr(ou.time, "sleep", lambda s: None)
+        resp = ou._http_get("https://x/papers")
+        assert resp.status_code == 429
+        assert len(calls) == ou.MAX_RETRIES + 1
+
+    def test_politeness_delay_between_requests(self, monkeypatch):
+        sleeps = []
+        clock = {"t": 100.0}
+
+        def fake_monotonic():
+            return clock["t"]
+
+        monkeypatch.setattr(ou.requests, "get",
+                            lambda url, timeout=None: self._Resp(200))
+        monkeypatch.setattr(ou.time, "sleep", lambda s: sleeps.append(s) or clock.__setitem__("t", clock["t"] + s))
+        monkeypatch.setattr(ou.time, "monotonic", fake_monotonic)
+        ou._http_get("https://x/1")
+        ou._http_get("https://x/2")
+        # the second request came < REQUEST_DELAY after the first -> waited
+        assert sleeps and abs(sleeps[0] - ou.REQUEST_DELAY) < 0.01
+
+    def test_no_delay_after_long_gap(self, monkeypatch):
+        sleeps = []
+        clock = {"t": 100.0}
+
+        def fake_monotonic():
+            return clock["t"]
+
+        monkeypatch.setattr(ou.requests, "get",
+                            lambda url, timeout=None: self._Resp(200))
+        monkeypatch.setattr(ou.time, "sleep", lambda s: sleeps.append(s))
+        monkeypatch.setattr(ou.time, "monotonic", fake_monotonic)
+        ou._http_get("https://x/1")
+        clock["t"] += 60.0  # long gap since the last request
+        ou._http_get("https://x/2")
+        assert sleeps == []
+
+
 class TestSubLinkPolicy:
     """OParl 1.1 update mechanism: only pagination + PDFs are followed,
     plain resource references are not dereferenced."""
@@ -524,6 +598,8 @@ class TestSubLinkPolicy:
         pdf_calls = []
 
         class _PdfResponse:
+            status_code = 200
+
             def raise_for_status(self):
                 pass
 
@@ -564,6 +640,7 @@ class TestSubLinkPolicy:
 class _JsonResponse:
     def __init__(self, payload):
         self._payload = payload
+        self.status_code = 200
 
     def raise_for_status(self):
         pass
