@@ -141,6 +141,12 @@ def crawl_env(tmp_path, monkeypatch):
     return requested, tmp_path
 
 
+@pytest.fixture()
+def supported_filters(monkeypatch):
+    """Probe says 'supported' for every collection/parameter."""
+    monkeypatch.setattr(ou, "_probe_filter", lambda url, param, now=None: "supported")
+
+
 class TestCrawlIncremental:
     def test_first_run_crawls_and_records_state(self, crawl_env, monkeypatch, tmp_path):
         requested, _ = crawl_env
@@ -164,7 +170,7 @@ class TestCrawlIncremental:
         assert recorder.end_state.startswith("2026-10-2") or recorder.end_state.startswith("2026-10-23T10")
         assert recorder.finished is True
         # the createdSince parameter contained the initial baseline
-        assert any("createdSince=2026-10-01T00%3A00%3A00Z" in u for u in requested)
+        assert any("created_since=2026-10-01T00%3A00%3A00Z" in u for u in requested)
         # collection response was saved (body arrives inside the wrapper)
         saved = list((tmp_path / "json").iterdir())
         assert saved
@@ -182,7 +188,7 @@ class TestCrawlIncremental:
         monkeypatch.setattr(ou.requests, "get", fake_get)
         ou.crawl_oparl("https://x/oparl", recorder.end_state, recorder=recorder)
         # the incremental query uses the tracked end state, not the epoch
-        assert any("createdSince=2026-10-20T00%3A00%3A00" in u for u in requested)
+        assert any("created_since=2026-10-20T00%3A00%3A00" in u for u in requested)
         assert not any("1970" in u for u in requested)
 
     def test_epoch_baseline_fetches_everything(self, crawl_env, monkeypatch):
@@ -209,7 +215,7 @@ class TestCrawlIncremental:
 
         monkeypatch.setattr(ou.requests, "get", fake_get)
         ou.crawl_oparl("https://x/oparl", baseline, recorder=recorder)
-        assert any("createdSince=1970-01-01T00%3A00%3A00Z" in u for u in requested)
+        assert any("created_since=1970-01-01T00%3A00%3A00Z" in u for u in requested)
         assert recorder.started == baseline
 
     def test_network_error_does_not_crash_crawl(self, crawl_env, monkeypatch):
@@ -308,7 +314,7 @@ class TestCrawlIncremental:
 class TestCollectionFiltering:
     """Tasks 1.1/1.2: timestamp filter on every collection, with fallback."""
 
-    def test_every_collection_requested_with_modifiedsince(self, crawl_env, monkeypatch):
+    def test_every_collection_requested_with_modified_since(self, crawl_env, monkeypatch, supported_filters):
         requested, _ = crawl_env
         recorder = _FakeRecorder()
 
@@ -320,92 +326,122 @@ class TestCollectionFiltering:
         ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
         for collection in ou.COLLECTIONS:
             assert any(
-                f"/bodies/0001/{collection}?modifiedSince=2026-10-01T00%3A00%3A00Z" in u
+                f"/bodies/0001/{collection}?modified_since=2026-10-01T00%3A00%3A00Z" in u
+                and "limit=1000" in u
                 for u in requested
-            ), f"{collection} was not requested with modifiedSince"
+            ), f"{collection} was not requested with modified_since"
 
-    def test_filter_honoured_detection(self):
-        baseline = ou.iso_to_dt("2026-10-01T00:00:00Z")
-        honoured = {"data": [{"id": "https://x/1", "modified": "2026-10-05T00:00:00Z"}]}
-        ignored = {"data": [{"id": "https://x/1", "modified": "2026-01-01T00:00:00Z"}]}
-        assert ou._filter_honoured(honoured, baseline, "modifiedSince") is True
-        assert ou._filter_honoured(ignored, baseline, "modifiedSince") is False
-        # createdSince compares the 'created' field
-        honoured_created = {"data": [{"id": "https://x/1", "created": "2026-10-05T00:00:00Z"}]}
-        ignored_created = {"data": [{"id": "https://x/1", "created": "2025-01-01T00:00:00Z"}]}
-        assert ou._filter_honoured(honoured_created, baseline, "createdSince") is True
-        assert ou._filter_honoured(ignored_created, baseline, "createdSince") is False
-        # empty page cannot be distinguished -> treated as honoured
-        assert ou._filter_honoured({"data": []}, baseline, "modifiedSince") is True
-
-    def test_fallback_to_full_fetch_when_filter_ignored(self, crawl_env, monkeypatch):
-        """modifiedSince ignored -> createdSince tried; if also ignored the
-        collection is fetched in full and recorded."""
-        requested, tmp_path = crawl_env
-        recorder = _FakeRecorder()
+    def test_probe_detects_support_via_future_baseline(self, crawl_env, monkeypatch):
+        """The probe: future baseline must return an empty listing."""
+        requested, _ = crawl_env
 
         def fake_get(url, timeout=None):
             requested.append(url)
-            if "modifiedSince" in url:
-                # provably ignored: contains an item older than the baseline
-                return _json_response({"data": [
-                    {"id": "https://x/papers/1",
-                     "type": "https://schema.oparl.org/1.1/Paper",
-                     "modified": "2020-01-01T00:00:00Z"},
-                ], "links": {}})
-            if "createdSince" in url and "papers" in url:
-                return _json_response({"data": [
-                    {"id": "https://x/papers/1",
-                     "type": "https://schema.oparl.org/1.1/Paper",
-                     "created": "2020-01-01T00:00:00Z"},
-                ], "links": {}})
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        result = ou._probe_filter(
+            "https://x/papers", "modified_since",
+            now=ou.datetime(2026, 10, 24, tzinfo=ou.timezone.utc),
+        )
+        assert result == "supported"
+        # the probe URL carried the future baseline + large page size
+        assert any("modified_since=2026-10-25" in u and "limit=1000" in u for u in requested)
+
+    def test_probe_detects_ignored_filter(self, crawl_env, monkeypatch):
+        """A non-empty listing for a FUTURE baseline proves the filter is
+        ignored (listings are sorted newest-first — real pages cannot be
+        used for this check; found against the live Karlsruhe API, which
+        silently ignores the camelCase 'modifiedSince' variant)."""
+        requested, _ = crawl_env
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            return _json_response({"data": [{"id": "https://x/papers/1",
+                                             "modified": "2026-10-01T00:00:00Z"}],
+                                   "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        result = ou._probe_filter(
+            "https://x/papers", "modified_since",
+            now=ou.datetime(2026, 10, 24, tzinfo=ou.timezone.utc),
+        )
+        assert result == "ignored"
+
+    def test_fallback_to_full_fetch_when_all_filters_ignored(self, crawl_env, monkeypatch):
+        """Both parameters ignored (probe returns items) -> full fetch."""
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+        monkeypatch.setattr(ou, "_probe_filter", lambda url, param, now=None: "ignored")
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
             return _json_response({"data": [], "links": {}})
 
         monkeypatch.setattr(ou.requests, "get", fake_get)
         ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
-        # both filter parameters were tried for papers ...
-        assert any("papers?modifiedSince=" in u for u in requested)
-        assert any("papers?createdSince=" in u for u in requested)
-        # ... and the fallback was recorded for the run
-        assert recorder.full_fetches == ["papers"]
+        # the collection pages were fetched WITHOUT any filter
+        assert any("/papers?limit=1000" in u for u in requested)
+        assert not any("/papers?modified_since" in u for u in requested)
+        assert not any("/papers?created_since" in u for u in requested)
+        # the fallback is visible in the run record
+        assert recorder.full_fetches == list(ou.COLLECTIONS)
 
-    def test_created_since_used_when_modified_since_rejected(self, crawl_env, monkeypatch):
-        """HTTP error on modifiedSince -> createdSince is used."""
+    def test_created_since_used_when_modified_since_ignored(self, crawl_env, monkeypatch):
+        """modified_since ignored (probe) -> created_since is used."""
         requested, _ = crawl_env
         recorder = _FakeRecorder()
 
+        def fake_probe(url, param, now=None):
+            return "ignored" if param == "modified_since" else "supported"
+
+        monkeypatch.setattr(ou, "_probe_filter", fake_probe)
+
         def fake_get(url, timeout=None):
             requested.append(url)
-            if "modifiedSince" in url:
-                raise requests.ConnectionError("400 unknown parameter")
             return _json_response({"data": [], "links": {}})
 
         monkeypatch.setattr(ou.requests, "get", fake_get)
         ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
-        assert any("papers?createdSince=" in u for u in requested)
-        # createdSince was honoured (empty response) -> no full fetch recorded
+        assert any("/papers?created_since=" in u for u in requested)
+        assert not any("/papers?modified_since=" in u for u in requested)
         assert recorder.full_fetches == []
 
-    def test_capability_decision_cached_per_run(self, crawl_env, monkeypatch):
-        """A decision made for one collection is not re-probed within a run."""
+    def test_created_since_used_when_modified_since_rejected(self, crawl_env, monkeypatch):
+        """HTTP error on the modified_since probe -> created_since is used."""
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_probe(url, param, now=None):
+            return "error" if param == "modified_since" else "supported"
+
+        monkeypatch.setattr(ou, "_probe_filter", fake_probe)
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        assert any("/papers?created_since=" in u for u in requested)
+        assert recorder.full_fetches == []
+
+    def test_capability_decided_once_per_run(self, crawl_env, monkeypatch, supported_filters):
+        """Each collection page is fetched exactly once (probe decided up front)."""
         requested, _ = crawl_env
         recorder = _FakeRecorder()
 
         def fake_get(url, timeout=None):
             requested.append(url)
-            if "modifiedSince" in url:
-                return _json_response({"data": [], "links": {}})
             return _json_response({"data": [], "links": {}})
 
         monkeypatch.setattr(ou.requests, "get", fake_get)
         ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
-        # each collection was requested exactly once ( honoured first probe,
-        # no repeated capability checks for the same collection type)
         for collection in ou.COLLECTIONS:
             n = sum(1 for u in requested if f"/bodies/0001/{collection}?" in u)
-            assert n == 1, f"{collection} was probed {n} times"
+            assert n == 1, f"{collection} was fetched {n} times"
 
-    def test_crawl_without_finalise_leaves_run_open(self, crawl_env, monkeypatch):
+    def test_crawl_without_finalise_leaves_run_open(self, crawl_env, monkeypatch, supported_filters):
         """finalise=False (sync entry point): end_state is set, run NOT finished."""
         requested, _ = crawl_env
         recorder = _FakeRecorder()
@@ -431,7 +467,13 @@ class TestSubLinkPolicy:
         assert ou._is_followable("https://x/consultations/38115") is False
         assert ou._is_followable("https://x/meetings/1/agendaitem") is False
 
-    def test_references_not_dereferenced(self, crawl_env, monkeypatch):
+    def test_with_limit(self):
+        assert ou._with_limit("https://x/papers?modified_since=X") == "https://x/papers?modified_since=X&limit=1000"
+        assert ou._with_limit("https://x/papers?page=2") == "https://x/papers?page=2&limit=1000"
+        assert ou._with_limit("https://x/papers?limit=50&page=2") == "https://x/papers?limit=50&page=2"
+        assert ou._with_limit("https://x/papers") == "https://x/papers?limit=1000"
+
+    def test_references_not_dereferenced(self, crawl_env, monkeypatch, supported_filters):
         """A changed consultation referencing old entities must NOT trigger
         fetches of those references (spec: update = filtered collections)."""
         requested, _ = crawl_env
@@ -439,7 +481,7 @@ class TestSubLinkPolicy:
 
         def fake_get(url, timeout=None):
             requested.append(url)
-            if "modifiedSince" in url and "consultations" in url:
+            if "modified_since" in url and "consultations" in url:
                 return _json_response({"data": [{
                     "id": "https://x/consultations/38115",
                     "type": "https://schema.oparl.org/1.1/Consultation",
@@ -455,30 +497,28 @@ class TestSubLinkPolicy:
         assert not any("/meetings/999" in u for u in requested)
         assert not any("/papers/888" in u for u in requested)
 
-    def test_pagination_is_followed(self, crawl_env, monkeypatch):
+    def test_pagination_is_followed(self, crawl_env, monkeypatch, supported_filters):
         requested, _ = crawl_env
         recorder = _FakeRecorder()
 
         def fake_get(url, timeout=None):
             requested.append(url)
-            if "papers?modifiedSince=" in url:
+            if "papers?modified_since=" in url:
                 return _json_response({
                     "data": [{
                         "id": "https://x/papers/1",
                         "type": "https://schema.oparl.org/1.1/Paper",
                         "modified": "2026-10-20T10:00:00Z",
                     }],
-                    "links": {"next": "https://x/papers?modifiedSince=X&page=2"},
+                    "links": {"next": "https://x/papers?modified_since=X&page=2"},
                 })
-            if "page=2" in url:
-                return _json_response({"data": [], "links": {}})
             return _json_response({"data": [], "links": {}})
 
         monkeypatch.setattr(ou.requests, "get", fake_get)
         ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
         assert any("page=2" in u for u in requested)
 
-    def test_pdf_downloads_are_followed(self, crawl_env, monkeypatch, tmp_path):
+    def test_pdf_downloads_are_followed(self, crawl_env, monkeypatch, supported_filters, tmp_path):
         requested, tmp_path = crawl_env
         recorder = _FakeRecorder()
         pdf_calls = []
@@ -494,7 +534,7 @@ class TestSubLinkPolicy:
             if url.lower().endswith(".pdf"):
                 pdf_calls.append(url)
                 return _PdfResponse()
-            if "meetings?modifiedSince=" in url:
+            if "meetings?modified_since=" in url:
                 return _json_response({"data": [{
                     "id": "https://x/meetings/1",
                     "type": "https://schema.oparl.org/1.1/Meeting",

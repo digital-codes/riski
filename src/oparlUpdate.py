@@ -302,7 +302,7 @@ def process_resource(data, url: str, recorder=None) -> list:
 # CRAWL (updated for incremental start)
 # ----------------------------------------------------------------------
 # Collections crawled under bodies/0001. Every collection is requested
-# with a timestamp filter (modifiedSince first, createdSince fallback);
+# with a timestamp filter (modified_since first, created_since fallback);
 # endpoints that provably ignore the filter fall back to a full fetch.
 # OParl 1.1 update mechanism: the filtered collections are the ONLY
 # source of changed objects — all entity types Karlsruhe exposes are
@@ -320,8 +320,20 @@ COLLECTIONS = [
     "locations",
 ]
 
-# Filter parameters tried in order (OParl standard parameters).
-FILTER_PARAMS = ["modifiedSince", "createdSince"]
+# Filter parameters tried in order — NOTE the underscore spelling from the
+# OParl 1.1 spec ("modified_since"); Karlsruhe silently ignores the
+# camelCase variant that earlier versions of this crawler used.
+FILTER_PARAMS = ["modified_since", "created_since"]
+
+# Karlsruhe accepts large page sizes: 1000 items/page instead of the
+# default 10 (verified live; the syndication project uses the same).
+PAGE_LIMIT = 1000
+
+# Capability probe: a filter applied to a future baseline must return an
+# EMPTY listing. A non-empty listing proves the parameter is ignored
+# (listings are sorted newest-first, so a single real page cannot
+# distinguish honoured from ignored).
+PROBE_MARGIN = timedelta(days=1)
 
 MODE_FULL = "full"
 
@@ -333,42 +345,25 @@ def _normalise_ts(ts: datetime) -> datetime:
     return ts
 
 
-# Map a filter parameter to the resource timestamp field it filters on.
-_FILTER_FIELD = {"modifiedSince": "modified", "createdSince": "created"}
+def _with_limit(url: str) -> str:
+    """Ensure *url* requests the large page size (see PAGE_LIMIT)."""
+    if "limit=" in url:
+        return url
+    return url + ("&" if "?" in url else "?") + f"limit={PAGE_LIMIT}"
 
 
-def _filter_honoured(data, baseline: datetime, field: str) -> bool:
-    """Heuristic check whether the endpoint applied the timestamp filter.
+def _probe_filter(collection_url: str, param: str, now: datetime | None = None) -> str:
+    """Probe whether the endpoint honours *param* (``modified_since`` etc.).
 
-    *field* is the filter parameter name (``modifiedSince``/``createdSince``);
-    the corresponding resource timestamp field (``modified``/``created``) is
-    compared against *baseline*. If any element of the returned (first) page
-    carries a timestamp older than *baseline*, the filter was provably
-    ignored (an honouring endpoint cannot return resources older than the
-    requested threshold). An empty page cannot be distinguished and is
-    treated as honoured: an ignoring endpoint would return the full,
-    non-empty set.
+    Requests the collection with a future baseline: an honouring endpoint
+    must return an empty listing, a non-empty listing proves the parameter
+    is ignored. Returns ``"supported"``, ``"ignored"`` or ``"error"``.
     """
-    item_field = _FILTER_FIELD.get(field, field)
-    if isinstance(data, dict):
-        items = data.get("data", [])
-    elif isinstance(data, list):
-        items = data
-    else:
-        return False
-    baseline = _normalise_ts(baseline)
-    for item in items:
-        if not isinstance(item, dict):
-            continue
-        val = item.get(item_field)
-        if not isinstance(val, str):
-            continue
-        try:
-            if _normalise_ts(iso_to_dt(val)) < baseline:
-                return False
-        except Exception:
-            continue
-    return True
+    probe_ts = (now or datetime.now(timezone.utc)) + PROBE_MARGIN
+    data = fetch_json(f"{collection_url}?{param}={quote(probe_ts.isoformat(), safe='')}&limit={PAGE_LIMIT}")
+    if not data:
+        return "error"
+    return "ignored" if data.get("data") else "supported"
 
 
 def _is_followable(url: str) -> bool:
@@ -391,14 +386,17 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
 
     ``start_from`` is an ISO‑8601 timestamp used to request only resources that
     have been created or modified after that moment. Every collection in
-    ``COLLECTIONS`` is requested with ``modifiedSince`` first; when the
-    endpoint rejects or provably ignores the filter, ``createdSince`` is
-    tried, and as a last resort the collection is fetched in full (with the
-    fallback recorded via ``recorder.record_full_fetch``). The capability
-    decision is cached per collection type for the duration of the run.
-    Per the OParl 1.1 update mechanism, only the filtered collections, their
-    pagination and PDF downloads are fetched — resource references are not
-    dereferenced. The function continues even when individual requests fail.
+    ``COLLECTIONS`` is requested with ``modified_since`` first; whether the
+    endpoint honours the parameter is decided per collection via a
+    future-baseline probe (an honouring endpoint returns an empty listing
+    for a future timestamp — listings are sorted newest-first, so real
+    pages cannot be used for this check). If the parameter is ignored or
+    rejected, ``created_since`` is tried, and as a last resort the
+    collection is fetched in full (with the fallback recorded via
+    ``recorder.record_full_fetch``). Per the OParl 1.1 update mechanism,
+    only the filtered collections, their pagination and PDF downloads are
+    fetched — resource references are not dereferenced. The function
+    continues even when individual requests fail.
 
     When *recorder* is given, every new or modified resource is logged.
     With ``finalise=False`` (used by the combined sync entry point) the run
@@ -413,11 +411,36 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
         url = f"{root_url}/bodies/0001/{collection}"
         if param:
             url += f"?{param}=" + quote(start_from, safe='')
-        return url
+        return _with_limit(url)
 
-    queue = deque([f"{root_url}/bodies/0001?createdSince=" + quote(start_from, safe='')])
+    # Decide the filter capability per collection up front via the probe.
+    queue = deque([f"{root_url}/bodies/0001?created_since=" + quote(start_from, safe='')])
     for collection in COLLECTIONS:
-        queue.append(collection_url(collection, FILTER_PARAMS[0]))
+        mode = None
+        for param in FILTER_PARAMS:
+            probe = _probe_filter(f"{root_url}/bodies/0001/{collection}", param)
+            if probe == "supported":
+                mode = param
+                break
+            if probe == "ignored":
+                logging.warning(
+                    "Collection %s ignores %s (probe returned items for a "
+                    "future baseline)", collection, param,
+                )
+            else:
+                logging.warning(
+                    "Collection %s rejected %s (HTTP error)", collection, param,
+                )
+        if mode is None:
+            mode = MODE_FULL
+            logging.warning(
+                "Collection %s supports no timestamp filter; fetching in full",
+                collection,
+            )
+            if recorder is not None:
+                recorder.record_full_fetch(collection)
+        capabilities[collection] = mode
+        queue.append(collection_url(collection, mode if mode != MODE_FULL else None))
 
     # Keep the latest timestamp seen during this run – start with the provided
     # baseline so that we only ever move forward.
@@ -460,62 +483,6 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
         # JSON resources
         data = fetch_json(current_url)
 
-        # Collection first page: decide the filter capability for this run.
-        # Matches ".../bodies/0001/<collection>?modifiedSince=..." first-page
-        # requests only (pagination URLs carry page parameters and never
-        # match exactly).
-        collection = next(
-            (c for c in COLLECTIONS
-             if current_url == collection_url(c, FILTER_PARAMS[0])
-             or current_url == collection_url(c, FILTER_PARAMS[1])),
-            None,
-        )
-        if collection is not None:
-            attempted = FILTER_PARAMS[1] if FILTER_PARAMS[1] in current_url else FILTER_PARAMS[0]
-            idx = FILTER_PARAMS.index(attempted)
-            next_param = FILTER_PARAMS[idx + 1] if idx + 1 < len(FILTER_PARAMS) else None
-            if data:
-                if _filter_honoured(data, baseline_dt, attempted):
-                    capabilities[collection] = attempted
-                else:
-                    # Filter provably ignored: re-try with the next filter
-                    # parameter (it may still be honoured); the unfiltered
-                    # response is discarded, the next attempt decides.
-                    if next_param:
-                        logging.warning(
-                            "Collection %s ignored %s; falling back to %s",
-                            collection, attempted, next_param,
-                        )
-                        queue.appendleft(collection_url(collection, next_param))
-                        continue
-                    logging.warning(
-                        "Collection %s ignored all timestamp filters; fetching in full",
-                        collection,
-                    )
-                    capabilities[collection] = MODE_FULL
-                    if recorder is not None:
-                        recorder.record_full_fetch(collection)
-                    # fall through: process the (unfiltered) response
-            else:
-                # HTTP error with the filter attached: first try the next
-                # filter parameter before fetching the collection in full.
-                if next_param:
-                    logging.warning(
-                        "Collection %s rejected %s (HTTP error); falling back to %s",
-                        collection, attempted, next_param,
-                    )
-                    queue.appendleft(collection_url(collection, next_param))
-                    continue
-                logging.warning(
-                    "Collection %s rejected all timestamp filters; fetching in full",
-                    collection,
-                )
-                capabilities[collection] = MODE_FULL
-                if recorder is not None:
-                    recorder.record_full_fetch(collection)
-                queue.appendleft(collection_url(collection))
-                continue
-
         if not data:
             logging.warning("No data for %s; skipping.", current_url)
             if recorder is not None:
@@ -547,7 +514,9 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
             if link in visited:
                 continue
             if _is_followable(link):
-                queue.append(link)
+                # pagination links get the large page size; PDFs must stay
+                # untouched (the .pdf suffix drives the download branch)
+                queue.append(link if link.lower().endswith(".pdf") else _with_limit(link))
             else:
                 skipped_refs += 1
         if skipped_refs:
