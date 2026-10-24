@@ -335,8 +335,8 @@ endpoints are unavailable.
 
 ## Incremental update — implementation status
 
-Implemented as of 2026-10-24 (open change
-`openspec/changes/incremental-oparl-sync`, tasks 1.x–3.x done; the DB is
+Implemented and verified as of 2026-10-24 (archived change
+`openspec/changes/archive/2026-10-24-incremental-oparl-sync/`; the DB is
 current through 2026-10-14 via the documented data update workflow). The
 timestamp cursor lives in the database (`oparlUpdateRuns` table — sole
 source of truth, see the archived change `track-oparl-update-runs`).
@@ -353,12 +353,12 @@ source of truth, see the archived change `track-oparl-update-runs`).
 | Unit tests (timestamps, shutdown) + mocked integration tests | ✅ `src/tests/test_unit_oparlUpdate.py`, `src/tests/test_unit_oparlRunLog.py`, `src/tests/test_unit_syncIncremental.py`, `src/tests/test_integration_oparlRunLog.py`, `src/tests/test_integration_syncIncremental.py` (rollback-only DB writes). |
 | README documentation | ✅ This section + the data update workflow above. |
 
-**Remaining:**
-
-- **Real-run verification** (`openspec/changes/incremental-oparl-sync`
-  task 4.1, user-gated): one live `syncIncremental` run to confirm the
-  Karlsruhe API honours `modifiedSince` (the fallback ensures correctness
-  either way) and that typical runs finish in minutes.
+**Verified against the live API** (2026-10-24): a real `syncIncremental`
+run recorded the baseline advance (2026-02-19 → 2026-10-24) with the
+import in the same run, and operator reruns complete in minutes (crawl
+seconds-to-minutes + ~3.5 min parallel import). Two live-API findings from
+the verification shaped the implementation: the underscore parameter
+spelling and the per-page filter validation (see the workflow section).
 
 ## Potential improvements
 
@@ -379,13 +379,24 @@ visibility (`oparlUpdateRuns.full_fetches`), one-command synchronisation
 cap for large documents), targeted incremental embeddings
 (`pgAddSummaries --embed-missing`), the missing
 `contentEmbeddings.oparlKey` unique constraint (self-healed at startup),
-and a data update that brought the DB from 2026-05-21 to 2026-10-14.
+and a data update that brought the DB from 2026-05-21 to 2026-10-14
+(archived changes: `2026-10-24-incremental-oparl-sync`,
+`2026-10-24-summary-refine-file-control`).
+
+**Recently implemented** (2026-10-24, later the same day): the summary
+pane's **"Verfeinern"** refinement — re-runs the query-guided summarizer
+with full document content (no document selection, complete overview with
+Datei-N references, 900-word budget), a single interactive document list
+with per-file include/exclude toggles (exclusion set is authoritative
+server-side), download URLs on every file, and the model's refusal note
+parsed but no longer displayed.
 
 **Still open:**
 
 - **LLM tag backfill for remaining items** — name-regex misses escalate
   to the teaser-based LLM pass; `python src/pgCategorise.py all`
-  continues it (idempotent/resumable). File coverage is now ~82%, AgendaItem ~28%.
+  continues it (idempotent/resumable). File coverage is at ~99.8%,
+  AgendaItem at ~28% (the remaining backlog).
 - **Submitter/faction facet** — OParl `originator*`/`submitter` fields are
   unpopulated in this corpus (verified by spike); would need rule-based
   derivation like the desinformationssystem project's `submitter.py`.
