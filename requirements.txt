@@ -1,0 +1,32 @@
+# riski runtime + test dependencies.
+# Supported: Python 3.10 – 3.14. Lower bounds are chosen so that pip can
+# resolve the set on 3.10 while newer interpreters pick newer wheels.
+
+# --- data layer ---
+SQLAlchemy>=2.0.30
+psycopg2-binary>=2.9.9
+pgvector>=0.3.6
+
+# --- remote model access (embeddings / chat / OCR) ---
+requests>=2.32.0
+httpx>=0.27.0
+
+# --- search / analysis ---
+numpy>=2.2
+pandas>=2.2.2
+PyYAML>=6.0.1
+
+# --- geo enrichment (streets, districts) ---
+geopandas>=1.0
+shapely>=2.0.3
+fiona>=1.9.5
+pyproj>=3.6.1
+
+# --- API server ---
+fastapi>=0.111.0
+uvicorn>=0.30.0
+pydantic>=2.7.0
+
+# --- tests / tooling ---
+pytest>=7.4
+rich>=13.7
