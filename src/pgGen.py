@@ -9,8 +9,10 @@ except ImportError:
 import json
 import os
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from sqlalchemy import (
@@ -45,6 +47,11 @@ DROP_ALL = False  # set True only for a clean rebuild
 
 # Print insert progress every N entities
 PROGRESS_EVERY = 500
+
+# Parallelism for the import (JSON parsing and base upserts). Override with
+# RISKI_IMPORT_WORKERS; upsert partitions use one connection per worker and
+# never touch the same rows (entities are partitioned by oparlId).
+IMPORT_WORKERS = max(1, int(os.environ.get('RISKI_IMPORT_WORKERS', '4')))
 
 STRING_SIZE = 256
 
@@ -197,19 +204,63 @@ def collect_entities_from_obj(
             collect_entities_from_obj(it, entities, url_to_key, source_file, f"{path}[{i}]")
 
 
+def _modified_ts(raw: Dict[str, Any]) -> Optional[datetime]:
+    """Best-effort `modified` timestamp of a raw entity dict (None if absent
+    or unparsable). Used to merge duplicate entities deterministically."""
+    val = raw.get('modified')
+    if not isinstance(val, str):
+        return None
+    ts = val.rstrip('Z')
+    try:
+        dt = datetime.fromisoformat(ts)
+    except ValueError:
+        return None
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
 def pass1_collect(directory: str) -> Tuple[Dict[EntityKey, Entity], Dict[str, EntityKey], Set[str]]:
+    """Collect entities from all JSON files in *directory*.
+
+    Files are read and parsed by a worker pool (IMPORT_WORKERS); the shared
+    entity maps are merged in the main thread. Duplicate entities (same
+    oparlId seen in several files, e.g. embedded in a listing and saved
+    individually) are merged deterministically: the version with the newer
+    `modified` timestamp wins.
+    """
     entities: Dict[EntityKey, Entity] = {}
     url_to_key: Dict[str, EntityKey] = {}
     tables: Set[str] = set()
     files = list(iter_json_files(directory))
-    print(f"Found {len(files)} JSON files to process in '{directory}'")
-    for i, path in enumerate(files, 1):
-        # print(f"  Reading file {i}/{len(files)}: {os.path.basename(path)}")
+    print(f"Found {len(files)} JSON files to process in '{directory}' "
+          f"({IMPORT_WORKERS} workers)")
+
+    def parse_file(path: str):
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        collect_entities_from_obj(data, entities, url_to_key, source_file=os.path.basename(path), path='$')
-    for k in entities.keys():
-        tables.add(k.table)
+        local_entities: Dict[EntityKey, Entity] = {}
+        local_url_to_key: Dict[str, EntityKey] = {}
+        collect_entities_from_obj(data, local_entities, local_url_to_key,
+                                  source_file=os.path.basename(path), path='$')
+        return local_entities, local_url_to_key
+
+    with ThreadPoolExecutor(max_workers=IMPORT_WORKERS) as pool:
+        for local_entities, local_url_to_key in pool.map(parse_file, files):
+            tables.update(k.table for k in local_entities)
+            for url, key in local_url_to_key.items():
+                url_to_key.setdefault(url, key)
+            for key, ent in local_entities.items():
+                existing = entities.get(key)
+                if existing is None:
+                    entities[key] = ent
+                    continue
+                # deterministic duplicate merge: newer `modified` wins
+                existing_ts = _modified_ts(existing.raw)
+                incoming_ts = _modified_ts(ent.raw)
+                if incoming_ts is not None and (existing_ts is None or incoming_ts > existing_ts):
+                    existing.raw = ent.raw
+                existing.sources |= ent.sources
     return entities, url_to_key, tables
 
 
@@ -588,35 +639,64 @@ def insert_all(
     Session = sessionmaker(bind=engine)
     session = Session()
     total = len(entities)
-    # 1) Base insert / upsert
-    for idx, ent in enumerate(entities.values(), 1):
-        if idx % PROGRESS_EVERY == 0 or idx == total:
-            print(f"  Base upsert {idx}/{total} ...")
-        t = main_tables[ent.key.table]
-        # print(f"Processing entity {idx}/{total}: table={ent.key.table} oparlId={ent.key.oparl_id}")
-        row = build_base_row(ent, scalar_types, scalar_colnames)
-        stmt = insert(t).values(**row)
-        # On conflict on oparlId, update when incoming modified is newer
-        stmt = stmt.on_conflict_do_update(
-            index_elements=['oparlId'],
-            set_={
-                'id': row['id'],
-                'oparlKey': row['oparlKey'],
-                'type': row['type'],
-                'created': row['created'],
-                'modified': row['modified'],
-                'data': row['data'],
-                # include scalar columns dynamically
-                **{col: row[col] for col in row if col not in {'id', 'oparlKey', 'oparlId', 'type', 'created', 'modified', 'data'}},
-            },
-            where= (t.c.modified < row['modified']) if row['modified'] is not None else True,
-        )
+
+    progress_lock = threading.Lock()
+    progress_count = [0]
+
+    def _track_progress(count: int) -> None:
+        with progress_lock:
+            progress_count[0] += count
+            done = progress_count[0]
+        if done % PROGRESS_EVERY < count or done >= total:
+            print(f"  Base upsert {min(done, total)}/{total} ...")
+
+    # 1) Base insert / upsert — partitioned across workers (one connection
+    # per worker, disjoint oparlIds, so partitions never conflict).
+    def _upsert_partition(partition: List[Tuple[int, Entity]]) -> None:
+        worker_session = Session()
         try:
-            session.execute(stmt)
-        except Exception as e:
-            raise RuntimeError(
-                f"Base upsert failed for table={ent.key.table} oparlId={ent.key.oparl_id}"
-            ) from e
+            for _, ent in partition:
+                t = main_tables[ent.key.table]
+                row = build_base_row(ent, scalar_types, scalar_colnames)
+                stmt = insert(t).values(**row)
+                # On conflict on oparlId, update when incoming modified is newer
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['oparlId'],
+                    set_={
+                        'id': row['id'],
+                        'oparlKey': row['oparlKey'],
+                        'type': row['type'],
+                        'created': row['created'],
+                        'modified': row['modified'],
+                        'data': row['data'],
+                        # include scalar columns dynamically
+                        **{col: row[col] for col in row if col not in {'id', 'oparlKey', 'oparlId', 'type', 'created', 'modified', 'data'}},
+                    },
+                    where=(t.c.modified < row['modified']) if row['modified'] is not None else True,
+                )
+                try:
+                    worker_session.execute(stmt)
+                except Exception as e:
+                    worker_session.rollback()
+                    raise RuntimeError(
+                        f"Base upsert failed for table={ent.key.table} oparlId={ent.key.oparl_id}"
+                    ) from e
+                _track_progress(1)
+            worker_session.commit()
+        finally:
+            worker_session.close()
+
+    indexed = list(enumerate(entities.values(), 1))
+    partitions: List[List[Tuple[int, Entity]]] = [[] for _ in range(IMPORT_WORKERS)]
+    for item in indexed:
+        partitions[item[0] % IMPORT_WORKERS].append(item)
+
+    if IMPORT_WORKERS == 1:
+        _upsert_partition(partitions[0])
+    else:
+        with ThreadPoolExecutor(max_workers=IMPORT_WORKERS) as pool:
+            for fut in [pool.submit(_upsert_partition, part) for part in partitions if part]:
+                fut.result()
     session.commit()
     # 2) Build oparlId -> sid map
     print('  Building oparlId->sid map ...')
