@@ -36,11 +36,17 @@ The pipeline has four stages, all built on two shared layers in `src/`:
 Scripts can be run directly or as modules — both work:
 
 ```bash
-# incremental crawl of new/changed OParl entities
+# one-command incremental synchronisation (crawl + DB import)
+python src/syncIncremental.py
+
+# incremental crawl only (no DB import)
 python src/oparlUpdate.py
 
 # (re)create/update the schema and import a directory of OParl JSON files
 python src/pgGen.py /path/to/oparl/json
+
+# OCR PDFs that have no extracted markdown yet (Mistral OCR backend)
+python src/pgOcr.py
 
 # one-off: rebuild content embeddings from a .npz vector dump
 python src/pgAddVecs.py vectors.npz
@@ -61,6 +67,86 @@ python src/pgTimeline.py
 # or as a package module
 python -m src.pgVecSearch
 ```
+
+## Data update workflow
+
+The full pipeline for bringing the database from "last run" to "now".
+Every step is **idempotent and resumable** — re-running never duplicates
+rows and skips already-processed items.
+
+```bash
+# 0) Snapshot (hard prerequisite — do not skip)
+PGPASSWORD=... pg_dump -Fc -h localhost -U riski -d riski_agentic \
+    -f /mnt_ai/data/riski/snapshots/riski_agentic_$(date +%F).dump
+pg_restore --list /mnt_ai/data/riski/snapshots/riski_agentic_*.dump   # verify
+
+# 1) Crawl + import in one command. Writes JSON/PDFs under
+#    /mnt_ai/data/odd26/ris/{ko,ko_pdf}, then imports via pgGen.
+#    The tracked baseline (oparlUpdateRuns) advances only when the
+#    import succeeds.
+python src/syncIncremental.py
+#    Two-phase alternative: python src/oparlUpdate.py  &&  python src/pgGen.py /mnt_ai/data/odd26/ris/ko
+#    Note: pgGen must see the FULL ko/ directory (not just new files) —
+#    association URLs are resolved within the passed directory only.
+
+# 2) OCR: for every PDF in ko_pdf without ko_extracted/<stem>.md, run
+#    Mistral OCR (keys in src/private.py: OCR_URL/OCR_KEY). Large
+#    documents are OCR'd only up to the first 12 pages (--max-pages 0
+#    disables the cap). Skips existing outputs; failures are logged.
+python src/pgOcr.py
+
+# 3) Summaries: for markdown >10000 chars, store an LLM summary
+#    (≤8000 chars, mistral-small) instead of the full text; smaller
+#    files are copied unchanged. Run from the data directory (relative
+#    ./ko_extracted → ./ko_sums) or pass explicit dirs:
+python src/pgSummarize.py --src-dir /mnt_ai/data/odd26/ris/ko_extracted \
+                          --dst-dir /mnt_ai/data/odd26/ris/ko_sums
+
+# 4) File contents + embeddings: match ko_sums markdown to File rows
+#    (by filename stem) and update File.content/contentKind.
+#    --embed-missing embeds ONLY files without a contentEmbeddings row.
+python src/pgAddSummaries.py -s /mnt_ai/data/odd26/ris/ko_sums \
+                             -f /mnt_ai/data/odd26/ris/ko_extracted \
+                             --embed-missing
+#    (use -e instead of --embed-missing to re-embed everything)
+
+# 5) Teasers: LLM teaser for every File that has content but no teaser.
+#    Needs DB credentials + an OpenAI-compatible LLM endpoint
+#    (local ollama by default; override for hosted APIs):
+RISKI_USER=riski RISKI_PASSWORD=... \
+RISKI_LLM_URL=https://api.mistral.ai RISKI_LLM_MDL=mistral-small-2603 \
+RISKI_LLM_API_KEY=... \
+python src/pgTeasers.py
+
+# 6) Geo references (idempotent, existing pairs are skipped):
+python src/pgAddFileGeoRefs.py --prune   # file name/teaser → streets/districts
+python src/pgAddStreetRefs.py            # agenda item names → streets
+python src/pgAddDistrictRefs.py          # agenda item names → districts
+
+# 7) Tags/categories: papertype backfill → name-regex → teaser LLM
+#    escalation. Skips already-tagged items (use --force to re-run LLM).
+python src/pgCategorise.py all
+
+# 8) Verify:
+python src/pgCoverage.py
+```
+
+**Duplicate-safety guarantees:** `pgGen` upserts on `oparlId` (newer
+`modified` wins), `pgSummarize`/`pgOcr`/`pgTeasers` skip existing
+outputs, `pgAddFileGeoRefs`/street/district refs preload existing pairs,
+`pgCategorise` skips already-tagged items, embeddings upsert on
+`oparlKey`. A crash mid-run is recovered by simply re-running the step.
+
+**Notes:**
+- The canonical data dirs (`/mnt_ai/data/odd26/ris/ko*`) are owned by the
+  `kugel` user; steps 2–3 write markdown there and must run as that user
+  (or with `--out-dir`/`--dst-dir` pointed at a writable mirror that is
+  copied back afterwards).
+- File matching in step 4 works on the numeric filename stem
+  (`00030895.md` ↔ `File.filename = "00030895.pdf"`); files without a
+  markdown source keep `content IS NULL` (they are skipped by search).
+- `pgGen` detects new scalar columns/tables from the observed JSON and
+  adds them additively — new OParl fields never require a rebuild.
 
 ## Interactive search — web app + API
 
@@ -191,33 +277,30 @@ endpoints are unavailable.
 
 ## Incremental update — implementation status
 
-The open change `openspec/changes/incremental-oparl-sync` describes incremental
-synchronisation of the PostgreSQL data. Much of it already exists in
-`src/oparlUpdate.py` and `src/pgGen.py`, partly in a different form than originally
-planned (the timestamp cursor moved from `last_run.txt` into the database — see the
-archived change `track-oparl-update-runs`).
-
-**Already implemented:**
+Implemented as of 2026-10-24 (open change
+`openspec/changes/incremental-oparl-sync`, tasks 1.x–3.x done; the DB is
+current through 2026-10-14 via the documented data update workflow). The
+timestamp cursor lives in the database (`oparlUpdateRuns` table — sole
+source of truth, see the archived change `track-oparl-update-runs`).
 
 | Planned | Status in the current code |
 |---|---|
-| Timestamp cursor tracking | ✅ Superseded and better: the `oparlUpdateRuns` table stores each run's baseline and end state in the database (DB is the sole source; `last_run.txt` was removed entirely). |
-| `?createdSince=<timestamp>` queries | ✅ Done: every collection (papers, agendaItems, meetings, people, consultations) is requested with `modifiedSince` first (captures modified-after-creation entities); `createdSince` is the fallback when `modifiedSince` is unsupported. The body resource keeps `createdSince`. |
-| Endpoint-capability detection and fallback | ✅ Done: when an endpoint provably ignores a filter (older resources returned) or rejects it (HTTP error), the crawler falls back — first to the other parameter, then to a full fetch with a warning. Fallback usage is visible in the run row (`oparlUpdateRuns.full_fetches`). |
-| Cover *modified* records, not only created ones | ✅ Done via `modifiedSince`-first (see above). |
-| One-command synchronisation | ✅ Done: `src/syncIncremental.py` runs the incremental crawl and then `pgGen`'s import against the crawl output. The run row is finalised (and the baseline advanced) only after a successful import; on failure the baseline is reset to the pre-crawl window. |
+| Timestamp cursor tracking | ✅ The `oparlUpdateRuns` table stores each run's baseline and end state in the database (DB is the sole source; `last_run.txt` was removed entirely). |
+| `?modifiedSince=`/`?createdSince=` queries | ✅ Every collection (papers, agendaItems, meetings, people, consultations) is requested with `modifiedSince` first (captures modified-after-creation entities); `createdSince` is the fallback when `modifiedSince` is unsupported. The body resource keeps `createdSince`. |
+| Endpoint-capability detection and fallback | ✅ When an endpoint provably ignores a filter (older resources returned) or rejects it (HTTP error), the crawler falls back — first to the other parameter, then to a full fetch with a warning. Fallback usage is visible in the run row (`oparlUpdateRuns.full_fetches`). |
+| Cover *modified* records, not only created ones | ✅ Via `modifiedSince`-first (see above). |
+| One-command synchronisation | ✅ `src/syncIncremental.py` runs the incremental crawl and then `pgGen`'s import against the crawl output. The run row is finalised (and the baseline advanced) only after a successful import; on failure the baseline is reset to the pre-crawl window. |
 | Idempotent upsert (`ON CONFLICT DO UPDATE`) | ✅ `pgGen.insert_all` upserts on `oparlId`, updating only when the incoming `modified` timestamp is newer. |
 | Graceful shutdown / cursor persistence | ✅ `SIGINT` is caught; the run is recorded with `success=false` and the items collected so far are persisted. |
-| Timestamp validation | ✅ Superseded: the cursor lives in typed DB columns, not a text file. |
 | Unit tests (timestamps, shutdown) + mocked integration tests | ✅ `src/tests/test_unit_oparlUpdate.py`, `src/tests/test_unit_oparlRunLog.py`, `src/tests/test_unit_syncIncremental.py`, `src/tests/test_integration_oparlRunLog.py`, `src/tests/test_integration_syncIncremental.py` (rollback-only DB writes). |
-| README documentation | ✅ This section. |
+| README documentation | ✅ This section + the data update workflow above. |
 
 **Remaining:**
 
-- **Real-run verification** (`openspec/changes/incremental-oparl-sync` task 4.1): one
-  live `syncIncremental` run to confirm the Karlsruhe API honours `modifiedSince`
-  (the fallback ensures correctness either way) and that typical runs finish in
-  minutes.
+- **Real-run verification** (`openspec/changes/incremental-oparl-sync`
+  task 4.1, user-gated): one live `syncIncremental` run to confirm the
+  Karlsruhe API honours `modifiedSince` (the fallback ensures correctness
+  either way) and that typical runs finish in minutes.
 
 ## Potential improvements
 
@@ -231,11 +314,20 @@ filters and match-type provenance, name vectors for all entity tables,
 the network graph view with OParl association edges, the FastAPI search
 API, and query-guided async summaries.
 
+**Recently implemented** (2026-10-24): `modifiedSince`-first incremental
+crawling for all collections with capability fallback and run-row
+visibility (`oparlUpdateRuns.full_fetches`), one-command synchronisation
+(`syncIncremental`), batch PDF OCR (`pgOcr`, Mistral backend, first-12-pages
+cap for large documents), targeted incremental embeddings
+(`pgAddSummaries --embed-missing`), the missing
+`contentEmbeddings.oparlKey` unique constraint (self-healed at startup),
+and a data update that brought the DB from 2026-05-21 to 2026-10-14.
+
 **Still open:**
 
-- **LLM tag backfill for remaining items** — AgendaItem coverage is at
-  ~28% (name-regex misses escalate to the teaser-based LLM pass; run
-  `python src/pgCategorise.py llm`).
+- **LLM tag backfill for remaining items** — name-regex misses escalate
+  to the teaser-based LLM pass; `python src/pgCategorise.py all`
+  continues it (idempotent/resumable). File coverage is now ~82%, AgendaItem ~28%.
 - **Submitter/faction facet** — OParl `originator*`/`submitter` fields are
   unpopulated in this corpus (verified by spike); would need rule-based
   derivation like the desinformationssystem project's `submitter.py`.
@@ -244,6 +336,6 @@ API, and query-guided async summaries.
 - **`/ask` endpoint** — contextual follow-up questions with LLM query
   rewrite against the session context (session store already in place).
 - **graphGL 3D renderer** — time as third axis / color, behind a toggle.
-- **contentEmbeddings coverage** — 93.7% → 100% (files without embeddings).
 - **Full text in Postgres** — raw text lives on disk only; a bounded
   `fulltext` column + tsvector would enable FTS beyond name trigrams.
+- **Name-vector backfill** — `pgBackfillNameVecs` covers ~97–98% per table.
