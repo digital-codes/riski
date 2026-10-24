@@ -288,6 +288,20 @@ too aggressive — e.g. topically related documents dropped as redundant —
 tighten the instruction to refuse only clearly unrelated documents; if
 noise leaks through, sharpen it in the other direction.
 
+#### Refine and per-file control
+
+The summary is built from the fast **teaser layer**; a **"Verfeinern"**
+button in the summary pane re-runs the summarizer with the **full document
+content** (prompt header names the layer) — the previous summary stays
+visible while the refined one is generated. The summary ends with a
+download-URL file list (number, name, berücksichtigt/nicht berücksichtigt)
+above the provenance footer, and the same list is rendered as interactive
+checkboxes: excluding a file removes it from the summary's document set and
+re-runs the summarizer over the remaining files (always full content, since
+it follows a user action). Files the model refused start excluded. Both
+features call `POST /summarize {refine, exclude}`; exclusions persist in the
+session until the next search.
+
 ### Performance instrumentation
 
 `src/timing.py` provides `@timed` / `timed_block` (stdlib-only) used

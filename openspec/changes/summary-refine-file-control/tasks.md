@@ -17,4 +17,4 @@
 
 ## 4. Docs
 
-- [ ] 4.1 README "Summaries" section: refine semantics (full content on user action), file list above the footer, include/exclude control; `openspec validate --changes` passes.
+- [x] 4.1 README "Summaries" section: refine semantics (full content on user action), file list above the footer, include/exclude control; `openspec validate --changes` passes.
