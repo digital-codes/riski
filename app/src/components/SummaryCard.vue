@@ -39,9 +39,6 @@
 							   @change="$emit('toggle-file', { oparlKey: f.oparlKey, excluded: !$event.target.checked })" />
 						<a v-if="f.downloadUrl" :href="f.downloadUrl" target="_blank" rel="noopener" class="file-name">{{ f.name }}</a>
 						<span v-else class="file-name">{{ f.name }}</span>
-						<span class="file-verdict" :class="f.excluded ? 'refused' : 'used'">
-							{{ f.excluded ? 'nicht berücksichtigt' : 'berücksichtigt' }}
-						</span>
 					</label>
 				</li>
 			</ul>
@@ -127,12 +124,11 @@ const downloadPdf = () => {
 	// document list (same order/verdicts as the pane; checkboxes omitted)
 	const fileListHtml = props.files.length
 		? `<h2>Dokumente</h2><ul>` +
-		  props.files.map(f => {
-				const verdict = f.excluded ? 'nicht berücksichtigt' : 'berücksichtigt';
+		  props.files.filter(f => !f.excluded).map(f => {
 				const name = f.downloadUrl
 					? `<a href="${f.downloadUrl}">${f.name ?? f.oparlKey}</a>`
 					: (f.name ?? f.oparlKey);
-				return `<li>${name} — ${verdict}</li>`;
+				return `<li>${name}</li>`;
 			}).join('') + `</ul>`
 		: '';
 	doc.open();
@@ -351,19 +347,6 @@ a.file-name:hover {
 	text-decoration: underline;
 }
 
-.file-verdict {
-	font-size: 0.78rem;
-	margin-left: auto;
-	white-space: nowrap;
-}
-
-.file-verdict.used {
-	color: #059669;
-}
-
-.file-verdict.refused {
-	color: #dc2626;
-}
 
 @media (max-width: 768px) {
 	.summary-card {
