@@ -131,6 +131,7 @@ class ResultSummarizer:
         original ``top_files`` stay untouched in the session result.
         """
         self.full_content_chars = self.content_chars * _FULL_CONTENT_FACTOR
+        self._last_refused = []
         top_files = list(result.get("top_files") or [])
         if exclude:
             top_files = [f for f in top_files if f.get("oparlKey") not in exclude]
@@ -173,6 +174,7 @@ class ResultSummarizer:
             # model listed as refused, resolved back to the fetched files —
             # consumers (map view) gate on this
             refused = self._parse_refused(summary, top_files)
+            self._last_refused = refused
             refused_keys = {r["oparlKey"] for r in refused}
             user_excluded = set(exclude or set())
             if not use_full_content:
@@ -193,7 +195,8 @@ class ResultSummarizer:
             # rendered above it (change: summary-refine-file-control) and
             # lists ALL fetched files with the exclusion-state verdict
             footer = self._footer(response)
-            file_list = self._file_list_section(list(result.get("top_files") or []), final_excluded)
+            file_list = self._file_list_section(list(result.get("top_files") or []),
+                                                top_files, final_excluded)
             result["summary"] = header + summary + file_list + footer
             result["summary_refused"] = refused
             # structured per-file metadata for the interactive frontend
@@ -223,18 +226,32 @@ class ResultSummarizer:
             })
         return files
 
-    def _file_list_section(self, top_files: list[dict], excluded: set) -> str:
-        """Markdown list of ALL fetched files — number, name as
-        download-URL link, verdict from the exclusion state — rendered
-        above the provenance footer (change: summary-refine-file-control)."""
+    def _file_list_section(self, all_files: list[dict], working_files: list[dict],
+                           excluded: set) -> str:
+        """Markdown list of ALL fetched files, rendered above the
+        provenance footer (change: summary-refine-file-control).
+
+        Files of the current run keep their prompt numbering ("Datei N" —
+        the numbering the model's summary text refers to) with the
+        per-run verdict; user-excluded files are listed without a number
+        and marked "ausgeschlossen" so the list cannot contradict the
+        model's note ("Alle Dokumente wurden berücksichtigt" refers to the
+        run's document set, not to user-excluded files).
+        """
+        working_index = {f["oparlKey"]: i for i, f in enumerate(working_files, 1)}
+        refused_keys = {r["oparlKey"] for r in (self._last_refused or [])}
         lines = ["", "**Dokumente:**", ""]
-        for i, f in enumerate(top_files, 1):
+        for f in all_files:
             _, download_url = self._file_text(f["oparlKey"])
-            verdict = "nicht berücksichtigt" if f["oparlKey"] in excluded else "berücksichtigt"
-            if download_url:
-                lines.append(f"- Datei {i}: [{f['name']}]({download_url}) — {verdict}")
+            link = f"[{f['name']}]({download_url})" if download_url else f['name']
+            no_url = "" if download_url else " (kein Download verfügbar)"
+            idx = working_index.get(f["oparlKey"])
+            if idx is None:
+                lines.append(f"- {link} — nicht berücksichtigt (ausgeschlossen){no_url}")
+            elif f["oparlKey"] in refused_keys:
+                lines.append(f"- Datei {idx}: {link} — nicht berücksichtigt{no_url}")
             else:
-                lines.append(f"- Datei {i}: {f['name']} — {verdict} (kein Download verfügbar)")
+                lines.append(f"- Datei {idx}: {link} — berücksichtigt{no_url}")
         return "\n".join(lines) + "\n"
 
     def _parse_refused(self, summary: str, top_files: list[dict]) -> list[dict]:

@@ -434,14 +434,33 @@ class TestFullContentRefinement:
         assert "[File 1](https://dl/f1.pdf) — berücksichtigt" in summary
 
     def test_file_list_marks_excluded_files(self, rich_session, result, monkeypatch):
-        """The list covers ALL fetched files; the verdict follows the
-        exclusion state (toggle = accepted/refused)."""
+        """The list covers ALL fetched files. Excluded files are listed
+        without a prompt number and marked "ausgeschlossen" so the list
+        cannot contradict the model's note (which refers to the run's
+        document set); working files keep their prompt numbering."""
         monkeypatch.setattr(pc.remote, "chat",
                             lambda *a, **k: {"content": "Zusammenfassung."})
         ResultSummarizer(rich_session).summarize(result, exclude={"101"})
         summary = result["summary"]
-        assert "[File 0](https://dl/f0.pdf) — berücksichtigt" in summary
-        assert "[File 1](https://dl/f1.pdf) — nicht berücksichtigt" in summary
+        assert "Datei 1: [File 0](https://dl/f0.pdf) — berücksichtigt" in summary
+        assert "[File 1](https://dl/f1.pdf) — nicht berücksichtigt (ausgeschlossen)" in summary
+        # the excluded file carries NO prompt number (the prompt only had
+        # one document — a "Datei 2" label would contradict the model text)
+        assert "Datei 2: [File 1]" not in summary
+
+    def test_file_list_model_refusal_keeps_prompt_number(self, rich_session, result, monkeypatch):
+        """A working file the model refused this run is labelled with its
+        prompt number and the per-run verdict."""
+        def fake_chat(messages, **kwargs):
+            return {"content": (
+                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 2: File 1\n")}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result)
+        summary = result["summary"]
+        assert "Datei 1: [File 0](https://dl/f0.pdf) — berücksichtigt" in summary
+        assert "Datei 2: [File 1](https://dl/f1.pdf) — nicht berücksichtigt" in summary
 
     def test_summary_files_metadata_refused_auto_excluded(self, rich_session, result, monkeypatch):
         def fake_chat(messages, **kwargs):
