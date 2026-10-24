@@ -304,7 +304,21 @@ def process_resource(data, url: str, recorder=None) -> list:
 # Collections crawled under bodies/0001. Every collection is requested
 # with a timestamp filter (modifiedSince first, createdSince fallback);
 # endpoints that provably ignore the filter fall back to a full fetch.
-COLLECTIONS = ["consultations", "papers", "agendaItems", "meetings", "people"]
+# OParl 1.1 update mechanism: the filtered collections are the ONLY
+# source of changed objects — all entity types Karlsruhe exposes are
+# covered here, so resource references inside items need not be
+# dereferenced during updates (see _is_followable).
+COLLECTIONS = [
+    "consultations",
+    "papers",
+    "agendaItems",
+    "meetings",
+    "people",
+    "files",
+    "memberships",
+    "organizations",
+    "locations",
+]
 
 # Filter parameters tried in order (OParl standard parameters).
 FILTER_PARAMS = ["modifiedSince", "createdSince"]
@@ -357,6 +371,20 @@ def _filter_honoured(data, baseline: datetime, field: str) -> bool:
     return True
 
 
+def _is_followable(url: str) -> bool:
+    """Whether *url* is worth fetching during an incremental crawl.
+
+    Followed: pagination links (``page=``) and PDF downloads. Everything
+    else (plain resource references) is skipped — all entity types are
+    covered by the filtered collections (see COLLECTIONS).
+    """
+    if url.lower().endswith(".pdf"):
+        return True
+    if "page=" in url:
+        return True
+    return False
+
+
 def crawl_oparl(root_url: str, start_from: str, recorder=None,
                 finalise: bool = True):
     """Breadth‑first crawl of the OParl system starting from ``start_from``.
@@ -368,8 +396,9 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
     tried, and as a last resort the collection is fetched in full (with the
     fallback recorded via ``recorder.record_full_fetch``). The capability
     decision is cached per collection type for the duration of the run.
-    The function respects the same pagination mechanism as the original
-    fetch script and continues even when individual requests fail.
+    Per the OParl 1.1 update mechanism, only the filtered collections, their
+    pagination and PDF downloads are fetched — resource references are not
+    dereferenced. The function continues even when individual requests fail.
 
     When *recorder* is given, every new or modified resource is logged.
     With ``finalise=False`` (used by the combined sync entry point) the run
@@ -507,9 +536,22 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
         except Exception as e:
             logging.error("Failed to extract timestamp from %s: %s", current_url, e)
 
+        # OParl 1.1 update mechanism: the filtered collections (and their
+        # pagination) are the sole source of changed objects. Plain
+        # resource references inside items are already on disk and in the
+        # DB — dereferencing them re-validated the whole graph on every
+        # incremental run (~170k fetches). Only pagination links and PDF
+        # downloads are followed.
+        skipped_refs = 0
         for link in sub_links:
-            if link not in visited:
+            if link in visited:
+                continue
+            if _is_followable(link):
                 queue.append(link)
+            else:
+                skipped_refs += 1
+        if skipped_refs:
+            logging.debug("Skipped %d resource references from %s", skipped_refs, current_url)
 
     logging.info("Collection filter capabilities: %s", capabilities)
 

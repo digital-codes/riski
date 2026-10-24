@@ -421,6 +421,106 @@ class TestCollectionFiltering:
         assert recorder.finished is None
 
 
+class TestSubLinkPolicy:
+    """OParl 1.1 update mechanism: only pagination + PDFs are followed,
+    plain resource references are not dereferenced."""
+
+    def test_is_followable(self):
+        assert ou._is_followable("https://x/papers?page=2") is True
+        assert ou._is_followable("https://x/downloadfiles/a/1.pdf") is True
+        assert ou._is_followable("https://x/consultations/38115") is False
+        assert ou._is_followable("https://x/meetings/1/agendaitem") is False
+
+    def test_references_not_dereferenced(self, crawl_env, monkeypatch):
+        """A changed consultation referencing old entities must NOT trigger
+        fetches of those references (spec: update = filtered collections)."""
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            if "modifiedSince" in url and "consultations" in url:
+                return _json_response({"data": [{
+                    "id": "https://x/consultations/38115",
+                    "type": "https://schema.oparl.org/1.1/Consultation",
+                    "modified": "2026-10-20T10:00:00Z",
+                    "meeting": "https://x/meetings/999",
+                    "paper": "https://x/papers/888",
+                }], "links": {}})
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        # the referenced (unchanged) resources were NOT fetched
+        assert not any("/meetings/999" in u for u in requested)
+        assert not any("/papers/888" in u for u in requested)
+
+    def test_pagination_is_followed(self, crawl_env, monkeypatch):
+        requested, _ = crawl_env
+        recorder = _FakeRecorder()
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            if "papers?modifiedSince=" in url:
+                return _json_response({
+                    "data": [{
+                        "id": "https://x/papers/1",
+                        "type": "https://schema.oparl.org/1.1/Paper",
+                        "modified": "2026-10-20T10:00:00Z",
+                    }],
+                    "links": {"next": "https://x/papers?modifiedSince=X&page=2"},
+                })
+            if "page=2" in url:
+                return _json_response({"data": [], "links": {}})
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        assert any("page=2" in u for u in requested)
+
+    def test_pdf_downloads_are_followed(self, crawl_env, monkeypatch, tmp_path):
+        requested, tmp_path = crawl_env
+        recorder = _FakeRecorder()
+        pdf_calls = []
+
+        class _PdfResponse:
+            def raise_for_status(self):
+                pass
+
+            content = b"%PDF-fake"
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            if url.lower().endswith(".pdf"):
+                pdf_calls.append(url)
+                return _PdfResponse()
+            if "meetings?modifiedSince=" in url:
+                return _json_response({"data": [{
+                    "id": "https://x/meetings/1",
+                    "type": "https://schema.oparl.org/1.1/Meeting",
+                    "modified": "2026-10-20T10:00:00Z",
+                    "auxiliaryFile": [{
+                        "id": "https://x/files/7",
+                        "type": "https://schema.oparl.org/1.1/File",
+                        "downloadUrl": "https://x/downloadfiles/a/7.pdf",
+                        "modified": "2026-10-20T10:00:00Z",
+                    }],
+                }], "links": {}})
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z", recorder=recorder)
+        assert any(u.endswith(".pdf") for u in pdf_calls)
+        assert (tmp_path / "pdf" / "7.pdf").exists()
+
+    def test_all_entity_types_have_collections(self):
+        """Karlsruhe exposes filtered collections for every crawled type."""
+        assert set(ou.COLLECTIONS) == {
+            "consultations", "papers", "agendaItems", "meetings", "people",
+            "files", "memberships", "organizations", "locations",
+        }
+
+
 class _JsonResponse:
     def __init__(self, payload):
         self._payload = payload
