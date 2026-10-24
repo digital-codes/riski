@@ -145,14 +145,13 @@ def summarize(req: SummarizeRequest) -> Dict[str, Any]:
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
-    # persist exclusions in the session FIRST (before the in-flight guard)
-    # so a toggle landing during a running refinement is never lost
-    if req.exclude:
-        merged = set(result.get("summary_excluded") or []) | set(req.exclude)
-        result["summary_excluded"] = sorted(merged)
+    # the request carries the COMPLETE desired exclusion set (the frontend
+    # maintains it) — replace, never union: re-including a file must remove
+    # it from the set (user finding: a union merge made re-inclusion
+    # impossible and triggered a pointless second refinement)
+    result["summary_excluded"] = sorted(set(req.exclude))
     # the flags in summary_files must always reflect the current exclusion
-    # set (a response built by an older run may be stale otherwise) — read
-    # at payload time, not snapshot time
+    # set — read at payload time, not snapshot time
     excluded_set = set(result.get("summary_excluded") or [])
 
     def _payload(in_progress: bool = False) -> Dict[str, Any]:

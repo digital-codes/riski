@@ -20,33 +20,36 @@ def client():
 
 
 @pytest.fixture()
-def live_file_row():
-    """One real oparlKey from the live File table (with a download URL if
-    available) — skipped when the DB is unreachable."""
+def live_file_rows():
+    """Two real rows from the live File table — skipped when the DB is
+    unreachable."""
     try:
         from sqlalchemy import text
         db = api.get_db_session()
         try:
-            row = db.execute(text(
+            rows = db.execute(text(
                 'SELECT "oparlKey", name, filename FROM "File" '
-                'WHERE content IS NOT NULL ORDER BY sid DESC LIMIT 1'
-            )).first()
+                'WHERE content IS NOT NULL ORDER BY sid DESC LIMIT 2'
+            )).all()
         finally:
             db.close()
     except Exception as exc:  # pragma: no cover - DB down
         pytest.skip(f"live DB unavailable: {exc}")
-    if row is None:
-        pytest.skip("live File table is empty")
-    return row
+    if len(rows) < 2:
+        pytest.skip("live File table has fewer than 2 rows with content")
+    return rows
 
 
-def test_refine_flow_updates_session_result(client, live_file_row, monkeypatch):
-    oparl_key, name, filename = live_file_row
+def test_refine_flow_updates_session_result(client, live_file_rows, monkeypatch):
+    (key_a, name_a, file_a), (key_b, name_b, file_b) = live_file_rows
     api._sessions.clear()
     session_id = "test-refine-1"
     api._sessions[session_id] = {"result": {
         "query": "Testfrage",
-        "top_files": [{"oparlKey": oparl_key, "name": name, "fileName": filename}],
+        "top_files": [
+            {"oparlKey": key_a, "name": name_a, "fileName": file_a},
+            {"oparlKey": key_b, "name": name_b, "fileName": file_b},
+        ],
     }}
 
     llm_calls = []
@@ -63,8 +66,9 @@ def test_refine_flow_updates_session_result(client, live_file_row, monkeypatch):
     assert r1.status_code == 200
     body1 = r1.json()
     assert body1["summary"]
-    assert body1["files"][0]["oparlKey"] == oparl_key
+    assert [f["oparlKey"] for f in body1["files"]] == [key_a, key_b]
     assert "Dokumente (Teaser):" in llm_calls[0]
+    assert name_a in llm_calls[0] and name_b in llm_calls[0]
     # the stored summary is clean of the document list (frontend renders it
     # from the structured metadata)
     assert "**Dokumente:**" not in body1["summary"]
@@ -84,12 +88,33 @@ def test_refine_flow_updates_session_result(client, live_file_row, monkeypatch):
     stored = api._sessions[session_id]["result"]
     assert stored["summary_refused"] == []
 
-    # 4) exclude persists in the session and is honoured by a re-run
+    # 4) exclude persists in the session and is honoured by a re-run:
+    #    the summarizer's document list matches the selection exactly
     r4 = client.post("/summarize", json={"session_id": session_id,
-                                         "refine": True, "exclude": [oparl_key]})
+                                         "refine": True, "exclude": [key_a]})
     assert r4.status_code == 200
-    assert r4.json()["files"][0]["excluded"] is True
+    files4 = {f["oparlKey"]: f for f in r4.json()["files"]}
+    assert files4[key_a]["excluded"] is True and files4[key_b]["excluded"] is False
     stored = api._sessions[session_id]["result"]
-    assert stored["summary_excluded"] == [oparl_key]
+    assert stored["summary_excluded"] == [key_a]
+    # the excluded file did NOT enter the prompt; the other one did
+    assert name_a not in llm_calls[-1]
+    assert name_b in llm_calls[-1]
+    calls_after_exclude = len(llm_calls)
+
+    # 5) re-including the file (user clicks it back on) must REMOVE it from
+    #    the exclusion set — replace, not union (user finding: the file
+    #    snapped back and never entered the summarizer)
+    r5 = client.post("/summarize", json={"session_id": session_id,
+                                         "refine": True, "exclude": []})
+    assert r5.status_code == 200
+    files5 = {f["oparlKey"]: f for f in r5.json()["files"]}
+    assert files5[key_a]["excluded"] is False
+    stored = api._sessions[session_id]["result"]
+    assert stored["summary_excluded"] == []
+    # the summarizer now sees the re-included document again
+    assert name_a in llm_calls[-1] and name_b in llm_calls[-1]
+    # exactly ONE summarizer run per click — no queued second run
+    assert len(llm_calls) == calls_after_exclude + 1
 
     api._sessions.clear()

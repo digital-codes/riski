@@ -35,6 +35,7 @@
 				<li v-for="f in files" :key="f.oparlKey" :class="{ excluded: f.excluded }">
 					<label class="file-item">
 						<input type="checkbox" :checked="!f.excluded"
+							   :disabled="refining"
 							   @change="$emit('toggle-file', { oparlKey: f.oparlKey, excluded: !$event.target.checked })" />
 						<span v-if="f.index" class="file-num">Datei {{ f.index }}</span>
 						<a v-if="f.downloadUrl" :href="f.downloadUrl" target="_blank" rel="noopener" class="file-name">{{ f.name }}</a>
