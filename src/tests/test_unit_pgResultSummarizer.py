@@ -488,26 +488,38 @@ class TestFullContentRefinement:
         assert calls == []
         assert result["summary_files"][0]["excluded"] is True
 
-    def test_refine_uses_user_set_model_refusal_display_only(self, rich_session, result, monkeypatch):
-        """A refinement must use exactly the user's set: the model's fresh
-        refusals never change the file set or the excluded flags (found in
-        user testing — refine silently shrank the considered set)."""
+    def test_refine_uses_full_selection_no_selection_prompt(self, rich_session, result, monkeypatch):
+        """Refinement = no document selection: the refine prompt reads ALL
+        provided content (the document set comes from the initial selection
+        or the user's toggles), and the effective 'not considered' set is
+        exactly the user-excluded files — a stray legacy note in the model
+        output never changes the set (user finding: refine shrank the
+        considered set)."""
+        captured = {}
+
         def fake_chat(messages, **kwargs):
-            # the model refuses File 1 during the refinement
+            captured["system"] = messages[0]["content"]
+            captured["user"] = messages[1]["content"]
+            # stray legacy-style note in the output — must be ignored
             return {"content": (
-                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "Übersicht.\n\n**Nicht berücksichtigte Dokumente:**\n"
                 "- Datei 2: File 1\n")}
 
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
         ResultSummarizer(rich_session).summarize(result, use_full_content=True)
-        files = {f["oparlKey"]: f for f in result["summary_files"]}
-        # the model's refusal is visible as info ...
-        assert files["101"]["refused"] is True
-        # ... but the user's set is untouched: not excluded, still listed
-        # as berücksichtigt
-        assert files["101"]["excluded"] is False
+        # the refine system prompt forbids selection and demands a complete
+        # overview with document references
+        assert "KEINE eigene Auswahl" in captured["system"]
+        assert "VOLLSTÄNDIGE Übersicht" in captured["system"]
+        assert "900" in captured["system"]  # refine word budget
+        # both files' full content entered the prompt
+        assert "Volltext 100" in captured["user"] and "Volltext 101" in captured["user"]
+        # the stray note does not change the set; nothing is excluded
+        assert result["summary_refused"] == []
         assert result["summary_excluded"] == []
-        assert result["summary_refused"] == [{"oparlKey": "101", "name": "File 1"}]
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["101"]["excluded"] is False and files["101"]["refused"] is False
+        assert result["summary_refined"] is True
 
     def test_teaser_run_refusals_pre_exclude(self, rich_session, result, monkeypatch):
         """On the automatic pass, refused files start excluded (so the

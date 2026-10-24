@@ -59,7 +59,8 @@ _SYSTEM_PROMPT = (
     "gestellten Frage beiträgt.\n"
     "2) Fasse NUR die relevanten Dokumente auf Deutsch zusammen — in "
     "Hinblick auf die Frage. Nenne die für die Frage wichtigsten "
-    "Dokumente und Ergebnisse. Bleibe unter 500 Wörtern. Keine Emojis.\n"
+    "Dokumente und Ergebnisse. Bleibe unter {max_words} Wörtern. Keine "
+    "Emojis.\n"
     "3) Hänge an das Ende einen Abschnitt '**Nicht berücksichtigte "
     "Dokumente:**' an. Liste dort jede als nicht relevant eingestufte "
     "Datei als eigene Zeile '- Datei <Nummer>: <Titel>' auf (Nummer = "
@@ -67,6 +68,28 @@ _SYSTEM_PROMPT = (
     "schreibe dort 'Alle Dokumente wurden berücksichtigt.'\n"
     "Antworte nur mit der Zusammenfassung (inklusive dieses Abschnitts)."
 )
+
+# Refinement prompt (user action, full content): NO document selection —
+# the document set comes from the initial selection or the user's
+# include/exclude toggles, so the model must read everything provided and
+# deliver a concise but COMPLETE overview with per-document references
+# (change: summary-refine-file-control).
+_REFINE_SYSTEM_PROMPT = (
+    "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine "
+    "Frage und eine nummerierte Liste von Dokumenten (Volltexte) gegeben. "
+    "Die Dokumentenauswahl wurde bereits getroffen — treffe KEINE eigene "
+    "Auswahl und lasse KEIN Dokument aus.\n"
+    " Lies alle bereitgestellten Inhalte vollständig und erstelle eine "
+    "prägnante, aber VOLLSTÄNDIGE Übersicht auf Deutsch, die die Frage "
+    "beantwortet: Themen, Entscheidungen, Beschlüsse, Verantwortlichkeiten "
+    "und Widersprüche zwischen den Dokumenten. Belege jede Aussage mit "
+    "einer Dokumentreferenz '(Datei N)'. Bleibe unter {max_words} Wörtern. "
+    "Keine Emojis.\n"
+    "Antworte nur mit der Übersicht."
+)
+
+_TEASER_MAX_WORDS = 500
+_REFINE_MAX_WORDS = 900
 
 
 class ResultSummarizer:
@@ -160,8 +183,10 @@ class ResultSummarizer:
             else:
                 prompt += "Inhalt: Not available\n"
 
+        max_words = _REFINE_MAX_WORDS if use_full_content else _TEASER_MAX_WORDS
+        system_prompt = (_REFINE_SYSTEM_PROMPT if use_full_content else _SYSTEM_PROMPT)
         messages = [
-            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "system", "content": system_prompt.format(max_words=max_words)},
             {"role": "user", "content": prompt},
         ]
         response = remote.chat(messages, model=self.model, temperature=self.temperature)
@@ -179,16 +204,19 @@ class ResultSummarizer:
             # it from the displayed summary (change: summary-refine-file-control)
             summary = self._strip_refusal_note(summary)
             self._last_refused = refused
-            refused_keys = {r["oparlKey"] for r in refused}
             user_excluded = set(exclude or set())
             if not use_full_content:
                 # automatic pass: the model's refusals pre-exclude files for
                 # the interactive list (refused files start excluded)
-                final_excluded = user_excluded | refused_keys
+                final_excluded = user_excluded | {r["oparlKey"] for r in refused}
             else:
-                # refinement: the user's selection is authoritative — the
-                # model's refusals are display-only and never change the set
+                # refinement: NO document selection — the refine prompt
+                # reads everything and never refuses, so the "not
+                # considered" set is exactly the user-excluded files (keeps
+                # the map gating aligned with the visible list)
                 final_excluded = user_excluded
+                refused = [f for f in result.get("top_files") or []
+                           if f["oparlKey"] in final_excluded]
             result["summary_excluded"] = sorted(final_excluded)
             # full-content mode marker: the frontend disables the refine
             # button once the summary is already refined

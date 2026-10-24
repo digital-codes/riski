@@ -87,7 +87,9 @@ const props = defineProps({
 
 defineEmits(['refine', 'toggle-file']);
 
-const listOpen = ref(false);
+// visible by default — the include/exclude toggles are the feature's
+// main control and must not hide behind a collapsed section
+const listOpen = ref(true);
 
 const md = new MarkdownIt({
 	breaks: true,
