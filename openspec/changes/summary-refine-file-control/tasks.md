@@ -12,8 +12,8 @@
 
 ## 3. Frontend — summary pane
 
-- [ ] 3.1 `SummaryCard.vue`: "Verfeinern" button (spinner while refining, disabled during load) emitting `refine`; collapsible file list from the new `files` prop with per-file include/exclude toggles emitting `toggle-file`; refused files pre-checked as excluded; summary text stays visible during refinement.
-- [ ] 3.2 `app/src/api.js` + `App.vue`: pass `refine`/`exclude` to `/summarize`, wire button + toggle events, keep old summary visible and replace on response; manual verification against the dev server.
+- [x] 3.1 `SummaryCard.vue`: "Verfeinern" button (spinner while refining, disabled during load) emitting `refine`; collapsible file list from the new `files` prop with per-file include/exclude toggles emitting `toggle-file`; refused files pre-checked as excluded; summary text stays visible during refinement.
+- [x] 3.2 `app/src/api.js` + `App.vue`: pass `refine`/`exclude` to `/summarize`, wire button + toggle events, keep old summary visible and replace on response; manual verification against the dev server.
 
 ## 4. Docs
 
