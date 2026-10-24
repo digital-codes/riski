@@ -33,9 +33,32 @@ def _get(attr: str, env_key: str, default: str = "") -> str:
     return os.getenv(env_key, default)
 
 
-CHAT_BASE_URL = _get("SUMMARY_URL", "CHAT_BASE_URL", "http://localhost:8080/v1")
-CHAT_MODEL = _get("SUMMARY_MDL", "CHAT_MODEL", "granite-4.1-3b-Q8_0")
-CHAT_API_KEY = _get("SUMMARY_KEY", "CHAT_API_KEY", "")
+def _get_first(pairs, default: str = "") -> str:
+    """First non-empty value across (private_attr, env_key) pairs.
+
+    Supports the older local-config naming (``LLM_MDL``/``LLM_URL``)
+    alongside the current ``SUMMARY_MDL``/``SUMMARY_URL`` names so a
+    deployment's private.py works regardless of which generation it
+    was written for."""
+    for attr, env_key in pairs:
+        value = _get(attr, env_key)
+        if value:
+            return value
+    return default
+
+
+CHAT_BASE_URL = _get_first(
+    [("SUMMARY_URL", "CHAT_BASE_URL"), ("LLM_URL", "LLM_URL")],
+    "http://localhost:8080/v1",
+)
+CHAT_MODEL = _get_first(
+    [("SUMMARY_MDL", "CHAT_MODEL"), ("LLM_MDL", "LLM_MDL")],
+    "granite-4.1-3b-Q8_0",
+)
+CHAT_API_KEY = _get_first(
+    [("SUMMARY_KEY", "CHAT_API_KEY"), ("LLM_KEY", "LLM_KEY")],
+    "",
+)
 
 EMBED_BASE_URL = _get("EMB_URL", "EMBED_BASE_URL", "http://localhost:8085/v1")
 EMBED_MODEL = _get("EMB_MDL", "EMBED_MODEL", "bge-m3-Q4_K_M")

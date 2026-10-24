@@ -325,3 +325,29 @@ class TestChatCompat:
         monkeypatch.setattr(remote, "_post", lambda path, payload: captured.update(p=payload) or remote._DUMMY_CHAT_RESPONSE)
         remote.chat([{"role": "user", "content": "x"}], temperature="0.3")
         assert isinstance(captured["p"]["temperature"], float)
+
+
+class TestConfigAliases:
+    def test_legacy_llm_names_resolved(self, monkeypatch):
+        # a private.py using the older LLM_MDL/LLM_URL naming must work
+        import types
+
+        import src.remote as remote
+
+        fake = types.SimpleNamespace(LLM_MDL="granite4.1:3b", LLM_URL="http://localhost:11434/v1/chat/completions")
+        monkeypatch.setattr(remote, "_pr", fake)
+        monkeypatch.delenv("CHAT_MODEL", raising=False)
+        monkeypatch.delenv("CHAT_BASE_URL", raising=False)
+        monkeypatch.delenv("LLM_MDL", raising=False)
+        monkeypatch.delenv("LLM_URL", raising=False)
+        assert remote._get_first([("SUMMARY_MDL", "CHAT_MODEL"), ("LLM_MDL", "LLM_MDL")], "d") == "granite4.1:3b"
+        assert remote._get_first([("SUMMARY_URL", "CHAT_BASE_URL"), ("LLM_URL", "LLM_URL")], "d") == "http://localhost:11434/v1/chat/completions"
+
+    def test_current_names_win_over_legacy(self, monkeypatch):
+        import types
+
+        import src.remote as remote
+
+        fake = types.SimpleNamespace(SUMMARY_MDL="mistral-small-2603", LLM_MDL="granite4.1:3b")
+        monkeypatch.setattr(remote, "_pr", fake)
+        assert remote._get_first([("SUMMARY_MDL", "CHAT_MODEL"), ("LLM_MDL", "LLM_MDL")], "d") == "mistral-small-2603"
