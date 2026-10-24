@@ -47,17 +47,18 @@ for the session so subsequent refinements honour them.
 
 ### Requirement: File list with download URLs and verdict marking
 
-Every summary SHALL end with a list of all fetched files, placed above the
-model/usage provenance footer. Each entry SHALL contain the file's number
-(from the prompt's document list), its name, and its download URL, and SHALL
-be marked as referenced or refused. The same information SHALL be available
-to the client as structured data (per file: identifier, name, download URL,
-refused flag) so the frontend can render interactive controls.
+The system SHALL expose all fetched files as structured data (per file:
+identifier, name, download URL, refused flag, excluded flag) so the client
+can render a single interactive document list with per-file
+include/exclude toggles and the accepted/refused verdict. The stored
+summary text SHALL NOT duplicate that list (body + provenance footer
+only); the client includes the list in the PDF export.
 
-#### Scenario: File list appears above the footer
-- **WHEN** a summary is produced
-- **THEN** the summary text contains the per-file list (number, name,
-  download URL, referenced/refused) followed by the provenance footer
+#### Scenario: Single interactive document list
+- **WHEN** the summary pane renders
+- **THEN** exactly one document list is shown (checkbox, name as download
+  link, accepted/refused verdict) and the stored summary text contains no
+  duplicate list
 
 #### Scenario: Structured metadata for the frontend
 - **WHEN** the summarize endpoint returns

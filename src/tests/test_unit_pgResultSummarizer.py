@@ -88,8 +88,9 @@ class TestQueryGuidedPrompt:
         # still parsed before stripping: map gating + pre-exclusion work
         assert result["summary_refused"] == [{"oparlKey": "100", "name": "File 0"}]
         assert result["summary_excluded"] == ["100"]
-        # our own list carries the verdicts
-        assert "Datei 1:" in result["summary"] and "nicht berücksichtigt" in result["summary"]
+        # the verdict lives in the structured metadata (frontend renders it)
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["100"]["excluded"] is True
 
     def test_summary_states_the_query(self, summarizer, result):
         summarizer.summarize(result)
@@ -428,45 +429,19 @@ class TestFullContentRefinement:
         assert len(result["top_files"]) == 2
         assert result["summary_excluded"] == ["101"]
 
-    def test_file_list_above_footer(self, rich_session, result, monkeypatch):
+    def test_summary_stays_clean_of_document_list(self, rich_session, result, monkeypatch):
+        """The stored summary contains body + provenance footer only — the
+        document list is rendered by the frontend from summary_files
+        (single list, no duplication — user finding)."""
         monkeypatch.setattr(pc.remote, "chat",
                             lambda *a, **k: {"content": "Zusammenfassung.", "endpoint": "http://llm"})
         ResultSummarizer(rich_session).summarize(result)
         summary = result["summary"]
-        list_pos = summary.find("**Dokumente:**")
-        footer_pos = summary.find("Endpunkt:")
-        assert list_pos != -1 and footer_pos != -1 and list_pos < footer_pos
-        assert "[File 0](https://dl/f0.pdf) — berücksichtigt" in summary
-        assert "[File 1](https://dl/f1.pdf) — berücksichtigt" in summary
-
-    def test_file_list_marks_excluded_files(self, rich_session, result, monkeypatch):
-        """The list covers ALL fetched files. Excluded files are listed
-        without a prompt number and marked "ausgeschlossen" so the list
-        cannot contradict the model's note (which refers to the run's
-        document set); working files keep their prompt numbering."""
-        monkeypatch.setattr(pc.remote, "chat",
-                            lambda *a, **k: {"content": "Zusammenfassung."})
-        ResultSummarizer(rich_session).summarize(result, exclude={"101"})
-        summary = result["summary"]
-        assert "Datei 1: [File 0](https://dl/f0.pdf) — berücksichtigt" in summary
-        assert "[File 1](https://dl/f1.pdf) — nicht berücksichtigt (ausgeschlossen)" in summary
-        # the excluded file carries NO prompt number (the prompt only had
-        # one document — a "Datei 2" label would contradict the model text)
-        assert "Datei 2: [File 1]" not in summary
-
-    def test_file_list_model_refusal_keeps_prompt_number(self, rich_session, result, monkeypatch):
-        """A working file the model refused this run is labelled with its
-        prompt number and the per-run verdict."""
-        def fake_chat(messages, **kwargs):
-            return {"content": (
-                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
-                "- Datei 2: File 1\n")}
-
-        monkeypatch.setattr(pc.remote, "chat", fake_chat)
-        ResultSummarizer(rich_session).summarize(result)
-        summary = result["summary"]
-        assert "Datei 1: [File 0](https://dl/f0.pdf) — berücksichtigt" in summary
-        assert "Datei 2: [File 1](https://dl/f1.pdf) — nicht berücksichtigt" in summary
+        assert "**Dokumente:**" not in summary
+        assert summary.find("Zusammenfassung.") < summary.find("Endpunkt:")
+        # the structured metadata still carries name, URL and verdict
+        assert result["summary_files"][0]["downloadUrl"] == "https://dl/f0.pdf"
+        assert result["summary_files"][0]["excluded"] is False
 
     def test_summary_files_metadata_refused_auto_excluded(self, rich_session, result, monkeypatch):
         def fake_chat(messages, **kwargs):

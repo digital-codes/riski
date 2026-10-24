@@ -65,8 +65,10 @@ def test_refine_flow_updates_session_result(client, live_file_row, monkeypatch):
     assert body1["summary"]
     assert body1["files"][0]["oparlKey"] == oparl_key
     assert "Dokumente (Teaser):" in llm_calls[0]
-    # file list above the provenance footer
-    assert body1["summary"].find("**Dokumente:**") < body1["summary"].find("Endpunkt:")
+    # the stored summary is clean of the document list (frontend renders it
+    # from the structured metadata)
+    assert "**Dokumente:**" not in body1["summary"]
+    assert body1["files"][0]["downloadUrl"] is not None
 
     # 2) non-refine repeat returns the stored summary without an LLM call
     calls_before = len(llm_calls)

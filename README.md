@@ -296,10 +296,10 @@ noise leaks through, sharpen it in the other direction.
 The summary is built from the fast **teaser layer**; a **"Verfeinern"**
 button in the summary pane re-runs the summarizer with the **full document
 content** (prompt header names the layer) — the previous summary stays
-visible while the refined one is generated. The summary ends with a
-download-URL file list (number, name, berücksichtigt/nicht berücksichtigt)
-above the provenance footer, and the same list is rendered as interactive
-checkboxes: excluding a file removes it from the summary's document set and
+visible while the refined one is generated. The document list
+(checkbox, name as download link, berücksichtigt/nicht berücksichtigt)
+renders once — directly under the summary text and in the PDF export —
+driven by the structured per-file metadata: excluding a file removes it from the summary's document set and
 re-runs the summarizer over the remaining files (always full content, since
 it follows a user action). Files the model refused start excluded. Both
 features call `POST /summarize {refine, exclude}`; exclusions persist in the

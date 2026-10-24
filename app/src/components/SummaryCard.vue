@@ -31,10 +31,7 @@
 		<div v-if="!loading" class="summary-body" v-html="renderedSummary"></div>
 
 		<div v-if="!loading && files.length" class="file-list">
-			<button type="button" class="file-list-toggle" @click="listOpen = !listOpen">
-				{{ listOpen ? '▾' : '▸' }} Dokumente ({{ files.length }}) — ein-/ausschließen
-			</button>
-			<ul v-if="listOpen" class="file-items">
+			<ul class="file-items">
 				<li v-for="f in files" :key="f.oparlKey" :class="{ excluded: f.excluded }">
 					<label class="file-item">
 						<input type="checkbox" :checked="!f.excluded"
@@ -87,9 +84,6 @@ const props = defineProps({
 
 defineEmits(['refine', 'toggle-file']);
 
-// visible by default — the include/exclude toggles are the feature's
-// main control and must not hide behind a collapsed section
-const listOpen = ref(true);
 
 const md = new MarkdownIt({
 	breaks: true,
@@ -130,11 +124,22 @@ const downloadPdf = () => {
 	document.body.appendChild(iframe);
 
 	const doc = iframe.contentDocument || iframe.contentWindow.document;
+	// document list (same order/verdicts as the pane; checkboxes omitted)
+	const fileListHtml = props.files.length
+		? `<h2>Dokumente</h2><ul>` +
+		  props.files.map(f => {
+				const verdict = f.excluded ? 'nicht berücksichtigt' : 'berücksichtigt';
+				const name = f.downloadUrl
+					? `<a href="${f.downloadUrl}">${f.name ?? f.oparlKey}</a>`
+					: (f.name ?? f.oparlKey);
+				return `<li>${name} — ${verdict}</li>`;
+			}).join('') + `</ul>`
+		: '';
 	doc.open();
 	doc.write(
 		`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">` +
 		`<title>RISKI Zusammenfassung</title><style>${css}</style></head><body>` +
-		`<h1>RISKI Zusammenfassung</h1>${renderedSummary.value}</body></html>`
+		`<h1>RISKI Zusammenfassung</h1>${renderedSummary.value}${fileListHtml}</body></html>`
 	);
 	doc.close();
 

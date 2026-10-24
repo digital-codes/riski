@@ -51,12 +51,13 @@ intact in the session. `summary_refused` is parsed from the new run's output
 over the included set (indices shift accordingly — parsing already maps
 Datei numbers back to the passed list).
 
-**D4 — File list placement.** A new `_file_list_section(files, refused)`
-renders markdown lines `- Datei <N>: [<name>](<downloadUrl>) — berücksichtigt|nicht berücksichtigt`
-before `_footer(response)`. The section is built from the INCLUDED working
-set plus refused flags (refused ⊆ included set of the current run; files the
-user excluded do not appear in the LLM prompt, but the interactive list the
-frontend renders comes from the structured response, not the markdown).
+**D4 — File list placement (revised after user testing).** The stored
+summary carries body + provenance footer only. The document list is
+rendered exclusively by the frontend from the structured `summary_files`
+metadata — as one interactive list (checkbox + download link + verdict)
+directly under the summary body, and included in the PDF export from the
+same data. An earlier backend-embedded markdown list duplicated the
+frontend list and its numbering could contradict the model's text.
 
 **D5 — Structured response.** `/summarize` returns
 `{"summary": str, "files": [{oparlKey, name, fileName, downloadUrl, refused,

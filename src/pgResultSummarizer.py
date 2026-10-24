@@ -223,13 +223,12 @@ class ResultSummarizer:
             result["summary_refined"] = use_full_content
             # provenance footer (model, endpoint, tokens, energy/emissions
             # when the endpoint reports them) — part of the summary, so it
-            # is included in the PDF export; the download-URL file list is
-            # rendered above it (change: summary-refine-file-control) and
-            # lists ALL fetched files with the exclusion-state verdict
+            # is included in the PDF export. The document list is NOT part
+            # of the stored summary: the frontend renders it from the
+            # structured summary_files metadata (single list, no
+            # duplication — change: summary-refine-file-control)
             footer = self._footer(response)
-            file_list = self._file_list_section(list(result.get("top_files") or []),
-                                                top_files, final_excluded)
-            result["summary"] = header + summary + file_list + footer
+            result["summary"] = header + summary + footer
             result["summary_refused"] = refused
             # structured per-file metadata for the interactive frontend
             result["summary_files"] = self._summary_files(result.get("top_files") or [], refused, final_excluded)
@@ -269,34 +268,6 @@ class ResultSummarizer:
                 "excluded": f["oparlKey"] in excluded,
             })
         return files
-
-    def _file_list_section(self, all_files: list[dict], working_files: list[dict],
-                           excluded: set) -> str:
-        """Markdown list of ALL fetched files, rendered above the
-        provenance footer (change: summary-refine-file-control).
-
-        Files of the current run keep their prompt numbering ("Datei N" —
-        the numbering the model's summary text refers to) with the
-        per-run verdict; user-excluded files are listed without a number
-        and marked "ausgeschlossen" so the list cannot contradict the
-        model's note ("Alle Dokumente wurden berücksichtigt" refers to the
-        run's document set, not to user-excluded files).
-        """
-        working_index = {f["oparlKey"]: i for i, f in enumerate(working_files, 1)}
-        refused_keys = {r["oparlKey"] for r in (self._last_refused or [])}
-        lines = ["", "**Dokumente:**", ""]
-        for f in all_files:
-            _, download_url = self._file_text(f["oparlKey"])
-            link = f"[{f['name']}]({download_url})" if download_url else f['name']
-            no_url = "" if download_url else " (kein Download verfügbar)"
-            idx = working_index.get(f["oparlKey"])
-            if idx is None:
-                lines.append(f"- {link} — nicht berücksichtigt (ausgeschlossen){no_url}")
-            elif f["oparlKey"] in refused_keys:
-                lines.append(f"- Datei {idx}: {link} — nicht berücksichtigt{no_url}")
-            else:
-                lines.append(f"- Datei {idx}: {link} — berücksichtigt{no_url}")
-        return "\n".join(lines) + "\n"
 
     def _parse_refused(self, summary: str, top_files: list[dict]) -> list[dict]:
         """Extract the refused documents from the trailing note.
