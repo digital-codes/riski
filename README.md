@@ -22,12 +22,27 @@ The pipeline has four stages, all built on two shared layers in `src/`:
 
 ## Setup
 
-1. **Database**: PostgreSQL with the [`pgvector`](https://github.com/pgvector/pgvector) extension:
+1. **Database**: PostgreSQL with the [`pgvector`](https://github.com/pgvector/pgvector) and `pg_trgm` extensions. Fresh deployment (one-time superuser bootstrap):
    ```sql
-   CREATE DATABASE riski_agentic;
+   -- as superuser: role + database owned by the app role
+   CREATE ROLE riski LOGIN PASSWORD '…' CREATEDB;
+   CREATE DATABASE riski_agentic OWNER riski;
+   -- extensions: vector 0.8.x is NOT a trusted extension (only superusers
+   -- can create it); pg_trgm IS trusted (the database owner can install it)
    \c riski_agentic
-   CREATE EXTENSION vector;
+   CREATE EXTENSION IF NOT EXISTS vector;      -- superuser, one-time
+   CREATE EXTENSION IF NOT EXISTS pg_trgm;     -- owner can do this
+   GRANT ALL ON SCHEMA public TO riski;
    ```
+   Notes:
+   - `pgvector` ≥ 0.10 is a *trusted* extension — once the server package is
+     upgraded, the database owner can `CREATE EXTENSION vector` itself and
+     fresh deployments need superuser only for the role/database.
+   - Check `pg_hba.conf`: the app role must be allowed to connect to the
+     databases it needs (on this deployment the host rule is
+     database-specific; a freshly created database is not covered by it).
+   - `fuzzystrmatch` is optional (used by some analysis scripts), same
+     trusted behaviour as `pg_trgm`.
 2. **Credentials**: create `src/private.py` (git-ignored) with `DB_USER`, `DB_PWD`, `DB_HOST`, `DB_NAME`, optionally read-only credentials `RO_USER`/`RO_PWD`, and model endpoint configuration (`EMB_*`, `SUMMARY_*`, `OCR_*`, `VIDEO_API_KEY`). Alternatively set `DB_*` / `POSTGRES_URL` / `CHAT_*` / `EMBED_*` environment variables. For test runs with database writes, `.env` may provide `RW_USER`/`RW_PWD`.
 3. **Dependencies**: SQLAlchemy, psycopg2, pgvector, requests, numpy, pandas, geopandas (street/district loading), pytest (tests).
 
@@ -174,6 +189,56 @@ outputs, `pgAddFileGeoRefs`/street/district refs preload existing pairs,
   markdown source keep `content IS NULL` (they are skipped by search).
 - `pgGen` detects new scalar columns/tables from the observed JSON and
   adds them additively — new OParl fields never require a rebuild.
+
+### Snapshots and restore (best practices)
+
+Snapshots live in `/mnt_ai/data/riski/snapshots/` (custom format,
+~680 MB each). Restoring one on a **different machine** requires a small
+bootstrap, because the dump contains the extension definitions and the
+object ACLs:
+
+1. **Role must exist**: the dump's ACL statements reference the `riski`
+   role — create it (with `CREATEDB`, matching this deployment's rights:
+   database owner, no superuser) before restoring.
+2. **Database must exist and be owned by that role** — do not restore into
+   the `postgres` database.
+3. **Extensions must exist before the restore**: the dump's pre-data
+   section contains `CREATE EXTENSION vector / pg_trgm / fuzzystrmatch`.
+   `vector` 0.8.x is **not** a trusted extension (superuser-only), so a
+   non-superuser restore fails there even when the extension is already
+   present — `pg_restore` re-runs `CREATE EXTENSION` regardless. Options:
+   - as superuser on the target: `CREATE EXTENSION IF NOT EXISTS vector;`
+     in the target database, then restore (the dump's duplicate
+     `CREATE EXTENSION` errors are benign — do **not** use
+     `--exit-on-error`), or
+   - filter the extension statements out of the table of contents:
+     ```bash
+     pg_restore -l dump | grep -viE 'EXTENSION|COMMENT - EXTENSION' > toc.list
+     pg_restore --no-owner --no-privileges -L toc.list -d riski_agentic dump
+     ```
+   - `pg_trgm`/`fuzzystrmatch` are trusted — the database owner can create
+     them itself; `pgvector` ≥ 0.10 will also be trusted (this host runs
+     0.8.0), after which the superuser bootstrap becomes unnecessary.
+4. **Connection rights**: restore into the database itself
+   (`-d riski_agentic`); if `pg_hba.conf` restricts the app role to
+   specific databases, the superuser bootstrap also needs an hba entry or
+   must run over the local socket.
+
+```bash
+# one-time bootstrap on the target (superuser)
+psql -c "CREATE ROLE riski LOGIN PASSWORD '…' CREATEDB;"
+createdb -O riski riski_agentic
+psql -d riski_agentic -c "CREATE EXTENSION IF NOT EXISTS vector;
+                          CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+# restore (app role; ownership/ACL errors are avoided by --no-owner)
+pg_restore --no-owner --no-privileges -d riski_agentic     /mnt_ai/data/riski/snapshots/<dump>.dump
+# verify
+psql -d riski_agentic -c "SELECT count(*) FROM \"Paper\";"
+```
+
+Also verify the target's `pgvector` version is ≥ the dump's
+(`SELECT extversion FROM pg_extension WHERE extname='vector';` — this
+deployment: 0.8.0); older versions may lack types used by the schema.
 
 ### Import performance notes (GIL)
 
