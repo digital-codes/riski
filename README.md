@@ -86,6 +86,9 @@ pg_restore --list /mnt_ai/data/riski/snapshots/riski_agentic_*.dump   # verify
 #    import succeeds.
 python src/syncIncremental.py
 #    Two-phase alternative: python src/oparlUpdate.py  &&  python src/pgGen.py /mnt_ai/data/odd26/ris/ko
+#    Import parallelism: RISKI_IMPORT_WORKERS (default 4) threads. Observed
+#    profile (2026-10-24): 1 Python core at ~100%, Postgres backends at ~5%
+#    each — expected, see the GIL note under "Import performance notes" below.
 #    Incremental mechanics (OParl 1.1 update mechanism): all 9 Karlsruhe
 #    collections are requested with modified_since=<baseline> (spec
 #    underscore spelling — the camelCase variant is silently ignored!),
@@ -171,6 +174,20 @@ outputs, `pgAddFileGeoRefs`/street/district refs preload existing pairs,
   markdown source keep `content IS NULL` (they are skipped by search).
 - `pgGen` detects new scalar columns/tables from the observed JSON and
   adds them additively — new OParl fields never require a rebuild.
+
+### Import performance notes (GIL)
+
+The import's parallelism (`RISKI_IMPORT_WORKERS`, default 4) is thread-based.
+Observed profile (2026-10-24, full 107k-entity import): **1 Python core at
+~100%, Postgres backends at ~5% each**. This is expected, not a
+misconfiguration: the GIL pins Python-side work (statement compilation, row
+building, JSON/entity parsing) to a single core, and the worker threads only
+overlap the network/disk waits — which is exactly where the measured gain
+comes from (full import 7.5 → 3.5 min). Adding workers will not raise CPU
+utilization. True multi-core would require multiprocessing (expensive here:
+~0.5–1 GB of entity state per worker would need to be shipped between
+processes) or a faster JSON parser (`orjson`) for pass 1 — the latter is the
+cheap future win.
 
 ## Interactive search — web app + API
 
