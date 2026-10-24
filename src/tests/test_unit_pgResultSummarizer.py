@@ -9,18 +9,22 @@ from src.pgResultSummarizer import ResultSummarizer
 
 
 class FakeSession:
-    """Minimal stand-in: File (teaser, content) lookup by oparlKey."""
+    """Minimal stand-in: File (teaser, content, downloadurl) by oparlKey."""
 
     def __init__(self, contents: dict):
-        self._contents = contents  # oparlKey -> (teaser, content)
+        self._contents = contents  # oparlKey -> (teaser, content[, downloadurl])
 
     def execute(self, stmt, params=None):
         key = params["k"]
 
         class R:
             def first(self):
-                teaser, content = self._c
-                return [teaser, content] if teaser or content else None
+                c = self._c
+                if c is None or (c[0] is None and c[1] is None and len(c) < 3):
+                    return None if c is None else [c[0], c[1], None]
+                if len(c) < 3:
+                    return [c[0], c[1], None]
+                return list(c)
 
         r = R()
         r._c = self._contents.get(key, (None, None))
@@ -347,3 +351,104 @@ class TestRefusalParsing:
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
         ResultSummarizer(FakeSession({})).summarize(result)
         assert result["summary_refused"] == [{"oparlKey": "100", "name": "File 0"}]
+
+
+class TestFullContentRefinement:
+    """Change: summary-refine-file-control — context mode + exclusions."""
+
+    @pytest.fixture()
+    def rich_session(self):
+        contents = {
+            "100": ("Teaser 100", "Volltext 100", "https://dl/f0.pdf"),
+            "101": ("Teaser 101", "Volltext 101", "https://dl/f1.pdf"),
+        }
+        return FakeSession(contents)
+
+    def test_full_content_preferred_on_refine(self, rich_session, result, monkeypatch):
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung.", "endpoint": "http://llm"}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result, use_full_content=True)
+        assert "Volltext 100" in captured["prompt"]
+        assert "Teaser 100" not in captured["prompt"]
+        assert "Dokumente (Volltext):" in captured["prompt"]
+
+    def test_teaser_default_names_layer(self, rich_session, result, monkeypatch):
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result)
+        assert "Teaser 100" in captured["prompt"]
+        assert "Dokumente (Teaser):" in captured["prompt"]
+
+    def test_full_content_capped(self, rich_session, result, monkeypatch):
+        long_content = "X" * 50_000
+        session = FakeSession({"100": ("Teaser", long_content, None),
+                               "101": ("Teaser 101", None, None)})
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        s = ResultSummarizer(session)
+        s.summarize(result, use_full_content=True)
+        cap = pc._MAX_CONTENT_CHARS * pc._FULL_CONTENT_FACTOR
+        assert ("X" * cap) in captured["prompt"]
+        assert ("X" * (cap + 1)) not in captured["prompt"]
+
+    def test_exclusion_filters_working_copy(self, rich_session, monkeypatch):
+        result = make_result(2)
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result, exclude={"101"})
+        assert "File 1" not in captured["prompt"]
+        assert "File 0" in captured["prompt"]
+        # the original top_files stay untouched
+        assert len(result["top_files"]) == 2
+        assert result["summary_excluded"] == ["101"]
+
+    def test_file_list_above_footer(self, rich_session, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "chat",
+                            lambda *a, **k: {"content": "Zusammenfassung.", "endpoint": "http://llm"})
+        ResultSummarizer(rich_session).summarize(result)
+        summary = result["summary"]
+        list_pos = summary.find("**Dokumente:**")
+        footer_pos = summary.find("Endpunkt:")
+        assert list_pos != -1 and footer_pos != -1 and list_pos < footer_pos
+        assert "[File 0](https://dl/f0.pdf) — berücksichtigt" in summary
+        assert "[File 1](https://dl/f1.pdf) — berücksichtigt" in summary
+
+    def test_summary_files_metadata_refused_auto_excluded(self, rich_session, result, monkeypatch):
+        def fake_chat(messages, **kwargs):
+            return {"content": (
+                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 2: File 1\n")}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result)
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["101"]["refused"] is True and files["101"]["excluded"] is True
+        assert files["100"]["refused"] is False and files["100"]["excluded"] is False
+        assert files["100"]["downloadUrl"] == "https://dl/f0.pdf"
+
+    def test_all_excluded_no_model_call(self, rich_session, result, monkeypatch):
+        calls = []
+        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: calls.append(1) or {})
+        ResultSummarizer(rich_session).summarize(result, exclude={"100", "101"})
+        assert calls == []
+        assert result["summary_files"][0]["excluded"] is True

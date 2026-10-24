@@ -126,27 +126,59 @@ def geo(session_id: str) -> Dict[str, Any]:
 
 class SummarizeRequest(BaseModel):
     session_id: str = Field(min_length=1)
+    # change: summary-refine-file-control
+    refine: bool = False          # re-run with full content (user action)
+    exclude: list[str] = Field(default_factory=list)  # oparlKeys to drop
 
 
 @app.post("/summarize")
 def summarize(req: SummarizeRequest) -> Dict[str, Any]:
     """Async summary step: run the (teaser-based) summarizer over the
     stored search result of a session. Lets clients render search results
-    immediately and fill the summary in when it arrives."""
+    immediately and fill the summary in when it arrives.
+
+    With ``refine=True`` (user action) the summarizer re-runs with full
+    document content; ``exclude`` drops files from the summary's document
+    set and persists in the session. The response additionally carries the
+    structured per-file metadata for the interactive file list."""
     sess = _sessions.get(req.session_id)
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
-    if result.get("summary"):
-        return {"summary": result["summary"]}
+    if result.get("summary") and not req.refine:
+        return {"summary": result["summary"],
+                "files": result.get("summary_files", [])}
+    if sess.get("summarizing"):
+        # a refine is already in flight for this session — report the
+        # current state instead of stacking another LLM call
+        return {"summary": result.get("summary"),
+                "files": result.get("summary_files", []),
+                "in_progress": True}
+
+    # persist exclusions in the session so subsequent refinements honour
+    # them without resending
+    if req.exclude:
+        merged = set(result.get("summary_excluded") or []) | set(req.exclude)
+        result["summary_excluded"] = sorted(merged)
+    # refused files stay excluded across refinements
+    req_exclude = set(result.get("summary_excluded") or [])
+
+    sess["summarizing"] = True
     db_session = get_db_session()
     try:
         from src.pgResultSummarizer import ResultSummarizer
 
-        ResultSummarizer(db_session).summarize(result)
+        ResultSummarizer(db_session).summarize(
+            result,
+            force=req.refine,
+            use_full_content=req.refine,
+            exclude=req_exclude,
+        )
     finally:
         db_session.close()
-    return {"summary": result.get("summary")}
+        sess["summarizing"] = False
+    return {"summary": result.get("summary"),
+            "files": result.get("summary_files", [])}
 
 
 @app.post("/expand")
