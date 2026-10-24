@@ -1,8 +1,15 @@
 """Unit tests for src.pgOcr – remote.ocr is mocked, no network."""
 
+import importlib.util
+
 import pytest
 
 from src import pgOcr
+
+# pypdf is an optional runtime dependency (OCR page-limit truncation);
+# without it the PdfReader/PdfWriter-based tests cannot run, everything
+# else here is mock-based and must still execute.
+_PYPDF_MISSING = importlib.util.find_spec("pypdf") is None
 
 
 @pytest.fixture()
@@ -28,6 +35,7 @@ class TestOcrPdfToMarkdown:
         assert pgOcr.ocr_pdf_to_markdown("x.pdf") == ""
 
 
+@pytest.mark.skipif(_PYPDF_MISSING, reason="pypdf not installed (optional OCR dependency)")
 class TestPageLimit:
     def _make_pdf(self, path, n_pages):
         from pypdf import PdfWriter
