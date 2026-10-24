@@ -349,4 +349,25 @@ watch(() => props.graph, render, { deep: true });
     min-width: auto;
   }
 }
+
+/* print: the ECharts canvas keeps its screen pixel size and would run past
+   the printable page width — scale it into the pane instead */
+@media print {
+  .network-card {
+    break-inside: avoid;
+    overflow: hidden;
+  }
+  .chart {
+    height: auto;
+  }
+  .chart canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+  /* interactive-only controls add nothing on paper */
+  .network-card .filter-row,
+  .network-card .chip {
+    display: none;
+  }
+}
 </style>
