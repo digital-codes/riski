@@ -30,6 +30,7 @@ from sqlalchemy import (
     inspect,
     Index,
     UniqueConstraint,
+    text as sa_text,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB as PGJSON, insert
@@ -627,27 +628,55 @@ def insert_all(
             if oparlId and sid:
                 oparlid_to_sid[oparlId] = int(sid)
     # 3) Populate FK columns
+    # One UPDATE ... FROM (VALUES ...) statement per table instead of one
+    # UPDATE per entity (~107k round trips on every import).
     print('  Populating FK columns ...')
-    for idx, ent in enumerate(entities.values(), 1):
-        if idx % PROGRESS_EVERY == 0 or idx == total:
-            print(f"  FK update {idx}/{total} ...")
+    fk_rows_by_table: Dict[str, List[Dict[str, Any]]] = {}
+    for ent in entities.values():
+        fields = single_fk_fields.get(ent.key.table) or {}
+        if not fields:
+            continue
         src_sid = oparlid_to_sid.get(ent.key.oparl_id)
         if not src_sid:
             continue
-        t = main_tables[ent.key.table]
-        updates: Dict[str, Any] = {}
-        for field, _tgt_table in single_fk_fields.get(ent.key.table, {}).items():
+        row: Dict[str, Any] = {'sid': src_sid}
+        for field in fields:
             v = ent.raw.get(field)
-            fk_col = f"{field}Sid"
-            if isinstance(v, str):
-                updates[fk_col] = oparlid_to_sid.get(v)
-            else:
-                updates[fk_col] = None
-        if updates:
-            session.execute(t.update().where(t.c.sid == src_sid).values(**updates))
+            row[f"{field}Sid"] = oparlid_to_sid.get(v) if isinstance(v, str) else None
+        fk_rows_by_table.setdefault(ent.key.table, []).append(row)
+
+    for table_name, rows in fk_rows_by_table.items():
+        fk_cols = [f"{field}Sid" for field in single_fk_fields[table_name]]
+        cols = ['sid'] + fk_cols
+        # stay below PostgreSQL's 65535 bind-parameter limit per statement
+        chunk_size = max(1, 60000 // len(cols))
+        # explicit casts: psycopg2 sends untyped NULLs and PostgreSQL could
+        # not infer the VALUES column types otherwise
+        set_clause = ', '.join(f'"{c}" = v."{c}"::bigint' for c in fk_cols)
+        for i in range(0, len(rows), chunk_size):
+            chunk = rows[i:i + chunk_size]
+            values_parts = []
+            params: Dict[str, Any] = {}
+            for j, row in enumerate(chunk):
+                placeholders = []
+                for c in cols:
+                    key = f"{c}_{j}"
+                    placeholders.append(f":{key}")
+                    params[key] = row[c]
+                values_parts.append(f"({', '.join(placeholders)})")
+            v_cols = ', '.join(f'"{c}"' for c in cols)
+            stmt = sa_text(
+                f'UPDATE "{table_name}" AS t SET {set_clause} '
+                f'FROM (VALUES {", ".join(values_parts)}) AS v({v_cols}) '
+                f'WHERE t.sid = v."sid"::bigint'
+            )
+            session.execute(stmt, params)
     session.commit()
     # 4) Association rows
+    # Collect deduped (src, tgt) pairs per association table and insert in
+    # batches (execute_values) instead of one INSERT per pair.
     print('  Inserting association rows ...')
+    pairs_by_table: Dict[str, set] = {}
     for ent in entities.values():
         src_sid = oparlid_to_sid.get(ent.key.oparl_id)
         if not src_sid:
@@ -661,22 +690,21 @@ def insert_all(
             at = assoc_tables.get(assoc_name)
             if at is None or at is False:
                 continue
-            pairs: List[Tuple[int, int]] = []
+            pairs = pairs_by_table.setdefault(assoc_name, set())
             if isinstance(value, list) and all(isinstance(x, str) for x in value):
                 for url in value:
                     tgt_sid = oparlid_to_sid.get(url)
                     if tgt_sid:
-                        pairs.append((src_sid, tgt_sid))
+                        pairs.add((src_sid, tgt_sid))
             elif isinstance(value, list) and all(is_entity_dict(x) for x in value):
                 for obj in value:
                     url = obj.get('id')
                     if isinstance(url, str):
                         tgt_sid = oparlid_to_sid.get(url)
                         if tgt_sid:
-                            pairs.append((src_sid, tgt_sid))
-            for s, tg in pairs:
-                session.execute(insert(at).on_conflict_do_nothing(), {'srcSid': s, 'tgtSid': tg})
-        # new 
+                            pairs.add((src_sid, tgt_sid))
+        # single-FK dict objects (invitation, location, verbatimProtocol,
+        # resultProtocol etc.) become associations when they carry an id
         for field, tgt_table in single_fk_fields.get(src_table, {}).items():
             value = ent.raw.get(field)
             if value is None or value is False:
@@ -685,24 +713,31 @@ def insert_all(
             at = assoc_tables.get(assoc_name)
             if at is None or at is False:
                 continue
-            pairs: List[Tuple[int, int]] = []
-            # add dict object like invitation, location, verbatimProtocol, resultProtocol etc. as association if it has an id
             if isinstance(value, dict):
                 url = value.get('id')
                 if isinstance(url, str):
                     tgt_sid = oparlid_to_sid.get(url)
                     if tgt_sid:
-                            pairs.append((src_sid, tgt_sid))
+                        pairs_by_table.setdefault(assoc_name, set()).add((src_sid, tgt_sid))
                     else:
                         print(f"  Warning: URL in single FK dict not found in oparlId->sid map: {url}")
-            else:
-                pass
-                # print(f"  Unexpected non-dict value for single FK association: {field} -> {tgt_table}, value: {value}")
 
-            for s, tg in pairs:
-                session.execute(insert(at).on_conflict_do_nothing(), {'srcSid': s, 'tgtSid': tg})
-
-    session.commit()
+    from psycopg2.extras import execute_values
+    raw = engine.raw_connection()
+    try:
+        cur = raw.cursor()
+        for assoc_name, pairs in pairs_by_table.items():
+            rows = list(pairs)
+            execute_values(
+                cur,
+                f'INSERT INTO "{assoc_name}" ("srcSid", "tgtSid") VALUES %s ON CONFLICT DO NOTHING',
+                rows,
+                page_size=10000,
+            )
+            print(f"    {assoc_name}: {len(rows)} pairs")
+        raw.commit()
+    finally:
+        raw.close()
 
 # ----------------------------
 # POST-CREATION MIGRATION (add missing scalar columns)
