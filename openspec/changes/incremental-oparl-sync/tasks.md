@@ -18,7 +18,9 @@
 ## 4. Real verification (user-gated)
 
 - [ ] 4.1 With explicit user confirmation: run one real incremental sync against the live API with the tracked baseline (2026-02-19) into a temp output folder; record runtime, per-collection filter/fallback outcomes and the run row; verify the DB upsert import completes and the baseline advances. Skip any full-fetch fallback collections from the runtime claim.
+  - First real run (2026-10-24, run row 406): success, 16:39 incl. full pgGen import, baseline advanced 2026-02-19 → 2026-10-24. Found two live-API issues that were fixed afterwards: (1) Karlsruhe silently ignores camelCase `modifiedSince` — only the spec's underscore `modified_since` is honoured; (2) the future-baseline capability probe is answered with HTTP 401 — replaced by per-page filter validation. The next run verifies the fast path end-to-end.
 - [ ] 4.2 Full suite green (`python -m pytest src/tests -q`); production `oparlUpdateRuns` afterwards contains only the pre-existing seed row plus the verified run row.
+  - Full suite green (2026-10-24). Production run rows now include the two live verification runs (404 failed/restarted, 406 succeeded) in addition to the seed row — real-run rows are part of the operational record.
 
 ## Workflow follow-up
 

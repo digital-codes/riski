@@ -90,10 +90,11 @@ python src/syncIncremental.py
 #    collections are requested with modified_since=<baseline> (spec
 #    underscore spelling — the camelCase variant is silently ignored!),
 #    page size limit=1000, only pagination links and PDF downloads are
-#    followed (resource references are never dereferenced). Filter
-#    support is verified per collection via a future-baseline probe;
-#    collections failing the probe fall back to created_since, then to a
-#    full fetch (visible in oparlUpdateRuns.full_fetches). The same
+#    followed (resource references are never dereferenced). Every
+#    collection page is validated against the baseline (an honouring
+#    filter never returns older items); a violating page falls back to
+#    created_since, then to a full fetch (visible in
+#    oparlUpdateRuns.full_fetches). The same
 #    approach is used by the independent karlsruhe-oparl-syndication
 #    crawler (github.com/digital-codes/karlsruhe-oparl-syndication), which
 #    additionally reconciles fully every 7 days — a reasonable pattern to
@@ -107,7 +108,7 @@ python src/syncIncremental.py
 #    disables the cap). Skips existing outputs; failures are logged.
 python src/pgOcr.py
 
-# 3) Summaries: for markdown >10000 chars, store an LLM summary
+# 3) Summaries: for markdown >8000 chars, store an LLM summary
 #    (≤8000 chars, mistral-small) instead of the full text; smaller
 #    files are copied unchanged. Run from the data directory (relative
 #    ./ko_extracted → ./ko_sums) or pass explicit dirs:
