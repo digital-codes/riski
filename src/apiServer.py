@@ -1,9 +1,19 @@
-"""RISKI search API (change: api-search-expand).
+"""RISKI search API (change: api-search-expand + intent-router).
 
 Thin FastAPI layer over the search pipeline:
 
   POST /search   hybrid search (+ optional summary) -> full result incl.
                  timeline, graph, matched_entities, facets, applied_filters
+  POST /ask      intent-routed question answering: decodes the query via
+                 the SystemOne decision model (config/intents.yaml),
+                 derives structured filters (gremium meeting scope,
+                 decision-type documents), runs the search with an
+                 empty-result fallback ladder, and returns the search
+                 result contract plus intent, slots, applied_filters and
+                 fallback_notes. Falls back to plain search when the
+                 decision model is unreachable. Accepts an optional
+                 sessionId (context reserved for a follow-up conversation
+                 mode; recorded but not yet consulted).
   POST /expand   depth-1 neighborhood of a graph node (additive
                 nodes/edges for client-side merge-by-id)
   GET  /facets   facet listing for filter UIs
@@ -13,8 +23,8 @@ Run (dev):
     uvicorn src.apiServer:app --port 8000
 
 Interactive clients (the web app) may hold a ``sessionId`` for future
-contextual endpoints (/ask — follow-up questions — is drafted but not
-implemented); /search creates one. Sessions are in-memory only.
+contextual endpoints; /search and /ask create one. Sessions are
+in-memory only.
 """
 
 # Dual-mode import support.
@@ -100,6 +110,52 @@ def search(req: SearchRequest) -> Dict[str, Any]:
     return result
 
 
+class AskRequest(BaseModel):
+    query: str = Field(min_length=1)
+    session_id: Optional[str] = None
+    top_k: int = Field(default=10, ge=1, le=100)
+    signals: Optional[Dict[str, bool]] = None
+    summarize: bool = True
+
+
+@app.post("/ask")
+def ask(req: AskRequest) -> Dict[str, Any]:
+    """Intent-routed question answering (change: intent-router).
+
+    Decodes the query via the SystemOne decision model, derives structured
+    filters, and runs the search with an empty-result fallback ladder.
+    Degrades to plain search (intent=search_topic) when the decision
+    model is unreachable."""
+    from src.pgIntentRouter import ask as route_ask
+
+    try:
+        session = get_db_session()
+    except Exception as exc:  # pragma: no cover - db down
+        raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
+
+    try:
+        result = route_ask(
+            session, req.query, top_k=req.top_k,
+            signals=req.signals, summarize=req.summarize,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    finally:
+        session.close()
+
+    session_id = req.session_id or uuid.uuid4().hex
+    _sessions[session_id] = {
+        "query": req.query,
+        "filters": result.get("applied_filters") or [],
+        "intent": result.get("intent"),
+        "slots": result.get("slots") or {},
+        "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
+        "result": result,  # kept for the async /summarize + /geo steps
+    }
+    result["sessionId"] = session_id
+    return result
+
+
 @app.get("/geo/{session_id}")
 def geo(session_id: str) -> Dict[str, Any]:
     """GeoJSON FeatureCollection of the streets/districts linked to the
@@ -126,27 +182,72 @@ def geo(session_id: str) -> Dict[str, Any]:
 
 class SummarizeRequest(BaseModel):
     session_id: str = Field(min_length=1)
+    # change: summary-refine-file-control
+    refine: bool = False          # re-run with full content (user action)
+    exclude: list[str] = Field(default_factory=list)  # oparlKeys to drop
 
 
 @app.post("/summarize")
 def summarize(req: SummarizeRequest) -> Dict[str, Any]:
     """Async summary step: run the (teaser-based) summarizer over the
     stored search result of a session. Lets clients render search results
-    immediately and fill the summary in when it arrives."""
+    immediately and fill the summary in when it arrives.
+
+    With ``refine=True`` (user action) the summarizer re-runs with full
+    document content; ``exclude`` drops files from the summary's document
+    set and persists in the session. The response additionally carries the
+    structured per-file metadata for the interactive file list."""
     sess = _sessions.get(req.session_id)
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
-    if result.get("summary"):
-        return {"summary": result["summary"]}
+    # the request carries the COMPLETE desired exclusion set (the frontend
+    # maintains it) — replace, never union: re-including a file must remove
+    # it from the set (user finding: a union merge made re-inclusion
+    # impossible and triggered a pointless second refinement)
+    result["summary_excluded"] = sorted(set(req.exclude))
+    # the flags in summary_files must always reflect the current exclusion
+    # set — read at payload time, not snapshot time
+    excluded_set = set(result.get("summary_excluded") or [])
+
+    def _payload(in_progress: bool = False) -> Dict[str, Any]:
+        # read the exclusion set at payload time — the summarizer may have
+        # extended it (teaser run: refused files pre-excluded)
+        excluded_now = set(result.get("summary_excluded") or [])
+        files_payload = [
+            {**f, "excluded": f["oparlKey"] in excluded_now}
+            for f in result.get("summary_files", [])
+        ]
+        return {"summary": result.get("summary"),
+                "files": files_payload,
+                "refined": result.get("summary_refined", False),
+                **({"in_progress": True} if in_progress else {})}
+
+    if result.get("summary") and not req.refine:
+        return _payload()
+    if sess.get("summarizing"):
+        # a refine is already in flight for this session — report the
+        # current state (with the merged exclusions) instead of stacking
+        # another LLM call
+        return _payload(in_progress=True)
+
+    req_exclude = excluded_set
+
+    sess["summarizing"] = True
     db_session = get_db_session()
     try:
         from src.pgResultSummarizer import ResultSummarizer
 
-        ResultSummarizer(db_session).summarize(result)
+        ResultSummarizer(db_session).summarize(
+            result,
+            force=req.refine,
+            use_full_content=req.refine,
+            exclude=req_exclude,
+        )
     finally:
         db_session.close()
-    return {"summary": result.get("summary")}
+        sess["summarizing"] = False
+    return _payload()
 
 
 @app.post("/expand")

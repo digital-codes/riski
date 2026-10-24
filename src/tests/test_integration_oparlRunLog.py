@@ -178,7 +178,14 @@ class TestReadonlyAccess:
 
 class TestSeedBaseline:
     def test_seeded_baseline_resolves(self):
-        """The production table is seeded with 19 Feb 2026 (CET)."""
+        """The production table resolves the baseline from its latest row.
+
+        Originally this asserted the 2026-02-19 seed value; the verified
+        real sync runs (2026-10-24) legitimately advanced the baseline, so
+        only the resolution source and the timestamp format are asserted.
+        """
         baseline, source = orl.resolve_baseline()
         assert source == "table"
-        assert baseline == orl.SEED_BASELINE
+        ou_iso = baseline
+        assert "T" in ou_iso  # ISO timestamp
+        assert ou_iso >= orl.SEED_BASELINE[:19]  # never moves backwards

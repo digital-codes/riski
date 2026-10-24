@@ -6,21 +6,49 @@
 				<span v-if="loading" class="loading-note">
 					<span class="header-spinner"></span> Zusammenfassung wird erstellt…
 				</span>
+				<span v-else-if="refining" class="loading-note">
+					<span class="header-spinner"></span> Verfeinere Zusammenfassung (Volltext)…
+				</span>
 				<span v-else-if="mapAvailable" class="loading-note map-note" title="Zu den Suchergebnissen gehört eine Karte — weiter unten auf der Seite">
 					📍 Karte verfügbar — weiter unten
 				</span>
 			</h2>
-			<button v-if="!loading && summary" type="button" class="pdf-btn" @click="downloadPdf" title="Zusammenfassung drucken oder als PDF speichern">
-				Als PDF speichern
-			</button>
+			<div class="header-actions">
+				<button v-if="!loading && summary" type="button" class="refine-btn"
+						:disabled="refining || refined"
+						@click="$emit('refine')"
+						:title="refined
+							? 'Volltext-Zusammenfassung aktiv — Dokumente ein-/ausschließen für Änderungen'
+							: 'Zusammenfassung mit dem Volltext der Dokumente neu erstellen (dauert etwas länger)'">
+					{{ refining ? 'Verfeinere…' : 'Verfeinern' }}
+				</button>
+				<button v-if="!loading && summary" type="button" class="pdf-btn" @click="downloadPdf" title="Zusammenfassung drucken oder als PDF speichern">
+					Als PDF speichern
+				</button>
+			</div>
 		</header>
 
 		<div v-if="!loading" class="summary-body" v-html="renderedSummary"></div>
+
+		<div v-if="!loading && files.length" class="file-list">
+			<ul class="file-items">
+				<li v-for="f in files" :key="f.oparlKey" :class="{ excluded: f.excluded }">
+					<label class="file-item">
+						<input type="checkbox" :checked="!f.excluded"
+							   :disabled="refining"
+							   @change="$emit('toggle-file', { oparlKey: f.oparlKey, excluded: !$event.target.checked })" />
+						<span v-if="f.index" class="file-num">Datei {{ f.index }}</span>
+						<a v-if="f.downloadUrl" :href="f.downloadUrl" target="_blank" rel="noopener" class="file-name">{{ f.name }}</a>
+						<span v-else class="file-name">{{ f.name }}</span>
+					</label>
+				</li>
+			</ul>
+		</div>
 	</section>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import MarkdownIt from 'markdown-it';
 
 const props = defineProps({
@@ -35,8 +63,25 @@ const props = defineProps({
 	mapAvailable: {
 		type: Boolean,
 		default: false
+	},
+	// structured per-file metadata from /summarize (change: summary-refine-file-control)
+	files: {
+		type: Array,
+		default: () => []
+	},
+	refining: {
+		type: Boolean,
+		default: false
+	},
+	// full-content mode reached — refine button disabled (toggles still re-run)
+	refined: {
+		type: Boolean,
+		default: false
 	}
 });
+
+defineEmits(['refine', 'toggle-file']);
+
 
 const md = new MarkdownIt({
 	breaks: true,
@@ -68,6 +113,8 @@ const downloadPdf = () => {
 		code { background: #f1f5f9; padding: 0.1rem 0.35rem; border-radius: 4px; }
 		pre { background: #0b1220; color: #e5e7eb; padding: 0.8rem; border-radius: 8px;
 		      white-space: pre-wrap; }
+			li.doc-excluded { color: #9ca3af; }
+		li.doc-excluded a { color: #9ca3af; }
 		@media print { body { margin: 1cm auto; } }
 	`;
 	const iframe = document.createElement('iframe');
@@ -77,11 +124,25 @@ const downloadPdf = () => {
 	document.body.appendChild(iframe);
 
 	const doc = iframe.contentDocument || iframe.contentWindow.document;
+	// full document list with status (all files, not just the considered
+	// ones — the printout should document the complete selection state)
+	const fileListHtml = props.files.length
+		? `<h2>Dokumente</h2><ul>` +
+		  props.files.map(f => {
+				const name = f.downloadUrl
+					? `<a href="${f.downloadUrl}">${f.name ?? f.oparlKey}</a>`
+					: (f.name ?? f.oparlKey);
+				const status = f.excluded
+					? ` <em>(nicht berücksichtigt)</em>`
+					: '';
+				return `<li class="${f.excluded ? 'doc-excluded' : ''}">${name}${status}</li>`;
+			}).join('') + `</ul>`
+		: '';
 	doc.open();
 	doc.write(
 		`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">` +
 		`<title>RISKI Zusammenfassung</title><style>${css}</style></head><body>` +
-		`<h1>RISKI Zusammenfassung</h1>${renderedSummary.value}</body></html>`
+		`<h1>RISKI Zusammenfassung</h1>${renderedSummary.value}${fileListHtml}</body></html>`
 	);
 	doc.close();
 
@@ -119,6 +180,34 @@ const downloadPdf = () => {
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
+}
+
+.header-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+.refine-btn {
+	background: white;
+	color: #667eea;
+	border: 1px solid #667eea;
+	padding: 8px 16px;
+	border-radius: 6px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.2s ease, color 0.2s ease;
+	white-space: nowrap;
+}
+
+.refine-btn:hover {
+	background: #667eea;
+	color: white;
+}
+
+.refine-btn:disabled {
+	opacity: 0.6;
+	cursor: wait;
 }
 
 .pdf-btn {
@@ -215,6 +304,62 @@ const downloadPdf = () => {
 	padding: 0.8rem;
 	overflow-x: auto;
 }
+
+/* interactive file list (change: summary-refine-file-control) */
+.file-list {
+	margin-top: 16px;
+	border-top: 1px solid #e5e7eb;
+	padding-top: 10px;
+}
+
+.file-list-toggle {
+	background: none;
+	border: none;
+	color: #6b7280;
+	font-size: 0.85rem;
+	cursor: pointer;
+	padding: 4px 0;
+}
+
+.file-items {
+	list-style: none;
+	margin: 6px 0 0;
+	padding: 0;
+}
+
+.file-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 4px 0;
+	font-size: 0.9rem;
+	cursor: pointer;
+}
+
+.file-item input {
+	cursor: pointer;
+}
+
+.file-item.excluded .file-name {
+	text-decoration: line-through;
+	color: #9ca3af;
+}
+
+.file-num {
+	color: #6b7280;
+	font-size: 0.8rem;
+	min-width: 52px;
+}
+
+.file-name {
+	color: #667eea;
+	text-decoration: none;
+}
+
+a.file-name:hover {
+	text-decoration: underline;
+}
+
 
 @media (max-width: 768px) {
 	.summary-card {

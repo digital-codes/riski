@@ -22,6 +22,18 @@
         <span v-if="loading" class="header-spinner" title="Suche läuft…"></span>
       </h2>
     </header>
+    <RouteInfo
+      :intent="intent"
+      :applied-filters="appliedFilters"
+      :gremium="gremium"
+      :fallback-notes="fallbackNotes"
+    />
+    <div v-if="emptyResponse" class="empty-response">
+      <p class="empty-title">{{ emptyResponse.message }}</p>
+      <p class="empty-detail">
+        Versucht: {{ emptyResponse.intent }}<template v-if="scopeText"> · Scope: {{ scopeText }}</template>
+      </p>
+    </div>
   </div>
   <div class="wrapper">
     <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph" @select="onSelect" />
@@ -35,12 +47,17 @@
     @expand="onExpand"
   />
   <div class="wrapper">
-    <SummaryCard v-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" />
+    <TopicList
+      v-if="topics.length"
+      :topics="topics"
+      @select="onSelect"
+    />
+    <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" :files="summaryFiles" :refining="refining" :refined="summaryRefined" @refine="onRefine" @toggle-file="onToggleFile" />
   </div>
   <div class="wrapper">
     <GeoMap v-if="geoAvailable && geoFC" :feature-collection="geoFC" />
   </div>
-  <div class="wrapper" v-if="rawData">
+  <div class="wrapper" v-if="rawData && answerMode !== 'list_topics'">
     <TimeLine :search-data="rawData" />
   </div>
 </template>
@@ -50,7 +67,9 @@ import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue
 import TimeLine from './components/TimeLine.vue';
 import SummaryCard from './components/SummaryCard.vue';
 import DetailPanel from './components/DetailPanel.vue';
-import { search as apiSearch, summarize as apiSummarize, expand as apiExpand, geoUrl } from './api.js';
+import RouteInfo from './components/RouteInfo.vue';
+import TopicList from './components/TopicList.vue';
+import { ask as apiAsk, search as apiSearch, summarize as apiSummarize, expand as apiExpand, geoUrl } from './api.js';
 // lazy: keeps echarts (large) out of the main bundle until the graph exists
 const NetworkView = defineAsyncComponent(() => import('./components/NetworkView.vue'));
 // lazy: keeps leaflet out until a georeferenced result arrives
@@ -66,10 +85,25 @@ const isMobile = ref(false);
 const loading = ref(false);
 const expanding = ref(false);
 const summaryLoading = ref(false);
+const summaryFiles = ref([]);
+const refining = ref(false);
+const summaryRefined = ref(false);
+// per-session exclusions — applied to every subsequent summarize call
+const summaryExclude = ref([]);
 const geoAvailable = ref(false);
 const geoFC = ref(null);
 const error = ref(null);
 const sessionId = ref(null);
+// change: intent-router — routing outcome of the last /ask call
+const intent = ref(null);
+const appliedFilters = ref([]);
+const gremium = ref(null);
+const fallbackNotes = ref([]);
+const emptyResponse = ref(null);
+// change: intent-router (D10) — meeting-centric answers: topics replace
+// the LLM summary, no map
+const topics = ref([]);
+const answerMode = ref(null);
 
 // graph is mutable state: search replaces it, /expand merges into it
 const graph = ref(null);
@@ -89,18 +123,35 @@ async function runSearch() {
   graph.value = null;
   summary.value = null;
   summaryLoading.value = false;
+  summaryFiles.value = [];
+  refining.value = false;
+  summaryRefined.value = false;
+  summaryExclude.value = [];
   geoAvailable.value = false;
   geoFC.value = null;
   selection.value = null;
+  intent.value = null;
+  appliedFilters.value = [];
+  gremium.value = null;
+  fallbackNotes.value = [];
+  emptyResponse.value = null;
+  topics.value = [];
+  answerMode.value = null;
   try {
-    // render results immediately; the summary arrives asynchronously
-    const result = await apiSearch(q, { topK: 10, summarize: false });
+    // /ask routes the query (intent + filters); same result contract as
+    // /search — render results immediately, the summary arrives async
+    const result = await apiAsk(q, { sessionId: sessionId.value, topK: 10, summarize: false });
     applyResult(result);
-    if (result.sessionId) {
+    // design D10: meeting-centric answers show the topic list instead of
+    // the LLM summary — skip the async summarize round-trip entirely
+    if (result.sessionId && answerMode.value !== 'list_topics') {
       summaryLoading.value = true;
       apiSummarize(result.sessionId)
         .then((res) => {
           if (res.summary) summary.value = res.summary;
+          summaryFiles.value = res.files || [];
+          summaryRefined.value = !!res.refined;
+          summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
           // the relevance verdict may gate the map — refresh it
           if (geoAvailable.value) fetchGeo();
         })
@@ -114,11 +165,67 @@ async function runSearch() {
   }
 }
 
+// change: summary-refine-file-control — user actions re-run the summarizer
+// with full content; the current summary stays visible until the new one
+// replaces it
+// change: summary-refine-file-control — user actions re-run the summarizer
+// with full content; the current summary stays visible until the new one
+// replaces it. The exclusion set sent here is authoritative (replace
+// semantics server-side), so one run per click is enough.
+async function runSummarize({ refine = false, exclude = [] } = {}) {
+  if (refining.value || !sessionId.value) return;
+  refining.value = true;
+  try {
+    const res = await apiSummarize(sessionId.value, { refine, exclude });
+    if (res.in_progress) return;  // another refine owns the session
+    if (res.summary) summary.value = res.summary;
+    summaryFiles.value = res.files || [];
+    summaryRefined.value = !!res.refined;
+    summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
+    if (geoAvailable.value) fetchGeo();
+  } catch (e) { /* keep the previous summary on failure */ }
+  finally { refining.value = false; }
+}
+
+const onRefine = () => runSummarize({ refine: true, exclude: summaryExclude.value });
+
+// change: intent-router — human-readable tried-scope for the empty state
+const scopeText = computed(() => {
+  const parts = [];
+  if (gremium.value?.orgs?.length) parts.push(gremium.value.orgs.join(', '));
+  for (const f of appliedFilters.value) {
+    if (f.facet === 'tag' && f.values?.length) parts.push(`Typ ${f.values.join('/')}`);
+    if (f.facet === 'organization' && !gremium.value?.orgs?.length && f.values?.length)
+      parts.push(f.values.join(', '));
+  }
+  return parts.join(', ');
+});
+
+const onToggleFile = ({ oparlKey, excluded }) => {
+  const current = new Set(summaryExclude.value);
+  if (excluded) current.add(oparlKey); else current.delete(oparlKey);
+  summaryExclude.value = [...current];
+  // immediate verdict feedback — the label must not wait for the slow
+  // full-content re-run (user finding: label out of sync with the toggle)
+  summaryFiles.value = summaryFiles.value.map(f =>
+    f.oparlKey === oparlKey ? { ...f, excluded } : f);
+  runSummarize({ refine: true, exclude: summaryExclude.value });
+};
+
 function applyResult(result) {
   rawData.value = result;
   summary.value = result.summary || null;
   graph.value = result.graph || { nodes: [], edges: [] };
-  sessionId.value = result.sessionId || null;
+  sessionId.value = result.sessionId || sessionId.value;
+  // change: intent-router — routing fields (absent on plain /search)
+  intent.value = result.intent || null;
+  appliedFilters.value = result.applied_filters || [];
+  gremium.value = result.gremium || null;
+  fallbackNotes.value = result.fallback_notes || [];
+  emptyResponse.value = result.empty_response || null;
+  // change: intent-router (D10) — meeting-centric answers
+  topics.value = result.topics || [];
+  answerMode.value = result.answer_mode || null;
   geoAvailable.value = !!result.geo_available && !!result.sessionId;
   geoFC.value = null;
   if (geoAvailable.value) fetchGeo();
@@ -285,6 +392,27 @@ html, body {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* change: intent-router — honest empty state */
+.empty-response {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+}
+
+.empty-title {
+  margin: 0;
+  font-weight: 600;
+  color: #92400e;
+}
+
+.empty-detail {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: #b45309;
 }
 
 @media (max-width: 768px) {

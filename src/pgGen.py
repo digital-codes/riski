@@ -9,8 +9,10 @@ except ImportError:
 import json
 import os
 import re
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Iterable, List, Optional, Set, Tuple
 
 from sqlalchemy import (
@@ -30,6 +32,7 @@ from sqlalchemy import (
     inspect,
     Index,
     UniqueConstraint,
+    text as sa_text,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB as PGJSON, insert
@@ -44,6 +47,11 @@ DROP_ALL = False  # set True only for a clean rebuild
 
 # Print insert progress every N entities
 PROGRESS_EVERY = 500
+
+# Parallelism for the import (JSON parsing and base upserts). Override with
+# RISKI_IMPORT_WORKERS; upsert partitions use one connection per worker and
+# never touch the same rows (entities are partitioned by oparlId).
+IMPORT_WORKERS = max(1, int(os.environ.get('RISKI_IMPORT_WORKERS', '4')))
 
 STRING_SIZE = 256
 
@@ -196,19 +204,63 @@ def collect_entities_from_obj(
             collect_entities_from_obj(it, entities, url_to_key, source_file, f"{path}[{i}]")
 
 
+def _modified_ts(raw: Dict[str, Any]) -> Optional[datetime]:
+    """Best-effort `modified` timestamp of a raw entity dict (None if absent
+    or unparsable). Used to merge duplicate entities deterministically."""
+    val = raw.get('modified')
+    if not isinstance(val, str):
+        return None
+    ts = val.rstrip('Z')
+    try:
+        dt = datetime.fromisoformat(ts)
+    except ValueError:
+        return None
+    if dt.tzinfo is not None:
+        dt = dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
+
 def pass1_collect(directory: str) -> Tuple[Dict[EntityKey, Entity], Dict[str, EntityKey], Set[str]]:
+    """Collect entities from all JSON files in *directory*.
+
+    Files are read and parsed by a worker pool (IMPORT_WORKERS); the shared
+    entity maps are merged in the main thread. Duplicate entities (same
+    oparlId seen in several files, e.g. embedded in a listing and saved
+    individually) are merged deterministically: the version with the newer
+    `modified` timestamp wins.
+    """
     entities: Dict[EntityKey, Entity] = {}
     url_to_key: Dict[str, EntityKey] = {}
     tables: Set[str] = set()
     files = list(iter_json_files(directory))
-    print(f"Found {len(files)} JSON files to process in '{directory}'")
-    for i, path in enumerate(files, 1):
-        # print(f"  Reading file {i}/{len(files)}: {os.path.basename(path)}")
+    print(f"Found {len(files)} JSON files to process in '{directory}' "
+          f"({IMPORT_WORKERS} workers)")
+
+    def parse_file(path: str):
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        collect_entities_from_obj(data, entities, url_to_key, source_file=os.path.basename(path), path='$')
-    for k in entities.keys():
-        tables.add(k.table)
+        local_entities: Dict[EntityKey, Entity] = {}
+        local_url_to_key: Dict[str, EntityKey] = {}
+        collect_entities_from_obj(data, local_entities, local_url_to_key,
+                                  source_file=os.path.basename(path), path='$')
+        return local_entities, local_url_to_key
+
+    with ThreadPoolExecutor(max_workers=IMPORT_WORKERS) as pool:
+        for local_entities, local_url_to_key in pool.map(parse_file, files):
+            tables.update(k.table for k in local_entities)
+            for url, key in local_url_to_key.items():
+                url_to_key.setdefault(url, key)
+            for key, ent in local_entities.items():
+                existing = entities.get(key)
+                if existing is None:
+                    entities[key] = ent
+                    continue
+                # deterministic duplicate merge: newer `modified` wins
+                existing_ts = _modified_ts(existing.raw)
+                incoming_ts = _modified_ts(ent.raw)
+                if incoming_ts is not None and (existing_ts is None or incoming_ts > existing_ts):
+                    existing.raw = ent.raw
+                existing.sources |= ent.sources
     return entities, url_to_key, tables
 
 
@@ -587,35 +639,64 @@ def insert_all(
     Session = sessionmaker(bind=engine)
     session = Session()
     total = len(entities)
-    # 1) Base insert / upsert
-    for idx, ent in enumerate(entities.values(), 1):
-        if idx % PROGRESS_EVERY == 0 or idx == total:
-            print(f"  Base upsert {idx}/{total} ...")
-        t = main_tables[ent.key.table]
-        # print(f"Processing entity {idx}/{total}: table={ent.key.table} oparlId={ent.key.oparl_id}")
-        row = build_base_row(ent, scalar_types, scalar_colnames)
-        stmt = insert(t).values(**row)
-        # On conflict on oparlId, update when incoming modified is newer
-        stmt = stmt.on_conflict_do_update(
-            index_elements=['oparlId'],
-            set_={
-                'id': row['id'],
-                'oparlKey': row['oparlKey'],
-                'type': row['type'],
-                'created': row['created'],
-                'modified': row['modified'],
-                'data': row['data'],
-                # include scalar columns dynamically
-                **{col: row[col] for col in row if col not in {'id', 'oparlKey', 'oparlId', 'type', 'created', 'modified', 'data'}},
-            },
-            where= (t.c.modified < row['modified']) if row['modified'] is not None else True,
-        )
+
+    progress_lock = threading.Lock()
+    progress_count = [0]
+
+    def _track_progress(count: int) -> None:
+        with progress_lock:
+            progress_count[0] += count
+            done = progress_count[0]
+        if done % PROGRESS_EVERY < count or done >= total:
+            print(f"  Base upsert {min(done, total)}/{total} ...")
+
+    # 1) Base insert / upsert — partitioned across workers (one connection
+    # per worker, disjoint oparlIds, so partitions never conflict).
+    def _upsert_partition(partition: List[Tuple[int, Entity]]) -> None:
+        worker_session = Session()
         try:
-            session.execute(stmt)
-        except Exception as e:
-            raise RuntimeError(
-                f"Base upsert failed for table={ent.key.table} oparlId={ent.key.oparl_id}"
-            ) from e
+            for _, ent in partition:
+                t = main_tables[ent.key.table]
+                row = build_base_row(ent, scalar_types, scalar_colnames)
+                stmt = insert(t).values(**row)
+                # On conflict on oparlId, update when incoming modified is newer
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['oparlId'],
+                    set_={
+                        'id': row['id'],
+                        'oparlKey': row['oparlKey'],
+                        'type': row['type'],
+                        'created': row['created'],
+                        'modified': row['modified'],
+                        'data': row['data'],
+                        # include scalar columns dynamically
+                        **{col: row[col] for col in row if col not in {'id', 'oparlKey', 'oparlId', 'type', 'created', 'modified', 'data'}},
+                    },
+                    where=(t.c.modified < row['modified']) if row['modified'] is not None else True,
+                )
+                try:
+                    worker_session.execute(stmt)
+                except Exception as e:
+                    worker_session.rollback()
+                    raise RuntimeError(
+                        f"Base upsert failed for table={ent.key.table} oparlId={ent.key.oparl_id}"
+                    ) from e
+                _track_progress(1)
+            worker_session.commit()
+        finally:
+            worker_session.close()
+
+    indexed = list(enumerate(entities.values(), 1))
+    partitions: List[List[Tuple[int, Entity]]] = [[] for _ in range(IMPORT_WORKERS)]
+    for item in indexed:
+        partitions[item[0] % IMPORT_WORKERS].append(item)
+
+    if IMPORT_WORKERS == 1:
+        _upsert_partition(partitions[0])
+    else:
+        with ThreadPoolExecutor(max_workers=IMPORT_WORKERS) as pool:
+            for fut in [pool.submit(_upsert_partition, part) for part in partitions if part]:
+                fut.result()
     session.commit()
     # 2) Build oparlId -> sid map
     print('  Building oparlId->sid map ...')
@@ -627,27 +708,55 @@ def insert_all(
             if oparlId and sid:
                 oparlid_to_sid[oparlId] = int(sid)
     # 3) Populate FK columns
+    # One UPDATE ... FROM (VALUES ...) statement per table instead of one
+    # UPDATE per entity (~107k round trips on every import).
     print('  Populating FK columns ...')
-    for idx, ent in enumerate(entities.values(), 1):
-        if idx % PROGRESS_EVERY == 0 or idx == total:
-            print(f"  FK update {idx}/{total} ...")
+    fk_rows_by_table: Dict[str, List[Dict[str, Any]]] = {}
+    for ent in entities.values():
+        fields = single_fk_fields.get(ent.key.table) or {}
+        if not fields:
+            continue
         src_sid = oparlid_to_sid.get(ent.key.oparl_id)
         if not src_sid:
             continue
-        t = main_tables[ent.key.table]
-        updates: Dict[str, Any] = {}
-        for field, _tgt_table in single_fk_fields.get(ent.key.table, {}).items():
+        row: Dict[str, Any] = {'sid': src_sid}
+        for field in fields:
             v = ent.raw.get(field)
-            fk_col = f"{field}Sid"
-            if isinstance(v, str):
-                updates[fk_col] = oparlid_to_sid.get(v)
-            else:
-                updates[fk_col] = None
-        if updates:
-            session.execute(t.update().where(t.c.sid == src_sid).values(**updates))
+            row[f"{field}Sid"] = oparlid_to_sid.get(v) if isinstance(v, str) else None
+        fk_rows_by_table.setdefault(ent.key.table, []).append(row)
+
+    for table_name, rows in fk_rows_by_table.items():
+        fk_cols = [f"{field}Sid" for field in single_fk_fields[table_name]]
+        cols = ['sid'] + fk_cols
+        # stay below PostgreSQL's 65535 bind-parameter limit per statement
+        chunk_size = max(1, 60000 // len(cols))
+        # explicit casts: psycopg2 sends untyped NULLs and PostgreSQL could
+        # not infer the VALUES column types otherwise
+        set_clause = ', '.join(f'"{c}" = v."{c}"::bigint' for c in fk_cols)
+        for i in range(0, len(rows), chunk_size):
+            chunk = rows[i:i + chunk_size]
+            values_parts = []
+            params: Dict[str, Any] = {}
+            for j, row in enumerate(chunk):
+                placeholders = []
+                for c in cols:
+                    key = f"{c}_{j}"
+                    placeholders.append(f":{key}")
+                    params[key] = row[c]
+                values_parts.append(f"({', '.join(placeholders)})")
+            v_cols = ', '.join(f'"{c}"' for c in cols)
+            stmt = sa_text(
+                f'UPDATE "{table_name}" AS t SET {set_clause} '
+                f'FROM (VALUES {", ".join(values_parts)}) AS v({v_cols}) '
+                f'WHERE t.sid = v."sid"::bigint'
+            )
+            session.execute(stmt, params)
     session.commit()
     # 4) Association rows
+    # Collect deduped (src, tgt) pairs per association table and insert in
+    # batches (execute_values) instead of one INSERT per pair.
     print('  Inserting association rows ...')
+    pairs_by_table: Dict[str, set] = {}
     for ent in entities.values():
         src_sid = oparlid_to_sid.get(ent.key.oparl_id)
         if not src_sid:
@@ -661,22 +770,21 @@ def insert_all(
             at = assoc_tables.get(assoc_name)
             if at is None or at is False:
                 continue
-            pairs: List[Tuple[int, int]] = []
+            pairs = pairs_by_table.setdefault(assoc_name, set())
             if isinstance(value, list) and all(isinstance(x, str) for x in value):
                 for url in value:
                     tgt_sid = oparlid_to_sid.get(url)
                     if tgt_sid:
-                        pairs.append((src_sid, tgt_sid))
+                        pairs.add((src_sid, tgt_sid))
             elif isinstance(value, list) and all(is_entity_dict(x) for x in value):
                 for obj in value:
                     url = obj.get('id')
                     if isinstance(url, str):
                         tgt_sid = oparlid_to_sid.get(url)
                         if tgt_sid:
-                            pairs.append((src_sid, tgt_sid))
-            for s, tg in pairs:
-                session.execute(insert(at).on_conflict_do_nothing(), {'srcSid': s, 'tgtSid': tg})
-        # new 
+                            pairs.add((src_sid, tgt_sid))
+        # single-FK dict objects (invitation, location, verbatimProtocol,
+        # resultProtocol etc.) become associations when they carry an id
         for field, tgt_table in single_fk_fields.get(src_table, {}).items():
             value = ent.raw.get(field)
             if value is None or value is False:
@@ -685,24 +793,31 @@ def insert_all(
             at = assoc_tables.get(assoc_name)
             if at is None or at is False:
                 continue
-            pairs: List[Tuple[int, int]] = []
-            # add dict object like invitation, location, verbatimProtocol, resultProtocol etc. as association if it has an id
             if isinstance(value, dict):
                 url = value.get('id')
                 if isinstance(url, str):
                     tgt_sid = oparlid_to_sid.get(url)
                     if tgt_sid:
-                            pairs.append((src_sid, tgt_sid))
+                        pairs_by_table.setdefault(assoc_name, set()).add((src_sid, tgt_sid))
                     else:
                         print(f"  Warning: URL in single FK dict not found in oparlId->sid map: {url}")
-            else:
-                pass
-                # print(f"  Unexpected non-dict value for single FK association: {field} -> {tgt_table}, value: {value}")
 
-            for s, tg in pairs:
-                session.execute(insert(at).on_conflict_do_nothing(), {'srcSid': s, 'tgtSid': tg})
-
-    session.commit()
+    from psycopg2.extras import execute_values
+    raw = engine.raw_connection()
+    try:
+        cur = raw.cursor()
+        for assoc_name, pairs in pairs_by_table.items():
+            rows = list(pairs)
+            execute_values(
+                cur,
+                f'INSERT INTO "{assoc_name}" ("srcSid", "tgtSid") VALUES %s ON CONFLICT DO NOTHING',
+                rows,
+                page_size=10000,
+            )
+            print(f"    {assoc_name}: {len(rows)} pairs")
+        raw.commit()
+    finally:
+        raw.close()
 
 # ----------------------------
 # POST-CREATION MIGRATION (add missing scalar columns)

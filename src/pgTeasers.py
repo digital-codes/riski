@@ -26,7 +26,7 @@ import requests
 LLM_URL = os.environ.get('RISKI_LLM_URL', 'http://localhost:11434')
 LLM_MDL = os.environ.get('RISKI_LLM_MDL', 'granite4.1:8b')
 LLM_API_KEY = os.environ.get('RISKI_LLM_API_KEY', "123")
-MAX_RETRIES = 3
+MAX_RETRIES = 5
 RETRY_DELAY = 2.0
 DEFAULT_MAX_LEN = 200
 TEXT_EXCERPT_MAXLEN = 16000
@@ -79,6 +79,21 @@ def make_request(text, lang="de", maxlen=DEFAULT_MAX_LEN):
                                      json=payload,
                                      headers={"Content-Type": "application/json", "Authorization": f"Bearer {LLM_API_KEY}"},
                                      timeout=API_TIMEOUT)
+
+            # Rate limiting: honour Retry-After before touching the body —
+            # a 429 response has no choices and would otherwise produce an
+            # empty/garbage teaser.
+            if response.status_code == 429:
+                retry_after = response.headers.get("Retry-After")
+                delay = float(retry_after) if retry_after and str(retry_after).replace(".", "", 1).isdigit() \
+                    else RETRY_DELAY * (2 ** attempt)
+                sys.stderr.write(f"  Rate limited (429) on attempt {attempt+1}: waiting {delay:.1f}s\n")
+                if attempt < MAX_RETRIES:
+                    time.sleep(delay)
+                    continue
+                return None
+
+            response.raise_for_status()
             result = response.json()
 
             # need to check which type of response we got, and extract the content accordingly

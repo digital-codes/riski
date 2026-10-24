@@ -9,18 +9,22 @@ from src.pgResultSummarizer import ResultSummarizer
 
 
 class FakeSession:
-    """Minimal stand-in: File (teaser, content) lookup by oparlKey."""
+    """Minimal stand-in: File (teaser, content, downloadurl) by oparlKey."""
 
     def __init__(self, contents: dict):
-        self._contents = contents  # oparlKey -> (teaser, content)
+        self._contents = contents  # oparlKey -> (teaser, content[, downloadurl])
 
     def execute(self, stmt, params=None):
         key = params["k"]
 
         class R:
             def first(self):
-                teaser, content = self._c
-                return [teaser, content] if teaser or content else None
+                c = self._c
+                if c is None or (c[0] is None and c[1] is None and len(c) < 3):
+                    return None if c is None else [c[0], c[1], None]
+                if len(c) < 3:
+                    return [c[0], c[1], None]
+                return list(c)
 
         r = R()
         r._c = self._contents.get(key, (None, None))
@@ -69,17 +73,24 @@ class TestQueryGuidedPrompt:
         assert "Beurteile" in seen["system"] and "nicht relevant" in seen["system"]
         assert "Nicht berücksichtigte Dokumente" in seen["system"]
 
-    def test_refusal_note_stored_verbatim(self, summarizer, result, monkeypatch):
-        """The model's trailing note (refused documents) is part of the
-        stored summary — not stripped or re-written."""
+    def test_refusal_note_stripped_from_summary(self, summarizer, result, monkeypatch):
+        """The model's trailing note is parsed (summary_refused) but then
+        stripped — the verdicts live in our own document list, and a
+        separate note would be redundant/contradictory (user finding)."""
 
         def fake_chat(messages, **kwargs):
-            return {"content": "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n- File 1"}
+            return {"content": "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n- Datei 1: File 0"}
 
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
         summarizer.summarize(result)
-        assert "**Nicht berücksichtigte Dokumente:**" in result["summary"]
+        assert "**Nicht berücksichtigte Dokumente:**" not in result["summary"]
         assert result["summary"].startswith("**Frage:** ")
+        # still parsed before stripping: map gating + pre-exclusion work
+        assert result["summary_refused"] == [{"oparlKey": "100", "name": "File 0"}]
+        assert result["summary_excluded"] == ["100"]
+        # the verdict lives in the structured metadata (frontend renders it)
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["100"]["excluded"] is True
 
     def test_summary_states_the_query(self, summarizer, result):
         summarizer.summarize(result)
@@ -347,3 +358,180 @@ class TestRefusalParsing:
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
         ResultSummarizer(FakeSession({})).summarize(result)
         assert result["summary_refused"] == [{"oparlKey": "100", "name": "File 0"}]
+
+
+class TestFullContentRefinement:
+    """Change: summary-refine-file-control — context mode + exclusions."""
+
+    @pytest.fixture()
+    def rich_session(self):
+        contents = {
+            "100": ("Teaser 100", "Volltext 100", "https://dl/f0.pdf"),
+            "101": ("Teaser 101", "Volltext 101", "https://dl/f1.pdf"),
+        }
+        return FakeSession(contents)
+
+    def test_full_content_preferred_on_refine(self, rich_session, result, monkeypatch):
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung.", "endpoint": "http://llm"}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result, use_full_content=True)
+        assert "Volltext 100" in captured["prompt"]
+        assert "Teaser 100" not in captured["prompt"]
+        assert "Dokumente (Volltext):" in captured["prompt"]
+
+    def test_teaser_default_names_layer(self, rich_session, result, monkeypatch):
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result)
+        assert "Teaser 100" in captured["prompt"]
+        assert "Dokumente (Teaser):" in captured["prompt"]
+
+    def test_full_content_capped(self, rich_session, result, monkeypatch):
+        long_content = "X" * 50_000
+        session = FakeSession({"100": ("Teaser", long_content, None),
+                               "101": ("Teaser 101", None, None)})
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        s = ResultSummarizer(session)
+        s.summarize(result, use_full_content=True)
+        cap = pc._MAX_CONTENT_CHARS * pc._FULL_CONTENT_FACTOR
+        assert ("X" * cap) in captured["prompt"]
+        assert ("X" * (cap + 1)) not in captured["prompt"]
+
+    def test_exclusion_filters_working_copy(self, rich_session, monkeypatch):
+        result = make_result(2)
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result, exclude={"101"})
+        assert "File 1" not in captured["prompt"]
+        assert "File 0" in captured["prompt"]
+        # the original top_files stay untouched
+        assert len(result["top_files"]) == 2
+        assert result["summary_excluded"] == ["101"]
+
+    def test_summary_stays_clean_of_document_list(self, rich_session, result, monkeypatch):
+        """The stored summary contains body + provenance footer only — the
+        document list is rendered by the frontend from summary_files
+        (single list, no duplication — user finding)."""
+        monkeypatch.setattr(pc.remote, "chat",
+                            lambda *a, **k: {"content": "Zusammenfassung.", "endpoint": "http://llm"})
+        ResultSummarizer(rich_session).summarize(result)
+        summary = result["summary"]
+        assert "**Dokumente:**" not in summary
+        assert summary.find("Zusammenfassung.") < summary.find("Endpunkt:")
+        # the structured metadata still carries name, URL and verdict
+        assert result["summary_files"][0]["downloadUrl"] == "https://dl/f0.pdf"
+        assert result["summary_files"][0]["excluded"] is False
+
+    def test_summary_files_metadata_refused_auto_excluded(self, rich_session, result, monkeypatch):
+        def fake_chat(messages, **kwargs):
+            return {"content": (
+                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 2: File 1\n")}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result)
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["101"]["refused"] is True and files["101"]["excluded"] is True
+        assert files["100"]["refused"] is False and files["100"]["excluded"] is False
+        assert files["100"]["downloadUrl"] == "https://dl/f0.pdf"
+
+    def test_all_excluded_no_model_call(self, rich_session, result, monkeypatch):
+        calls = []
+        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: calls.append(1) or {})
+        ResultSummarizer(rich_session).summarize(result, exclude={"100", "101"})
+        assert calls == []
+        assert result["summary_files"][0]["excluded"] is True
+
+    def test_refine_uses_full_selection_no_selection_prompt(self, rich_session, result, monkeypatch):
+        """Refinement = no document selection: the refine prompt reads ALL
+        provided content (the document set comes from the initial selection
+        or the user's toggles), and the effective 'not considered' set is
+        exactly the user-excluded files — a stray legacy note in the model
+        output never changes the set (user finding: refine shrank the
+        considered set)."""
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["system"] = messages[0]["content"]
+            captured["user"] = messages[1]["content"]
+            # stray legacy-style note in the output — must be ignored
+            return {"content": (
+                "Übersicht.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 2: File 1\n")}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result, use_full_content=True)
+        # the refine system prompt forbids selection and demands a complete
+        # overview with document references
+        assert "KEINE eigene Auswahl" in captured["system"]
+        assert "VOLLSTÄNDIGE Übersicht" in captured["system"]
+        assert "900" in captured["system"]  # refine word budget
+        # both files' full content entered the prompt
+        assert "Volltext 100" in captured["user"] and "Volltext 101" in captured["user"]
+        # the stray note does not change the set; nothing is excluded
+        assert result["summary_refused"] == []
+        assert result["summary_excluded"] == []
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["101"]["excluded"] is False and files["101"]["refused"] is False
+        assert result["summary_refined"] is True
+
+    def test_prompt_numbering_follows_full_list(self, rich_session, result, monkeypatch):
+        """Files keep their FULL-list position in the prompt even when
+        other files are excluded — the model's "(Datei N)" references must
+        match the document list the user sees (user finding: after
+        excluding file 1 the text still referenced 'Datei 1', meaning
+        something else)."""
+        captured = {}
+
+        def fake_chat(messages, **kwargs):
+            captured["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        # exclude the FIRST file (full-list position 1): the remaining file
+        # keeps its position number 2
+        ResultSummarizer(rich_session).summarize(result, exclude={"100"})
+        assert "Datei 2: File 1 (f1.pdf)" in captured["prompt"]
+        assert "Datei 1:" not in captured["prompt"]
+
+    def test_teaser_run_refusals_pre_exclude(self, rich_session, result, monkeypatch):
+        """On the automatic pass, refused files start excluded (so the
+        refine button uses the current considered set)."""
+        def fake_chat(messages, **kwargs):
+            return {"content": (
+                "Zusammenfassung.\n\n**Nicht berücksichtigte Dokumente:**\n"
+                "- Datei 2: File 1\n")}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        ResultSummarizer(rich_session).summarize(result)
+        assert result["summary_excluded"] == ["101"]
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["101"]["excluded"] is True
+
+    def test_refined_mode_marker(self, rich_session, result, monkeypatch):
+        monkeypatch.setattr(pc.remote, "chat", lambda *a, **k: {"content": "Z."})
+        ResultSummarizer(rich_session).summarize(result)
+        assert result["summary_refined"] is False
+        ResultSummarizer(rich_session).summarize(result, force=True, use_full_content=True)
+        assert result["summary_refined"] is True

@@ -1,8 +1,15 @@
 """Unit tests for src.pgOcr – remote.ocr is mocked, no network."""
 
+import importlib.util
+
 import pytest
 
 from src import pgOcr
+
+# pypdf is an optional runtime dependency (OCR page-limit truncation);
+# without it the PdfReader/PdfWriter-based tests cannot run, everything
+# else here is mock-based and must still execute.
+_PYPDF_MISSING = importlib.util.find_spec("pypdf") is None
 
 
 @pytest.fixture()
@@ -18,16 +25,19 @@ def mock_ocr(monkeypatch):
 
 
 class TestOcrPdfToMarkdown:
-    def test_joins_pages(self, mock_ocr):
+    def test_joins_pages_with_default_cap(self, mock_ocr):
+        # default max_pages=12: uncountable document -> range sent, note w/o total
         md = pgOcr.ocr_pdf_to_markdown("whatever.pdf")
-        assert md == "# Seite 1\n\nSeite 2"
-        assert mock_ocr[0][1] is None  # no page limit requested
+        assert mock_ocr[0][1] == "0-11"
+        assert md.startswith("# Seite 1\n\nSeite 2")
+        assert md.endswith("<!-- OCR truncated to the first 12 pages -->")
 
     def test_empty_pages(self, monkeypatch):
         monkeypatch.setattr(pgOcr.remote, "ocr", lambda d, model=None, pages=None: {"pages": []})
         assert pgOcr.ocr_pdf_to_markdown("x.pdf") == ""
 
 
+@pytest.mark.skipif(_PYPDF_MISSING, reason="pypdf not installed (optional OCR dependency)")
 class TestPageLimit:
     def _make_pdf(self, path, n_pages):
         from pypdf import PdfWriter
@@ -64,7 +74,7 @@ class TestPageLimit:
         pgOcr.ocr_pdf_to_markdown(pdf, max_pages=12)
         assert calls == [None]
 
-    def test_unknown_page_count_unlimited(self, tmp_path, monkeypatch):
+    def test_unknown_page_count_capped(self, tmp_path, monkeypatch):
         calls = []
         monkeypatch.setattr(pgOcr, "pdf_page_count", lambda p: None)
 
@@ -73,8 +83,24 @@ class TestPageLimit:
             return {"pages": [{"markdown": "p"}]}
 
         monkeypatch.setattr(pgOcr.remote, "ocr", _ocr)
-        assert pgOcr.ocr_pdf_to_markdown(tmp_path / "broken.pdf", max_pages=12) == "p"
-        assert calls == [None]
+        md = pgOcr.ocr_pdf_to_markdown(tmp_path / "broken.pdf", max_pages=12)
+        assert calls == ["0-11"]
+        assert md == "p\n\n<!-- OCR truncated to the first 12 pages -->"
+
+    def test_range_rejected_retries_unlimited(self, tmp_path, monkeypatch):
+        calls = []
+        monkeypatch.setattr(pgOcr, "pdf_page_count", lambda p: None)
+
+        def _ocr(document, model=None, pages=None):
+            calls.append(pages)
+            if pages is not None:
+                raise RuntimeError("422: page range out of bounds")
+            return {"pages": [{"markdown": "p1"}, {"markdown": "p2"}]}
+
+        monkeypatch.setattr(pgOcr.remote, "ocr", _ocr)
+        md = pgOcr.ocr_pdf_to_markdown(tmp_path / "short.pdf", max_pages=12)
+        assert calls == ["0-11", None]
+        assert md == "p1\n\np2"  # no truncation note on the unlimited retry
 
     def test_max_pages_zero_disables_limit(self, tmp_path, monkeypatch):
         calls = []
@@ -119,7 +145,9 @@ class TestRun:
         (pdf_dir / "0001.pdf").write_bytes(b"%PDF")
         stats = pgOcr.run(pdf_dir, md_dir)
         assert stats == {"missing": 1, "ocr_ok": 1, "ocr_failed": 0, "empty": 0}
-        assert (md_dir / "0001.md").read_text() == "# Seite 1\n\nSeite 2"
+        text = (md_dir / "0001.md").read_text()
+        assert text.startswith("# Seite 1\n\nSeite 2")
+        assert text.endswith("<!-- OCR truncated to the first 12 pages -->")
 
     def test_resumable_skips_existing(self, tmp_path, mock_ocr):
         pdf_dir = tmp_path / "pdf"
@@ -168,7 +196,9 @@ class TestRun:
         (pdf_dir / "0001.pdf").write_bytes(b"%PDF")
         stats = pgOcr.run(pdf_dir, md_dir, out_dir=out_dir)
         assert stats["ocr_ok"] == 1
-        assert (out_dir / "0001.md").read_text() == "# Seite 1\n\nSeite 2"
+        text = (out_dir / "0001.md").read_text()
+        assert text.startswith("# Seite 1\n\nSeite 2")
+        assert text.endswith("<!-- OCR truncated to the first 12 pages -->")
         assert not (md_dir / "0001.md").exists()
 
     def test_empty_result_not_written(self, tmp_path, monkeypatch):

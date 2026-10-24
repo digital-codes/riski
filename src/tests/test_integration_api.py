@@ -19,6 +19,52 @@ def client():
     return TestClient(app)
 
 
+@pytest.fixture(scope="module")
+def stub_decoder():
+    """Deterministic stub for the SystemOne decision model (no network)."""
+    import src.pgIntentRouter as ir
+
+    class StubDecoder:
+        def __init__(self):
+            self.last_query = None
+
+        def decode(self, query, cfg, gremium_vocab):
+            self.last_query = query
+            q = query.lower()
+            scores = {i["name"]: 0.1 for i in cfg["intents"]}
+            slots = {}
+            if "ortschaftsrat" in q or "gemeinderat" in q:
+                scores["ask_gremium_recent"] = 0.9
+                for g in gremium_vocab or []:
+                    if g in q:
+                        slots["gremium"] = g
+                        break
+                if "gremium" not in slots and gremium_vocab:
+                    slots["gremium"] = "ortschaftsrat"
+            elif q.startswith("wann "):
+                scores["ask_decision_date"] = 0.9
+            else:
+                scores["search_topic"] = 0.9
+            return {"intent": max(scores, key=scores.get), "scores": scores,
+                    "slots": slots, "error": None}
+
+    stub = StubDecoder()
+    original = ir.IntentRouter.decode
+
+    def decode(self, query, engine=None):
+        from src.db import get_engine
+        from src.pgIntentRouter import build_slot_vocab
+
+        gi = [i for i in self.cfg["intents"] if "gremium" in (i.get("slots") or {})][0]
+        with get_engine(readonly=True).connect() as conn:
+            vocab = build_slot_vocab(conn, gi, "gremium")
+        return stub.decode(query, self.cfg, vocab)
+
+    ir.IntentRouter.decode = decode
+    yield stub
+    ir.IntentRouter.decode = original
+
+
 class TestHealthAndFacets:
     def test_health(self, client):
         r = client.get("/health")
@@ -101,3 +147,81 @@ class TestExpand:
     def test_expand_malformed_id_404(self, client):
         r = client.post("/expand", json={"node_id": "garbage"})
         assert r.status_code == 404
+
+
+class TestAsk:
+    def test_gremium_routed_query(self, client, stub_decoder):
+        r = client.post("/ask", json={
+            "query": "was wurde im letzten ortschaftsrat neureut beschlossen",
+            "top_k": 5, "summarize": False,
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert body["intent"] == "ask_gremium_recent"
+        assert body["slots"]["gremium"]
+        assert any(f["facet"] == "organization" for f in body["applied_filters"])
+        assert body["gremium"]["orgs"] == ["Ortschaftsrat Neureut"]
+        assert body["gremium"]["meeting"] is not None
+        for key in ("top_files", "graph", "sessionId", "fallback_notes"):
+            assert key in body
+
+    def test_decision_routed_query(self, client, stub_decoder):
+        r = client.post("/ask", json={
+            "query": "wann wurde der rückbau der herrenalber strasse beschlossen",
+            "top_k": 5, "summarize": False,
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert body["intent"] == "ask_decision_date"
+        assert body["answer_mode"] == "date"
+        assert any(
+            f["facet"] == "tag" and "Beschlüsse" in f["values"]
+            for f in body["applied_filters"]
+        )
+
+    def test_fallback_intent_plain_search(self, client, stub_decoder):
+        r = client.post("/ask", json={
+            "query": "erzähl was zur theatersanierung",
+            "top_k": 5, "summarize": False,
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert body["intent"] == "search_topic"
+        assert body["applied_filters"] == []
+
+    def test_session_id_reused(self, client, stub_decoder):
+        r = client.post("/ask", json={
+            "query": "erzähl was zur theatersanierung",
+            "session_id": "my-ask-session", "summarize": False,
+        })
+        assert r.status_code == 200
+        assert r.json()["sessionId"] == "my-ask-session"
+        r2 = client.get("/sessions/my-ask-session")
+        assert r2.status_code == 200
+        assert r2.json()["intent"] == "search_topic"
+
+    def test_empty_query_422(self, client, stub_decoder):
+        r = client.post("/ask", json={"query": ""})
+        assert r.status_code == 422
+
+
+class TestAskDegraded:
+    def test_unreachable_decision_model_degrades_to_search(self, client, monkeypatch):
+        import src.pgIntentRouter as ir
+
+        monkeypatch.setattr(
+            ir.IntentRouter, "decode",
+            lambda self, query, engine=None: {
+                "intent": "search_topic", "scores": {}, "slots": {},
+                "error": "decision model unreachable: connection refused",
+            },
+        )
+        r = client.post("/ask", json={
+            "query": "was wurde im letzten gemeinderat beschlossen",
+            "top_k": 3, "summarize": False,
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert body["intent"] == "search_topic"
+        assert body["applied_filters"] == []
+        assert any("unreachable" in n for n in body["fallback_notes"])

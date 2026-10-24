@@ -24,6 +24,12 @@ from src import remote
 
 # Marker appended to the markdown when OCR was truncated to the first pages.
 _TRUNCATION_NOTE = "\n\n<!-- OCR truncated to the first {max_pages} pages of {total} -->"
+_TRUNCATION_NOTE_NO_TOTAL = "\n\n<!-- OCR truncated to the first {max_pages} pages -->"
+
+# Page cap for OCR when the document page count is unknown (no pypdf):
+# the range is sent unconditionally; the API returns fewer pages for
+# shorter documents and a failed call falls back to unlimited OCR.
+DEFAULT_MAX_PAGES = 12
 
 
 def pdf_page_count(pdf_path: Path) -> int | None:
@@ -36,22 +42,36 @@ def pdf_page_count(pdf_path: Path) -> int | None:
         return None
 
 
-def ocr_pdf_to_markdown(pdf_path: Path, max_pages: int | None = None) -> str:
+def ocr_pdf_to_markdown(pdf_path: Path, max_pages: int | None = DEFAULT_MAX_PAGES) -> str:
     """OCR *pdf_path* and return the joined page markdown.
 
-    With *max_pages*, documents with more pages are OCR'd only up to that
-    page and a truncation marker is appended.
+    With *max_pages*, documents are OCR'd only up to that page and a
+    truncation marker is appended. The page count (pypdf, optional) is
+    used when available to skip the range for shorter documents and to
+    render the document total in the marker; without it the range is sent
+    unconditionally, and a rejected range falls back to unlimited OCR.
     """
     pages = None
     note = ""
     if max_pages is not None:
         total = pdf_page_count(pdf_path)
-        if total is not None and total > max_pages:
+        if total is None:
+            pages = f"0-{max_pages - 1}"
+            note = _TRUNCATION_NOTE_NO_TOTAL.format(max_pages=max_pages)
+        elif total > max_pages:
             pages = f"0-{max_pages - 1}"
             note = _TRUNCATION_NOTE.format(max_pages=max_pages, total=total)
-    result = remote.ocr(str(pdf_path), pages=pages)
+    try:
+        result = remote.ocr(str(pdf_path), pages=pages)
+    except Exception:
+        if pages is None:
+            raise
+        # range rejected (e.g. shorter document): retry unlimited
+        result = remote.ocr(str(pdf_path))
+        note = ""
     pages_md = result.get("pages", [])
-    return "\n\n".join(p.get("markdown", "") for p in pages_md).strip() + note
+    content = "\n\n".join(p.get("markdown", "") for p in pages_md).strip()
+    return content + note if content else ""
 
 
 def find_missing(pdf_dir: Path, md_dir: Path) -> list[Path]:

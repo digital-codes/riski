@@ -22,12 +22,27 @@ The pipeline has four stages, all built on two shared layers in `src/`:
 
 ## Setup
 
-1. **Database**: PostgreSQL with the [`pgvector`](https://github.com/pgvector/pgvector) extension:
+1. **Database**: PostgreSQL with the [`pgvector`](https://github.com/pgvector/pgvector) and `pg_trgm` extensions. Fresh deployment (one-time superuser bootstrap):
    ```sql
-   CREATE DATABASE riski_agentic;
+   -- as superuser: role + database owned by the app role
+   CREATE ROLE riski LOGIN PASSWORD '…' CREATEDB;
+   CREATE DATABASE riski_agentic OWNER riski;
+   -- extensions: vector 0.8.x is NOT a trusted extension (only superusers
+   -- can create it); pg_trgm IS trusted (the database owner can install it)
    \c riski_agentic
-   CREATE EXTENSION vector;
+   CREATE EXTENSION IF NOT EXISTS vector;      -- superuser, one-time
+   CREATE EXTENSION IF NOT EXISTS pg_trgm;     -- owner can do this
+   GRANT ALL ON SCHEMA public TO riski;
    ```
+   Notes:
+   - `pgvector` ≥ 0.10 is a *trusted* extension — once the server package is
+     upgraded, the database owner can `CREATE EXTENSION vector` itself and
+     fresh deployments need superuser only for the role/database.
+   - Check `pg_hba.conf`: the app role must be allowed to connect to the
+     databases it needs (on this deployment the host rule is
+     database-specific; a freshly created database is not covered by it).
+   - `fuzzystrmatch` is optional (used by some analysis scripts), same
+     trusted behaviour as `pg_trgm`.
 2. **Credentials**: create `src/private.py` (git-ignored) with `DB_USER`, `DB_PWD`, `DB_HOST`, `DB_NAME`, optionally read-only credentials `RO_USER`/`RO_PWD`, and model endpoint configuration (`EMB_*`, `SUMMARY_*`, `OCR_*`, `VIDEO_API_KEY`). Alternatively set `DB_*` / `POSTGRES_URL` / `CHAT_*` / `EMBED_*` environment variables. For test runs with database writes, `.env` may provide `RW_USER`/`RW_PWD`.
 3. **Dependencies**: SQLAlchemy, psycopg2, pgvector, requests, numpy, pandas, geopandas (street/district loading), pytest (tests).
 
@@ -86,6 +101,22 @@ pg_restore --list /mnt_ai/data/riski/snapshots/riski_agentic_*.dump   # verify
 #    import succeeds.
 python src/syncIncremental.py
 #    Two-phase alternative: python src/oparlUpdate.py  &&  python src/pgGen.py /mnt_ai/data/odd26/ris/ko
+#    Import parallelism: RISKI_IMPORT_WORKERS (default 4) threads. Observed
+#    profile (2026-10-24): 1 Python core at ~100%, Postgres backends at ~5%
+#    each — expected, see the GIL note under "Import performance notes" below.
+#    Incremental mechanics (OParl 1.1 update mechanism): all 9 Karlsruhe
+#    collections are requested with modified_since=<baseline> (spec
+#    underscore spelling — the camelCase variant is silently ignored!),
+#    page size limit=1000, only pagination links and PDF downloads are
+#    followed (resource references are never dereferenced). Every
+#    collection page is validated against the baseline (an honouring
+#    filter never returns older items); a violating page falls back to
+#    created_since, then to a full fetch (visible in
+#    oparlUpdateRuns.full_fetches). The same
+#    approach is used by the independent karlsruhe-oparl-syndication
+#    crawler (github.com/digital-codes/karlsruhe-oparl-syndication), which
+#    additionally reconciles fully every 7 days — a reasonable pattern to
+#    adopt via cron for this pipeline too.
 #    Note: pgGen must see the FULL ko/ directory (not just new files) —
 #    association URLs are resolved within the passed directory only.
 
@@ -95,7 +126,7 @@ python src/syncIncremental.py
 #    disables the cap). Skips existing outputs; failures are logged.
 python src/pgOcr.py
 
-# 3) Summaries: for markdown >10000 chars, store an LLM summary
+# 3) Summaries: for markdown >8000 chars, store an LLM summary
 #    (≤8000 chars, mistral-small) instead of the full text; smaller
 #    files are copied unchanged. Run from the data directory (relative
 #    ./ko_extracted → ./ko_sums) or pass explicit dirs:
@@ -158,6 +189,70 @@ outputs, `pgAddFileGeoRefs`/street/district refs preload existing pairs,
   markdown source keep `content IS NULL` (they are skipped by search).
 - `pgGen` detects new scalar columns/tables from the observed JSON and
   adds them additively — new OParl fields never require a rebuild.
+
+### Snapshots and restore (best practices)
+
+Snapshots live in `/mnt_ai/data/riski/snapshots/` (custom format,
+~680 MB each). Restoring one on a **different machine** requires a small
+bootstrap, because the dump contains the extension definitions and the
+object ACLs:
+
+1. **Role must exist**: the dump's ACL statements reference the `riski`
+   role — create it (with `CREATEDB`, matching this deployment's rights:
+   database owner, no superuser) before restoring.
+2. **Database must exist and be owned by that role** — do not restore into
+   the `postgres` database.
+3. **Extensions must exist before the restore**: the dump's pre-data
+   section contains `CREATE EXTENSION vector / pg_trgm / fuzzystrmatch`.
+   `vector` 0.8.x is **not** a trusted extension (superuser-only), so a
+   non-superuser restore fails there even when the extension is already
+   present — `pg_restore` re-runs `CREATE EXTENSION` regardless. Options:
+   - as superuser on the target: `CREATE EXTENSION IF NOT EXISTS vector;`
+     in the target database, then restore (the dump's duplicate
+     `CREATE EXTENSION` errors are benign — do **not** use
+     `--exit-on-error`), or
+   - filter the extension statements out of the table of contents:
+     ```bash
+     pg_restore -l dump | grep -viE 'EXTENSION|COMMENT - EXTENSION' > toc.list
+     pg_restore --no-owner --no-privileges -L toc.list -d riski_agentic dump
+     ```
+   - `pg_trgm`/`fuzzystrmatch` are trusted — the database owner can create
+     them itself; `pgvector` ≥ 0.10 will also be trusted (this host runs
+     0.8.0), after which the superuser bootstrap becomes unnecessary.
+4. **Connection rights**: restore into the database itself
+   (`-d riski_agentic`); if `pg_hba.conf` restricts the app role to
+   specific databases, the superuser bootstrap also needs an hba entry or
+   must run over the local socket.
+
+```bash
+# one-time bootstrap on the target (superuser)
+psql -c "CREATE ROLE riski LOGIN PASSWORD '…' CREATEDB;"
+createdb -O riski riski_agentic
+psql -d riski_agentic -c "CREATE EXTENSION IF NOT EXISTS vector;
+                          CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+# restore (app role; ownership/ACL errors are avoided by --no-owner)
+pg_restore --no-owner --no-privileges -d riski_agentic     /mnt_ai/data/riski/snapshots/<dump>.dump
+# verify
+psql -d riski_agentic -c "SELECT count(*) FROM \"Paper\";"
+```
+
+Also verify the target's `pgvector` version is ≥ the dump's
+(`SELECT extversion FROM pg_extension WHERE extname='vector';` — this
+deployment: 0.8.0); older versions may lack types used by the schema.
+
+### Import performance notes (GIL)
+
+The import's parallelism (`RISKI_IMPORT_WORKERS`, default 4) is thread-based.
+Observed profile (2026-10-24, full 107k-entity import): **1 Python core at
+~100%, Postgres backends at ~5% each**. This is expected, not a
+misconfiguration: the GIL pins Python-side work (statement compilation, row
+building, JSON/entity parsing) to a single core, and the worker threads only
+overlap the network/disk waits — which is exactly where the measured gain
+comes from (full import 7.5 → 3.5 min). Adding workers will not raise CPU
+utilization. True multi-core would require multiprocessing (expensive here:
+~0.5–1 GB of entity state per worker would need to be shipped between
+processes) or a faster JSON parser (`orjson`) for pass 1 — the latter is the
+cheap future win.
 
 ## Interactive search — web app + API
 
@@ -240,9 +335,12 @@ teasers with respect to the question, states the question, and names the
 key documents. Teasers (not full text) keep the LLM call fast.
 
 Wide searches can fetch off-topic documents, so the summarizer first
-evaluates each document against the question, summarizes only the
-relevant ones, and appends a note listing the refused documents
-("Nicht berücksichtigte Dokumente"). A provenance footer states the
+evaluates each document against the question and summarizes only the
+relevant ones. The per-document verdict (berücksichtigt /
+nicht berücksichtigt) is rendered in the document list at the end of the
+summary — the model's own refusal note is parsed for the machine-readable
+verdict (map gating, pre-exclusion) but stripped from the displayed text,
+since the list already carries it. A provenance footer states the
 model, endpoint and token usage — plus inference time, energy and
 emissions when the endpoint reports them (`remote.chat` passes the
 `usage`/`impact` fields through). The footer is part of the stored
@@ -257,6 +355,20 @@ lever (`_SYSTEM_PROMPT` in `src/pgResultSummarizer.py`): if refusals feel
 too aggressive — e.g. topically related documents dropped as redundant —
 tighten the instruction to refuse only clearly unrelated documents; if
 noise leaks through, sharpen it in the other direction.
+
+#### Refine and per-file control
+
+The summary is built from the fast **teaser layer**; a **"Verfeinern"**
+button in the summary pane re-runs the summarizer with the **full document
+content** (prompt header names the layer) — the previous summary stays
+visible while the refined one is generated. The document list
+(checkbox, name as download link, berücksichtigt/nicht berücksichtigt)
+renders once — directly under the summary text and in the PDF export —
+driven by the structured per-file metadata: excluding a file removes it from the summary's document set and
+re-runs the summarizer over the remaining files (always full content, since
+it follows a user action). Files the model refused start excluded. Both
+features call `POST /summarize {refine, exclude}`; exclusions persist in the
+session until the next search.
 
 ### Performance instrumentation
 
@@ -288,8 +400,8 @@ endpoints are unavailable.
 
 ## Incremental update — implementation status
 
-Implemented as of 2026-10-24 (open change
-`openspec/changes/incremental-oparl-sync`, tasks 1.x–3.x done; the DB is
+Implemented and verified as of 2026-10-24 (archived change
+`openspec/changes/archive/2026-10-24-incremental-oparl-sync/`; the DB is
 current through 2026-10-14 via the documented data update workflow). The
 timestamp cursor lives in the database (`oparlUpdateRuns` table — sole
 source of truth, see the archived change `track-oparl-update-runs`).
@@ -297,21 +409,21 @@ source of truth, see the archived change `track-oparl-update-runs`).
 | Planned | Status in the current code |
 |---|---|
 | Timestamp cursor tracking | ✅ The `oparlUpdateRuns` table stores each run's baseline and end state in the database (DB is the sole source; `last_run.txt` was removed entirely). |
-| `?modifiedSince=`/`?createdSince=` queries | ✅ Every collection (papers, agendaItems, meetings, people, consultations) is requested with `modifiedSince` first (captures modified-after-creation entities); `createdSince` is the fallback when `modifiedSince` is unsupported. The body resource keeps `createdSince`. |
+| `?modified_since=`/`?created_since=` queries | ✅ Every collection (all 9 Karlsruhe types incl. files/memberships/organizations/locations) is requested with `modified_since` first (captures modified-after-creation entities); `created_since` is the fallback. NOTE: the parameters must use the underscore spelling from the OParl 1.1 spec — the API **silently ignores** the camelCase variant (`modifiedSince`), which an earlier version of this crawler used. Page size `limit=1000` cuts pagination requests ~100×. |
 | Endpoint-capability detection and fallback | ✅ When an endpoint provably ignores a filter (older resources returned) or rejects it (HTTP error), the crawler falls back — first to the other parameter, then to a full fetch with a warning. Fallback usage is visible in the run row (`oparlUpdateRuns.full_fetches`). |
-| Cover *modified* records, not only created ones | ✅ Via `modifiedSince`-first (see above). |
+| Cover *modified* records, not only created ones | ✅ Via `modified_since`-first (see above). |
 | One-command synchronisation | ✅ `src/syncIncremental.py` runs the incremental crawl and then `pgGen`'s import against the crawl output. The run row is finalised (and the baseline advanced) only after a successful import; on failure the baseline is reset to the pre-crawl window. |
 | Idempotent upsert (`ON CONFLICT DO UPDATE`) | ✅ `pgGen.insert_all` upserts on `oparlId`, updating only when the incoming `modified` timestamp is newer. |
 | Graceful shutdown / cursor persistence | ✅ `SIGINT` is caught; the run is recorded with `success=false` and the items collected so far are persisted. |
 | Unit tests (timestamps, shutdown) + mocked integration tests | ✅ `src/tests/test_unit_oparlUpdate.py`, `src/tests/test_unit_oparlRunLog.py`, `src/tests/test_unit_syncIncremental.py`, `src/tests/test_integration_oparlRunLog.py`, `src/tests/test_integration_syncIncremental.py` (rollback-only DB writes). |
 | README documentation | ✅ This section + the data update workflow above. |
 
-**Remaining:**
-
-- **Real-run verification** (`openspec/changes/incremental-oparl-sync`
-  task 4.1, user-gated): one live `syncIncremental` run to confirm the
-  Karlsruhe API honours `modifiedSince` (the fallback ensures correctness
-  either way) and that typical runs finish in minutes.
+**Verified against the live API** (2026-10-24): a real `syncIncremental`
+run recorded the baseline advance (2026-02-19 → 2026-10-24) with the
+import in the same run, and operator reruns complete in minutes (crawl
+seconds-to-minutes + ~3.5 min parallel import). Two live-API findings from
+the verification shaped the implementation: the underscore parameter
+spelling and the per-page filter validation (see the workflow section).
 
 ## Potential improvements
 
@@ -325,20 +437,31 @@ filters and match-type provenance, name vectors for all entity tables,
 the network graph view with OParl association edges, the FastAPI search
 API, and query-guided async summaries.
 
-**Recently implemented** (2026-10-24): `modifiedSince`-first incremental
+**Recently implemented** (2026-10-24): `modified_since`-first incremental
 crawling for all collections with capability fallback and run-row
 visibility (`oparlUpdateRuns.full_fetches`), one-command synchronisation
 (`syncIncremental`), batch PDF OCR (`pgOcr`, Mistral backend, first-12-pages
 cap for large documents), targeted incremental embeddings
 (`pgAddSummaries --embed-missing`), the missing
 `contentEmbeddings.oparlKey` unique constraint (self-healed at startup),
-and a data update that brought the DB from 2026-05-21 to 2026-10-14.
+and a data update that brought the DB from 2026-05-21 to 2026-10-14
+(archived changes: `2026-10-24-incremental-oparl-sync`,
+`2026-10-24-summary-refine-file-control`).
+
+**Recently implemented** (2026-10-24, later the same day): the summary
+pane's **"Verfeinern"** refinement — re-runs the query-guided summarizer
+with full document content (no document selection, complete overview with
+Datei-N references, 900-word budget), a single interactive document list
+with per-file include/exclude toggles (exclusion set is authoritative
+server-side), download URLs on every file, and the model's refusal note
+parsed but no longer displayed.
 
 **Still open:**
 
 - **LLM tag backfill for remaining items** — name-regex misses escalate
   to the teaser-based LLM pass; `python src/pgCategorise.py all`
-  continues it (idempotent/resumable). File coverage is now ~82%, AgendaItem ~28%.
+  continues it (idempotent/resumable). File coverage is at ~99.8%,
+  AgendaItem at ~28% (the remaining backlog).
 - **Submitter/faction facet** — OParl `originator*`/`submitter` fields are
   unpopulated in this corpus (verified by spike); would need rule-based
   derivation like the desinformationssystem project's `submitter.py`.

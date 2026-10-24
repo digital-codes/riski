@@ -362,7 +362,7 @@ def build_candidate_filters(tbl, filters: List[Dict[str, Any]], conn):
                     extra.append(col >= datetime.datetime(int(year), 1, 1))
                 else:
                     extra.append(col <= datetime.datetime(int(year), 12, 31, 23, 59, 59))
-        elif facet in ("tag", "district"):
+        elif facet in ("tag", "district", "organization"):
             keys = _keys_for_facet(conn, table, f)
             if keys is None:
                 # Facet does not apply to this table (e.g. district only
@@ -413,6 +413,28 @@ def _keys_for_facet(conn, table: str, f: Dict[str, Any]) -> Optional[set]:
     # organization facet: entities directly associated with the named
     # organizations via their junction tables (committee membership etc.)
     if f["facet"] == "organization":
+        org = Table("Organization", metadata, autoload_with=conn)
+        if table == "File":
+            # two-hop path: File -File__meeting__Meeting-> Meeting
+            #   -Meeting__organization__Organization-> Organization
+            assoc_name = "File__meeting__Meeting"
+            if not _has_table(conn, assoc_name):
+                return None
+            assoc = Table(assoc_name, metadata, autoload_with=conn)
+            meeting = Table("Meeting", metadata, autoload_with=conn)
+            morg = Table("Meeting__organization__Organization", metadata, autoload_with=conn)
+            item = Table(table, metadata, autoload_with=conn)
+            stmt = (
+                select(item.c.oparlKey)
+                .select_from(
+                    assoc.join(meeting, assoc.c.tgtSid == meeting.c.sid)
+                    .join(morg, morg.c.srcSid == meeting.c.sid)
+                    .join(org, morg.c.tgtSid == org.c.sid)
+                    .join(item, assoc.c.srcSid == item.c.sid)
+                )
+                .where(org.c.name.in_(f["values"]))
+            )
+            return {r[0] for r in conn.execute(stmt)}
         org_links = {
             "Meeting": "Meeting__organization__Organization",
             "Paper": "Paper__underDirectionOf__Organization",
