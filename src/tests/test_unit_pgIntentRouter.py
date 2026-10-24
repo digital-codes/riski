@@ -16,6 +16,8 @@ from src.pgIntentRouter import (
     parse_answers,
 )
 
+pytestmark = pytest.mark.unit
+
 
 @pytest.fixture(scope="module")
 def cfg():

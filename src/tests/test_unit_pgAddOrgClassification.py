@@ -6,6 +6,8 @@ import pytest
 
 from src.pgAddOrgClassification import derive_classification
 
+pytestmark = pytest.mark.unit
+
 
 class TestDeriveClassification:
     @pytest.mark.parametrize(

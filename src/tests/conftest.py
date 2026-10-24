@@ -1,5 +1,7 @@
 import sys, os
 
+import pytest
+
 # Ensure the repository root is on sys.path so that `import src` works during tests
 repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 if repo_root not in sys.path:
