@@ -362,18 +362,17 @@ COLLECTIONS = [
 
 # Filter parameters tried in order — NOTE the underscore spelling from the
 # OParl 1.1 spec ("modified_since"); Karlsruhe silently ignores the
-# camelCase variant that earlier versions of this crawler used.
+# camelCase variant that earlier versions of this crawler used, and it
+# rejects future-dated baselines with HTTP 401 (so no future-baseline
+# probing is possible). Instead, every collection page is validated while
+# it is processed: an honouring filter can never return an item older than
+# the baseline. Pages are sorted newest-first, so a silently ignored filter
+# is detected as soon as the walk reaches items older than the baseline.
 FILTER_PARAMS = ["modified_since", "created_since"]
 
 # Karlsruhe accepts large page sizes: 1000 items/page instead of the
 # default 10 (verified live; the syndication project uses the same).
 PAGE_LIMIT = 1000
-
-# Capability probe: a filter applied to a future baseline must return an
-# EMPTY listing. A non-empty listing proves the parameter is ignored
-# (listings are sorted newest-first, so a single real page cannot
-# distinguish honoured from ignored).
-PROBE_MARGIN = timedelta(days=1)
 
 MODE_FULL = "full"
 
@@ -392,18 +391,37 @@ def _with_limit(url: str) -> str:
     return url + ("&" if "?" in url else "?") + f"limit={PAGE_LIMIT}"
 
 
-def _probe_filter(collection_url: str, param: str, now: datetime | None = None) -> str:
-    """Probe whether the endpoint honours *param* (``modified_since`` etc.).
+def _param_of(url: str) -> str | None:
+    """The timestamp filter parameter used by *url*, if any."""
+    for param in FILTER_PARAMS:
+        if f"{param}=" in url:
+            return param
+    return None
 
-    Requests the collection with a future baseline: an honouring endpoint
-    must return an empty listing, a non-empty listing proves the parameter
-    is ignored. Returns ``"supported"``, ``"ignored"`` or ``"error"``.
+
+def _page_filter_ok(data, baseline: datetime, param: str) -> bool:
+    """Validate one collection page against the filter baseline.
+
+    An honouring endpoint cannot return an item whose timestamp is older
+    than the baseline — if it does, the filter was silently ignored (this
+    is how the camelCase ``modifiedSince`` variant behaves). Items without
+    the filtered timestamp field are ignored by the check.
     """
-    probe_ts = (now or datetime.now(timezone.utc)) + PROBE_MARGIN
-    data = fetch_json(f"{collection_url}?{param}={quote(probe_ts.isoformat(), safe='')}&limit={PAGE_LIMIT}")
-    if not data:
-        return "error"
-    return "ignored" if data.get("data") else "supported"
+    field = {"modified_since": "modified", "created_since": "created"}.get(param, param)
+    items = data.get("data", []) if isinstance(data, dict) else data if isinstance(data, list) else []
+    baseline = _normalise_ts(baseline)
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        val = item.get(field)
+        if not isinstance(val, str):
+            continue
+        try:
+            if _normalise_ts(iso_to_dt(val)) < baseline:
+                return False
+        except Exception:
+            continue
+    return True
 
 
 def _is_followable(url: str) -> bool:
@@ -426,17 +444,16 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
 
     ``start_from`` is an ISO‑8601 timestamp used to request only resources that
     have been created or modified after that moment. Every collection in
-    ``COLLECTIONS`` is requested with ``modified_since`` first; whether the
-    endpoint honours the parameter is decided per collection via a
-    future-baseline probe (an honouring endpoint returns an empty listing
-    for a future timestamp — listings are sorted newest-first, so real
-    pages cannot be used for this check). If the parameter is ignored or
-    rejected, ``created_since`` is tried, and as a last resort the
-    collection is fetched in full (with the fallback recorded via
-    ``recorder.record_full_fetch``). Per the OParl 1.1 update mechanism,
-    only the filtered collections, their pagination and PDF downloads are
-    fetched — resource references are not dereferenced. The function
-    continues even when individual requests fail.
+    ``COLLECTIONS`` is requested with ``modified_since`` first. Whether the
+    endpoint honours the parameter is validated on every fetched collection
+    page: an honouring filter cannot return items older than the baseline
+    (listings are sorted newest-first, so a silently ignored filter is
+    detected as soon as the walk reaches older items). On detection the
+    crawler falls back — first to ``created_since``, then to a full fetch
+    (recorded via ``recorder.record_full_fetch``). Per the OParl 1.1 update
+    mechanism, only the filtered collections, their pagination and PDF
+    downloads are fetched — resource references are not dereferenced. The
+    function continues even when individual requests fail.
 
     When *recorder* is given, every new or modified resource is logged.
     With ``finalise=False`` (used by the combined sync entry point) the run
@@ -453,34 +470,21 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
             url += f"?{param}=" + quote(start_from, safe='')
         return _with_limit(url)
 
-    # Decide the filter capability per collection up front via the probe.
+    def collection_of(url: str) -> str | None:
+        """The collection a (first-page or pagination) URL belongs to.
+
+        Matches ``/<collection>?`` at a path boundary so both first-page
+        URLs and server-generated pagination links (which may use shorter
+        or relative path shapes) are recognised.
+        """
+        for collection in COLLECTIONS:
+            if re.search(rf"/{collection}\?", url):
+                return collection
+        return None
+
     queue = deque([f"{root_url}/bodies/0001?created_since=" + quote(start_from, safe='')])
     for collection in COLLECTIONS:
-        mode = None
-        for param in FILTER_PARAMS:
-            probe = _probe_filter(f"{root_url}/bodies/0001/{collection}", param)
-            if probe == "supported":
-                mode = param
-                break
-            if probe == "ignored":
-                logging.warning(
-                    "Collection %s ignores %s (probe returned items for a "
-                    "future baseline)", collection, param,
-                )
-            else:
-                logging.warning(
-                    "Collection %s rejected %s (HTTP error)", collection, param,
-                )
-        if mode is None:
-            mode = MODE_FULL
-            logging.warning(
-                "Collection %s supports no timestamp filter; fetching in full",
-                collection,
-            )
-            if recorder is not None:
-                recorder.record_full_fetch(collection)
-        capabilities[collection] = mode
-        queue.append(collection_url(collection, mode if mode != MODE_FULL else None))
+        queue.append(collection_url(collection, FILTER_PARAMS[0]))
 
     # Keep the latest timestamp seen during this run – start with the provided
     # baseline so that we only ever move forward.
@@ -522,6 +526,33 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
 
         # JSON resources
         data = fetch_json(current_url)
+
+        # Filter validation on collection pages: a page carrying a filter
+        # parameter must not contain items older than the baseline.
+        collection = collection_of(current_url)
+        attempted = _param_of(current_url)
+        if collection is not None and attempted is not None \
+                and capabilities.get(collection) != MODE_FULL and data:
+            if not _page_filter_ok(data, baseline_dt, attempted):
+                idx = FILTER_PARAMS.index(attempted)
+                next_param = FILTER_PARAMS[idx + 1] if idx + 1 < len(FILTER_PARAMS) else None
+                if next_param:
+                    logging.warning(
+                        "Collection %s ignores %s (page contains items older "
+                        "than the baseline); falling back to %s",
+                        collection, attempted, next_param,
+                    )
+                    capabilities[collection] = next_param
+                    queue.appendleft(collection_url(collection, next_param))
+                    continue
+                logging.warning(
+                    "Collection %s ignores all timestamp filters; fetching in full",
+                    collection,
+                )
+                capabilities[collection] = MODE_FULL
+                if recorder is not None:
+                    recorder.record_full_fetch(collection)
+                # fall through: this page is part of the full listing
 
         if not data:
             logging.warning("No data for %s; skipping.", current_url)

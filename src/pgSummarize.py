@@ -30,7 +30,7 @@ from src.remote import chat
 # ----------------------------------------------------------------------
 SRC_DIR = Path("./ko_extracted")
 DST_DIR = Path("./ko_sums")
-
+CUTOFF = 8000
 # ----------------------------------------------------------------------
 # Prompt – unchanged (German instructions)
 # ----------------------------------------------------------------------
@@ -55,7 +55,7 @@ Verwende die Informationen im Bericht, um die Fragen zu beantworten,
 und füge keine Informationen hinzu, die nicht im Bericht enthalten sind.
 Wenn eine Information nicht im Bericht enthalten ist, lasse sie einfach weg.
 
-Stelle sicher, dass Dein Bericht insgesamt nicht länger ist als 8000 Zeichen.
+Stelle sicher, dass Dein Bericht insgesamt nicht länger ist als CUTOFF Zeichen.
 
 {report}
 
@@ -119,10 +119,10 @@ def _run_summarizer(src_dir: Path | None = None, dst_dir: Path | None = None) ->
     df_q98 = df[df.length <= q98]
     print("DF Q98:", df_q98.describe())
 
-    df_large = df_q98[df_q98.length > 10000]
+    df_large = df_q98[df_q98.length > CUTOFF]
     print("DF large:", df_large.describe())
 
-    df_small = df_q98[df_q98.length <= 10000]
+    df_small = df_q98[df_q98.length <= CUTOFF]
     print("DF small:", df_small.describe())
 
     os.makedirs(dst_dir, exist_ok=True)
@@ -156,7 +156,7 @@ def _run_summarizer(src_dir: Path | None = None, dst_dir: Path | None = None) ->
             summary = request_summary(content)
             cleaned = _strip_code_fence(summary)
             print(f"Cleaned summary for {d}:\n{cleaned}\n\n")
-            out_path.write_text(cleaned, encoding="utf-8")
+            out_path.write_text(cleaned[:CUTOFF], encoding="utf-8")
         except Exception as e:
             print(f"Error processing {d}: {e}")
 

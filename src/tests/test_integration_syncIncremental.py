@@ -55,6 +55,10 @@ class _RollbackEngine:
 def rollback_tx(engine, monkeypatch):
     orl.ensure_tables(engine)
     monkeypatch.setattr(orl, "ensure_tables", lambda engine=None: None)
+    # pin the baseline: unit/integration tests must not depend on the live
+    # tracking table's current value
+    monkeypatch.setattr(orl, "resolve_baseline",
+                        lambda engine=None: (BASELINE, "table"))
     conn = engine.connect()
     tx = conn.begin()
     yield conn

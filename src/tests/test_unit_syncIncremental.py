@@ -29,6 +29,16 @@ class _FakeRecorder:
         return "2026-02-19T00:00:00+01:00", "table"
 
 
+@pytest.fixture(autouse=True)
+def fixed_baseline(monkeypatch):
+    """Unit tests must not read the live tracking table — the baseline the
+    sync resolves is fixed (a successful run 2026-10-24 legitimately moved
+    the real baseline past the value asserted here)."""
+    import src.oparlRunLog as orl
+    monkeypatch.setattr(orl, "resolve_baseline",
+                        lambda engine=None: ("2026-02-19T00:00:00+01:00", "table"))
+
+
 @pytest.fixture()
 def mocked_phases(monkeypatch):
     """Stub both phases; returns the call log dicts."""
