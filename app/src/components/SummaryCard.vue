@@ -112,6 +112,8 @@ const downloadPdf = () => {
 		code { background: #f1f5f9; padding: 0.1rem 0.35rem; border-radius: 4px; }
 		pre { background: #0b1220; color: #e5e7eb; padding: 0.8rem; border-radius: 8px;
 		      white-space: pre-wrap; }
+			li.doc-excluded { color: #9ca3af; }
+		li.doc-excluded a { color: #9ca3af; }
 		@media print { body { margin: 1cm auto; } }
 	`;
 	const iframe = document.createElement('iframe');
@@ -121,14 +123,18 @@ const downloadPdf = () => {
 	document.body.appendChild(iframe);
 
 	const doc = iframe.contentDocument || iframe.contentWindow.document;
-	// document list (same order/verdicts as the pane; checkboxes omitted)
+	// full document list with status (all files, not just the considered
+	// ones — the printout should document the complete selection state)
 	const fileListHtml = props.files.length
 		? `<h2>Dokumente</h2><ul>` +
-		  props.files.filter(f => !f.excluded).map(f => {
+		  props.files.map(f => {
 				const name = f.downloadUrl
 					? `<a href="${f.downloadUrl}">${f.name ?? f.oparlKey}</a>`
 					: (f.name ?? f.oparlKey);
-				return `<li>${name}</li>`;
+				const status = f.excluded
+					? ` <em>(nicht berücksichtigt)</em>`
+					: '';
+				return `<li class="${f.excluded ? 'doc-excluded' : ''}">${name}${status}</li>`;
 			}).join('') + `</ul>`
 		: '';
 	doc.open();
