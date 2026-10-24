@@ -24,6 +24,7 @@ from sqlalchemy import create_engine  # needed for openDb
 import requests
 
 import time
+from functools import lru_cache
 
 # ----------------------------------------------------------------------
 # Shared layers: DB (read-only engine + config) and remote model client
@@ -253,7 +254,18 @@ def call_embedding_model(text: str, api_url: str = None, api_key: str = None, mo
     The endpoint/model/key configuration lives in ``src.remote`` (resolved
     from ``private.py`` / environment variables); the arguments are kept for
     API compatibility and override the shared configuration when given.
+
+    Results are cached (LRU, 256 entries, keyed by text+model) — query
+    texts repeat far more often than they change, and the remote call is
+    the single largest fixed cost of a search (change:
+    api-latency-optimization). Only QUERY paths use this helper; bulk
+    document-embedding paths call ``remote.embed`` directly.
     """
+    return _embed_cached(text, model)
+
+
+@lru_cache(maxsize=256)
+def _embed_cached(text: str, model: str | None) -> tuple[list[float], float]:
     if model:
         vec = remote.embed(text, model=model)
     else:
@@ -261,6 +273,11 @@ def call_embedding_model(text: str, api_url: str = None, api_key: str = None, mo
     vector = vec.tolist()
     _ensure_log().debug(f"Received vector of length {len(vector)}")  # Debug print to check vector length
     return vector
+
+
+def clear_embedding_cache() -> None:
+    """Drop the query-embedding cache (e.g. after a model/config change)."""
+    _embed_cached.cache_clear()
 
 # here, threshold is a distance threshold, so we want to keep vectors with distance <= threshold (i.e. similarity above a certain level)
 def filter_by_threshold(vectors_with_scores: list[tuple], threshold: float) -> list[tuple]:

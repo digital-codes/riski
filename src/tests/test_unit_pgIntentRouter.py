@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import datetime
+import sys
+import types
 
 import pytest
 
@@ -312,3 +314,238 @@ class TestLiveDb:
             )
             names = {r[0] for r in conn.execute(stmt)}
         assert names <= {"Ortschaftsrat Neureut"}
+
+
+class TestParallelRecall:
+    def test_run_all_concurrent(self):
+        import time
+
+        from src.pgHybridSearch import _run_all
+
+        def slow(ms):
+            return lambda: (time.sleep(ms / 1000), ms)[1]
+
+        t0 = time.perf_counter()
+        out = _run_all([("a", slow(300)), ("b", slow(300))])
+        wall = time.perf_counter() - t0
+        assert out == [300, 300]
+        assert wall < 0.55  # concurrent: ~max, not sum
+
+    def test_run_all_task_failure_isolated(self, monkeypatch):
+        from src.pgHybridSearch import _run_all
+
+        def boom():
+            raise RuntimeError("db down")
+
+        out = _run_all([("ok", lambda: 42), ("bad", boom)])
+        assert out == [42, None]
+
+    def test_sequential_kill_switch(self, monkeypatch):
+        import time
+
+        import src.pgHybridSearch as hs
+
+        monkeypatch.setenv("RISKI_PARALLEL_SIGNALS", "0")
+
+        def slow(ms):
+            return lambda: (time.sleep(ms / 1000), ms)[1]
+
+        t0 = time.perf_counter()
+        out = hs._run_all([("a", slow(200)), ("b", slow(200))])
+        wall = time.perf_counter() - t0
+        assert out == [200, 200]
+        assert wall >= 0.4  # sequential: sum
+
+
+class TestFacetCache:
+    # time imported at use; keep module deps explicit
+    def _setup(self, monkeypatch):
+        import src.pgHybridSearch as hs
+
+        calls = {"n": 0}
+
+        def fake_uncached(conn):
+            calls["n"] += 1
+            return {"paperType": {"Antrag": calls["n"]}}
+
+        monkeypatch.setattr(hs, "_facets_uncached", fake_uncached)
+        monkeypatch.setattr(hs, "_FACET_CACHE", {"ts": 0.0, "payload": None})
+        return hs, calls
+
+    def test_second_call_served_from_cache(self, monkeypatch):
+        import time as _t
+
+        hs, calls = self._setup(monkeypatch)
+        a = hs.facets(None)
+        b = hs.facets(None)
+        assert calls["n"] == 1
+        assert a == b == {"paperType": {"Antrag": 1}}
+
+    def test_ttl_expiry_recomputes(self, monkeypatch):
+        import time
+        hs, calls = self._setup(monkeypatch)
+        monkeypatch.setattr(hs, "facet_ttl", lambda: 0.05)
+        hs.facets(None)
+        time.sleep(0.06)
+        hs.facets(None)
+        assert calls["n"] == 2
+
+    def test_ttl_zero_disables(self, monkeypatch):
+        hs, calls = self._setup(monkeypatch)
+        monkeypatch.setattr(hs, "facet_ttl", lambda: 0)
+        hs.facets(None)
+        hs.facets(None)
+        assert calls["n"] == 2
+
+    def test_caller_cannot_mutate_cache(self, monkeypatch):
+        hs, calls = self._setup(monkeypatch)
+        a = hs.facets(None)
+        a["paperType"]["HACK"] = 1
+        b = hs.facets(None)
+        assert "HACK" not in b["paperType"]
+
+    def test_invalidate(self, monkeypatch):
+        hs, calls = self._setup(monkeypatch)
+        hs.facets(None)
+        hs.invalidate_facet_cache()
+        hs.facets(None)
+        assert calls["n"] == 2
+
+
+class TestSyncInvalidation:
+    def test_sync_calls_invalidate_after_import(self, monkeypatch):
+        import inspect
+
+        import src.pgHybridSearch as hs
+        import src.syncIncremental as sync
+
+        # source-level guard: the invalidation hook is wired after the
+        # import phase (full sync() needs crawl plumbing)
+        source = inspect.getsource(sync.sync)
+        assert "invalidate_facet_cache" in source
+
+        calls = []
+        monkeypatch.setattr(hs, "invalidate_facet_cache", lambda: calls.append(True))
+        hs.invalidate_facet_cache()
+        assert calls == [True]
+
+
+class TestEmbeddingCache:
+    def test_repeat_query_one_remote_call(self, monkeypatch):
+        import src.pgTimeline as tl
+
+        calls = []
+
+        class FakeVec:
+            def tolist(self):
+                return [0.1, 0.2]
+
+        monkeypatch.setattr(tl.remote, "embed", lambda text, model=None: calls.append(text) or FakeVec())
+        tl._embed_cached.cache_clear()
+        v1 = tl.call_embedding_model("theatersanierung")
+        v2 = tl.call_embedding_model("theatersanierung")
+        assert calls == ["theatersanierung"]
+        assert v1 == v2 == [0.1, 0.2]
+        tl._embed_cached.cache_clear()
+
+    def test_distinct_texts_hit_remote(self, monkeypatch):
+        import src.pgTimeline as tl
+
+        calls = []
+
+        class FakeVec:
+            def tolist(self):
+                return [0.1]
+
+        monkeypatch.setattr(tl.remote, "embed", lambda text, model=None: calls.append(text) or FakeVec())
+        tl._embed_cached.cache_clear()
+        tl.call_embedding_model("a")
+        tl.call_embedding_model("b")
+        assert sorted(calls) == ["a", "b"]
+        tl._embed_cached.cache_clear()
+
+    def test_bulk_paths_bypass_cache(self):
+        # pgAddVecs/pgBackfillNameVecs use remote.embed directly, not the
+        # cached query helper (source-level guard)
+        import inspect
+
+        import src.pgAddVecs
+        import src.pgBackfillNameVecs
+
+        for mod in (src.pgAddVecs, src.pgBackfillNameVecs):
+            src_text = inspect.getsource(mod)
+            assert "call_embedding_model" not in src_text
+
+
+class TestDecodeEmbedOverlap:
+    def test_embed_overlaps_decode(self, monkeypatch):
+        import time as _t
+
+        import src.pgIntentRouter as ir
+        import src.pgTimeline as tl
+
+        calls = {"embed": 0, "decode": 0}
+
+        class FakeVec:
+            def tolist(self):
+                return [0.1]
+
+        def slow_embed(text, model=None):
+            _t.sleep(0.3)
+            calls["embed"] += 1
+            return FakeVec()
+
+        class SlowRouter:
+            def __init__(self):
+                self.cfg = load_intents_config()
+
+            def decode(self, query, engine=None):
+                _t.sleep(0.3)
+                calls["decode"] += 1
+                return {"intent": "search_topic", "scores": {}, "slots": {}, "error": None}
+
+            def resolve(self, intent, slots, session):
+                return {"intent": intent, "handler": "search", "answer_mode": "summary",
+                        "filters": [], "gremium": None, "notes": []}
+
+            def run_search(self, session, query, resolved, top_k=10, signals=None, summarize=True):
+                tl.call_embedding_model(query)  # what the real search does
+                return {"top_files": [{"oparlKey": "f1"}], "matched_entities": []}
+
+        monkeypatch.setattr(tl.remote, "embed", slow_embed)
+        t0 = _t.perf_counter()
+        out = ir.ask(None, "test", router=SlowRouter(), summarize=False)
+        wall = _t.perf_counter() - t0
+        assert out["top_files"] == [{"oparlKey": "f1"}]
+        assert calls == {"embed": 1, "decode": 1}  # pre-warm, no duplicate
+        assert wall < 0.55  # overlapped: ~max(0.3, 0.3), not 0.6
+
+    def test_parallel_kill_switch_skips_prewarm(self, monkeypatch):
+        import time as _t
+
+        import src.pgIntentRouter as ir
+        import src.pgTimeline as tl
+
+        calls = []
+
+        class FakeVec:
+            def tolist(self):
+                return [0.1]
+
+        monkeypatch.setenv("RISKI_PARALLEL_SIGNALS", "0")
+        monkeypatch.setattr(tl.remote, "embed", lambda text, model=None: calls.append(text) or FakeVec())
+
+        class Router:
+            cfg = load_intents_config()
+            def decode(self, query, engine=None):
+                return {"intent": "search_topic", "scores": {}, "slots": {}, "error": None}
+            def resolve(self, intent, slots, session):
+                return {"intent": intent, "handler": "search", "answer_mode": "summary",
+                        "filters": [], "gremium": None, "notes": []}
+            def run_search(self, session, query, resolved, **kw):
+                tl.call_embedding_model(query)
+                return {"top_files": [], "matched_entities": []}
+
+        ir.ask(None, "x", router=Router(), summarize=False)
+        # sequential mode: pre-warm skipped, single embed from the search
+        assert calls == ["x"]

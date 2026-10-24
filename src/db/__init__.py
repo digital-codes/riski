@@ -84,7 +84,13 @@ def get_engine(url: str | None = None, readonly: bool = False) -> Engine:
         url = POSTGRES_RO_URL if readonly else POSTGRES_URL
     engine = _engines.get(url)
     if engine is None:
-        engine = create_engine(url, pool_pre_ping=True, future=True)
+        kwargs = {"pool_pre_ping": True, "future": True}
+        # pool sized for the hybrid-recall fan-out (up to 12 concurrent
+        # per-signal queries per request, change: api-latency-optimization);
+        # PostgreSQL-only — SQLite test URLs use incompatible pool classes
+        if url.startswith("postgresql"):
+            kwargs.update(pool_size=16, max_overflow=8)
+        engine = create_engine(url, **kwargs)
         _engines[url] = engine
         if not readonly:
             Session.configure(bind=engine)

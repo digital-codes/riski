@@ -216,7 +216,10 @@ def lexical_candidates(
     )
     for f in extra_where or []:
         stmt = stmt.where(f)
-    stmt = stmt.order_by(sa.desc("sim")).limit(limit)
+    # deterministic tie-break on oparlKey: identical scores (duplicate
+    # names / identical vectors) must order identically across runs and
+    # connections (change: api-latency-optimization, parity requirement)
+    stmt = stmt.order_by(sa.desc("sim"), sa.asc(tbl.c.oparlKey)).limit(limit)
     return [(row.oparlKey, row[1], float(row.sim)) for row in conn.execute(stmt)]
 
 
@@ -254,7 +257,7 @@ def name_vector_candidates(
     for f in extra_where or []:
         item_keys = item_keys.where(f)
     stmt = stmt.where(vec.c.oparl_key.in_(item_keys.scalar_subquery()))
-    stmt = stmt.order_by(sa.asc("distance")).limit(limit)
+    stmt = stmt.order_by(sa.asc("distance"), sa.asc(vec.c.oparl_key)).limit(limit)
     return [(row.oparl_key, float(row.distance)) for row in conn.execute(stmt)]
 
 
@@ -284,7 +287,7 @@ def content_vector_candidates(
         stmt = stmt.join(file_tbl, emb.c.oparlKey == file_tbl.c.oparlKey)
     for f in extra_where or []:
         stmt = stmt.where(f)
-    stmt = stmt.order_by(sa.asc("distance")).limit(limit)
+    stmt = stmt.order_by(sa.asc("distance"), sa.asc(emb.c.oparlKey)).limit(limit)
     return [(row.oparlKey, float(row.distance)) for row in conn.execute(stmt)]
 
 
@@ -458,10 +461,50 @@ def _keys_for_facet(conn, table: str, f: Dict[str, Any]) -> Optional[set]:
 
 
 # ----------------------------------------------------------------------
-# Facet listing (task 4.5)
+# Facet listing (task 4.5) + TTL cache (change: api-latency-optimization)
 # ----------------------------------------------------------------------
+_FACET_CACHE: Dict[str, Any] = {"ts": 0.0, "payload": None}
+FACET_TTL_DEFAULT = 600.0  # seconds
+
+
+def facet_ttl() -> float:
+    """TTL for the facet cache (env ``RISKI_FACET_TTL``, 0 disables)."""
+    try:
+        return float(os.getenv("RISKI_FACET_TTL", str(FACET_TTL_DEFAULT)))
+    except ValueError:
+        return FACET_TTL_DEFAULT
+
+
+def invalidate_facet_cache() -> None:
+    """Drop the cached facet listing (called after data syncs)."""
+    _FACET_CACHE["ts"] = 0.0
+    _FACET_CACHE["payload"] = None
+
+
 @timed
 def facets(conn) -> Dict[str, Any]:
+    """Available filter values with counts, to drive UI dropdowns.
+
+    Cached with a TTL (``RISKI_FACET_TTL``, default 10 min, 0 disables):
+    /facets and the per-search facet block share the cache; invalidated
+    by :func:`invalidate_facet_cache` after pipeline imports."""
+    ttl = facet_ttl()
+    if ttl <= 0:
+        return _facets_uncached(conn)
+    import copy
+    import time as _time
+
+    now = _time.time()
+    payload = _FACET_CACHE["payload"]
+    if payload is not None and now - _FACET_CACHE["ts"] < ttl:
+        return copy.deepcopy(payload)
+    payload = _facets_uncached(conn)
+    _FACET_CACHE["ts"] = now
+    _FACET_CACHE["payload"] = payload
+    return copy.deepcopy(payload)
+
+
+def _facets_uncached(conn) -> Dict[str, Any]:
     """Available filter values with counts, to drive UI dropdowns."""
     out: Dict[str, Any] = {}
     meta = MetaData()
@@ -525,6 +568,102 @@ def facets(conn) -> Dict[str, Any]:
 # ----------------------------------------------------------------------
 # Hybrid candidate generation (tasks 4.2/4.3 wiring)
 # ----------------------------------------------------------------------
+# change: api-latency-optimization — the per-table/per-signal recall
+# queries are independent read-only waits and run concurrently on a
+# bounded pool; results merge in the same deterministic table order as
+# the sequential path (parity is asserted by the integration test).
+# Kill switch: RISKI_PARALLEL_SIGNALS=0 restores the sequential path.
+_HYBRID_EXECUTOR = None
+
+
+def _hybrid_executor():
+    global _HYBRID_EXECUTOR
+    if _HYBRID_EXECUTOR is None:
+        from concurrent.futures import ThreadPoolExecutor
+
+        _HYBRID_EXECUTOR = ThreadPoolExecutor(
+            max_workers=12, thread_name_prefix="hybrid"
+        )
+    return _HYBRID_EXECUTOR
+
+
+def _parallel_signals_enabled() -> bool:
+    import os as _os
+
+    return _os.getenv("RISKI_PARALLEL_SIGNALS", "1").strip().lower() not in {
+        "0", "false", "no", "off",
+    }
+
+
+def _run_all(tasks: List):
+    """Run (name, callable) tasks; returns results in submission order.
+    Concurrent on the bounded pool, or sequentially when disabled. A
+    failing task yields None for its slot instead of failing the batch."""
+    tasks = [(name, fn) for name, fn in tasks]
+    if _parallel_signals_enabled():
+        futures = [(name, _hybrid_executor().submit(fn)) for name, fn in tasks]
+        out = []
+        for _name, fut in futures:
+            try:
+                out.append(fut.result())
+            except Exception as exc:  # noqa: BLE001 - degrade per task
+                import logging
+
+                logging.getLogger("riski.hybrid").warning(
+                    "hybrid task %s failed: %s", _name, exc
+                )
+                out.append(None)
+        return out
+    out = []
+    for name, fn in tasks:
+        try:
+            out.append(fn())
+        except Exception as exc:  # noqa: BLE001
+            import logging
+
+            logging.getLogger("riski.hybrid").warning(
+                "hybrid task %s failed: %s", name, exc
+            )
+            out.append(None)
+    return out
+
+
+def _table_recall(conn, table, query, nv_embedding, query_embedding,
+                  per_signal, parsed, stop_terms,
+                  use_lexical, use_name_vecs, use_content):
+    """Per-table recall task: own connection, filters, signals, fusion and
+    provenance assembly. Returns (table, fused, required, lex, nv, vc,
+    nv_dist, vc_dist, names) or raises."""
+    tbl = Table(table, MetaData(), autoload_with=conn)
+    extra, required = build_candidate_filters(tbl, parsed, conn)
+
+    lex: List[str] = []
+    if use_lexical:
+        with timed_block(f"hybrid.lexical[{table}]"):
+            lex = [k for k, _n, _s in lexical_candidates(
+                conn, query, tbl, per_signal, extra_where=extra, stop_terms=stop_terms)]
+    nv: List[str] = []
+    nv_dist: Dict[str, float] = {}
+    if use_name_vecs:
+        with timed_block(f"hybrid.name_vecs[{table}]"):
+            pairs = name_vector_candidates(conn, nv_embedding, tbl, per_signal, extra_where=None)
+            nv = [k for k, _d in pairs]
+            nv_dist = dict(pairs)
+    vc: List[str] = []
+    vc_dist: Dict[str, float] = {}
+    if use_content and table == "File":
+        with timed_block(f"hybrid.content_vecs[{table}]"):
+            pairs = content_vector_candidates(
+                conn, query_embedding, per_signal, extra_where=extra, file_tbl=tbl
+            )
+            vc = [k for k, _d in pairs]
+            vc_dist = dict(pairs)
+
+    fused = rrf_fuse([l for l in (lex, nv, vc) if l])
+    names = _names_for(conn, tbl, list(fused)[: per_signal * 2])
+    return table, fused, required, lex, nv, vc, nv_dist, vc_dist, names
+
+
 @timed
 def hybrid_candidates(
     conn,
@@ -561,34 +700,24 @@ def hybrid_candidates(
     file_fused: Dict[str, float] = {}
     file_signals: Dict[str, Dict[str, Any]] = {}
 
-    shared_meta = MetaData()
+    engine = conn.engine
+    tasks = []
     for table in CANDIDATE_TABLES:
-        tbl = Table(table, shared_meta, autoload_with=conn)
-        extra, required = build_candidate_filters(tbl, parsed, conn)
-
-        lex: List[str] = []
-        if use_lexical:
-            with timed_block(f"hybrid.lexical[{table}]"):
-                lex = [k for k, _n, _s in lexical_candidates(
-                    conn, query, tbl, per_signal, extra_where=extra, stop_terms=stop_terms)]
-        nv: List[str] = []
-        nv_dist: Dict[str, float] = {}
-        if use_name_vecs:
-            with timed_block(f"hybrid.name_vecs[{table}]"):
-                pairs = name_vector_candidates(conn, nv_embedding, tbl, per_signal, extra_where=None)
-                nv = [k for k, _d in pairs]
-                nv_dist = dict(pairs)
-        vc: List[str] = []
-        vc_dist: Dict[str, float] = {}
-        if use_content and table == "File":
-            with timed_block(f"hybrid.content_vecs[{table}]"):
-                pairs = content_vector_candidates(
-                    conn, query_embedding, per_signal, extra_where=extra, file_tbl=tbl
+        def _task(table=table):
+            with engine.connect() as task_conn:
+                return _table_recall(
+                    task_conn, table, query, nv_embedding, query_embedding,
+                    per_signal, parsed, stop_terms,
+                    use_lexical, use_name_vecs, use_content,
                 )
-                vc = [k for k, _d in pairs]
-                vc_dist = dict(pairs)
+        tasks.append((f"recall[{table}]", _task))
 
-        fused = rrf_fuse([l for l in (lex, nv, vc) if l])
+    results = _run_all(tasks)
+
+    for result in results:  # submission order == CANDIDATE_TABLES order
+        if result is None:
+            continue  # task failed: that table contributes nothing
+        (table, fused, required, lex, nv, vc, nv_dist, vc_dist, names) = result
         if required is not None:
             fused = {k: v for k, v in fused.items() if k in required}
         if not fused:
@@ -597,7 +726,6 @@ def hybrid_candidates(
         # per-candidate signal provenance: which signals found it, with the
         # distance where the signal provides one (lower = better)
         lex_set, nv_set, vc_set = set(lex), set(nv), set(vc)
-        names = _names_for(conn, tbl, list(fused)[: per_signal * 2])
         for oparl_key, score in fused.items():
             signals_hit: Dict[str, Any] = {}
             if oparl_key in lex_set:

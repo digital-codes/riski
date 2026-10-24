@@ -77,6 +77,15 @@ def sync(system_url: str = SYSTEM_URL,
         recorder.finish(success=False)
         return 1
 
+    # New data landed: drop the search API's cached facet aggregates
+    # (change: api-latency-optimization)
+    try:
+        from src.pgHybridSearch import invalidate_facet_cache
+        invalidate_facet_cache()
+        logger.info("Facet cache invalidated after import.")
+    except Exception:  # noqa: BLE001 - cache invalidation is best-effort
+        logger.warning("Could not invalidate facet cache.", exc_info=True)
+
     # Both phases succeeded: finalise the run with the advanced end state
     # (crawl_oparl has already set it to the latest timestamp seen).
     recorder.finish(success=True)

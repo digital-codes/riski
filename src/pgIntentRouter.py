@@ -723,9 +723,32 @@ def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
         signals: Optional[Dict[str, bool]] = None,
         summarize: bool = True) -> Dict[str, Any]:
     """Convenience entry point for the /ask endpoint: decode + resolve +
-    execute in one call."""
+    execute in one call.
+
+    The query-embedding fetch and the decision-model decode are
+    independent network waits — the embedding is pre-warmed on the
+    parallel pool while the decoder runs (change:
+    api-latency-optimization, task 4.1)."""
     router = router or IntentRouter(cfg=cfg)
+
+    prewarm = None
+    if _parallel_enabled():
+        try:
+            from src.pgHybridSearch import _hybrid_executor
+            from src.pgTimeline import call_embedding_model
+
+            prewarm = _hybrid_executor().submit(call_embedding_model, query)
+        except Exception:  # noqa: BLE001 - pre-warm is best-effort
+            prewarm = None
+
     decoded = router.decode(query)
+
+    if prewarm is not None:
+        try:
+            prewarm.result(timeout=60)
+        except Exception:  # noqa: BLE001 - search path embeds on its own
+            pass
+
     resolved = router.resolve(decoded["intent"], decoded.get("slots") or {}, session)
     result = router.run_search(session, query, resolved, top_k=top_k,
                                signals=signals, summarize=summarize)
@@ -736,3 +759,11 @@ def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
         ]
     result["slots"] = decoded.get("slots") or {}
     return result
+
+
+def _parallel_enabled() -> bool:
+    import os
+
+    return os.getenv("RISKI_PARALLEL_SIGNALS", "1").strip().lower() not in {
+        "0", "false", "no", "off",
+    }
