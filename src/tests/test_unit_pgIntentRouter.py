@@ -8,6 +8,7 @@ import types
 
 import pytest
 
+import src.pgIntentRouter as ir
 from src.pgIntentRouter import (
     IntentRouter,
     SystemOneDecoder,
@@ -549,3 +550,38 @@ class TestDecodeEmbedOverlap:
         ir.ask(None, "x", router=Router(), summarize=False)
         # sequential mode: pre-warm skipped, single embed from the search
         assert calls == ["x"]
+
+
+class TestDecoderTimeout:
+    def test_default_is_generous(self):
+        import src.pgIntentRouter as ir
+
+        assert ir.DEFAULT_SYSONE_TIMEOUT >= 120.0
+
+    def test_env_timeout_override(self, monkeypatch):
+        monkeypatch.setenv("SYSONE_TIMEOUT", "45")
+        d = ir.SystemOneDecoder(url="http://x/v1/systemone", model="m")
+        assert d.timeout == 45.0
+
+    def test_private_attr_timeout(self, monkeypatch):
+        monkeypatch.delenv("SYSONE_TIMEOUT", raising=False)
+        import src.private as pr
+
+        monkeypatch.setattr(pr, "SYSONE_TIMEOUT", 77.0, raising=False)
+        d = ir.SystemOneDecoder(url="http://x/v1/systemone", model="m")
+        assert d.timeout == 77.0
+
+    def test_explicit_argument_wins(self, monkeypatch):
+        monkeypatch.setenv("SYSONE_TIMEOUT", "45")
+        d = ir.SystemOneDecoder(url="http://x/v1/systemone", model="m", timeout=10)
+        assert d.timeout == 10.0
+
+    def test_timeout_degrades_to_fallback(self, cfg):
+        class SlowDecoder:
+            def decode(self, *a, **k):
+                raise __import__("httpx").ReadTimeout("timed out")
+
+        router = ir.IntentRouter(cfg=cfg, decoder=SlowDecoder())
+        out = router.decode("x")
+        assert out["intent"] == "search_topic"
+        assert "timed out" in out["error"]

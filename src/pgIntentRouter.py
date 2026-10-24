@@ -36,7 +36,7 @@ from src.db import get_engine
 CONFIG_PATH = Path(__file__).parent.parent / "config" / "intents.yaml"
 DEFAULT_FALLBACK_INTENT = "search_topic"
 DEFAULT_THRESHOLD = 0.5
-DEFAULT_SYSONE_TIMEOUT = 30.0
+DEFAULT_SYSONE_TIMEOUT = 120.0  # slow boxes / model cold starts
 
 
 # ----------------------------------------------------------------------
@@ -225,31 +225,58 @@ def parse_answers(cfg: Dict[str, Any], answers: Dict[str, Any],
 
 
 class SystemOneDecoder:
-    """Thin sync client for the SystemOne decision-model endpoint."""
+    """Thin sync client for the SystemOne decision-model endpoint.
+
+    Timeout (seconds) resolution: explicit argument > env ``SYSONE_TIMEOUT``
+    > ``private.py`` ``SYSONE_TIMEOUT`` > default. The default is generous
+    because small decision models on slow boxes (or first-load model
+    startup) can take a while; a connect timeout bounds the wait when the
+    endpoint is simply down. On timeout the client is closed cleanly so no
+    half-open connection lingers."""
 
     def __init__(self, url: Optional[str] = None, model: Optional[str] = None,
-                 key: Optional[str] = None, timeout: float = DEFAULT_SYSONE_TIMEOUT):
+                 key: Optional[str] = None, timeout: Optional[float] = None):
+        import os
+
         import src.private as pr
 
         self.url = url or getattr(pr, "SYSONE_URL", None)
         self.model = model or getattr(pr, "SYSONE_MDL", None)
         self.key = key or getattr(pr, "SYSONE_KEY", None)
-        self.timeout = timeout
+        if timeout is not None:
+            self.timeout = timeout
+        else:
+            env_timeout = os.getenv("SYSONE_TIMEOUT")
+            if env_timeout:
+                try:
+                    self.timeout = float(env_timeout)
+                except ValueError:
+                    self.timeout = DEFAULT_SYSONE_TIMEOUT
+            else:
+                self.timeout = float(
+                    getattr(pr, "SYSONE_TIMEOUT", DEFAULT_SYSONE_TIMEOUT)
+                )
         if not self.url or not self.model:
             raise DecoderError("SYSONE_URL / SYSONE_MDL not configured")
 
     def decode(self, query: str, cfg: Dict[str, Any],
                gremium_vocab: List[str]) -> Dict[str, Any]:
-        """One round-trip: intent (noul per intent) + slot questions."""
+        """One round-trip: intent (noul per intent) + slot questions.
+
+        Uses an explicit client so the connection (and its pool) is closed
+        deterministically — including on timeout — instead of leaving the
+        request dangling."""
         payload = {
             "model": self.model,
             "state": normalize_value(query),
             "questions": build_questions(cfg, gremium_vocab),
         }
         headers = {"Authorization": f"Bearer {self.key}"} if self.key else {}
-        resp = httpx.post(self.url, json=payload, timeout=self.timeout, headers=headers)
-        resp.raise_for_status()
-        data = resp.json()
+        timeout = httpx.Timeout(self.timeout, connect=min(15.0, self.timeout))
+        with httpx.Client(timeout=timeout) as client:
+            resp = client.post(self.url, json=payload, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
         return parse_answers(cfg, data.get("answers", {}), gremium_vocab)
 
 
