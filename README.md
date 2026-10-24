@@ -141,7 +141,18 @@ outputs, `pgAddFileGeoRefs`/street/district refs preload existing pairs,
 - The canonical data dirs (`/mnt_ai/data/odd26/ris/ko*`) are owned by the
   `kugel` user; steps 2–3 write markdown there and must run as that user
   (or with `--out-dir`/`--dst-dir` pointed at a writable mirror that is
-  copied back afterwards).
+  copied back afterwards), e.g. when running as `agent`:
+
+  ```bash
+  # steps 2–3 with a writable mirror
+  python src/pgOcr.py --out-dir /home/agent/ris_update/ko_extracted_new
+  python src/pgSummarize.py --src-dir /mnt_ai/data/odd26/ris/ko_extracted \
+                            --dst-dir /home/agent/ris_update/ko_sums_new
+  # copy the new markdown into the canonical folders (as kugel, or with
+  # write permission) — the DB is populated from the mirrors either way
+  cp /home/agent/ris_update/ko_extracted_new/*.md /mnt_ai/data/odd26/ris/ko_extracted/
+  cp /home/agent/ris_update/ko_sums_new/*.md      /mnt_ai/data/odd26/ris/ko_sums/
+  ```
 - File matching in step 4 works on the numeric filename stem
   (`00030895.md` ↔ `File.filename = "00030895.pdf"`); files without a
   markdown source keep `content IS NULL` (they are skipped by search).
