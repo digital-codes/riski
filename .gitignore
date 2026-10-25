@@ -375,3 +375,4 @@ search_results_*.json
 
 # local analysis notes (not for git)
 docs/20261023-hermes/
+docs/geo-gate-apply-*.md
