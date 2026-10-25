@@ -1,6 +1,6 @@
 """Georeference matching for Files (change: add-map-view, task 4.1/4.2).
 
-Links streets and districts to Files whose `name` or `teaser` mentions
+Links streets and districts to Files whose `name` or `content` mentions
 them (boundary-valid literal matching, same rules as the agenda-item geo
 refs in `pgAddStreetRefs`/`pgAddDistrictRefs` via `local_geo_matching`).
 
@@ -69,15 +69,23 @@ def _load_entities(engine, table: str):
         return conn.execute(select(tbl.c.id, tbl.c.name)).all()
 
 
-def _iter_files(engine, limit: int | None, batch_size: int = 2000):
-    """Yield (file_sid, name, teaser) batches."""
+def _iter_files(engine, limit: int, batch_size: int = 500):
+    """Yield (file_sid, name, content) batches.
+
+    change: geo-gating ops review — matching runs over File **content**
+    (the markdown-derived full text), not the teaser. The teaser-based
+    matching was a divergence from the original design (pre-teaser code
+    matched the full text; teasers only cover the content start, which is
+    exactly where the Briefkopf addresses live). Content is the more
+    complete reference and the gate's authoritative field. Smaller batches:
+    content rows are ~8 KB each."""
     md = MetaData()
     f = Table("File", md, autoload_with=engine)
     last_sid = 0
     with engine.connect() as conn:
         while True:
             stmt = (
-                select(f.c.sid, f.c.name, f.c.teaser)
+                select(f.c.sid, f.c.name, f.c.content)
                 .where(f.c.sid > last_sid)
                 .order_by(f.c.sid)
                 .limit(batch_size)
@@ -104,7 +112,7 @@ _VENUE_NOISE = re.compile(
 
 def match_files(engine, limit: int | None = None, dry_run: bool = False,
                 rebuild: bool = False, gate: bool = True) -> dict:
-    """Match street/district names against File name + teaser, write the
+    """Match street/district names against File name + content, write the
     file geo association tables. Idempotent: existing (entity, file) pairs
     are skipped. With *rebuild*, the tables are wiped first — use after a
     matching-mechanism change so no stale mixture persists.
@@ -197,11 +205,11 @@ def match_files(engine, limit: int | None = None, dry_run: bool = False,
         gated_new.update({name: [] for name in matchers})
 
     for batch in _iter_files(engine, limit):
-        for file_sid, name, teaser in batch:
+        for file_sid, name, content in batch:
             scanned += 1
             # venue boilerplate first: "Bürgersaal, Rathaus am Marktplatz"
             # appears in every protocol teaser and must not create links
-            text_ = _VENUE_NOISE.sub("", f"{name or ''}\n{teaser or ''}")
+            text_ = _VENUE_NOISE.sub("", f"{name or ''}\n{content or ''}")
             if len(text_) < 3:
                 continue
             name_field = name or ""
@@ -216,7 +224,7 @@ def match_files(engine, limit: int | None = None, dry_run: bool = False,
                     matched += 1
                     # evidence: where the reference was found, with context —
                     # so the reason for a link stays visible in the table
-                    source = "name" if literal_name_spans(name_field, match.name) else "teaser"
+                    source = "name" if literal_name_spans(name_field, match.name) else "content"
                     evidence = _match_evidence(text_, match.name) or match.name
                     pending[assoc_name].append(
                         {m["entity_col"]: match.item_id, "file_id": file_sid,

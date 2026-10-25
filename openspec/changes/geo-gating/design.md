@@ -2,16 +2,21 @@
 
 ## Context
 
-Geo file links are produced by `pgAddFileGeoRefs.match_files`: a literal,
-boundary-aware matcher over `File.name + teaser` (the `_VENUE_NOISE`
+Geo file links are produced by `pgAddFileGeoRefs.match_files`. **Amended
+after ops review**: matching runs over `File.name + content` (the
+markdown-derived full text) — the teaser-based matching was a divergence
+from the original pre-teaser design; content is the more complete
+reference and the gate's authoritative field. The literal,
+boundary-aware matcher works over that text (the `_VENUE_NOISE`
 regex already strips the known "Rathaus am Marktplatz" boilerplate — the
 address-block problem is the same *class* of defect, but too varied for a
 regex). Teasers are built from the content start (`pgTeasers`), and
 council documents begin with a Briefkopf — sender/recipient address blocks
 ("SPD-Fraktion Karlsruhe, Hebelstraße …", "Landratsamt Karlsruhe,
-Beiertheimer Allee 2 …"). The matcher therefore links address streets.
-`File.content` (≤ 8000 chars, the markdown-derived text) is available per
-file and gives the LLM enough context to distinguish header from body.
+Beiertheimer Allee 2 …"). Matching on content therefore still needs the
+gate: addresses live in the content's Briefkopf too. `File.content`
+(≤ 8000 chars) is simultaneously the match text and the gate's context —
+one field, consistent decisions.
 
 Agenda-item links (`pgAddStreetRefs`/`pgAddDistrictRefs`) match item names
 — much shorter, but item titles like "Antrag der SPD-Fraktion" can still
@@ -154,7 +159,10 @@ the graph but not yet in `summary_files` (summary not yet run) are *shown*
 `collect_geo` additionally filters `gate_status <> 'boilerplate'` (D4).
 
 **D6 — Cleanup (`src/pgGeoGateCleanup.py`).**
-Iterates association rows with `gate_status IS NULL` in batches
+After the content-based rebuild the file-link inventory is new and gets
+gated at write time; the cleanup's remaining roles are the agenda-item
+links and any rows the gate could not classify. It iterates rows with
+`gate_status IS NULL` in batches
 (`--batch 50` documents), loads `File.content`, builds mentions from the
 `name_match` evidence column (format `[source] evidence`), gates, writes
 verdicts. Flags: `--dry-run` (report verdict distribution without

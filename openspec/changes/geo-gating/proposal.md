@@ -30,6 +30,9 @@ für Digitalisierung bei der Stadt Karlsruhe":
   their match context. Verdicts stored on the association rows:
   `gate_status` (`content` | `boilerplate` | `unsure`), `gate_reason`,
   `gated_at`, `gate_model`.
+- **Match on content** — `pgAddFileGeoRefs` matches `File.name + content`
+  (divergence fixed: the original pre-teaser design matched the full
+  text); a `--rebuild` re-derives the link inventory from content.
 - **Gate at write time** — `pgAddFileGeoRefs.match_files` (and the
   agenda-item ref creators `pgAddStreetRefs` / `pgAddDistrictRefs`) consult
   the gate for newly created links; `boilerplate` links are never shown.

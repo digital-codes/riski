@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 15608 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 104, "boilerplate": 56, "unsure": 0, "error": 0} (of 15608 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 597, "boilerplate": 73, "unsure": 0, "error": 0} (of 15608 rows)
 
-### Removal candidates so far (56):
+### Removal candidates so far (73):
 - Farnweg ← Anfrage Mai 2023 Dach Aussegnungshalle PV Anlage [[teaser] …halle PV Anlage CDU-Fraktion  im Ortschaftsrat  Stupferich  Farnweg 1 76228 Karlsruhe  CDU-Fraktion im Ortscha]
   reason: Die Straße wird ausschließlich in der Absenderadresse der CDU-Fraktion genannt, nicht im inhaltlichen Haupttext der Anfrage.
   context:
@@ -235,3 +235,87 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
   reason: Die Straße wird ausschließlich in der Absenderadresse der Fraktion genannt, nicht im inhaltlichen Haupttext.
   context:
     GRÜNE Gemeinderatsfraktion, Hebelstraße 13, 76133 Karlsruhe
+- Hebelstraße ← Antrag Linke_030 [[teaser] …Antrag Linke_030 Die Linke, mit Sitz in Karlsruhe (Hebelstraße 21, 76133), richtet einen Antrag an den Oberbür]
+  reason: Die Straße wird ausschließlich in der Absenderadresse der Antragstellerin genannt, nicht im inhaltlichen Haupttext.
+  context:
+    Die Linke, Hebelstraße 21, 76133 Karlsruhe
+- Hebelstraße ← Anträge 354-355 SPD GRÜNE Stadtjugendausschuss Ausweitung Ferienangebote [[teaser] …e  **1. Autor der Präsentation:** SPD-Gemeinderatsfraktion, Hebelstraße 13, 76133 Karlsruhe; GRÜNE-Gemeinderat]
+  reason: Die Straße wird ausschließlich in den Absenderangaben der Fraktionen genannt, nicht im inhaltlichen Haupttext.
+  context:
+    **1. Autor der Präsentation:** SPD-Gemeinderatsfraktion, Hebelstraße 13, 76133 Karlsruhe; GRÜNE-Gemeinderatsfraktion, Hebelstraße 13, 76133 Karlsruhe
+- Markgrafenstraße ← Anlage A_1_Lebensraeume_final [[teaser] …## Auftraggeber: Stadt Karlsruhe  Umwelt und Arbeitsschutz  Markgrafenstraße 14  76124 Karlsruhe  0 500 1.000 ]
+  reason: Die Straße wird ausschließlich im Adressblock des Auftraggebers genannt, nicht im inhaltlichen Haupttext.
+  context:
+    Markgrafenstraße 14
+- Henriette-Obermüller-Straße ← Protokoll TOP 29 [[teaser] …, 15:30 Uhr öffentlich Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe Vorsitze]
+  reason: Die Straße wird nur als Veranstaltungsort im Metadatenbereich (Ort der Sitzung) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    öffentlich
+    Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe
+    Vorsitzende/r: Oberbürgermeister Dr. Frank Mentrup
+- Hebelstraße ← Antrag Nr. 38 AfD - KEK Zuschüsse streichen [[teaser] …Antrag Nr. 38 AfD - KEK Zuschüsse streichen 38 AFD, Hebelstraße 13, 76133 Karlsruhe Herrn Oberbürgermeister Dr]
+  reason: Die Hebelstraße wird ausschließlich in der Absenderadresse der AfD-Fraktion genannt, nicht im inhaltlichen Haupttext des Antrags.
+  context:
+    38
+    AFD, Hebelstraße 13, 76133 Karlsruhe
+    Herrn Oberbürgermeister
+- Welfenstraße ← Anlage Einwohnerantrag [[teaser] …an folgende Adresse schicken:  ADFC Kreisverband Karlsruhe, Welfenstraße 13, 76137 Karlsruhe  # VERTRAUENSPERS]
+  reason: Straße wird ausschließlich in der Absenderadresse des Antragstellers genannt.
+  context:
+    ADFC Kreisverband Karlsruhe, Welfenstraße 13, 76137 Karlsruhe
+- Ostendstraße ← TOP 2 Anlage 2_Abgrenzung_Sanierungsgebiet [[teaser] …el Freier Stadtplaner BDA, SRL Freier Landschaftsarchitekt  Ostendstraße 106 70188 Stuttgart  fen (0711) 411 3]
+  reason: Die Straße wird ausschließlich in der Adresse des externen Planers genannt, nicht im inhaltlichen Teil des Dokuments.
+  context:
+    Ostendstraße 106
+    70188 Stuttgart
+- Saarlandstraße ← Anlage 2 Luftbild [[teaser] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Saarlandstraße 67  |   |   | |  Maßstab: 1:500 bei]
+  reason: Die Straße wird ausschließlich in der Absenderadresse des Liegenschaftsamts genannt, nicht im inhaltlichen Haupttext.
+  context:
+    | --- | --- | --- |
+    |  Saarlandstraße 67  |   |   |
+    |  Maßstab: 1:500 bei DIN A4 | Gemarkung Karlsruhe | Datum: 27.01.2025  |
+- Niddastraße ← Tagesordnung Ausschuss/OV (öffentlich) [[teaser] …uli 2021, 19:00 Uhr,  Saal der Begegnungsstätte Grötzingen, Niddastraße 9, 76229 Karlsruhe  ## Öffentliche Sit]
+  reason: Die Straße wird nur als Veranstaltungsort im Metadaten-Teil der Tagesordnung genannt.
+  context:
+    Saal der Begegnungsstätte Grötzingen, Niddastraße 9, 76229 Karlsruhe
+- Hebelstraße ← Antrag CDU_014 [[teaser] …** 00.00.0000  **Gremium:** Gemeinderatsfraktion der CDU in Hebelstraße, Karlsruhe  **Thema des Berichts:** Po]
+  reason: Die Hebelstraße wird nur im Kontext der Adresse des Gremiums (Absender-Metadaten) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    **Gremium:** Gemeinderatsfraktion der CDU in Hebelstraße, Karlsruhe
+- Steinstraße ← 02Lageplan [[teaser] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Steinstraße  |   |   | |  Maßstab: 1:750 bei DIN A]
+  reason: Die Straße wird ausschließlich im Briefkopf des Liegenschaftsamts genannt, nicht im inhaltlichen Haupttext des Lageplans.
+  context:
+    | --- | --- | --- |
+    |  Steinstraße  |   |   |
+    |  Maßstab: 1:750 bei DIN A4 | Gemarkung Karlsruhe | Datum: 14.07.2023  |
+- Steinstraße ← 03Luftbild [[teaser] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Steinstraße  |   |   | |  Mailstab: 1:750 - bei DI]
+  reason: Die Straße wird ausschließlich im Briefkopf des Liegenschaftsamts der Stadt Karlsruhe genannt, nicht im inhaltlichen Haupttext.
+  context:
+    | --- | --- | --- |
+    |  Steinstraße  |   |   |
+    |  Mailstab: 1:750 - bei DIN AA | Gemarkung Karlsruhe | Datum: 14.07.2023  |
+- Hebelstraße ← Antrag VOLT_012 [[teaser] …rn.  **Verfasser des Berichts:** Volt-Gemeinderatsfraktion, Hebelstraße 21, 76133 Karlsruhe - Fabian Gaukel - ]
+  reason: Die Straße wird ausschließlich in der Absenderadresse der Verfasser des Berichts genannt.
+  context:
+    **Verfasser des Berichts:**
+    Volt-Gemeinderatsfraktion, Hebelstraße 21, 76133 Karlsruhe
+    - Fabian Gaukel
+- Rathausstraße ← TOP 2: Anfrage_CDU_Wettersteinstraße_Original [[teaser] …erwaltung Wolfartsweier z. Hd. H. Ortsvorsteher Anton Huber Rathausstraße 2  76228 Karlsruhe  # Straßenbelag d]
+  reason: Die Straße wird ausschließlich in der Empfängeradresse des Dokuments genannt.
+  context:
+    z. Hd. H. Ortsvorsteher Anton Huber
+    Rathausstraße 2
+- Niddastraße ← TOP 2 Protokollauszug [[teaser] …1 Uhr | Herbert-Schweizer-Haus Begegnungsstätte Grötzingen, Niddastraße 9, 76229 Karlsruhe  | |  Vorsitzende O]
+  reason: Die Straße wird nur als Veranstaltungsort im Metadaten-Bereich des Protokolls genannt.
+  context:
+    |  öffentlich  |   |
+    |  26. Juli 2023, 18 bis 21 Uhr | Herbert-Schweizer-Haus Begegnungsstätte Grötzingen, Niddastraße 9, 76229 Karlsruhe  |
+    |  Vorsitzende Ortsvorsteherin Karen Eßrich  |   |
+- Hebelstraße ← KAL-TOP 246 [[teaser] …KAL-TOP 246 KAL Gemeinderatsfraktion, Hebelstraße 13, 76133 Karlsruhe  Herrn Oberbürgermeister  Heinz Fenrich…]
+  reason: Die Straße wird ausschließlich im Absender-Block der Antragstellerin genannt, nicht im Haupttext des Antrags.
+  context:
+    KAL Gemeinderatsfraktion, Hebelstraße 13, 76133 Karlsruhe
+- Esslinger Straße ← Tagesordnung (öffentlich) Ausschuss/Ortschaftsrat [[teaser] …uli 2024, um 20:30 Uhr im Musiksaal der Heinz-Barth-Schule (Esslinger Straße 2, 76228 Karlsruhe) ein. Die Tage]
+  reason: Die Straße wird ausschließlich als Veranstaltungsort im Metadaten-Bereich (Einladung) genannt, nicht im inhaltlichen Haupttext der Tagesordnung.
+  context:
+    Musiksaal der Heinz-Barth-Schule, Esslinger Straße 2, 76228 Karlsruhe
