@@ -505,6 +505,7 @@ Anything an agent needs to know (test commands, conventions) belongs in
 
 ## Further reading
 
+- `deploy/` — deployment templates with rationale (supervisor unit, apache vhost, crontab, capacity model, rollout checklist); placeholders only — fill against the actual deployment host
 - `docs/` — database DDL, pg reports, street-name data, visualisation notes
 - `docs/20261023-hermes/` — cross-repo analysis of related Karlsruhe-RIS projects
 - `openspec/specs/` — capability specs describing the intended behaviour of each module (`search-api`, `network-view`, `result-summarizer`, `semantic-search`, `data-enrichment`, …)

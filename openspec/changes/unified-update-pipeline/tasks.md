@@ -31,4 +31,4 @@
 ## 5. Documentation
 
 - [x] 5.1 README "Data update workflow" rewritten around `python src/riskiUpdate.py` (flags, criticality/failure semantics, stage ledger, report location) plus a cron example with `flock`, exit-code handling and report path; the manual per-script flow stays as an appendix describing the underlying phases.
-- [ ] 5.2 `openspec validate --changes` passes; archive-ready summary in the change folder.
+- [x] 5.2 `openspec validate --changes` passes; archive-ready summary in the change folder.

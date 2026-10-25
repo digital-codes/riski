@@ -1,0 +1,21 @@
+# Nightly RISKI update pipeline (deployment-config + unified-update-pipeline)
+#
+# Install: merge this entry into the deployment user's crontab
+# (crontab -e); replace <REPO_DIR> with the actual repository path.
+#
+# Contract (see src/riskiUpdate.py docstring):
+# - flock -n: an overlap means yesterday's run is still going — queueing
+#   would only delay it further, so the second invocation exits immediately.
+#   (The pipeline itself also takes the lock; the cron-level flock is the
+#   belt to the app's braces.)
+# - exit codes: 0 = all stages done/empty, 1 = critical failure
+#   (snapshot/sync), 2 = partial success (recorded stage failures).
+# - Mail only on 1/2: the nightly run is expected to heal itself by
+#   retrying; the operator is woken for critical failures and for partial
+#   runs whose poison items need attention. MAILTO must be set.
+# - Off-peak, non-round minute (02:17): avoids backup windows and the
+#   top-of-hour load spike.
+
+MAILTO=<OPERATOR>
+
+17 2 * * * flock -n /tmp/riski-update.lock /usr/bin/python3 <REPO_DIR>/src/riskiUpdate.py >> <REPO_DIR>/update.log 2>&1; code=$?; if [ $code -eq 1 ] || [ $code -eq 2 ]; then echo "riskiUpdate exit=$code — see the report path in the log tail:" && tail -5 <REPO_DIR>/update.log; fi
