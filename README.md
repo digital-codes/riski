@@ -398,6 +398,68 @@ Integration tests run against the real `riski_agentic` database but only touch
 `test_*`-prefixed tables, and skip automatically when credentials or live LLM
 endpoints are unavailable.
 
+## Development
+
+This project is developed with heavy assistance from AI coding agents (see
+the note at the top). The development workflow and its tooling:
+
+### Branches
+
+| Branch | Purpose |
+|---|---|
+| `main` | **Deployed prototype** — the code currently running on the host (supervisor-managed API + cron-era scripts). Merge into it deliberately and only after the test suite passes; deployment follows `main`. |
+| `dev` | **Active development** — default working branch for all changes. Feature branches off `dev` are welcome for larger work; merge back with a clean `python -m pytest src/tests -m unit` run. |
+
+```bash
+git checkout dev            # start here for any work
+# ... implement, test ...
+git checkout main && git merge --no-ff dev   # promotion to deployment track
+```
+
+The deployed host tracks `main` — never commit experimental work there
+directly.
+
+### OpenSpec — spec-driven changes
+
+Larger work is managed as *OpenSpec changes*: a proposal (why/what), a
+design (decisions and rejected alternatives), spec deltas (requirements
+with scenarios) and a task list live in
+`openspec/changes/<change-name>/`, and are validated and archived via the
+`openspec` CLI. Capability specs — the intended behaviour per module — live
+in `openspec/specs/`.
+
+```bash
+openspec list --json          # active changes + task progress
+openspec status --change <name>
+openspec validate --changes   # run before committing artifact edits
+openspec archive <name>       # after implementation: moves deltas into openspec/specs/
+```
+
+Workflow: **explore** (think, investigate, no code) → **propose** (capture
+proposal/design/spec/tasks) → **apply** (implement task by task, ticking
+checkboxes) → **archive**. In opencode this is guided by the
+`openspec-explore`, `openspec-propose`, `openspec-apply-change` and
+`openspec-archive-change` skills (`.opencode/skills/`).
+
+References:
+- Project layout: `openspec/config.yaml`, `openspec/specs/`,
+  `openspec/changes/` (active) and `openspec/changes/archive/` (history —
+  worth reading, e.g. the 2026-10-23/24 search, sync and API work).
+- OpenSpec CLI docs: https://github.com/Fission-AI/OpenSpec
+
+### opencode — AI coding agent
+
+Development sessions run in [opencode](https://opencode.ai)
+(client/docs), currently powered by a GLM model. Project-specific
+configuration and skills live in `.opencode/`:
+
+- `.opencode/skills/openspec-*/` — the change workflow skills above
+- agent rules (explore vs. implement stances) keep the agent from writing
+  code outside an approved change
+
+Anything an agent needs to know (test commands, conventions) belongs in
+`AGENTS.md`/this README — agents read these first.
+
 ## Further reading
 
 - `docs/` — database DDL, pg reports, street-name data, visualisation notes
