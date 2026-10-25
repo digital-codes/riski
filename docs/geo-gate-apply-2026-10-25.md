@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 20930 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 8592, "boilerplate": 1931, "unsure": 15, "error": 0} (of 20930 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 8931, "boilerplate": 1941, "unsure": 15, "error": 0} (of 20930 rows)
 
-### Removal candidates so far (1931):
+### Removal candidates so far (1941):
 - Am Alten Bahnhof ← TOP 2 Anlage1 [regex: Hausnummer + PLZ Karlsruhe | [content] …uptstr. 256  ![00589785_img_1_1.jpg](00589785_img_1_1.jpg)  Am Alten Bahnhof 7 76149 Karlsruhe-Neur]
   context:
     Am Alten Bahnhof 7
@@ -6877,3 +6877,53 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
     Behindertenparkplatz
     Am Zwinger 5
     (Saumarkt)
+- Rudolf-Breitscheid-Straße ← Anlage Bebauungsplan Vorkaufsrecht [[content] …iegenschaftsamt  |   |   |   | | --- | --- | --- | --- | |  Rudolf-Breitscheid-Straße 6a Bebauungsplan Nr. 86]
+  reason: Die Straße wird ausschließlich in der Adresse des Liegenschaftsamts genannt, nicht im inhaltlichen Haupttext des Bebauungsplans.
+  context:
+    | --- | --- | --- | --- |
+    |  Rudolf-Breitscheid-Straße 6a
+    Bebauungsplan Nr. 861 v. 13.07.2018  |   |   |   |
+- Marktplatz ← Protokoll TOP 20 [[content] …r öffentlich veranstaltet, in den Bürgersaal des Rathauses, Marktplatz, Karlsruhe. 4. **Thema des Berichts:**]
+  reason: Der Name stammt aus der Veranstaltungsort-Angabe im Metadatenbereich des Dokuments.
+  context:
+    2. **Datum des Berichts:** Das Datum der Verwaltungssitzung war am 18. Februar 2020.
+    3. **Gremium:** Die Sitzung fand im Rahmen der 7. Plenarsitzung des Gemeinderates statt und war öffentlich veranstaltet, in den Bürgersaal des Rathauses, Marktplatz, Karlsruhe.
+    4. **Thema des Berichts:** Das Thema des Berichts richtete sich auf "Graffitischutz an Verteilerkästen".
+- Hebelstraße ← Antrag CDU_002 [[content] …Vorlage behandelt wurde:** Gemeinderatsfraktion der CDU in Hebelstraße, Karlsruhe  **Vorbereiter des Berichts]
+  reason: Die Hebelstraße wird nur als Sitzungsort des Gremiums genannt, nicht inhaltlich im Haupttext behandelt.
+  context:
+    **Gremium, bei dem die Sitzung oder Vorlage behandelt wurde:** Gemeinderatsfraktion der CDU in Hebelstraße, Karlsruhe
+- Marktplatz ← Protokoll TOP 5 [[content] …tzung statt und trat in den Bürgersaal des Rathauses an der Marktplatz auf.  **4. Was ist das Thema des Beric]
+  reason: Der Name wird nur im Kontext des Veranstaltungsorts (Bürgersaal des Rathauses an der Marktplatz) genannt, nicht inhaltlich im Haupttext.
+  context:
+    **3. Bei welchem Gremium war die Sitzung oder bei welchem Gremium wurde die Vorlage behandelt?**
+    Die Sitzung fand am 17. September 2019 im Rahmen der Hauptausschusssitzung statt und trat in den Bürgersaal des Rathauses an der Marktplatz auf.
+- Daimlerstraße ← Luftbild [[content] …g](00663431_img_1_1.jpg)  Stadt Karlsruhe Liegenschaftsamt  Daimlerstraße 7  |  Maßstab: 1:1.000 bei DIN A4 |]
+  reason: Die Straße wird ausschließlich im Briefkopf des Liegenschaftsamts als Adresse genannt, nicht im inhaltlichen Haupttext.
+  context:
+    Daimlerstraße 7
+- Marktplatz ← Protokoll TOP 19 [[content] …**9. April 2019, 15:30 Uhr** im **Bürgersaal des Rathauses, Marktplatz** statt und wurde vom **Oberbürgermeis]
+  reason: Der Name erscheint ausschließlich im Veranstaltungsort-Boilerplate ('Bürgersaal des Rathauses, Marktplatz').
+  context:
+    Der Bericht wurde von **Stadtrat Tom Høyem (FDP)** im Rahmen des Tagesordnungspunkts 19 „Zukunft der Grundsteuer“ (Vorlage 2019/0217) vorgestellt. Die Sitzung fand am **9. April 2019, 15:30 Uhr** im **Bürgersaal des Rathauses, Marktplatz** statt und wurde vom **Oberbürgermeister Dr. Frank Mentrup** als Vorsitzender geleitet.
+- Ostendstraße ← TOP 5: Anlagen Pläne [[content] …el Freier Stadtplaner BDA, BRL Freier Landschaftsarchitekt  Ostendstraße 100 75198 Stuttgart  Tel.: (0711) 41]
+  reason: Die Ostendstraße erscheint ausschließlich in der Adresse des Absenders.
+  context:
+    Ostendstraße 100
+    75198 Stuttgart
+- Quellenstraße ← TOP7_Anlage_$NKPlan Radweg Tiefentalstraße [[content] …jpg)  Wollartsweler: 1 M. Born Straße 2 Bleichenholstraße 3 Quellenstraße 4 Heinz Wackenhut Weg  Bergwald Hoo]
+  reason: Die Straße erscheint nur in einer Liste ohne inhaltlichen Bezug zum Haupttext.
+  context:
+    2 Bleichenholstraße
+    3 Quellenstraße
+    4 Heinz Wackenhut Weg
+- Henriette-Obermüller-Straße ← GR Protokoll TOP 7 [[content] …öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird nur im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt.
+  context:
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
+    Henriette-Obermüller-Straße 10,
+    Karlsruhe  |
+- Rathausstraße ← Tagesordnung  ö [[content] …anuar 2014 um 19.00 Uhr im Begegnungszentrum Wolfartsweier, Rathausstraße 2a  ## ÖFFENTLICHE SITZUNG  TOP 1 V]
+  reason: Die Straße wird nur als Veranstaltungsort im Sitzungsrahmen (Metadaten) genannt, nicht im Hauptinhalt der Tagesordnung.
+  context:
+    ## zur gemeinsamen Sitzung der Ortschaftsräte Wettersbach, Hohenwettersbach, Stupferich und Wolfartsweier am Donnerstag, 9. Januar 2014 um 19.00 Uhr im Begegnungszentrum Wolfartsweier, Rathausstraße 2a

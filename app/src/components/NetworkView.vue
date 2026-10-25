@@ -3,16 +3,12 @@
     <h3 class="card-title">Netzwerk ({{ visibleNodes.length }} Knoten, {{ visibleEdges.length }} Kanten)</h3>
 
     <div class="filters">
-      <div class="filter-row">
-        <span class="filter-label">Typen:</span>
-        <button v-for="t in allTypes" :key="t" type="button"
-                class="chip" :class="{ off: !enabledTypes.has(t) }"
-                :style="enabledTypes.has(t) ? { borderColor: typeColor(t) } : {}"
-                @click="toggleType(t)">
-          <span class="dot" :style="{ background: typeColor(t) }"></span>
-          {{ typeLabel(t) }}
-        </button>
-      </div>
+      <!-- change: network-highlighting review — the type chip row was
+           removed: it was dead UI (enabledTypes was never applied to the
+           node list) and duplicated the ECharts canvas legend, which
+           natively toggles category visibility with the same colors. The
+           relation (Kanten) chips stay: ECharts has no native edge-type
+           legend, and they actually filter visibleEdges. -->
       <div class="filter-row" v-if="allRelations.length > 1">
         <span class="filter-label">Kanten:</span>
         <button v-for="r in allRelations" :key="r" type="button"
@@ -87,18 +83,16 @@ const relationLabel = (r) => RELATION_LABELS[r] || r;
 const MAX_DEGREE_SIZE = 46;
 const MIN_DEGREE_SIZE = 14;
 
-// ---- filters (tasks 3.3/3.4): display-only, underlying data stays intact ----
-const enabledTypes = ref(new Set());
+// ---- filters: relation chips filter edges (no native ECharts equivalent).
+// Node-type filtering is the ECharts canvas legend's native job — its
+// colors come from the same `categories` palette, so there is exactly one
+// type legend and it works. (The removed type chip row was dead code:
+// enabledTypes was never applied to the node list.)
 const enabledRelations = ref(new Set());
 
 const allTypes = computed(() => [...new Set(props.graph.nodes.map((n) => n.type))].sort());
 const allRelations = computed(() => [...new Set(props.graph.edges.map((e) => e.relation))].sort());
 
-const toggleType = (t) => {
-  const next = new Set(enabledTypes.value);
-  next.has(t) ? next.delete(t) : next.add(t);
-  enabledTypes.value = next;
-};
 const toggleRelation = (r) => {
   const next = new Set(enabledRelations.value);
   next.has(r) ? next.delete(r) : next.add(r);
@@ -116,16 +110,13 @@ const visibleNodes = computed(() => {
   return props.graph.nodes.filter((n) => connected.has(n.id) || (n.type === 'File' && n.attrs?.match));
 });
 
-// keep filter sets in sync when data changes (search/expand): ADD new
-// types/relations enabled, but preserve the user's manual toggles
+// keep the relation filter set in sync when data changes (search/expand):
+// ADD new relations enabled, but preserve the user's manual toggles
 watch(
   () => props.graph,
   () => {
-    const nextTypes = new Set(enabledTypes.value);
-    for (const t of allTypes.value) nextTypes.add(t);
     const nextRels = new Set(enabledRelations.value);
     for (const r of allRelations.value) nextRels.add(r);
-    enabledTypes.value = nextTypes;
     enabledRelations.value = nextRels;
   },
   { immediate: true }
@@ -362,9 +353,8 @@ watch(() => props.graph, render, { deep: true });
   padding-bottom: 8px;
 }
 
-.legend {
-  display: none; /* replaced by the filter chips */
-}
+/* node-type visibility is toggled natively via the ECharts canvas legend
+   (colors from the same `categories` palette) — no DOM legend here */
 
 .filters {
   display: flex;
@@ -406,13 +396,6 @@ watch(() => props.graph, render, { deep: true });
 .chip.off {
   opacity: 0.45;
   background: #f3f4f6;
-}
-
-.chip .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  display: inline-block;
 }
 
 .chart {

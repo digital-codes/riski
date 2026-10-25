@@ -9,6 +9,7 @@
 ## 2. App.vue wiring
 
 - [x] 2.1 Computed sets: `activeFileKeys` (summaryFiles minus excluded), `rejectedFileKeys` (summaryExclude ∪ result.summary_refused), `activeItemKeys` (topics.oparlKey); passed as props.
+- [x] 2.2 Filter-chip review (ops): the type chip row was **dead UI** (`enabledTypes` was never applied to the node list) and duplicated the ECharts canvas legend (which natively toggles category visibility with the same palette) → removed. Relation ("Kanten") chips kept — they genuinely filter `visibleEdges` and ECharts has no native edge-type legend. Colors single-sourced via `categories`.
 
 ## 3. Verification
 
