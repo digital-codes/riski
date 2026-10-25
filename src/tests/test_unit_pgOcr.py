@@ -1,10 +1,10 @@
-"""Unit tests for src.pgOcr – remote.ocr is mocked, no network."""
+"""Unit tests for src.update.pgOcr – remote.ocr is mocked, no network."""
 
 import importlib.util
 
 import pytest
 
-from src import pgOcr
+from src.update import pgOcr
 
 # pypdf is an optional runtime dependency (OCR page-limit truncation);
 # without it the PdfReader/PdfWriter-based tests cannot run, everything

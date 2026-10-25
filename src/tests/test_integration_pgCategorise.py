@@ -1,4 +1,4 @@
-"""Tests for the category derivation passes (src.pgCategorise).
+"""Tests for the category derivation passes (src.update.pgCategorise).
 
 Dry-run integration tests against the live database (read-only) plus unit
 tests for the LLM classification parsing with a stubbed chat client.
@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 
 from src.db import get_engine
-from src.pgCategorise import (
+from src.update.pgCategorise import (
     _candidate_vocabulary,
     _llm_classify,
     derive_llm_tags,
@@ -47,7 +47,7 @@ def _assoc_count(engine, table: str) -> int:
 
 class TestLlmClassify:
     def test_parses_json_answer(self, monkeypatch):
-        import src.pgCategorise as pc
+        import src.update.pgCategorise as pc
 
         def fake_chat(messages, **kwargs):
             return {"content": 'Hier: {"tag": "Anträge"}'}
@@ -56,7 +56,7 @@ class TestLlmClassify:
         assert _llm_classify("teaser", ["Anträge"]) == "Anträge"
 
     def test_returns_none_on_garbage(self, monkeypatch):
-        import src.pgCategorise as pc
+        import src.update.pgCategorise as pc
 
         def fake_chat(messages, **kwargs):
             return {"content": "kein json hier"}
@@ -65,7 +65,7 @@ class TestLlmClassify:
         assert _llm_classify("teaser", ["Anträge"]) is None
 
     def test_survives_exception(self, monkeypatch):
-        import src.pgCategorise as pc
+        import src.update.pgCategorise as pc
 
         def fake_chat(messages, **kwargs):
             raise RuntimeError("api down")
@@ -81,7 +81,7 @@ class TestLlmClassify:
 
 class TestLlmPassEscalation:
     def test_regex_hits_are_not_sent_to_llm(self, monkeypatch):
-        import src.pgCategorise as pc
+        import src.update.pgCategorise as pc
 
         calls = {"n": 0}
 

@@ -1,4 +1,4 @@
-"""Integration tests for src.oparlRunLog against the live database.
+"""Integration tests for src.update.oparlRunLog against the live database.
 
 All verification writes happen inside a transaction that is **rolled back**
 at test end (design D7) - the production tables stay untouched except for
@@ -10,7 +10,8 @@ import os
 import pytest
 from sqlalchemy import select, text
 
-from src import db, oparlRunLog as orl
+from src import db
+from src.update import oparlRunLog as orl
 
 pytestmark = pytest.mark.integration
 

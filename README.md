@@ -85,7 +85,44 @@ python -m src.pgVecSearch
 
 ## Data update workflow
 
-The full pipeline for bringing the database from "last run" to "now".
+**One command** (change: `unified-update-pipeline`):
+
+```bash
+python src/riskiUpdate.py            # snapshot → sync → ocr → summaries
+                                     # → content → teasers → geo → tags → report
+```
+
+- **Criticality classes**: `snapshot` and `sync` are critical (a failure
+  stops the run; the sync baseline deliberately stays put, so the next run
+  re-fetches the window). All enrichment phases are **best-effort** — one
+  failing step (e.g. the OCR backend) is recorded and the remaining phases
+  still run.
+- **Retry, not rollback**: every step is idempotent, and a per-File stage
+  ledger (`fileStageStatus`) tracks each document's stage outcomes —
+  `done`, `failed` (retried next run automatically) or `empty` with a
+  recorded reason (terminal). The pipeline never auto-restores; the
+  snapshot is a manual recovery point (helpers in `src/db/db_snapshot.py`,
+  restore into a verified fresh target, nothing dropped).
+- **Cron contract**: exclusive `flock` lock (overlapping runs exit
+  immediately), per-phase timeout (`RISKI_PHASE_TIMEOUT`, default 2 h — a
+  hung LLM phase retries next run), exit codes 0 = all done, 1 = critical
+  failure, 2 = partial (stage failures recorded). Example crontab:
+  ```cron
+  17 2 * * * flock -n /tmp/riski-update.lock /usr/bin/python3 \
+      /home/okl/projects/riski/src/riskiUpdate.py >> /home/okl/projects/riski/update.log 2>&1
+  ```
+  (mail on exit codes 1/2 via the cron wrapper; the report path is printed
+  to stdout at the end of every run)
+- **Report**: markdown, re-rendered after every phase into the snapshot
+  directory — per-phase status/duration, sync counters, per-stage
+  done/failed/empty counts, poison items (a stage failed ≥ 3 consecutive
+  runs), and row-count deltas.
+- **Phase selection**: `--phases sync,enrich`-style subsets via
+  `--phases a,b` / `--skip x`, `--last-date` overrides the tracked
+  baseline, `--poison-threshold N`.
+
+### Appendix: the manual per-script flow (the underlying phases)
+
 Every step is **idempotent and resumable** — re-running never duplicates
 rows and skips already-processed items.
 

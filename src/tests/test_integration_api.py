@@ -1,4 +1,4 @@
-"""Integration tests for the search API (src.apiServer).
+"""Integration tests for the search API (src.search.apiServer).
 
 Runs against the live database; /search uses the real embedding endpoint
 (cheap), reranking is pass-through when unconfigured.
@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from src.apiServer import app
+from src.search.apiServer import app
 
 pytestmark = pytest.mark.integration
 

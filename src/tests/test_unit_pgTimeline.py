@@ -1,4 +1,4 @@
-"""Unit tests for src.pgTimeline – pure logic with mocked model calls."""
+"""Unit tests for src.search.pgTimeline – pure logic with mocked model calls."""
 
 import importlib.util
 import pathlib
@@ -7,7 +7,7 @@ from datetime import datetime
 
 import pytest
 
-from src import pgTimeline as tl
+from src.search import pgTimeline as tl
 
 
 # ---------------------------------------------------------------------------
@@ -239,7 +239,7 @@ class TestParityWithLegacy:
             def get_bind(self):
                 raise RuntimeError("should not touch db")
 
-        import src.pgTimeline as mod
+        import src.search.pgTimeline as mod
 
         monkey = pytest.MonkeyPatch()
         monkey.setattr(mod, "call_embedding_model", lambda *a, **k: [0.0])

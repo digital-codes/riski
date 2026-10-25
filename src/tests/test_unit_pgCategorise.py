@@ -1,10 +1,10 @@
-"""Unit tests for the category derivation helpers (src.pgCategorise)."""
+"""Unit tests for the category derivation helpers (src.update.pgCategorise)."""
 
 from __future__ import annotations
 
 import pytest
 
-from src.pgCategorise import (
+from src.update.pgCategorise import (
     SOURCE_CONFIDENCE,
     SOURCE_PRECEDENCE,
     canonicalize_document_type,

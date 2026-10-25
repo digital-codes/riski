@@ -1,11 +1,11 @@
-"""Unit tests for src.oparlUpdate – HTTP stubbed, filesystem via tmp_path."""
+"""Unit tests for src.update.oparlUpdate – HTTP stubbed, filesystem via tmp_path."""
 
 import json
 
 import pytest
 import requests
 
-from src import oparlUpdate as ou
+from src.update import oparlUpdate as ou
 
 
 # ---------------------------------------------------------------------------
@@ -188,7 +188,7 @@ class TestCrawlIncremental:
 
     def test_epoch_baseline_fetches_everything(self, crawl_env, monkeypatch):
         """With no tracked state the baseline is the epoch (fetch everything)."""
-        from src.oparlRunLog import resolve_baseline
+        from src.update.oparlRunLog import resolve_baseline
 
         requested, _ = crawl_env
 

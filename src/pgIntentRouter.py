@@ -124,7 +124,7 @@ def _db_source_values(conn, src: Dict[str, Any]) -> List[str]:
     for (raw,) in conn.execute(stmt):
         norm = spec.get("normalize")
         if norm == "canonical_document_type":
-            from src.pgCategorise import canonicalize_document_type
+            from src.update.pgCategorise import canonicalize_document_type
 
             raw, _code = canonicalize_document_type(raw)
         if raw:
@@ -453,7 +453,7 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
     their files, and Tagesordnung + all session documents as top_files
     (no top_k cut — the session IS the answer). No LLM summary, no map
     (answer_mode: list_topics)."""
-    from src.graphModel import expand_neighbors
+    from src.search.graphModel import expand_neighbors
 
     notes: List[str] = list(resolved.get("notes") or [])
     grem = resolved.get("gremium") or {}
@@ -663,7 +663,7 @@ class IntentRouter:
         """Execute the routed search with the empty-result fallback ladder:
         scoped search -> unscoped retry (if filters were applied) -> honest
         empty response."""
-        from src.pgTimeline import search_and_summarize
+        from src.search.pgTimeline import search_and_summarize
 
         notes: List[str] = list(resolved.get("notes") or [])
         filters = resolved.get("filters") or []
@@ -761,8 +761,8 @@ def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
     prewarm = None
     if _parallel_enabled():
         try:
-            from src.pgHybridSearch import _hybrid_executor
-            from src.pgTimeline import call_embedding_model
+            from src.search.pgHybridSearch import _hybrid_executor
+            from src.search.pgTimeline import call_embedding_model
 
             prewarm = _hybrid_executor().submit(call_embedding_model, query)
         except Exception:  # noqa: BLE001 - pre-warm is best-effort

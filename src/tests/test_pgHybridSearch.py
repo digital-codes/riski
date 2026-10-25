@@ -1,10 +1,10 @@
-"""Tests for hybrid multi-signal recall (src.pgHybridSearch)."""
+"""Tests for hybrid multi-signal recall (src.search.pgHybridSearch)."""
 
 from __future__ import annotations
 
 import pytest
 
-from src.pgHybridSearch import (
+from src.search.pgHybridSearch import (
     FilterError,
     _strip_terms_py,
     load_stop_terms,
@@ -119,7 +119,7 @@ class TestHybridCandidatesIntegration:
             yield c
 
     def test_lexical_recall_excludes_stop_term_only_matches(self, conn):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
 
         # fake vector: name_vecs absent/empty → lexical does the work
         hyb = hybrid_candidates(
@@ -132,7 +132,7 @@ class TestHybridCandidatesIntegration:
         assert not any("inklusionspreis" in n or "linke-kitas" in n for n in names)
 
     def test_lexical_recall_finds_exact_name(self, conn):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
 
         fake = [0.01] * 1024  # name_vecs tables absent; lexical does the work
         hyb = hybrid_candidates(conn, "Digitalstrategie", fake, top_k=10)
@@ -141,7 +141,7 @@ class TestHybridCandidatesIntegration:
         assert hyb["file_candidates"]
 
     def test_papertype_filter_constrains_papers(self, conn):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
         from sqlalchemy import text
 
         hyb = hybrid_candidates(
@@ -157,7 +157,7 @@ class TestHybridCandidatesIntegration:
         assert not rows
 
     def test_signals_can_be_disabled(self, conn):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
 
         hyb = hybrid_candidates(
             conn, "Digitalstrategie", [0.01] * 1024, top_k=10,
@@ -167,7 +167,7 @@ class TestHybridCandidatesIntegration:
         assert hyb["file_candidates"] == []
 
     def test_facets_listing(self, conn):
-        from src.pgHybridSearch import facets
+        from src.search.pgHybridSearch import facets
 
         f = facets(conn)
         assert "Beschlussvorlage" in f["paperType"]

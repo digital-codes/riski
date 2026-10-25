@@ -6,7 +6,7 @@ import pytest
 from sqlalchemy import Column, DateTime, Integer, LargeBinary, MetaData, String, Table, text, select
 
 from src import db
-from src.local_geo_matching import (
+from src.search.local_geo_matching import (
     NameMatch,
     literal_name_spans,
     name_matches,
@@ -259,7 +259,7 @@ class TestReferenceBuilders:
             conn.execute(agenda_tbl.insert().values(id=101, name="Unrelated topic"))
 
         # build refs using the shared matcher logic from the module
-        from src.pgAddStreetRefs import prepare_street_matcher
+        from src.update.pgAddStreetRefs import prepare_street_matcher
         from datetime import datetime, timezone
 
         with engine.connect() as conn:
@@ -307,7 +307,7 @@ class TestReferenceBuilders:
             assert new_pending == []
 
     def test_district_refs_boundary_safe(self, engine, geo_tables):
-        from src.local_geo_matching import name_matches as nm
+        from src.search.local_geo_matching import name_matches as nm
         from datetime import datetime, timezone
 
         districts_tbl = geo_tables["districts"]

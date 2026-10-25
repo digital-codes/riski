@@ -1,9 +1,9 @@
-"""Unit tests for src.pgVecSearch – embeddings mocked, ranking logic verified."""
+"""Unit tests for src.search.pgVecSearch – embeddings mocked, ranking logic verified."""
 
 import numpy as np
 import pytest
 
-from src import pgVecSearch as vs
+from src.search import pgVecSearch as vs
 
 
 @pytest.fixture()

@@ -5,11 +5,11 @@ import threading
 
 import pytest
 
-from src import apiServer
+from src.search import apiServer
 
 pytestmark = pytest.mark.unit
 
-from src.pgHybridSearch import (
+from src.search.pgHybridSearch import (
     CapacityError,
     _fanout_budget,
     _fanout_pool_timeout,
@@ -81,12 +81,12 @@ class _FakeConn:
 
 
 def test_capacity_error_when_budget_held(monkeypatch):
-    from src.pgHybridSearch import hybrid_candidates
+    from src.search.pgHybridSearch import hybrid_candidates
 
     monkeypatch.setenv("RISKI_FANOUT_BUDGET", "4")
     monkeypatch.setenv("RISKI_DB_POOL_TIMEOUT", "1")
     sem = None
-    from src.pgHybridSearch import _fanout_semaphore
+    from src.search.pgHybridSearch import _fanout_semaphore
 
     sem = _fanout_semaphore()
     for _ in range(4):
@@ -101,7 +101,7 @@ def test_capacity_error_when_budget_held(monkeypatch):
 def test_semaphore_released_after_success(monkeypatch):
     """When the budget is available the request acquires and releases its
     permits (observable: a second full-budget hold after the run)."""
-    from src.pgHybridSearch import _fanout_semaphore
+    from src.search.pgHybridSearch import _fanout_semaphore
 
     sem = _fanout_semaphore()
     acquired = sem.acquire(timeout=1)

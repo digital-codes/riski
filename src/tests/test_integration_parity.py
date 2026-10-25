@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.pgHybridSearch import hybrid_candidates
+from src.search.pgHybridSearch import hybrid_candidates
 
 pytestmark = pytest.mark.integration
 

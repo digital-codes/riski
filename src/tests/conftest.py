@@ -28,6 +28,19 @@ def pytest_configure(config):
     )
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """The API rate limiter is process-global state; without a reset the
+    LLM budget (10/min) is exhausted by earlier tests in the same run."""
+    try:
+        from src import apiRateLimit
+
+        apiRateLimit.limiter._hits.clear()
+    except Exception:  # noqa: BLE001 - module not imported in pure-unit runs
+        pass
+    yield
+
+
 def pytest_collection_modifyitems(config, items):
     """Skip integration tests unless RW credentials are available."""
     have_rw = bool(os.getenv("RW_USER")) and bool(os.getenv("RW_PWD"))

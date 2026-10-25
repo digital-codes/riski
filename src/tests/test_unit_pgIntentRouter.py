@@ -196,7 +196,7 @@ class TestSearchLadder:
                 return {"top_files": [], "matched_entities": []}
             return {"top_files": [{"oparlKey": "f1"}], "matched_entities": [{"id": "File_f1"}]}
 
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         monkeypatch.setattr(tl, "search_and_summarize", fake_search)
 
@@ -222,7 +222,7 @@ class TestSearchLadder:
         def fake_search(session, query, **kw):
             return {"top_files": [], "matched_entities": []}
 
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         monkeypatch.setattr(tl, "search_and_summarize", fake_search)
         router = IntentRouter(cfg=cfg)
@@ -239,7 +239,7 @@ class TestLiveDb:
 
     @pytest.fixture(scope="class")
     def session(self):
-        from src.pgTimeline import get_db_session
+        from src.search.pgTimeline import get_db_session
 
         session = get_db_session()
         yield session
@@ -284,7 +284,7 @@ class TestLiveDb:
         assert "kein gremium" in out["note"].lower()
 
     def test_organization_facet_constrains_files(self, session):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
 
         with session.bind.connect() as conn:
             hyb = hybrid_candidates(
@@ -321,7 +321,7 @@ class TestParallelRecall:
     def test_run_all_concurrent(self):
         import time
 
-        from src.pgHybridSearch import _run_all
+        from src.search.pgHybridSearch import _run_all
 
         def slow(ms):
             return lambda: (time.sleep(ms / 1000), ms)[1]
@@ -333,7 +333,7 @@ class TestParallelRecall:
         assert wall < 0.55  # concurrent: ~max, not sum
 
     def test_run_all_task_failure_isolated(self, monkeypatch):
-        from src.pgHybridSearch import _run_all
+        from src.search.pgHybridSearch import _run_all
 
         def boom():
             raise RuntimeError("db down")
@@ -344,7 +344,7 @@ class TestParallelRecall:
     def test_sequential_kill_switch(self, monkeypatch):
         import time
 
-        import src.pgHybridSearch as hs
+        import src.search.pgHybridSearch as hs
 
         monkeypatch.setenv("RISKI_PARALLEL_SIGNALS", "0")
 
@@ -361,7 +361,7 @@ class TestParallelRecall:
 class TestFacetCache:
     # time imported at use; keep module deps explicit
     def _setup(self, monkeypatch):
-        import src.pgHybridSearch as hs
+        import src.search.pgHybridSearch as hs
 
         calls = {"n": 0}
 
@@ -417,8 +417,8 @@ class TestSyncInvalidation:
     def test_sync_calls_invalidate_after_import(self, monkeypatch):
         import inspect
 
-        import src.pgHybridSearch as hs
-        import src.syncIncremental as sync
+        import src.search.pgHybridSearch as hs
+        import src.update.syncIncremental as sync
 
         # source-level guard: the invalidation hook is wired after the
         # import phase (full sync() needs crawl plumbing)
@@ -433,7 +433,7 @@ class TestSyncInvalidation:
 
 class TestEmbeddingCache:
     def test_repeat_query_one_remote_call(self, monkeypatch):
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         calls = []
 
@@ -450,7 +450,7 @@ class TestEmbeddingCache:
         tl._embed_cached.cache_clear()
 
     def test_distinct_texts_hit_remote(self, monkeypatch):
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         calls = []
 
@@ -470,10 +470,10 @@ class TestEmbeddingCache:
         # cached query helper (source-level guard)
         import inspect
 
-        import src.pgAddVecs
-        import src.pgBackfillNameVecs
+        import src.update.pgAddVecs
+        import src.update.pgBackfillNameVecs
 
-        for mod in (src.pgAddVecs, src.pgBackfillNameVecs):
+        for mod in (src.update.pgAddVecs, src.update.pgBackfillNameVecs):
             src_text = inspect.getsource(mod)
             assert "call_embedding_model" not in src_text
 
@@ -483,7 +483,7 @@ class TestDecodeEmbedOverlap:
         import time as _t
 
         import src.pgIntentRouter as ir
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         calls = {"embed": 0, "decode": 0}
 
@@ -525,7 +525,7 @@ class TestDecodeEmbedOverlap:
         import time as _t
 
         import src.pgIntentRouter as ir
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         calls = []
 

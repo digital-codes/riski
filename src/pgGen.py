@@ -440,7 +440,7 @@ def ensure_project_schema(engine) -> None:
     md = MetaData()
 
     # OParl crawl run tracking tables (additive; see src/oparlRunLog.py).
-    from src.oparlRunLog import ensure_tables as ensure_run_log_tables
+    from src.update.oparlRunLog import ensure_tables as ensure_run_log_tables
 
     ensure_run_log_tables(engine)
 

@@ -1,9 +1,9 @@
-"""Unit tests for src.pgTeasers – HTTP layer mocked, no network, no DB."""
+"""Unit tests for src.update.pgTeasers – HTTP layer mocked, no network, no DB."""
 
 import pytest
 import requests
 
-from src import pgTeasers as pt
+from src.update import pgTeasers as pt
 
 
 class _Resp:

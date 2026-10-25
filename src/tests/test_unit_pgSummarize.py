@@ -1,9 +1,9 @@
-"""Unit tests for src.pgSummarize – chat client is mocked."""
+"""Unit tests for src.update.pgSummarize – chat client is mocked."""
 
 import pytest
 
-from src import pgSummarize
-from src.pgSummarize import request_summary, _strip_code_fence
+from src.update import pgSummarize
+from src.update.pgSummarize import request_summary, _strip_code_fence
 
 
 @pytest.fixture()

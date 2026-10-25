@@ -1,4 +1,4 @@
-"""Integration tests for src.syncIncremental against the live database.
+"""Integration tests for src.update.syncIncremental against the live database.
 
 Full sync flow with stubbed crawl/import phases; all DB writes (run row,
 item log, type counts, full_fetches marker) happen inside a transaction
@@ -11,7 +11,9 @@ import os
 import pytest
 from sqlalchemy import select
 
-from src import db, oparlRunLog as orl, syncIncremental as si
+from src import db
+from src.update import oparlRunLog as orl
+from src.update import syncIncremental as si
 
 pytestmark = pytest.mark.integration
 

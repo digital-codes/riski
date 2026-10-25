@@ -5,7 +5,8 @@ import logging
 
 import pytest
 
-from src import apiRateLimit, apiServer
+from src import apiRateLimit
+from src.search import apiServer
 
 pytestmark = pytest.mark.unit
 

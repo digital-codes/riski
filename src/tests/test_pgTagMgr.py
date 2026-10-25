@@ -1,5 +1,5 @@
 """
-Tests for the refactored TagManager (src.pgTagMgr) against a live PostgreSQL.
+Tests for the refactored TagManager (src.update.pgTagMgr) against a live PostgreSQL.
 
 Integration tests: use read/write credentials from ``.env`` (RW_USER/RW_PWD,
 falling back to the resolved default engine) and only touch ``test_*`` tables,
@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 
 import os
 
-from src.pgTagMgr import TagManager
+from src.update.pgTagMgr import TagManager
 from src import db
 
 pytestmark = pytest.mark.integration

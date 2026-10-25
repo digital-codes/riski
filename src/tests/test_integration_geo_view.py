@@ -70,7 +70,7 @@ class TestGeoCollection:
 class TestGeoEndpoint:
     @pytest.fixture(scope="class")
     def client(self):
-        from src.apiServer import app
+        from src.search.apiServer import app
 
         return TestClient(app)
 
@@ -79,7 +79,7 @@ class TestGeoEndpoint:
 
     def test_geo_for_session_with_georeferences(self, client, linked_agenda_key):
         # build a session whose answer set contains the linked agenda item
-        from src.apiServer import _sessions
+        from src.search.apiServer import _sessions
 
         session_id = "test-geo-session"
         _sessions[session_id] = {
@@ -102,7 +102,7 @@ class TestGeoEndpoint:
         assert fc["features"][0]["properties"]["agendaItems"] == [linked_agenda_key]
 
     def test_geo_empty_for_session_without_georeferences(self, client):
-        from src.apiServer import _sessions
+        from src.search.apiServer import _sessions
 
         session_id = "test-geo-empty"
         _sessions[session_id] = {

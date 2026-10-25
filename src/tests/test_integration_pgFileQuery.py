@@ -1,4 +1,4 @@
-"""Integration tests for src.pgFileQuery against the live database.
+"""Integration tests for src.search.pgFileQuery against the live database.
 
 Parity check: the refactored module must produce the same results as the
 original ``src/pgFileQuery.py`` on the same data. Read-only queries only.
@@ -12,7 +12,7 @@ import pytest
 from sqlalchemy import MetaData, Table, select, text
 
 from src import db
-from src.pgFileQuery import (
+from src.search.pgFileQuery import (
     find_unreferenced_files,
     get_related_ids_for_agenda_item,
     get_related_ids_for_file,

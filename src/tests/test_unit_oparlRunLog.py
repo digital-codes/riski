@@ -1,4 +1,4 @@
-"""Unit tests for src.oparlRunLog – mocked engine / in-memory SQLite."""
+"""Unit tests for src.update.oparlRunLog – mocked engine / in-memory SQLite."""
 
 import os
 from datetime import datetime
@@ -6,7 +6,7 @@ from datetime import datetime
 import pytest
 from sqlalchemy import create_engine, text
 
-from src import oparlRunLog as orl
+from src.update import oparlRunLog as orl
 
 pytestmark = pytest.mark.unit
 
@@ -89,7 +89,7 @@ class TestBaselineResolution:
 
         # Patch the module-level query path: emulate a successful table read.
         orig_connect = None
-        import src.oparlRunLog as m
+        import src.update.oparlRunLog as m
 
         class FakeConn:
             def __enter__(self):
@@ -119,7 +119,7 @@ class TestBaselineResolution:
             baseline = "2026-02-01T00:00:00Z"
             end_state = None
 
-        import src.oparlRunLog as m
+        import src.update.oparlRunLog as m
 
         class FakeConn:
             def __enter__(self):

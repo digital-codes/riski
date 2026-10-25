@@ -1,10 +1,10 @@
-"""Tests for the OParl graph model (src.graphModel) and edge logging."""
+"""Tests for the OParl graph model (src.search.graphModel) and edge logging."""
 
 from __future__ import annotations
 
 import pytest
 
-from src.graphModel import ADJACENCY, build_graph, node_id
+from src.search.graphModel import ADJACENCY, build_graph, node_id
 
 
 class TestAdjacencyMap:
@@ -163,7 +163,7 @@ class TestFindRelatedObjectsEdgeLog:
     pytestmark = pytest.mark.integration
 
     def test_edges_reference_existing_nodes(self):
-        from src.pgTimeline import find_related_objects, get_db_session
+        from src.search.pgTimeline import find_related_objects, get_db_session
 
         session = get_db_session()
         try:
@@ -174,7 +174,7 @@ class TestFindRelatedObjectsEdgeLog:
             assert edges, "expected at least one logged edge"
 
             # every edge endpoint must exist as a node (via oparlKey per type)
-            from src.graphModel import node_id
+            from src.search.graphModel import node_id
             node_keys = set()
             for t, objs in related.items():
                 for o in objs:
