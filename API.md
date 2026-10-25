@@ -26,6 +26,29 @@ The backend API runs as a FastAPI app served by uvicorn. Apache proxies `/api/` 
 - Capacity model: the three limits are the anyio worker threadpool (40
   threads), the DB pool (24 connections), and the LLM endpoint throughput.
 
+## Security controls (api-security-hardening)
+
+The API is anonymous and inference-expensive; the controls bound what one
+client can inflict:
+
+- **Rate limiting (sliding window, per client)**: `/ask` and `/summarize`
+  share the tight `llm` budget (`RISKI_RATE_LIMIT_LLM`, default 10/min);
+  `/search?summarize=true` enforces the same budget *before* any database
+  or LLM work; plain search/expand/facets/geo share the looser `search`
+  budget (`RISKI_RATE_LIMIT_SEARCH`, default 60/min). `/health` is never
+  limited. Exceeding a budget → **429 + `Retry-After`**.
+- **Client identity**: socket address, or the last `X-Forwarded-For` hop
+  when the peer is a trusted proxy (`RISKI_TRUSTED_PROXIES`, default
+  `127.0.0.1`). Spoofed headers from non-proxy peers are ignored. The
+  limiter is in-process (single-worker deployment) and resets on restart.
+- **Input bounds**: `query` ≤ 512 chars, `filters` ≤ 20 items,
+  `exclude` ≤ 100 items — oversized input → 422 before any processing.
+- **Sanitized errors**: client-facing failure bodies carry generic text
+  plus a `correlation_id`; the full exception goes to the log only.
+- **CORS**: dev origins by default; set `RISKI_CORS_ORIGINS`
+  (comma-separated) for split deployments. Same-origin production behind
+  apache needs no CORS.
+
 ## Current Setup
 
 - **Host/Port**: `127.0.0.1:11384`

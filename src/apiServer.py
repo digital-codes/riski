@@ -39,27 +39,45 @@ import uuid
 import threading
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from src import apiRateLimit
 from src.db import get_engine
 from src.pgHybridSearch import CapacityError, FilterError, facets
 from src.pgTimeline import get_db_session, search_and_summarize
 
 app = FastAPI(title="RISKI Search API", version="0.1.0")
 
-# permissive CORS for local frontend dev (vite runs on its own port)
+# CORS: dev origins by default (vite runs on its own port); production
+# origins come from RISKI_CORS_ORIGINS (comma-separated) for split
+# deployments — a same-origin production deployment behind apache needs
+# none (change: api-security-hardening)
+def _cors_origins() -> List[str]:
+    raw = os.getenv("RISKI_CORS_ORIGINS", "").strip()
+    if raw:
+        return [o.strip() for o in raw.split(",") if o.strip()]
+    return [
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "http://localhost:5199",
+    ]
+
+
 try:
     from fastapi.middleware.cors import CORSMiddleware
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://localhost:4173", "http://localhost:5199"],
+        allow_origins=_cors_origins(),
         allow_methods=["*"],
         allow_headers=["*"],
     )
 except ImportError:  # pragma: no cover
     pass
+
+# per-client sliding-window rate limiting (change: api-security-hardening)
+app.add_middleware(apiRateLimit.RateLimitMiddleware)
 
 # in-memory session store (no persistence for v1) — bounded since
 # api-capacity-hardening: TTL + max size, lazy eviction on insert (no
@@ -104,15 +122,34 @@ def _store_session(session_id: str, entry: Dict[str, Any]) -> None:
 def _get_session(session_id: str) -> Optional[Dict[str, Any]]:
     with _sessions_lock:
         sess = _sessions.get(session_id)
-        if sess is not None and time.time() - sess.get("created", 0) > _session_ttl():
+        if sess is not None and time.time() - sess.get("created", time.time()) > _session_ttl():
             _sessions.pop(session_id, None)
             return None
         return sess
 
 
+def _log_failure(where: str, exc: Exception) -> str:
+    """Log the full exception, return a correlation id for the client-facing
+    generic error body (change: api-security-hardening)."""
+    import logging
+
+    correlation_id = uuid.uuid4().hex
+    logging.getLogger("riski.api").exception(
+        "%s failed (correlation_id=%s): %s", where, correlation_id, exc
+    )
+    return correlation_id
+
+
+# Input bounds (change: api-security-hardening): the API is anonymous;
+# unbounded queries/filters burn tokens, pool connections and memory.
+MAX_QUERY_LENGTH = 512
+MAX_FILTER_ITEMS = 20
+MAX_EXCLUDE_ITEMS = 100
+
+
 class SearchRequest(BaseModel):
-    query: str = Field(min_length=1)
-    filters: Optional[List[Dict[str, Any]]] = None
+    query: str = Field(min_length=1, max_length=MAX_QUERY_LENGTH)
+    filters: Optional[List[Dict[str, Any]]] = Field(default=None, max_length=MAX_FILTER_ITEMS)
     top_k: int = Field(default=10, ge=1, le=100)
     # change: api-capacity-hardening — default moved to False: the LLM
     # summary belongs in the async /summarize follow-up, not the search hot
@@ -133,8 +170,10 @@ def health() -> Dict[str, Any]:
 
 
 @app.post("/search")
-def search(req: SearchRequest) -> Dict[str, Any]:
-    from src.db import get_engine as _ge  # noqa: F401 (import guard)
+def search(req: SearchRequest, request: Request) -> Dict[str, Any]:
+    # inline summaries share the LLM budget (change: api-security-hardening);
+    # enforced before any database/LLM work
+    apiRateLimit.llm_budget_for_search(request, req.summarize)
 
     try:
         session = get_db_session()
@@ -150,6 +189,12 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(exc))
     except CapacityError as exc:
         raise HTTPException(status_code=503, detail=str(exc), headers={"Retry-After": "5"})
+    except Exception as exc:
+        correlation_id = _log_failure("search", exc)
+        raise HTTPException(
+            status_code=500,
+            detail=f"internal error (correlation_id={correlation_id})",
+        )
     finally:
         session.close()
 
@@ -165,8 +210,8 @@ def search(req: SearchRequest) -> Dict[str, Any]:
 
 
 class AskRequest(BaseModel):
-    query: str = Field(min_length=1)
-    session_id: Optional[str] = None
+    query: str = Field(min_length=1, max_length=MAX_QUERY_LENGTH)
+    session_id: Optional[str] = Field(default=None, max_length=64)
     top_k: int = Field(default=10, ge=1, le=100)
     signals: Optional[Dict[str, bool]] = None
     summarize: bool = True
@@ -195,12 +240,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     except CapacityError as exc:
         raise HTTPException(status_code=503, detail=str(exc), headers={"Retry-After": "5"})
     except Exception as exc:
-        import logging
-
-        correlation_id = uuid.uuid4().hex
-        logging.getLogger("riski.api").exception(
-            "ask failed (correlation_id=%s): %s", correlation_id, exc
-        )
+        correlation_id = _log_failure("ask", exc)
         raise HTTPException(
             status_code=500,
             detail=f"internal error (correlation_id={correlation_id})",
@@ -246,10 +286,10 @@ def geo(session_id: str) -> Dict[str, Any]:
 
 
 class SummarizeRequest(BaseModel):
-    session_id: str = Field(min_length=1)
+    session_id: str = Field(min_length=1, max_length=64)
     # change: summary-refine-file-control
     refine: bool = False          # re-run with full content (user action)
-    exclude: list[str] = Field(default_factory=list)  # oparlKeys to drop
+    exclude: list[str] = Field(default_factory=list, max_length=MAX_EXCLUDE_ITEMS)  # oparlKeys to drop
 
 
 @app.post("/summarize")
