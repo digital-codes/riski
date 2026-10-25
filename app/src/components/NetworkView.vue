@@ -10,11 +10,14 @@
            relation (Kanten) chips stay: ECharts has no native edge-type
            legend, and they actually filter visibleEdges. -->
       <div class="filter-row" v-if="allRelations.length > 1">
-        <span class="filter-label">Kanten:</span>
+        <!-- "Beziehungen", not "Kanten": the chips are OParl relations
+             (directional verbs), several of which sound like node types —
+             the arrow makes the direction explicit -->
+        <span class="filter-label">Beziehungen:</span>
         <button v-for="r in allRelations" :key="r" type="button"
                 class="chip" :class="{ off: !enabledRelations.has(r) }"
                 @click="toggleRelation(r)">
-          {{ relationLabel(r) }}
+          → {{ relationLabel(r) }}
         </button>
       </div>
     </div>
@@ -201,6 +204,16 @@ function truncate(text, max = 40) {
   return text.length > max ? text.slice(0, max) + '…' : text;
 }
 
+// AgendaItem nodes carry their TOP number (attrs.number, from the OParl
+// data) — surface it in the graph label so the topics of the meeting list
+// are findable in the network ("TOP 3 · …").
+function nodeLabel(n, max = 40) {
+  if (n.type === 'AgendaItem' && n.attrs?.number) {
+    return `TOP ${n.attrs.number} · ${truncate(n.name, Math.max(10, max - 10))}`;
+  }
+  return truncate(n.name);
+}
+
 function toOption() {
   const catIndex = Object.fromEntries(categories.value.map((c, i) => [c.name, i]));
   const visibleIds = new Set(visibleNodes.value.map((n) => n.id));
@@ -213,7 +226,7 @@ function toOption() {
     const boosted = symbol !== 'circle';
     return {
       id: n.id,
-      name: truncate(n.name),
+      name: nodeLabel(n),
       category: catIndex[n.type] ?? 0,
       symbol,
       symbolSize: (MIN_DEGREE_SIZE + (MAX_DEGREE_SIZE - MIN_DEGREE_SIZE) * Math.sqrt(deg / maxDeg))
@@ -238,7 +251,7 @@ function toOption() {
         return `${p.data.source}<br/>—${p.data.relation}→<br/>${p.data.target}`;
       }
       const raw = p.data.raw || {};
-      const lines = [`<b>${raw.type ? typeLabel(raw.type) : ''}</b>`, truncate(raw.name, 60)];
+      const lines = [`<b>${raw.type ? typeLabel(raw.type) : ''}</b>`, nodeLabel(raw, 60)];
       if (raw.date) lines.push(raw.date);
       if (raw.attrs && raw.attrs.distance != null) lines.push(`Distanz: ${Number(raw.attrs.distance).toFixed(3)}`);
       const suffix = nodeTooltipSuffix(raw);

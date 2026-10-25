@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 20930 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 8931, "boilerplate": 1941, "unsure": 15, "error": 0} (of 20930 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 9705, "boilerplate": 1963, "unsure": 17, "error": 0} (of 20930 rows)
 
-### Removal candidates so far (1941):
+### Removal candidates so far (1963):
 - Am Alten Bahnhof ← TOP 2 Anlage1 [regex: Hausnummer + PLZ Karlsruhe | [content] …uptstr. 256  ![00589785_img_1_1.jpg](00589785_img_1_1.jpg)  Am Alten Bahnhof 7 76149 Karlsruhe-Neur]
   context:
     Am Alten Bahnhof 7
@@ -6927,3 +6927,115 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
   reason: Die Straße wird nur als Veranstaltungsort im Sitzungsrahmen (Metadaten) genannt, nicht im Hauptinhalt der Tagesordnung.
   context:
     ## zur gemeinsamen Sitzung der Ortschaftsräte Wettersbach, Hohenwettersbach, Stupferich und Wolfartsweier am Donnerstag, 9. Januar 2014 um 19.00 Uhr im Begegnungszentrum Wolfartsweier, Rathausstraße 2a
+- Alter Friedhof ← Anlage ANORDNUNG_Umlegung [[content] …Anlage ANORDNUNG_Umlegung Alter Friedhof 1960 ANL  ![00611558_img_1_1.jpg](00611558_img_1_1.jpg)  St…]
+  reason: Der Name erscheint nur im Briefkopf/Metadatenbereich (Titel/Überschrift) ohne inhaltliche Behandlung im Haupttext.
+  context:
+    Alter Friedhof
+    1960
+- Konrad-Zuse-Straße ← Lageplan [[content] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Konrad-Zuse-Straße 9  |   |   | |  Maßstab: 1:1.0]
+  reason: Die Straße wird ausschließlich im Adresskopf des Liegenschaftsamts genannt, nicht im inhaltlichen Haupttext des Lageplans.
+  context:
+    | --- | --- | --- |
+    |  Konrad-Zuse-Straße 9  |   |   |
+    |  Maßstab: 1:1.000 bei DIN A4 | Gemarkung Karlsruhe | Datum: 13.11.2023  |
+- Marktplatz ← TOP_4_Anlage_Hochwasser_Stupferich [[content] …3-6609 E-Mail: toralf.kramer@tba.karlsruhe.de  Haltestelle: Marktplatz  9. März 2022  # Informationsveranstal]
+  reason: Der Name erscheint ausschließlich in der Metadatenzeile 'Haltestelle: Marktplatz' und nicht im inhaltlichen Haupttext.
+  context:
+    Haltestelle: Marktplatz
+- Goethestraße ← TOP 17 Vorlage 509b Bauantrag [[content] …Ingenieurbüro Hans Leuze, Dipl.-Ing GEOTZINGEN, Kr. K. 'he Goethestraße 2 1, R. 42213  Die Übereinstimmung de]
+  reason: Die Straße erscheint ausschließlich in der Adresse des Ingenieurbüros im Fußbereich.
+  context:
+    GEOTZINGEN, Kr. K. 'he
+    Goethestraße 2 1, R. 42213
+- Karl-Weysser-Straße ← Lageplan [[content] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Karl-Weysser-Straße 15  |   |   | |  Maßstab: 1:1]
+  reason: Die Straße wird ausschließlich in der Adresse des Liegenschaftsamts genannt, nicht im inhaltlichen Haupttext des Lageplans.
+  context:
+    | --- | --- | --- |
+    |  Karl-Weysser-Straße 15  |   |   |
+    |  Maßstab: 1:1.500 bei DIN A4 | Gemarkung Durlach | Datum: 25.11.2022  |
+- Hebelstraße ← Antrag Nr. 147 SPD, GRÜNE - Jazzclub [[content] …erantwortlichen der GRÜNE und SPD Gemeinderatsfraktionen in Hebelstraße 13 vorgelegt.  **2. Was ist das Datum]
+  reason: Die Straße wird ausschließlich im Kontext der Absenderadresse der Fraktionen genannt, nicht im inhaltlichen Haupttext.
+  context:
+    **1. Welche Person legt den Bericht vor?**
+    Der Bericht wird von den Verantwortlichen der GRÜNE und SPD Gemeinderatsfraktionen in Hebelstraße 13 vorgelegt.
+- Vierordtstraße ← Vierordtstraße in Palmbach - Anlage [[name] …Vierordtstraße in Palmbach - Anlage **Titel:** Deutschland, haffe!  **1) V…]
+  reason: Der Name erscheint nur im Dokumenttitel und nicht im inhaltlichen Haupttext.
+  context:
+    (match not in content — from name/teaser)
+- Tullastraße ← Anlage 2_Plan Moltkestraße [[content] …--- | |   | Name | Datum | Verkehrsbetriebe Karlsruhe GmbH Tullastraße 71, 76131 Karlsruhe Telefon 07 21 / 61]
+  reason: Die Tullastraße wird ausschließlich in der Adresse der Verkehrsbetriebe Karlsruhe GmbH im Dokumentkopf genannt.
+  context:
+    |   | Name | Datum | Verkehrsbetriebe Karlsruhe GmbH
+    Tullastraße 71, 76131 Karlsruhe
+    Telefon 07 21 / 61 07-0
+- Henriette-Obermüller-Straße ← Protokoll TOP 42 [[content] …, 15:30 Uhr Öffentlich Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe Vorsitz]
+  reason: Die Straße wird ausschließlich als Veranstaltungsort im Metadatenbereich (Ort der Sitzung) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    Öffentlich
+    Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe
+    Vorsitzende/r: Oberbürgermeister Dr. Frank Mentrup
+- Am Friedhof ← Niederschrift öffentlich [[content] …sions‑Runder Tisch, Fotoausstellung, Kunstwochen, Führungen am Friedhof.  **7. Ergebnis / Beschluss**   - ein]
+  reason: Der Fundkontext bezieht sich auf eine Aufzählung von Veranstaltungen und Terminen, nicht auf eine inhaltliche Behandlung des Ortes.
+  context:
+    - Bauanträge (Einfamilienhaus, Scheunenumbruch, Gewächshausanlage) – Zustimmung unter Auflagen.
+    - Mitteilungen: Start der Grünzug‑Neuanlage „Mühlengraben“, Termine für Abendmarkt, Liederabend, Inklusions‑Runder Tisch, Fotoausstellung, Kunstwochen, Führungen am Friedhof.
+- Kaiserallee ← Tagesordnung (öffentlich) Ausschuss/Ortschaftsrat [[content] …m  Freitag, 10. Oktober 2025, 13:00 Uhr,  Stadtplanungsamt, Kaiserallee 4, Raum 201  # Tagesordnung  ## Öffen]
+  reason: Adresse des Veranstaltungsorts im Metadaten-Bereich der Einladung.
+  context:
+    Stadtplanungsamt, Kaiserallee 4, Raum 201
+- Thüringer Straße ← TOP1_Plan_Schwimmhalle EG [[content] …e sind deutlich als solche kenntlich zu machen.  |   |   |  Thüringer Straße…]
+  reason: Die Straße wird nur in der Metadatenzeile des Plans (Gemarkung/Datum) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    Thüringer Straße
+- Stephanienstraße ← Herrenalber Straße10 [[content] …2.jpg)  |  Architekten archis Architekten + Ingenieure GmbH Stephanienstraße 30 D-76133 Karlsruhe | Tel (0721]
+  reason: Die Straße wird ausschließlich in der Absenderadresse der Architektenfirma genannt.
+  context:
+    + Ingenieure GmbH
+    Stephanienstraße 30
+    D-76133 Karlsruhe | Tel (0721) 919 61-0
+- Am Friedhof ← Niederschrift (ö) .OSR [[content] …Bereitstellung von Fahrradständern und einer Kompostabgabe am Friedhof West, wobei die Verwaltung Bedenken we]
+  reason: Der Fundkontext zeigt keine inhaltliche Behandlung des Friedhofs, sondern nur eine Aufzählung von Maßnahmen in dessen Nähe.
+  context:
+    - Verkehrssicherheit: Markierung und Trennung von Fußgänger‑ und Radverkehr in der Kirchstraßenunterführung, Klärung der Vorfahrtregelung an der Kreuzung Bruchwaldstraße‑Werrabronner‑Durlacher Straße.
+    - Bereitstellung von Fahrradständern und einer Kompostabgabe am Friedhof West, wobei die Verwaltung Bedenken wegen Unkraut und Pflegeaufwand äußert.
+    - Beschluss, den Unterhaltungsweg mit einem geeigneten Bodenbelag (z. B. Rasenpflaster) ökologisch und gestalterisch anzulegen.
+- Am Heegwald ← BPlan Karlsruher Straße - 2.7 Ansichten Süd-Ost und Nord [[content] …GmbH &amp; Co. KG Dipl.-Ing. (FH) Daniel Reusch, Architekt Am Heegwald 26 76227 Kartxruhe Fon +49 (0) 721 476]
+  reason: Die Adresse stammt aus dem Planer-Block und ist kein inhaltlicher Bezug im Haupttext.
+  context:
+    Dipl.-Ing. (FH) Daniel Reusch, Architekt
+    Am Heegwald 26
+    76227 Kartxruhe
+- Südlicher Herrenhof ← Lageplan Kaiserstraße 161 [[content] …| |  Arbeitsgericht Vwg 27 WGhs 12 WGhs 12  |   |   | |  Südlicher Herrenhof  |   |   | |  Neues Ständehaus  ]
+  reason: Der Name erscheint nur in einer tabellarischen Auflistung ohne inhaltlichen Bezug zum Haupttext des Dokuments.
+  context:
+    |  Arbeitsgericht Vwg 27 WGhs 12 WGhs 12  |   |   |
+    |  Südlicher Herrenhof  |   |   |
+    |  Neues Ständehaus  |   |   |
+- Stephanienstraße ← Herrenalber Straße14 [[content] …3.jpg)  |  Architekten archis Architekten + Ingenieure GmbH Stephanienstraße 30 D-76133 Karlsruhe | Tel (0721]
+  reason: Die Straße erscheint ausschließlich in der Adresse des Architekturbüros.
+  context:
+    + Ingenieure GmbH
+    Stephanienstraße 30
+    D-76133 Karlsruhe | Tel (0721) 919 61-0
+- Marktplatz ← Protokoll Anträge Nrn. 140-142 [[content] …DHH-Beratungen 2019/20)  **Standort:** Bürgersaal, Rathaus, Marktplatz, Karlsruhe  **Vorsitzender:** Oberbürg]
+  reason: Der Name erscheint ausschließlich im Standort-Block als Veranstaltungsort-Boilerplate.
+  context:
+    **Standort:** Bürgersaal, Rathaus, Marktplatz, Karlsruhe
+- Stuttgarter Straße ← BPlan Stuttgarter Straße Anlage 2 [[name] …BPlan Stuttgarter Straße Anlage 2 # Vorhaben‑ und Erschließungsplan    **Verfasser:*…]
+  reason: Der Name erscheint nur im Dokumenttitel als Teil des Dateinamens, nicht im inhaltlichen Haupttext.
+  context:
+    (match not in content — from name/teaser)
+- Marktplatz ← Tagesordnung (öffentlich) Ausschuss/Ortschaftsrat [[content] …rstraße erhalten Antrag: DIE LINKE. Vorlage: 2022/1068 2.3. Marktplatz für die Zukunft mit Bäumen ausstatten ]
+  reason: Der Marktplatz wird nur im Veranstaltungsort-Boilerplate (Bürgersaal, Rathaus am Marktplatz) genannt.
+  context:
+    Bürgersaal, Rathaus am Marktplatz
+- Henriette-Obermüller-Straße ← Protokoll TOP 1 [[content] …öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird ausschließlich im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt, nicht im Haupttext des Protokolls.
+  context:
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
+    Henriette-Obermüller-Straße 10,
+    Karlsruhe  |
+- Marktplatz ← Protokoll TOP 6 [[content] …e Sitzung war öffentlich, fand im Bürgersaal des Rathauses, Marktplatz, Karlsruhe statt, und die Abstimmungse]
+  reason: Der Name wird ausschließlich im Veranstaltungsort-Boilerplate (Bürgersaal des Rathauses, Marktplatz) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    *Die Sitzung war öffentlich, fand im Bürgersaal des Rathauses, Marktplatz, Karlsruhe statt, und die Abstimmungsergebnisse liegen im Bericht unter den jeweiligen Themenfeldern 1 bis 5.*

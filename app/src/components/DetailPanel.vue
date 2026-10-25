@@ -77,7 +77,16 @@ const node = computed(() => (props.selection?.kind === 'node' ? props.selection.
 const edge = computed(() => (props.selection?.kind === 'edge' ? props.selection.data : null));
 
 const raw = computed(() => node.value?.raw || node.value || {});
-const typeLabel = computed(() => TYPE_LABELS[raw.value.type] || raw.value.type || 'Kante');
+const typeLabel = computed(() => {
+  const base = TYPE_LABELS[raw.value.type] || raw.value.type || 'Kante';
+  // change: network-highlighting — agenda items read "Tagesordnungspunkt"
+  // (with their TOP number when known), not the abbreviated "TOP"
+  if (raw.value.type === 'AgendaItem') {
+    const num = raw.value.attrs?.number;
+    return num ? `Tagesordnungspunkt (TOP ${num})` : 'Tagesordnungspunkt';
+  }
+  return base;
+});
 const typeColor = computed(() => TYPE_COLORS[raw.value.type] || '#667eea');
 const title = computed(() => {
   if (edge.value) return `${edge.value.relation}`;
