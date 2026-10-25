@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 20930 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 9778, "boilerplate": 1965, "unsure": 18, "error": 0} (of 20930 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 10101, "boilerplate": 1976, "unsure": 19, "error": 0} (of 20930 rows)
 
-### Removal candidates so far (1965):
+### Removal candidates so far (1976):
 - Am Alten Bahnhof ← TOP 2 Anlage1 [regex: Hausnummer + PLZ Karlsruhe | [content] …uptstr. 256  ![00589785_img_1_1.jpg](00589785_img_1_1.jpg)  Am Alten Bahnhof 7 76149 Karlsruhe-Neur]
   context:
     Am Alten Bahnhof 7
@@ -7049,3 +7049,63 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
     |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
     Henriette-Obermüller-Straße 10,
     Karlsruhe  |
+- Henriette-Obermüller-Straße ← Protokoll TOP 2 [[content] …öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird ausschließlich im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt, nicht im Haupttext des Beschlusses.
+  context:
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
+    Henriette-Obermüller-Straße 10,
+    Karlsruhe  |
+- Im Mittelfeld ← Protokoll TOP 2.1 [[content] …900 Straftaten pro 100.000 Einwohner zusammen mit Stuttgart im Mittelfeld positioniert ist. Positiv sei auch ]
+  reason: Der Begriff 'Mittelfeld' bezieht sich auf eine Positionierung in einer Statistik und ist kein konkreter Stadtteil oder eine Straße.
+  context:
+    Die Berichterstattung stellt den aktuellen Stand der Kriminalitätslage und das Sicherheitsbewusstsein in Karlsruhe dar. Aus den statistischen Daten geht hervor, dass die Stadt bei acht Großstädten in Baden-Württemberg mit rund 8.900 Straftaten pro 100.000 Einwohner zusammen mit Stuttgart im Mittelfeld positioniert ist. Positiv sei auch der Rückgang der erfassten Straftaten einschließlich derjenigen gegen das Aufenthalts- und Asylgesetz in Karlsruhe von -2,9 % gegenüber der Vorzeit 2012.
+- Esslinger Straße ← Tagesordnung Ausschuss/OV (öffentlich) [[content] …10. Mai 2022, 19:00 Uhr,  Musiksaal der Heinz-Barth-Schule, Esslinger Straße 2, 76228 Karlsruhe  # Öffentlich]
+  reason: Die Straße wird nur im Veranstaltungsort-Boilerplate (Musiksaal der Heinz-Barth-Schule, Esslinger Straße 2) genannt.
+  context:
+    Musiksaal der Heinz-Barth-Schule, Esslinger Straße 2, 76228 Karlsruhe
+- Henriette-Obermüller-Straße ← Protokoll TOP 4 [[content] …öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird nur im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
+    Henriette-Obermüller-Straße 10,
+    Karlsruhe  |
+- Hofäckerweg ← TOP 9, Anlage Erbbaurecht SVF 1988 [[content] …rvereins Grötzingen e.V., z. Hd. von Herrn Herbert Kleiber, Hofäckerweg 2, 7500 Karlsruhe 41, ein Erbbaurecht]
+  reason: Die Straße wird ausschließlich in der Empfängeradresse des Erbbauberechtigten genannt, nicht im inhaltlichen Haupttext.
+  context:
+    des Sportfischervereins Grötzingen e.V., z. Hd. von Herrn Herbert
+    Kleiber, Hofäckerweg 2, 7500 Karlsruhe 41, ein Erbbaurecht bestellt.
+    Das Erbbaurecht beginnt mit der Eintragung im Grundbuch und endet
+- Henriette-Obermüller-Straße ← Protokoll TOP 16 [[content] …öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird nur im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt, nicht im Haupttext des Beschlusses.
+  context:
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
+    Henriette-Obermüller-Straße 10,
+    Karlsruhe  |
+- Heidenheimer Straße ← Lageplan Anlage [[content] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Heidenheimer Straße Zur Ziegelhütte 17  |   |   |]
+  reason: Die Straße wird ausschließlich im Adresskopf des Liegenschaftsamts genannt.
+  context:
+    | --- | --- | --- |
+    |  Heidenheimer Straße
+    Zur Ziegelhütte 17  |   |   |
+- Zur Ziegelhütte ← Lageplan Anlage [[content] …tsamt  |   |   | | --- | --- | --- | |  Heidenheimer Straße Zur Ziegelhütte 17  |   |   | |  Maßstab 1 : 750 ]
+  reason: Die Straße wird ausschließlich im Adresskopf des Liegenschaftsamts genannt.
+  context:
+    |  Heidenheimer Straße
+    Zur Ziegelhütte 17  |   |   |
+    |  Maßstab
+- Ludwig-Erhard-Allee ← Anlage_Geltungsbereich_A3_1500 [[content] …urrer Straße  ![00610660_img_1_2.jpg](00610660_img_1_2.jpg) Ludwig-Erhard-Allee  ![00610660_img_1_3.jpg](0061]
+  reason: Wird nur im Bildkontext (Metadaten) genannt, nicht im Haupttext.
+  context:
+    ![00610660_img_1_2.jpg](00610660_img_1_2.jpg)
+    Ludwig-Erhard-Allee
+- Schützenstraße ← Anlage_Geltungsbereich_A3_1500 [[content] …-Reis-Straße  ![00610660_img_1_5.jpg](00610660_img_1_5.jpg) Schützenstraße  ![00610660_img_1_6.jpg](00610660_]
+  reason: Wird nur im Bildkontext (Metadaten) genannt, nicht im Haupttext.
+  context:
+    ![00610660_img_1_5.jpg](00610660_img_1_5.jpg)
+    Schützenstraße
+- Marktplatz ← Protokoll TOP 20 [[content] …inderats Karlsruhe, öffentlich im Bürgersaal des Rathauses, Marktplatz   - **Wichtigste Argumente:**     * Ka]
+  reason: Der Name stammt aus dem Veranstaltungsort-Boilerplate ('Bürgersaal des Rathauses, Marktplatz') und wird nicht inhaltlich im Haupttext behandelt.
+  context:
+    - **Datum der Sitzung:** 15. Mai 2018, 15:30 Uhr
+    - **Gremium:** 50. Plenarsitzung des Gemeinderats Karlsruhe, öffentlich im Bürgersaal des Rathauses, Marktplatz
+    - **Wichtigste Argumente:**
