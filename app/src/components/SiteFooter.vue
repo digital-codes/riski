@@ -4,6 +4,7 @@ const year = new Date().getFullYear();
 const links = [
   { path: '/datenschutz', label: 'Datenschutz' },
   { path: '/impressum', label: 'Impressum' },
+
 ];
 
 defineEmits(['navigate']);
@@ -24,6 +25,12 @@ defineEmits(['navigate']);
           class="footer-link"
           @click="$emit('navigate', link.path)"
         >{{ link.label }}</a>
+        <a
+          href="https://github.com/digital-codes/riski"
+          class="footer-link"
+          target="_blank"
+          rel="noopener noreferrer"
+        >Repository</a>
       </div>
       <p class="footer-copy">© {{ year }} riski</p>
     </div>
