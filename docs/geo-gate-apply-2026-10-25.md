@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 20930 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 10101, "boilerplate": 1976, "unsure": 19, "error": 0} (of 20930 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 10512, "boilerplate": 1986, "unsure": 21, "error": 0} (of 20930 rows)
 
-### Removal candidates so far (1976):
+### Removal candidates so far (1986):
 - Am Alten Bahnhof ← TOP 2 Anlage1 [regex: Hausnummer + PLZ Karlsruhe | [content] …uptstr. 256  ![00589785_img_1_1.jpg](00589785_img_1_1.jpg)  Am Alten Bahnhof 7 76149 Karlsruhe-Neur]
   context:
     Am Alten Bahnhof 7
@@ -7109,3 +7109,53 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
     - **Datum der Sitzung:** 15. Mai 2018, 15:30 Uhr
     - **Gremium:** 50. Plenarsitzung des Gemeinderats Karlsruhe, öffentlich im Bürgersaal des Rathauses, Marktplatz
     - **Wichtigste Argumente:**
+- Hebelstraße ← Antrag Interfrak_013 [[content] …rank Mentrup  **Gremium:** Gemeinderatsfraktionen SPD, CDU, Hebelstraße 21 und der Stadtverband Karlsruhe  **]
+  reason: Die Straße wird ausschließlich im Kontext der Gremiumszusammensetzung als Adressangabe genannt, nicht im Haupttext inhaltlich behandelt.
+  context:
+    **Gremium:** Gemeinderatsfraktionen SPD, CDU, Hebelstraße 21 und der Stadtverband Karlsruhe
+- Marktplatz ← Anlage3 RP Schreiben Deckblatt [[content] ….baden-wuerttemberg.de · www.service-bw.de ÖPNV Haltestelle Marktplatz · Parkmöglichkeit Schlossplatz Tiefgar]
+  reason: Der Name erscheint ausschließlich in der Fußzeile als ÖPNV-Haltestelle ohne inhaltlichen Bezug zum Haupttext.
+  context:
+    abteilung5@rpk.bwl.de · www.rp.baden-wuerttemberg.de · www.service-bw.de
+    ÖPNV Haltestelle Marktplatz · Parkmöglichkeit Schlossplatz Tiefgarage
+- Schlossplatz ← Anlage3 RP Schreiben Deckblatt [[content] …service-bw.de ÖPNV Haltestelle Marktplatz · Parkmöglichkeit Schlossplatz Tiefgarage…]
+  reason: Der Name erscheint ausschließlich in der Fußzeile als Parkmöglichkeit ohne inhaltlichen Bezug zum Haupttext.
+  context:
+    abteilung5@rpk.bwl.de · www.rp.baden-wuerttemberg.de · www.service-bw.de
+    ÖPNV Haltestelle Marktplatz · Parkmöglichkeit Schlossplatz Tiefgarage
+- Neureuter Hauptstraße ← Top 2: Anlage 1 [[content] ….08.2016  Herrn Ortsvorsteher Jürgen Stober Rathaus Neureut Neureuter Hauptstraße 76149 Karlsruhe-Neureut  ##]
+  reason: Die Straße wird ausschließlich in der Empfängeradresse des Antrags genannt, nicht im Haupttext des Antrags.
+  context:
+    Rathaus Neureut
+    Neureuter Hauptstraße
+    76149 Karlsruhe-Neureut
+- Henriette-Obermüller-Straße ← Protokoll TOP 19 [[content] …öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird ausschließlich im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt, nicht im Haupttext des TOP 19.
+  context:
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
+    Henriette-Obermüller-Straße 10,
+    Karlsruhe  |
+- Henriette-Obermüller-Straße ← Protokoll Sitzungseröffnung [[content] …rmeister Dr. Frank Mentrup  **Ort:** Südwerk-Bürgerzentrum, Henriette-Obermüller-Straße 10, Karlsruhe  **Tage]
+  reason: Die Straße wird nur als Veranstaltungsort im Metadaten-Bereich (Ort) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    **Ort:** Südwerk-Bürgerzentrum, Henriette-Obermüller-Straße 10, Karlsruhe
+- Humboldtstraße ← Antrag Externe_007_Anlage 1 [[content] …Antrag Externe_007_Anlage 1 Störring, Uwe Gerd Humboldtstraße 33 [76131] Karlsruhe, den 27.10.25  Störring, U]
+  reason: Die Straße wird ausschließlich in der Absenderadresse des Antragstellers genannt, nicht im Haupttext des Dokuments.
+  context:
+    Störring, Uwe Gerd
+    Humboldtstraße 33
+    [76131] Karlsruhe, den 27.10.25
+- Niddastraße ← Tagesordnung Ausschuss/OV (öffentlich) [[content] …ch, 23. März 2022, 19:00 Uhr,  Begegnungsstätte Grötzingen, Niddastraße 9, 76229 Karlsruhe  # Öffentliche Sit]
+  reason: Die Niddastraße wird nur als Veranstaltungsort der Sitzung (Adresszeile) genannt.
+  context:
+    Begegnungsstätte Grötzingen, Niddastraße 9, 76229 Karlsruhe
+- Am Zwinger ← Einladung [[content] …1 und 8 Haltestelle: Friedrichschule  Behindertenparkplatz Am Zwinger 5 (Saumarkt)  11.04.2014…]
+  reason: Der Name erscheint ausschließlich im Kontext der Behindertenparkplatz-Angabe als Metadaten-Information.
+  context:
+    Behindertenparkplatz Am Zwinger 5 (Saumarkt)
+- Henriette-Obermüller-Straße ← Protokoll TOP 54 [[content] …, 15:30 Uhr Öffentlich Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe Vorsitz]
+  reason: Die Straße wird nur als Veranstaltungsort im Metadaten-Bereich (Ort der Sitzung) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    Öffentlich
+    Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe
+    Vorsitzende/r: Oberbürgermeister Dr. Frank Mentrup
