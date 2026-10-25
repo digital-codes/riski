@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 20930 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 6838, "boilerplate": 1890, "unsure": 12, "error": 0} (of 20930 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 8592, "boilerplate": 1931, "unsure": 15, "error": 0} (of 20930 rows)
 
-### Removal candidates so far (1890):
+### Removal candidates so far (1931):
 - Am Alten Bahnhof ← TOP 2 Anlage1 [regex: Hausnummer + PLZ Karlsruhe | [content] …uptstr. 256  ![00589785_img_1_1.jpg](00589785_img_1_1.jpg)  Am Alten Bahnhof 7 76149 Karlsruhe-Neur]
   context:
     Am Alten Bahnhof 7
@@ -6670,3 +6670,210 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
   context:
     Rathaus, Marktplatz
     Telefon
+- Stephanienstraße ← Herrenalber Straße5 [[content] …plätze  |  Architekten archis Architekten + Ingenieure GmbH Stephanienstraße 30 D-76133 Karlsruhe | Tel (0721]
+  reason: Straße erscheint ausschließlich in der Adresse des Architekturbüros.
+  context:
+    + Ingenieure GmbH
+    Stephanienstraße 30
+    D-76133 Karlsruhe | Tel (0721) 919 61-0
+- Pfinztalstraße ← Anlage 1 Pfinztalstraße [[name] …Anlage 1 Pfinztalstraße **Antworten auf die Fragen**  1) Der Bericht wird von der S…]
+  reason: Der Name erscheint nicht im Haupttext, sondern nur im Dokumenttitel als Metadaten.
+  context:
+    (match not in content — from name/teaser)
+- Am Zwinger ← Einladung [[content] …1 und 8 Haltestelle: Friedrichschule  Behindertenparkplatz Am Zwinger 5 (Saumarkt)  02.05.2017  ## Sondersitz]
+  reason: Der Name erscheint ausschließlich im Kontext der Angabe eines Behindertenparkplatzes in einer Fußzeile/Metadatenzeile.
+  context:
+    Behindertenparkplatz
+    Am Zwinger 5
+    (Saumarkt)
+- Marktplatz ← Tagesordnung ö [[content] …sruhe  Stadt Karlsruhe, 76124 Karlsruhe Dezernat 6  Rathaus.Marktplatz  Tel.: 0721133-6114 Fax: 0721 133-1069]
+  reason: Der Name erscheint ausschließlich in Adress- und Metadatenbestandteilen (Rathaus.Marktplatz, HaltestelleMarktplatz).
+  context:
+    Rathaus.Marktplatz
+- Hebelstraße ← Antrag Interfrak_016 [[content] …lle  **1) Präsidium:** Die Gemeinderatsfraktionen SPD, CDU, Hebelstraße 21 und die Stadt Karlsruhe sind veran]
+  reason: Die Straße wird nur im Kontext der Adresse einer Fraktion im Präsidiumsblock genannt, nicht im Hauptinhalt des Antrags.
+  context:
+    **1) Präsidium:**
+    Die Gemeinderatsfraktionen SPD, CDU, Hebelstraße 21 und die Stadt Karlsruhe sind verantwortlich für den Vorschlag.
+- Henriette-Obermüller-Straße ← Protokoll TOP 43 [[content] …, 15:30 Uhr Öffentlich Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe Vorsitz]
+  reason: Die Straße wird nur als Veranstaltungsort im Metadaten-Bereich (Ort der Sitzung) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    Öffentlich
+    Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe
+    Vorsitzende/r: Oberbürgermeister Dr. Frank Mentrup
+- Henriette-Obermüller-Straße ← Protokoll TOP 50.3 [[content] …Öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird ausschließlich im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt, nicht im Haupttext des Dokuments.
+  context:
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
+    Henriette-Obermüller-Straße 10,
+    Karlsruhe  |
+- Henriette-Obermüller-Straße ← Protokoll TOP 3 [[content] …, 15:30 Uhr öffentlich Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe Vorsitz]
+  reason: Die Straße wird nur als Veranstaltungsort im Metadatenbereich (Ort der Sitzung) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    öffentlich
+    Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe
+    Vorsitzende/r: Oberbürgermeister Dr. Frank Mentrup
+- Hebelstraße ← Anlage Antrag Zuschlagskriterien für Schulverpflegung_DIELINKE [[content] …Schulverpflegung_DIELINKE DIE LINKE.  Gemeinderatsfraktion Hebelstraße 13 | 76133 Karlsruhe Tel.: 0721 133 10]
+  reason: Die Straße wird ausschließlich in der Absenderadresse der Fraktion genannt, nicht im inhaltlichen Haupttext des Antrags.
+  context:
+    Gemeinderatsfraktion
+    Hebelstraße 13 | 76133 Karlsruhe
+    Tel.: 0721 133 1095 | Fax: 0721 133 1579
+- Im Mittelfeld ← Stellungnahme TOP 20 [[content] …esamt liegen die Stadtwerke mit ihren Strom- und Gaspreisen im Mittelfeld der Mitwettbewerber und im Preisber]
+  reason: Der Begriff bezieht sich auf einen Preisvergleich und ist kein Straßennamen oder Stadtteil.
+  context:
+    In den Geschäftsfeldern der Stadtwerke Karlsruhe, die dem freien Wettbewerb unterliegen (insbesondere Strom und Gas) orientieren sich die Stadtwerke am Marktpreis und Konditionen der Mitwettbewerber. Eine einseitige Preiserhöhung durch die Stadtwerke Karlsruhe würde hier zu starken Kundenverlusten führen, welche nicht im Interesse der Stadtwerke Karlsruhe sind. Insgesamt liegen die Stadtwerke mit ihren Strom- und Gaspreisen im Mittelfeld der Mitwettbewerber und im Preisbereich anderer Stadtwerke.
+- Festplatz ← Tagesordnung (öffentlich) [[content] …16. Januar 2018, 16:30 Uhr,  Konferenzraum 1, Gartenhalle, Festplatz 3  TAGESORDNUNG  ÖFFENTLICHE SITZUNG  1.]
+  reason: Der Fundkontext zeigt, dass 'Festplatz' nur als Veranstaltungsort in der Tagesordnung (Metadaten) genannt wird.
+  context:
+    Konferenzraum 1, Gartenhalle, Festplatz 3
+- Festplatz ← Anwesenheit (Protokoll) [[content] …ffentlich | nicht öffentlich  Konferenzraum 1, Gartenhalle, Festplatz 3  Vorsitzender: Oberbürgermeister Dr. ]
+  reason: Der Name erscheint ausschließlich im Veranstaltungsort-Boilerplate (Konferenzraum 1, Gartenhalle, Festplatz 3).
+  context:
+    Konferenzraum 1, Gartenhalle, Festplatz 3
+- Festplatz ← Protokoll Sitzungseröffnung, außerhalb Tagesordnung [[content] …nuar 2018, 16:30  öffentlich  Konferenzraum 1, Gartenhalle, Festplatz 3  Vorsitzender: Oberbürgermeister Dr. ]
+  reason: Der Name erscheint ausschließlich im Veranstaltungsort-Boilerplate (Konferenzraum 1, Gartenhalle, Festplatz 3).
+  context:
+    Konferenzraum 1, Gartenhalle, Festplatz 3
+- Stephanienstraße ← Herrenalber Straße8 [[content] …1.jpg)  |  Architekten archis Architekten + Ingenieure GmbH Stephanienstraße 30 D-76133 Karlsruhe | Tel (0721]
+  reason: Die Straße wird ausschließlich in der Absenderadresse der Architektenfirma genannt.
+  context:
+    + Ingenieure GmbH
+    Stephanienstraße 30
+    D-76133 Karlsruhe | Tel (0721) 919 61-0
+- Michelinstraße ← TOP 3: Anlage [[content] …Brücke; Fläche 700 m²  Stadt Karlsruhe - Tiefbauamt -  836 Michelinstraße, Deckenerneuerung und Instandsetzun]
+  reason: Straße wird nur in der Adresse des Tiefbauamts genannt, nicht im inhaltlichen Haupttext.
+  context:
+    836 Michelinstraße, Deckenerneuerung und Instandsetzung Albbrücke in der Blohnstraße
+    Anlage zur Bauausschussvorlage
+- Marktplatz ← Tagesordnung öffentlich [[content] …hluss gem. § 2 Abs. 1 BauGB Vorlage Nr. 101/PlanA  Rathaus, Marktplatz  Telefon 0721/133-6114 Telefax 0721/13]
+  reason: Straße wird nur im Adressblock ('Rathaus, Marktplatz') und als Haltestellenangabe genannt.
+  context:
+    Rathaus, Marktplatz
+- Marktplatz ← Tagesordnung ö [[content] …ruhe  Stadt Karlsruhe, 76124 Karlsruhe Dezernat 6  Rathaus, Marktplatz  Tel.: 0721133-6114 Fax: 0721 133-1069]
+  reason: Der Name erscheint ausschließlich in Metadaten wie Adresszeilen und Fußzeilen.
+  context:
+    Rathaus, Marktplatz
+- Europaplatz ← Einladung 21.09.23 [[content] …ntegration - Kaiserstraße 235, 76133 Karlsruhe Haltestelle: Europaplatz Sprechzeiten: nach telefonischer Vere]
+  reason: Der Name erscheint ausschließlich im Kontext der Haltestellenangabe des Büros für Integration, nicht im Haupttext der Einladung.
+  context:
+    Kaiserstraße 235, 76133 Karlsruhe
+    Haltestelle: Europaplatz
+    Sprechzeiten: nach telefonischer Vereinbarung
+- Marktplatz ← Protokoll GR TOP 35 [[content] …m auf Europa hinzuweisen. Von 11 bis 17 Uhr gibt es auf dem Marktplatz ein Info- und Mitmachangebot von EUROP]
+  reason: Der Name erscheint ausschließlich im Veranstaltungsort-Boilerplate des Sitzungsprotokolls.
+  context:
+    öffentlich
+    Bürgersaal, Rathaus am Marktplatz
+    Vorsitzender: Oberbürgermeister Dr. Frank Mentrup
+- Henriette-Obermüller-Straße ← Protokoll TOP 49 [[content] …Öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird ausschließlich im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt, nicht im Haupttext des Dokuments.
+  context:
+    |   |   | Öffentlich  |
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  |
+    |   |  Vorsitzende/r: | Oberbürgermeister Dr. Frank Mentrup  |
+- Durlacher Tor ← Anlage 5_Hst Glogauerstraße [[content] …: 01 21 47 61 61 |   | |  JAN | J. P. P. | VSK |   | |  VSK Durlacher Tor - Waldstadt |   | Rechtsform  | | -]
+  reason: Der Name erscheint ausschließlich im Kontext der Projektbezeichnung 'VSK Durlacher Tor - Waldstadt' in einer Tabellenzeile ohne inhaltliche Behandlung im Haupttext.
+  context:
+    |  JAN | J. P. P. | VSK |   |
+    |  VSK Durlacher Tor - Waldstadt |   | Rechtsform  |
+    | --- | --- | --- |
+- Pfinztalstraße ← Tagesordnung [[content] …ch, 21. Juni 2023, 17:00 Uhr,  im Bürgersaal des Rathauses, Pfinztalstraße 33  # Öffentliche Sitzung  1. Zust]
+  reason: Die Straße wird nur als Veranstaltungsort im Sitzungskopf genannt.
+  context:
+    im Bürgersaal des Rathauses, Pfinztalstraße 33
+- Gartenstraße ← Anlage 3.9 [[content] …|  GREATER  |   |   |   | |  GARTENCARRE  |   |   |   | |  Gartenstraße/ Lerenstraße  |   |   |   | |  Karlsr]
+  reason: Der Name erscheint ausschließlich in der Tabellenstruktur ohne inhaltlichen Bezug im Haupttext.
+  context:
+    |  GARTENCARRE  |   |   |   |
+    |  Gartenstraße/ Lerenstraße  |   |   |   |
+    |  Karlsruhe  |   |   |   |
+- Hirtenweg ← Anlage_1 [[content] …0_img_1_1.jpg)  # Hertha-Sponer-Straße  Technologie - park  Hirtenweg  Landhaus  Emmy-Noether-Str.  Ada-Lovel]
+  reason: Der Name erscheint nur als Teil einer unstrukturierten Liste von Straßennamen ohne inhaltlichen Bezug im Haupttext.
+  context:
+    Hirtenweg
+- Tullastraße ← TOP 1 - Anlage 2 Fahrgastzahlen TBB [[content] …ng Abteilungsleitung  VBK - Verkehrsbetriebe Karlsruhe GmbH Tullastraße 71, D-76131 Karlsruhe Postfach 1140, ]
+  reason: Die Straße wird ausschließlich in der Adresse der absendenden Behörde genannt.
+  context:
+    VBK - Verkehrsbetriebe Karlsruhe GmbH
+    Tullastraße 71, D-76131 Karlsruhe
+    Postfach 1140, D-76001 Karlsruhe
+- Durlacher Allee ← TOP 1 - Anlage 2 Fahrgastzahlen TBB [[content] …Karlsruhe Postfach 1140, D-76001 Karlsruhe  Büroanschrift: Durlacher Allee 71, D-76131 Karlsruhe  ![00663612_]
+  reason: Die Straße wird ausschließlich in der Adresse der absendenden Behörde genannt.
+  context:
+    Büroanschrift:
+    Durlacher Allee 71, D-76131 Karlsruhe
+- Am Heegwald ← BPlan Karlsruher Straße - 5.1 Stellplatznachweis [[content] …eisende Stellplätze Gesamt: 85  Vollack GmbH &amp; Co. KG - Am Heegwald 26 – 76227 Karlsruhe  vollack  # Abzu]
+  reason: Die Straße wird ausschließlich in der Signatur/Adresse der ausstellenden Firma genannt, nicht im inhaltlichen Teil des Stellplatznachweises.
+  context:
+    Vollack GmbH &amp; Co. KG - Am Heegwald 26 – 76227 Karlsruhe
+- Auf der Römerstraße ← Vorl.Nr. 34_Anlage Pläne Bebauungsplan Ochsenstraße [[content] ….jpg](00612073_img_5_1.jpg) Physik Instrumente PI Bebauung: Auf der Römerstraße Karlsruhe Städtebaulicher Ent]
+  reason: Die Straße wird ausschließlich in Adressangaben von Absender und Planverfassern genannt, nicht im Haupttext.
+  context:
+    Physik Instrumente PI
+    Bebauung: Auf der Römerstraße Karlsruhe
+    Städtebaulicher Entwurf PI Variante 02
+- Stephanienstraße ← Herrenalber Straße15 [[content] …2.jpg)  |  Architekten archis Architekten + Ingenieure GmbH Stephanienstraße 30 D-76133 Karlsruhe | Tel (0721]
+  reason: Die Straße wird ausschließlich in der Absenderadresse der Architektenfirma genannt.
+  context:
+    + Ingenieure GmbH
+    Stephanienstraße 30
+    D-76133 Karlsruhe | Tel (0721) 919 61-0
+- Marktplatz ← Tagesordnung (öffentlich) [[content] …chendeckende Granitpflaster in der Kaiserstraße und auf dem Marktplatz 	5. Zukunft des 1. Baseball und Softba]
+  reason: Der Name stammt aus dem Metadaten-Bereich (Ort der Sitzung) und nicht aus dem Haupttext.
+  context:
+    **Ort:** Bürgersaal, Rathaus am Marktplatz
+- Reutstraße ← TOP 3 - Anlage Plan BA Neubergstr [[content] …TOP 3 - Anlage Plan BA Neubergstr chwaldstraße  # Reutstraße  ![00038276_img_1_1.jpg](00038276_img_1_1.jpg)  ]
+  reason: Straße erscheint nur im Fundkontext von Bildunterschriften ohne inhaltlichen Bezug im Haupttext.
+  context:
+    # Reutstraße
+- Sonnenbergstraße ← TOP 3 - Anlage Plan BA Neubergstr [[content] …eutstraße  ![00038276_img_1_1.jpg](00038276_img_1_1.jpg)  # Sonnenbergstraße  ![00038276_img_1_2.jpg](0003827]
+  reason: Straße erscheint nur im Fundkontext von Bildunterschriften ohne inhaltlichen Bezug im Haupttext.
+  context:
+    # Sonnenbergstraße
+- Fröbelstraße ← TOP 12 Vorlage Nr. 192 Minikreisel Fröbelstraße [[name] …TOP 12 Vorlage Nr. 192 Minikreisel Fröbelstraße BESCHLUSSVORLAGE STADT KARLSRUHE Ortsverwaltung Grötzingen…]
+  reason: Der Name erscheint nur im Dokumenttitel und hat keinen inhaltlichen Bezug im Haupttext.
+  context:
+    (match not in content — from name/teaser)
+- Hebelstraße ← Antrag SR Braun_001 [[content] …**Vorträger**: Die Vorlage wurde vom Stadtrat der Gemeinde Hebelstraße, Karlsruhe vorgelegt. 2. **Datum**: Da]
+  reason: Die Hebelstraße wird nur im Kontext des Stadtrats der Gemeinde Hebelstraße als Adressangabe genannt, nicht inhaltlich im Haupttext behandelt.
+  context:
+    1. **Vorträger**: Die Vorlage wurde vom Stadtrat der Gemeinde Hebelstraße, Karlsruhe vorgelegt.
+    2. **Datum**: Das Datum des Berichts ist am 20.11.2025.
+- Marktplatz ← Protokoll TOP 5 HA_20_09_2022 [[content] …ausschusses, öffentlich im Bürgersaal des Rathauses auf der Marktplatz in Karlsruhe.  **4. Thema des Berichts]
+  reason: Der Name wird nur im Veranstaltungsort-Boilerplate ('Bürgersaal des Rathauses auf der Marktplatz') genannt, nicht im inhaltlichen Haupttext.
+  context:
+    **3. Gremium, bei dem die Sitzung oder Vorlage behandelt wurde:**
+    32. Sitzung des Hauupausschusses, öffentlich im Bürgersaal des Rathauses auf der Marktplatz in Karlsruhe.
+- Am Zwinger ← Einladung [[content] …1 und 8 Haltestelle: Friedrichschule  Behindertenparkplatz Am Zwinger 5 (Saumarkt) 23.03.2017  ## Sitzung des]
+  reason: Die Straße wird ausschließlich im Kontext der Adresse eines Behindertenparkplatzes in der Fußzeile/Metadaten genannt.
+  context:
+    Behindertenparkplatz
+    Am Zwinger 5
+    (Saumarkt)
+- Marktplatz ← Tagesordnung ö [[content] …aße 37, Karlsruhe-Waldstadt Vorlage Nr. 231/PlanA  Rathaus, Marktplatz  Telefon 0721/133-6114 Telefax 0721/13]
+  reason: Der Name erscheint nur in Metadaten wie Adresszeilen und Veranstaltungsort-Angaben.
+  context:
+    Rathaus, Marktplatz
+- Marktplatz ← Tagesordnung öffentlich [[content] …rten  Stadt Karlsruhe, 76124 Karlsruhe Dezernat 6  Rathaus, Marktplatz Tel.: 0721 133-6114 Fax: 0721 133-1069]
+  reason: Der Name erscheint ausschließlich in Adress- und Metadatenbestandteilen (Rathaus, Haltestelle) ohne inhaltliche Behandlung im Haupttext.
+  context:
+    Rathaus, Marktplatz
+    Tel.: 0721 133-6114
+- Mühlburger Tor ← TOP 11 Schreiben OA 23.06.17 [[content] …2:30 Uhr Mo - Mi 14 - 15:30 Uhr Do 14 - 17 Uhr  Haltestelle Mühlburger Tor  Aktuelle Hinweise zum Fahrplan er]
+  reason: Der Name erscheint nur in der Fußzeile als Haltestellenangabe ohne inhaltlichen Bezug.
+  context:
+    Haltestelle
+    Mühlburger Tor
+- Marktplatz ← TOP 4 Toilettenkonzept Anlage 2 [[content] …595811_img_1_1.jpg](00595811_img_1_1.jpg)  Stadtamt Durlach Marktplatz 76227 Karlsruhe  Sachbearbeiter/-in: T]
+  reason: Der Name erscheint ausschließlich in der Adresse des Stadtamts Durlach.
+  context:
+    Stadtamt Durlach
+    Marktplatz
+    76227 Karlsruhe
+- Am Zwinger ← TOP 4 Toilettenkonzept Anlage 2 [[content] …1 und 8 Haltestelle: Friedrichschule  Behindertenparkplatz Am Zwinger 5 (Saumarkt)  08.09.2016  # Toilettenan]
+  reason: Der Name wird nur im Kontext des Behindertenparkplatzes als Metadaten-Information genannt.
+  context:
+    Behindertenparkplatz
+    Am Zwinger 5
+    (Saumarkt)

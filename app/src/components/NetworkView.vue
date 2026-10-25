@@ -146,9 +146,18 @@ const degree = computed(() => {
 
 // ---- answer-list marking (change: network-highlighting) -------------------
 // permissive display semantics: only a clear membership/rejection state
-// changes the look; everything else renders as before
-const HIGHLIGHT_COLOR = '#667eea';
+// changes the look; everything else renders as before.
+// Accepted (docs/topics of the answer list): DOUBLE ring — an SVG-path
+// symbol of two concentric stroke circles over the category-colored disc,
+// dark stroke for contrast against every category color and the white
+// card. Rejected (excluded/refused): a SINGLE red ring — no dimming, so
+// the two states never blur into each other.
+const RING_COLOR = '#1f2937';
 const REJECTED_COLOR = '#dc2626';
+// two concentric circles (r 12 / r 7 in a 24-unit box; the symbol scales
+// with symbolSize) — same winding, so both strokes render as rings
+const DOUBLE_RING_SYMBOL =
+  'path://M0,-12 a12,12 0 1,0 0.0001,0 Z M0,-7 a7,7 0 1,0 0.0001,0 Z';
 
 const activeFiles = computed(() => new Set(props.activeFileKeys));
 const rejectedFiles = computed(() => new Set(props.rejectedFileKeys));
@@ -166,13 +175,19 @@ function nodeStatus(n) {
   return undefined;
 }
 
+function nodeSymbol(n) {
+  return nodeStatus(n) === 'active' ? DOUBLE_RING_SYMBOL : 'circle';
+}
+
 function nodeItemStyle(n) {
   const status = nodeStatus(n);
   if (status === 'active') {
-    return { borderColor: HIGHLIGHT_COLOR, borderWidth: 2.5 };
+    // the path symbol is filled with the category color; the two stroke
+    // circles form the double ring
+    return { color: typeColor(n.type), borderColor: RING_COLOR, borderWidth: 2 };
   }
   if (status === 'rejected') {
-    return { opacity: 0.22, borderColor: REJECTED_COLOR, borderWidth: 1.5, borderType: 'dashed' };
+    return { borderColor: REJECTED_COLOR, borderWidth: 2 };
   }
   return undefined;
 }
@@ -203,11 +218,15 @@ function toOption() {
   const nodes = visibleNodes.value.map((n) => {
     const deg = degree.value[n.id] || 0;
     const itemStyle = nodeItemStyle(n);
+    const symbol = nodeSymbol(n);
+    const boosted = symbol !== 'circle';
     return {
       id: n.id,
       name: truncate(n.name),
       category: catIndex[n.type] ?? 0,
-      symbolSize: MIN_DEGREE_SIZE + (MAX_DEGREE_SIZE - MIN_DEGREE_SIZE) * Math.sqrt(deg / maxDeg),
+      symbol,
+      symbolSize: (MIN_DEGREE_SIZE + (MAX_DEGREE_SIZE - MIN_DEGREE_SIZE) * Math.sqrt(deg / maxDeg))
+        * (boosted ? 1.15 : 1),
       ...(itemStyle ? { itemStyle } : {}),
       // full data for the detail panel — kept raw on the node
       raw: n,

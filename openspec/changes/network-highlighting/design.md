@@ -37,18 +37,21 @@ and make the marking reactive for free (the `watch(() => props.graph)`
 already re-renders; prop changes re-trigger via the same deep watch plus
 Vue's reactivity on computed sets).
 
-**D2 — Visual language.**
-- *Enabled list documents / listed topics*: 2.5 px highlight ring
-  (`itemStyle.borderColor: #667eea`, `borderWidth: 2.5`) + a tooltip
-  prefix. One accent color for "this is part of the answer list" — the
-  existing primary (`#667eea`), no new palette entries.
-- *Rejected documents (excluded or refused)*: `opacity: 0.22` +
-  dashed `#dc2626` border + tooltip suffix "— deaktiviert"/"— nicht
-  relevant". Dimming (not hiding) preserves the graph topology context
-  while making the rejection unmistakable. Hiding rejected nodes was
-  rejected: the user asked for *distinguishable*, not filtered (and the
-  type/relation chips already provide filtering).
-- *Everything else*: unchanged.
+**D2 — Visual language.** (Amended after first visual check: dimming had
+too little contrast against the many traversal nodes.)
+- *Enabled list documents / listed topics*: **double ring** — an SVG-path
+  symbol (two concentric stroke circles over the category-colored disc,
+  `path://M0,-12 a12,12 0 1,0 0.0001,0 Z M0,-7 a7,7 0 1,0 0.0001,0 Z`),
+  dark stroke (`#1f2937`) for contrast against every category color and
+  the white card, symbol size boosted ×1.15, tooltip prefix "Trefferliste"
+  / "Themenliste".
+- *Rejected documents (excluded or refused)*: **single red ring**
+  (`#dc2626`, 2 px) — no dimming; the ring count (two vs one) is the
+  contrast carrier, so both states stay fully visible in the graph.
+  Hiding rejected nodes was rejected: the user asked for
+  *distinguishable*, not filtered (and the type/relation chips already
+  provide filtering).
+- *Everything else*: unchanged (plain category-colored circle, no ring).
 
 **D3 — Force layout tuning (empirical, node-count aware).**
 - `gravity: 0.25` (was 0.12) — stronger pull to the viewport center.
