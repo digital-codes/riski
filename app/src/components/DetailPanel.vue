@@ -2,7 +2,7 @@
   <transition name="panel">
     <aside v-if="selection" class="detail-panel" :class="{ mobile: isMobile }">
       <header class="panel-header">
-        <span class="type-badge" :style="{ background: typeColor }">{{ typeLabel }}</span>
+        <span class="type-badge" :style="{ background: typeColor, color: typeTextColor }">{{ typeLabel }}</span>
         <button type="button" class="close-btn" @click="$emit('close')" aria-label="Schließen">✕</button>
       </header>
 
@@ -88,6 +88,16 @@ const typeLabel = computed(() => {
   return base;
 });
 const typeColor = computed(() => TYPE_COLORS[raw.value.type] || '#667eea');
+// white text is unreadable on the light category fills (AgendaItem yellow,
+// AuxFile light green) — pick the text color by background luminance
+const typeTextColor = computed(() => {
+  const hex = typeColor.value.replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  // WCAG relative luminance approximation
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6 ? '#1f2937' : 'white';
+});
 const title = computed(() => {
   if (edge.value) return `${edge.value.relation}`;
   return raw.value.name || 'Ohne Titel';

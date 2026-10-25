@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 20930 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 9705, "boilerplate": 1963, "unsure": 17, "error": 0} (of 20930 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 9778, "boilerplate": 1965, "unsure": 18, "error": 0} (of 20930 rows)
 
-### Removal candidates so far (1963):
+### Removal candidates so far (1965):
 - Am Alten Bahnhof ← TOP 2 Anlage1 [regex: Hausnummer + PLZ Karlsruhe | [content] …uptstr. 256  ![00589785_img_1_1.jpg](00589785_img_1_1.jpg)  Am Alten Bahnhof 7 76149 Karlsruhe-Neur]
   context:
     Am Alten Bahnhof 7
@@ -7039,3 +7039,13 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
   reason: Der Name wird ausschließlich im Veranstaltungsort-Boilerplate (Bürgersaal des Rathauses, Marktplatz) genannt, nicht im inhaltlichen Haupttext.
   context:
     *Die Sitzung war öffentlich, fand im Bürgersaal des Rathauses, Marktplatz, Karlsruhe statt, und die Abstimmungsergebnisse liegen im Bericht unter den jeweiligen Themenfeldern 1 bis 5.*
+- Esslinger Straße ← Tagesordnung Ausschuss/OV (öffentlich) [[content] …ezember 2021, 19:00 Uhr,  Musiksaal der Heinz-Barth-Schule, Esslinger Straße 2, 76228 Karlsruhe  # Öffentlich]
+  reason: Die Straße wird nur als Veranstaltungsort im Kopfbereich der Tagesordnung genannt.
+  context:
+    Musiksaal der Heinz-Barth-Schule, Esslinger Straße 2, 76228 Karlsruhe
+- Henriette-Obermüller-Straße ← Protokoll TOP 50.1 [[content] …Öffentlich  | |   |  Ort: | Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe  | |   ]
+  reason: Die Straße wird ausschließlich im Veranstaltungsort-Boilerplate (Ort der Sitzung) genannt, nicht im Haupttext des Dokuments.
+  context:
+    |   |  Ort: | Südwerk-Bürgerzentrum Südstadt,
+    Henriette-Obermüller-Straße 10,
+    Karlsruhe  |
