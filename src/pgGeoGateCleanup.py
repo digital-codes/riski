@@ -96,6 +96,45 @@ def _context_lines(content: str, name: str, lines: int = 3) -> str:
     return "(match not in content — from name/teaser)"
 
 
+# ---------------------------------------------------------------------------
+# regex pre-filter (bulk cleanup only, not the regular pipeline)
+# ---------------------------------------------------------------------------
+# A typical address mention: <street> + house number, then — separated by
+# blanks/commas/newlines — the postal code and city:
+#   "Hebelstraße 21, 76133 Karlsruhe" / "Hebelstraße 13\n76133 Karlsruhe"
+# Strictly permissive: a name counts as regex-boilerplate ONLY when EVERY
+# occurrence in the content sits in such an address pattern. One occurrence
+# outside address blocks → the mention goes to the LLM (protects genuine
+# content like "Verkauf des Hauses der Fraktionen in der Hebelstraße 13").
+
+_HOUSE_NUMBER = r"\d+\s*[a-zA-Z]?(?:\s*[-/]\s*\d+\s*[a-zA-Z]?)?"
+_SEPARATOR = r"[\s,;·]{0,8}"
+_PLZ_CITY = r"\d{5}\s+Karlsruhe"
+
+
+def _address_regex(name: str):
+    return re.compile(
+        rf"{re.escape(name)}\s*{_HOUSE_NUMBER}{_SEPARATOR}{_PLZ_CITY}",
+        re.IGNORECASE,
+    )
+
+
+def _name_occurrences(content: str, name: str) -> List[int]:
+    return [m.start() for m in re.finditer(
+        re.escape(name), content, re.IGNORECASE)]
+
+
+def regex_all_addresses(content: str, name: str) -> bool:
+    """True when the content mentions *name* at least once and EVERY
+    occurrence is part of an address block (house number + PLZ Karlsruhe
+    following). Strict: one non-address occurrence disqualifies."""
+    occurrences = _name_occurrences(content, name)
+    if not occurrences:
+        return False  # not verbatim in content → let the LLM decide
+    addr = _address_regex(name)
+    return all(addr.match(content, pos) is not None for pos in occurrences)
+
+
 def _verdict_from_evidence_context(row: Dict[str, Any],
                                    gate: GeoGate) -> Optional[str]:
     """Locate the mention's context in the content for the prompt."""
@@ -107,7 +146,8 @@ def _verdict_from_evidence_context(row: Dict[str, Any],
 def run(assoc_tables: Optional[List[str]] = None, batch: int = 25,
         limit: Optional[int] = None, dry_run: bool = False,
         reprocess_unsure: bool = False, purge_boilerplate: bool = False,
-        engine=None, out_path: Optional[str] = None) -> Dict[str, Any]:
+        engine=None, out_path: Optional[str] = None,
+        use_regex: bool = True) -> Dict[str, Any]:
     engine = engine or get_engine()
     gate = GeoGate(engine=engine)
     gate.ensure_columns()
@@ -138,8 +178,30 @@ def run(assoc_tables: Optional[List[str]] = None, batch: int = 25,
         report_lines.append("")
 
         # one LLM call per document, its rows gated (and written) right away
+        # — but FIRST the regex pre-filter (bulk only): obvious address-block
+        # mentions never reach the LLM
         by_doc: Dict[Any, List[Dict[str, Any]]] = {}
+        regex_stats = {"regex_boilerplate": 0}
         for r in rows:
+            content = r.get("content") or ""
+            if use_regex and regex_all_addresses(content, r["entity_name"]):
+                regex_stats["regex_boilerplate"] += 1
+                counts["boilerplate"] += 1
+                removals.append(
+                    f"- {r['entity_name']} ← "
+                    f"{r.get('doc_name') or r.get('item_sid')} "
+                    f"[regex: Hausnummer + PLZ Karlsruhe | {r['evidence'][:110]}]\n"
+                    f"  context:\n    {_context_lines(content, r['entity_name'])}")
+                if not dry_run:
+                    verdict = {"verdict": "boilerplate",
+                               "reason": "regex: Adressblock (Hausnummer + PLZ Karlsruhe)"}
+                    gate.write_verdicts(table, [
+                        {"entity_id": r["entity_id"],
+                         "entity_name": r["entity_name"],
+                         **({"file_id": r["file_sid"]} if "file_sid" in r
+                            else {"item_sid": r["item_sid"]})}
+                    ], {r["entity_name"]: verdict}, entity_col)
+                continue
             by_doc.setdefault(r.get("file_sid") or r.get("item_sid"), []).append(r)
 
         for doc_sid, doc_rows in by_doc.items():
@@ -181,7 +243,8 @@ def run(assoc_tables: Optional[List[str]] = None, batch: int = 25,
                 _flush_report(report_lines, removals, counts, table,
                               len(rows), dry_run, gated_written, out_path)
 
-        report_lines.append(f"verdicts: {json.dumps(counts)}")
+        report_lines.append(f"verdicts: {json.dumps(counts)}"
+                            f"  (regex pre-filter removed: {regex_stats['regex_boilerplate']})")
         if not dry_run:
             report_lines.append(f"rows gated: {gated_written}")
         if removals:
@@ -234,6 +297,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap.add_argument("--purge-boilerplate", action="store_true",
                     help="DELETE boilerplate rows instead of only marking "
                          "(asks for confirmation)")
+    ap.add_argument("--no-regex", action="store_true",
+                    help="Skip the regex address pre-filter (LLM for all rows)")
     ap.add_argument("--out", default=None,
                     help="Write the (dry-run) report to this path")
     args = ap.parse_args(argv)
@@ -249,6 +314,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     run(assoc_tables=args.table, batch=args.batch, limit=args.limit,
         dry_run=args.dry_run, reprocess_unsure=args.reprocess,
         purge_boilerplate=args.purge_boilerplate,
+        use_regex=not args.no_regex,
         out_path=args.out or default_out)
     return 0
 
