@@ -36,7 +36,11 @@
     </div>
   </div>
   <div class="wrapper">
-    <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph" @select="onSelect" />
+    <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph"
+      :active-file-keys="activeFileKeys"
+      :rejected-file-keys="rejectedFileKeys"
+      :active-item-keys="activeItemKeys"
+      @select="onSelect" />
   </div>
   <DetailPanel
     :selection="selection"
@@ -90,6 +94,8 @@ const refining = ref(false);
 const summaryRefined = ref(false);
 // per-session exclusions — applied to every subsequent summarize call
 const summaryExclude = ref([]);
+// summarizer-refused documents (arrives with the /summarize response)
+const summaryRefused = ref([]);
 const geoAvailable = ref(false);
 const geoFC = ref(null);
 const error = ref(null);
@@ -107,6 +113,20 @@ const answerMode = ref(null);
 
 // graph is mutable state: search replaces it, /expand merges into it
 const graph = ref(null);
+
+// change: network-highlighting — answer-list membership/rejection in the
+// network view, derived from the live summary state (updates on every
+// toggle/refine without a new search)
+const activeFileKeys = computed(() =>
+  (summaryFiles.value || [])
+    .filter((f) => f.oparlKey && !f.excluded)
+    .map((f) => f.oparlKey));
+const rejectedFileKeys = computed(() => [...new Set([
+  ...summaryExclude.value,
+  ...summaryRefused.value,
+])]);
+const activeItemKeys = computed(() =>
+  (topics.value || []).map((t) => t.oparlKey).filter(Boolean));
 
 const onSelect = (sel) => {
   // 3.1: selection opens the detail panel; links (oparlId / PDF) live there
@@ -127,6 +147,7 @@ async function runSearch() {
   refining.value = false;
   summaryRefined.value = false;
   summaryExclude.value = [];
+  summaryRefused.value = [];
   geoAvailable.value = false;
   geoFC.value = null;
   selection.value = null;
@@ -152,6 +173,7 @@ async function runSearch() {
           summaryFiles.value = res.files || [];
           summaryRefined.value = !!res.refined;
           summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
+          summaryRefused.value = res.refused || summaryRefused.value;
           // the relevance verdict may gate the map — refresh it
           if (geoAvailable.value) fetchGeo();
         })
@@ -182,6 +204,7 @@ async function runSummarize({ refine = false, exclude = [] } = {}) {
     summaryFiles.value = res.files || [];
     summaryRefined.value = !!res.refined;
     summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
+    summaryRefused.value = res.refused || summaryRefused.value;
     if (geoAvailable.value) fetchGeo();
   } catch (e) { /* keep the previous summary on failure */ }
   finally { refining.value = false; }
@@ -226,6 +249,7 @@ function applyResult(result) {
   // change: intent-router (D10) — meeting-centric answers
   topics.value = result.topics || [];
   answerMode.value = result.answer_mode || null;
+  summaryRefused.value = (result.summary_refused || []).map(r => r.oparlKey).filter(Boolean);
   geoAvailable.value = !!result.geo_available && !!result.sessionId;
   geoFC.value = null;
   if (geoAvailable.value) fetchGeo();

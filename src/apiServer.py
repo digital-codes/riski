@@ -228,6 +228,10 @@ def summarize(req: SummarizeRequest) -> Dict[str, Any]:
         return {"summary": result.get("summary"),
                 "files": files_payload,
                 "refined": result.get("summary_refined", False),
+                # refused keys: the frontend marks these documents as
+                # rejected in the network view (change: network-highlighting)
+                "refused": sorted(r.get("oparlKey") for r in
+                                  (result.get("summary_refused") or [])),
                 **({"in_progress": True} if in_progress else {})}
 
     if result.get("summary") and not req.refine:

@@ -209,7 +209,5 @@ again.
 
 ## Open Questions
 
-- Should `pgTeasers` also learn to strip the Briefkopf before teaser
-  generation (root cause rather than symptom)? Deferred — the gate
-  suffices; teaser hygiene would *additionally* reduce noisy teasers in
-  the result list.
+(none — teaser Briefkopf hygiene was considered and dropped by ops
+decision: the gate fixes data and display; teaser generation stays as is.)

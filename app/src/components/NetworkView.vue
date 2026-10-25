@@ -45,6 +45,11 @@ const onResize = () => {
 
 const props = defineProps({
   graph: { type: Object, required: true },
+  // change: network-highlighting — answer-list membership + rejection
+  // state, passed as plain oparlKey arrays and derived into Sets here
+  activeFileKeys: { type: Array, default: () => [] },   // enabled docs of the summary list
+  rejectedFileKeys: { type: Array, default: () => [] }, // excluded ∪ summarizer-refused
+  activeItemKeys: { type: Array, default: () => [] },   // meeting-view topics
 });
 
 const emit = defineEmits(['select']);
@@ -139,6 +144,48 @@ const degree = computed(() => {
   return d;
 });
 
+// ---- answer-list marking (change: network-highlighting) -------------------
+// permissive display semantics: only a clear membership/rejection state
+// changes the look; everything else renders as before
+const HIGHLIGHT_COLOR = '#667eea';
+const REJECTED_COLOR = '#dc2626';
+
+const activeFiles = computed(() => new Set(props.activeFileKeys));
+const rejectedFiles = computed(() => new Set(props.rejectedFileKeys));
+const activeItems = computed(() => new Set(props.activeItemKeys));
+
+// node id → status: 'active' (in the answer/topic list) | 'rejected'
+// (excluded or refused) | undefined (traversal-only node)
+function nodeStatus(n) {
+  if (n.type === 'File') {
+    // rejection wins: an excluded document must never look active
+    if (rejectedFiles.value.has(n.oparlKey)) return 'rejected';
+    if (activeFiles.value.has(n.oparlKey)) return 'active';
+  }
+  if (n.type === 'AgendaItem' && activeItems.value.has(n.oparlKey)) return 'active';
+  return undefined;
+}
+
+function nodeItemStyle(n) {
+  const status = nodeStatus(n);
+  if (status === 'active') {
+    return { borderColor: HIGHLIGHT_COLOR, borderWidth: 2.5 };
+  }
+  if (status === 'rejected') {
+    return { opacity: 0.22, borderColor: REJECTED_COLOR, borderWidth: 1.5, borderType: 'dashed' };
+  }
+  return undefined;
+}
+
+function nodeTooltipSuffix(n) {
+  const status = nodeStatus(n);
+  if (status === 'rejected') return ' — deaktiviert';
+  if (status === 'active') {
+    return n.type === 'AgendaItem' ? ' — Themenliste' : ' — Trefferliste';
+  }
+  return '';
+}
+
 const chartEl = ref(null);
 let chart = null;
 let resizeObserver = null;
@@ -155,11 +202,13 @@ function toOption() {
   const maxDeg = Math.max(1, ...Object.values(degree.value));
   const nodes = visibleNodes.value.map((n) => {
     const deg = degree.value[n.id] || 0;
+    const itemStyle = nodeItemStyle(n);
     return {
       id: n.id,
       name: truncate(n.name),
       category: catIndex[n.type] ?? 0,
       symbolSize: MIN_DEGREE_SIZE + (MAX_DEGREE_SIZE - MIN_DEGREE_SIZE) * Math.sqrt(deg / maxDeg),
+      ...(itemStyle ? { itemStyle } : {}),
       // full data for the detail panel — kept raw on the node
       raw: n,
     };
@@ -173,18 +222,20 @@ function toOption() {
       lineStyle: { curveness: 0.15 },
     }));
   return {
-    tooltip: {
-      formatter: (p) => {
-        if (p.dataType === 'edge') {
-          return `${p.data.source}<br/>—${p.data.relation}→<br/>${p.data.target}`;
-        }
-        const raw = p.data.raw || {};
-        const lines = [`<b>${raw.type ? typeLabel(raw.type) : ''}</b>`, truncate(raw.name, 60)];
-        if (raw.date) lines.push(raw.date);
-        if (raw.attrs && raw.attrs.distance != null) lines.push(`Distanz: ${Number(raw.attrs.distance).toFixed(3)}`);
-        return lines.join('<br/>');
-      },
+  tooltip: {
+    formatter: (p) => {
+      if (p.dataType === 'edge') {
+        return `${p.data.source}<br/>—${p.data.relation}→<br/>${p.data.target}`;
+      }
+      const raw = p.data.raw || {};
+      const lines = [`<b>${raw.type ? typeLabel(raw.type) : ''}</b>`, truncate(raw.name, 60)];
+      if (raw.date) lines.push(raw.date);
+      if (raw.attrs && raw.attrs.distance != null) lines.push(`Distanz: ${Number(raw.attrs.distance).toFixed(3)}`);
+      const suffix = nodeTooltipSuffix(raw);
+      if (suffix) lines.push(`<i>${suffix.replace('— ', '')}</i>`);
+      return lines.join('<br/>');
     },
+  },
     legend: [{ data: categories.value.map((c) => c.name), textStyle: { fontSize: 11 } }],
     series: [
       {
@@ -197,12 +248,21 @@ function toOption() {
         draggable: !isMobile.value,
         label: { show: true, position: 'right', fontSize: 10, formatter: (p) => p.name },
         emphasis: { focus: 'adjacency', lineStyle: { width: 3 } },
-        force: {
-          repulsion: 320,
-          edgeLength: [60, 160],
-          gravity: 0.12,
-          layoutAnimation: true,
-        },
+        force: (() => {
+          // change: network-highlighting — fast settling. Larger gravity
+          // pulls to the viewport center, friction damps the oscillation,
+          // repulsion scales mildly with node count so dense graphs don't
+          // clump, and large graphs compute synchronously instead of
+          // wobbling into place for seconds.
+          const n = nodes.length;
+          return {
+            repulsion: 320 + Math.min(400, n * 2),
+            edgeLength: [60, 160],
+            gravity: 0.25,
+            friction: 0.35,
+            layoutAnimation: n <= 120,
+          };
+        })(),
       },
     ],
   };
@@ -255,6 +315,11 @@ onUnmounted(() => {
 
 // re-render when the roam mode flips (rotation across the breakpoint)
 watch(isMobile, () => render());
+
+// re-render when the answer-list marking changes (toggle/refine) — the
+// sets are replaced wholesale in App.vue, so plain reference watches work
+watch([() => props.activeFileKeys, () => props.rejectedFileKeys,
+       () => props.activeItemKeys], () => render());
 
 watch(() => props.graph, render, { deep: true });
 </script>

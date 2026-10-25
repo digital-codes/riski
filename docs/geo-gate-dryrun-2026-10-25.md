@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 20930 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 246, "boilerplate": 1739, "unsure": 0, "error": 0} (of 20930 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 794, "boilerplate": 1747, "unsure": 2, "error": 0} (of 20930 rows)
 
-### Removal candidates so far (1739):
+### Removal candidates so far (1747):
 - Am Alten Bahnhof ← TOP 2 Anlage1 [regex: Hausnummer + PLZ Karlsruhe | [content] …uptstr. 256  ![00589785_img_1_1.jpg](00589785_img_1_1.jpg)  Am Alten Bahnhof 7 76149 Karlsruhe-Neur]
   context:
     Am Alten Bahnhof 7
@@ -5913,3 +5913,44 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
   reason: Der Name erscheint ausschließlich im Adressblock des Empfängers (Rathaus, Marktplatz) und nicht im inhaltlichen Teil des Antrags.
   context:
     Rathaus, Marktplatz
+- Marktplatz ← Protokoll GR TOP 3 [[content] …am 16. Juli 2019 um 15:30 Uhr im Bürgersaal des Rathauses, Marktplatz, öffentlich statt. Im Mittelpunkt stand]
+  reason: Der Name bezieht sich auf den Veranstaltungsort der Sitzung, nicht auf den Hauptinhalt des Dokuments.
+  context:
+    Der Bericht wurde von Oberbürgermeister Dr. Frank Mentrup im Rahmen der 66. Plenarsitzung des Gemeinderates vorgelegt. Die Sitzung fand am 16. Juli 2019 um 15:30 Uhr im Bürgersaal des Rathauses, Marktplatz, öffentlich statt. Im Mittelpunkt stand die Tagesordnungspunkte 3 und 4: die Herstellung der erforderlichen Infrastruktur für den geplanten Campingplatz auf dem städtischen Grundstück Flst. Nr. 46791/2 (ca. 2.070 m²) in der Tiengener Straße, Durlach, sowie ein ergänzender Antrag der Fraktion FÜR Karlsruhe, der die Ausweisung von bis zu einem Drittel der Fläche für Tiny‑House‑Einheiten vorsah
+- Henriette-Obermüller-Straße ← Protokoll TOP 29 [[content] …, 15:30 Uhr öffentlich Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe Vorsitz]
+  reason: Die Straße wird nur als Veranstaltungsort im Metadaten-Bereich (Ort der Sitzung) genannt, nicht im inhaltlichen Haupttext.
+  context:
+    öffentlich
+    Ort: Südwerk-Bürgerzentrum Südstadt, Henriette-Obermüller-Straße 10, Karlsruhe
+    Vorsitzende/r: Oberbürgermeister Dr. Frank Mentrup
+- Ostendstraße ← TOP 2 Anlage 2_Abgrenzung_Sanierungsgebiet [[content] …el Freier Stadtplaner BDA, SRL Freier Landschaftsarchitekt  Ostendstraße 106 70188 Stuttgart  fen (0711) 411 ]
+  reason: Die Straße wird ausschließlich in der Adresse des externen Planers genannt, nicht im inhaltlichen Teil des Dokuments.
+  context:
+    Ostendstraße 106
+    70188 Stuttgart
+- Saarlandstraße ← Anlage 2 Luftbild [[content] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Saarlandstraße 67  |   |   | |  Maßstab: 1:500 be]
+  reason: Die Straße wird ausschließlich im Briefkopf des Liegenschaftsamts als Adresse genannt.
+  context:
+    | --- | --- | --- |
+    |  Saarlandstraße 67  |   |   |
+    |  Maßstab: 1:500 bei DIN A4 | Gemarkung Karlsruhe | Datum: 27.01.2025  |
+- Hebelstraße ← Antrag CDU_014 [[content] …** 00.00.0000  **Gremium:** Gemeinderatsfraktion der CDU in Hebelstraße, Karlsruhe  **Thema des Berichts:** P]
+  reason: Die Hebelstraße wird nur im Gremium-Kontext als Adresse der Fraktion genannt, nicht im inhaltlichen Haupttext.
+  context:
+    **Gremium:** Gemeinderatsfraktion der CDU in Hebelstraße, Karlsruhe
+- Steinstraße ← 02Lageplan [[content] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Steinstraße  |   |   | |  Maßstab: 1:750 bei DIN ]
+  reason: Die Straße wird ausschließlich im Briefkopf des Liegenschaftsamts genannt, nicht im inhaltlichen Haupttext des Lageplans.
+  context:
+    | --- | --- | --- |
+    |  Steinstraße  |   |   |
+    |  Maßstab: 1:750 bei DIN A4 | Gemarkung Karlsruhe | Datum: 14.07.2023  |
+- Steinstraße ← 03Luftbild [[content] …arlsruhe Liegenschaftsamt  |   |   | | --- | --- | --- | |  Steinstraße  |   |   | |  Mailstab: 1:750 - bei D]
+  reason: Die Straße wird ausschließlich im Briefkopf/Legende des Liegenschaftsamts genannt, nicht im inhaltlichen Haupttext.
+  context:
+    | --- | --- | --- |
+    |  Steinstraße  |   |   |
+    |  Mailstab: 1:750 - bei DIN AA | Gemarkung Karlsruhe | Datum: 14.07.2023  |
+- Ständehausstraße ← Tagesordnung (öffentlich) Ausschuss/Ortschaftsrat [[content] …ses am  Donnerstag, 11. Mai 2023, 16:00 Uhr,  Stephanssaal, Ständehausstraße 4  # Tagesordnung  Öffentliche S]
+  reason: Die Straße wird nur als Veranstaltungsort im Einladungsteil genannt, nicht im Hauptinhalt der Tagesordnungspunkte.
+  context:
+    Stephanssaal, Ständehausstraße 4
