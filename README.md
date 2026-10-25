@@ -43,6 +43,21 @@ The pipeline has four stages, all built on two shared layers in `src/`:
      database-specific; a freshly created database is not covered by it).
    - `fuzzystrmatch` is optional (used by some analysis scripts), same
      trusted behaviour as `pg_trgm`.
+   - **Troubleshooting `function similarity(text, unknown) does not exist`**:
+     extensions are per-database (not cluster-wide) and permanent — reboots
+     never remove them. If `similarity()` (or another extension function)
+     suddenly stops resolving, check: (a) you are connected to the database
+     the app actually uses (`DB_NAME` in `src/private.py`) — `vector` being
+     present in one database says nothing about `pg_trgm` in another;
+     (b) the extension's schema is on the app's `search_path`
+     (`SELECT extname, extnamespace::regnamespace FROM pg_extension;` vs.
+     `SHOW search_path;`). Genuine disappearances mean something ran
+     `DROP EXTENSION` — check the server log. Recreating the extension is
+     safe and idempotent; afterwards recreate the trigram GIN indexes
+     (`idx_*_name_trgm`) or re-run `python -m src/pgGen.py` (all
+     `IF NOT EXISTS`). Losing `pg_trgm` only degrades lexical recall — the
+     hybrid search catches the error per-signal and continues with the
+     remaining signals, so check logs for `failed:` lines after any fix.
 2. **Credentials**: create `src/private.py` (git-ignored) with `DB_USER`, `DB_PWD`, `DB_HOST`, `DB_NAME`, optionally read-only credentials `RO_USER`/`RO_PWD`, and model endpoint configuration (`EMB_*`, `SUMMARY_*`, `OCR_*`, `VIDEO_API_KEY`). Alternatively set `DB_*` / `POSTGRES_URL` / `CHAT_*` / `EMBED_*` environment variables. For test runs with database writes, `.env` may provide `RW_USER`/`RW_PWD`.
 3. **Dependencies**: SQLAlchemy, psycopg2, pgvector, requests, numpy, pandas, geopandas (street/district loading), pytest (tests).
 
