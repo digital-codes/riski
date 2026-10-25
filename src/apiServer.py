@@ -172,10 +172,17 @@ def geo(session_id: str) -> Dict[str, Any]:
     keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", []) if n.get("type") == "AgendaItem"]
     file_keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", [])
                  if n.get("type") in ("File", "AuxFile")]
-    # gate on the summarizer's relevance verdict: georeferences from
-    # documents the summarizer refused are excluded from the map
+    # gate on the summarizer's relevance verdict AND the user's document
+    # exclusion set (change: geo-gating): the map reflects exactly the
+    # enabled document set — the frontend re-fetches /geo after every
+    # toggle/refine, so the map updates live with the list
     refused = {r["oparlKey"] for r in result.get("summary_refused", [])}
-    file_keys = [k for k in file_keys if k not in refused]
+    excluded = set(result.get("summary_excluded") or [])
+    # files not yet in summary_files cannot have been disabled by the user:
+    # only files the summarizer has seen can be excluded/refused
+    seen = {f.get("oparlKey") for f in result.get("summary_files", []) if isinstance(f, dict)}
+    blocked = (refused | excluded) & seen
+    file_keys = [k for k in file_keys if k not in blocked]
     engine = get_engine(readonly=True)
     return collect_geo(engine, keys, file_keys)
 

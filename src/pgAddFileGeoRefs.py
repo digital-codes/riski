@@ -103,11 +103,15 @@ _VENUE_NOISE = re.compile(
 
 
 def match_files(engine, limit: int | None = None, dry_run: bool = False,
-                rebuild: bool = False) -> dict:
+                rebuild: bool = False, gate: bool = True) -> dict:
     """Match street/district names against File name + teaser, write the
     file geo association tables. Idempotent: existing (entity, file) pairs
     are skipped. With *rebuild*, the tables are wiped first — use after a
-    matching-mechanism change so no stale mixture persists."""
+    matching-mechanism change so no stale mixture persists.
+
+    With *gate* (default), newly created links are classified by the LLM
+    GeoGate (change: geo-gating) right after being written — permissive:
+    gate failures leave rows ungated (visible) for the cleanup pass."""
     if rebuild and not dry_run:
         with engine.begin() as conn:
             for assoc_name in _MATCHERS:
@@ -126,6 +130,17 @@ def match_files(engine, limit: int | None = None, dry_run: bool = False,
             "matcher": matcher,
         }
 
+    geo_gate = None
+    if gate and not dry_run:
+        try:
+            from src.geoGate import GeoGate
+
+            geo_gate = GeoGate(engine=engine)
+            geo_gate.ensure_columns()
+            print("  geo gate active (LLM verdicts on new links)", flush=True)
+        except Exception as exc:  # noqa: BLE001 - permissive fallback
+            print(f"  geo gate unavailable ({exc}) — links written ungated", flush=True)
+
     existing_cache: dict[str, set] = {name: set() for name in matchers}
     if not dry_run and not rebuild:
         for assoc_name, m in matchers.items():
@@ -135,6 +150,8 @@ def match_files(engine, limit: int | None = None, dry_run: bool = False,
 
     scanned = matched = 0
     pending: dict[str, list[dict]] = {name: [] for name in matchers}
+    # change: geo-gating — new links per file, gated after the file is done
+    gated_new: dict[str, list[dict]] = {name: [] for name in matchers}
     last_report = time.time()
 
     def flush(assoc_name: str) -> None:
@@ -143,7 +160,41 @@ def match_files(engine, limit: int | None = None, dry_run: bool = False,
         m = matchers[assoc_name]
         with engine.begin() as conn:
             conn.execute(m["tbl"].insert(), pending[assoc_name])
+        gated_new[assoc_name].extend(pending[assoc_name])
         pending[assoc_name].clear()
+
+    def gate_new_links() -> None:
+        """Gate the links created since the last call, batched per file
+        (change: geo-gating). Failures leave the rows ungated (NULL) —
+        permissive: visible until the cleanup pass gates them."""
+        if dry_run or geo_gate is None:
+            gated_new.clear()
+            gated_new.update({name: [] for name in matchers})
+            return
+        by_file: dict[int, list[dict]] = {}
+        for assoc_name in matchers:
+            for row in gated_new[assoc_name]:
+                by_file.setdefault(row["file_id"], []).append(
+                    {**row, "assoc": assoc_name})
+        for file_sid, rows in by_file.items():
+            try:
+                mentions = [
+                    {"entity": row["entity_name"], "context": row["context"]}
+                    for row in rows
+                ]
+                verdicts = geo_gate.gate_file(file_sid, mentions)
+                for row in rows:
+                    m = matchers[row["assoc"]]
+                    geo_gate.write_verdicts(
+                        row["assoc"],
+                        [{"entity_id": row[m["entity_col"]],
+                          "entity_name": row["entity_name"],
+                          "file_id": file_sid}],
+                        verdicts, m["entity_col"])
+            except Exception as exc:  # noqa: BLE001 - gate must never break matching
+                print(f"  gate failed for file {file_sid}: {exc}", flush=True)
+        gated_new.clear()
+        gated_new.update({name: [] for name in matchers})
 
     for batch in _iter_files(engine, limit):
         for file_sid, name, teaser in batch:
@@ -170,15 +221,22 @@ def match_files(engine, limit: int | None = None, dry_run: bool = False,
                     pending[assoc_name].append(
                         {m["entity_col"]: match.item_id, "file_id": file_sid,
                          "name_match": f"[{source}] {evidence}"[:255],
+                         "entity_name": match.name,
+                         "context": evidence,
                          "created_at": datetime.now()}
                     )
                     if len(pending[assoc_name]) >= 500:
                         flush(assoc_name)
         for assoc_name in matchers:
             flush(assoc_name)
+        gate_new_links()
         if time.time() - last_report > 30:
             print(f"  scanned {scanned} files, {matched} new links so far...", flush=True)
             last_report = time.time()
+
+    for assoc_name in matchers:
+        flush(assoc_name)
+    gate_new_links()
 
     for assoc_name in matchers:
         stats[assoc_name] = len(existing_cache[assoc_name])
@@ -229,11 +287,13 @@ def main(argv=None) -> int:
     ap.add_argument("--prune", action="store_true", help="Also prune stale agenda-item geo links")
     ap.add_argument("--prune-only", action="store_true", help="Only prune, skip file matching")
     ap.add_argument("--rebuild", action="store_true", help="Wipe the file geo tables before matching (use after matching-mechanism changes)")
+    ap.add_argument("--no-gate", action="store_true", help="Skip the LLM geo gate (links written ungated, visible until cleanup)")
     args = ap.parse_args(argv)
 
     engine = get_engine()
     if not args.prune_only:
-        stats = match_files(engine, limit=args.limit, dry_run=args.dry_run, rebuild=args.rebuild)
+        stats = match_files(engine, limit=args.limit, dry_run=args.dry_run,
+                            rebuild=args.rebuild, gate=not args.no_gate)
         for key, val in stats.items():
             print(f"  {key}: {val}")
     if args.prune or args.prune_only:

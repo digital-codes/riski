@@ -63,8 +63,8 @@ def create_districts_agendaitems_table(engine):
     return table
 
 
-def add_district_agendaitem_refs(district_table, agendaitem_table):
-    # type: (Table, Table) -> int
+def add_district_agendaitem_refs(district_table, agendaitem_table, gate=True):
+    # type: (Table, Table, bool) -> int
     """Process all agenda items for all districts and add name matches.
 
     This function finds all pairs where a district name appears in an agenda item name
@@ -96,6 +96,7 @@ def add_district_agendaitem_refs(district_table, agendaitem_table):
 
         # For each district, check all agenda items
         inserted_count = 0
+        new_pairs = []  # change: geo-gating — for post-insert gating
         for district_row in districts:
             district_id = district_row.id
             district_name = district_row.name
@@ -127,9 +128,33 @@ def add_district_agendaitem_refs(district_table, agendaitem_table):
                         )
                         conn.execute(insert_stmt)
                         inserted_count += 1
+                        new_pairs.append({
+                            "entity_id": int(district_id),
+                            "entity_name": district_name,
+                            "item_sid": int(agendaitem_id),
+                            "item_name": agendaitem_name or "",
+                        })
 
         conn.commit()
+
+        # change: geo-gating — gate the newly inserted links (permissive:
+        # gate failures leave rows ungated/visible)
+        if gate and new_pairs:
+            try:
+                from src.geoGate import GeoGate
+
+                GeoGate(engine=engine).gate_agenda_links(
+                    "Districts_items_AgendaItems", "district_id", new_pairs)
+            except Exception as exc:  # noqa: BLE001
+                print(f"  geo gate unavailable ({exc}) — rows left ungated",
+                      flush=True)
         return inserted_count
+
+
+def _no_gate_arg() -> bool:
+    import sys as _sys
+
+    return "--no-gate" in _sys.argv
 
 
 def main():
@@ -157,7 +182,10 @@ def main():
     ref_table = create_districts_agendaitems_table(engine)
 
     # Add references
-    count = add_district_agendaitem_refs(district_table, agendaitem_table)
+    count = add_district_agendaitem_refs(
+        district_table, agendaitem_table,
+        gate=not _no_gate_arg(),
+    )
     print(f"Added {count} district-agendaitem references")
 
 

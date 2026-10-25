@@ -84,6 +84,15 @@ Regeln:
 - Wenn du nicht sicher entscheiden kannst: "unsure".
 ```
 
+Karlsruhe-specific rule added after ops review: many parties share the
+"Haus der Fraktionen" on Hebelstraße, so submitter address lines cluster
+on that street across *all* fractions. The prompt must prevent the model
+from reasoning "politically relevant street → content": an address line of
+a submitter ("Fraktion X, Hebelstraße 21, 76133 Karlsruhe") is boilerplate
+regardless of which party sits there; only the main text treating the
+street itself (e.g. the sale of the "ehemaliges Haus der Fraktionen in der
+Hebelstraße 13") makes it content.
+
 Model: the configured summary model (`SUMMARY_*` / `src.remote`), JSON
 parsed defensively (strip code fences; on parse failure → all verdicts
 `unsure` with reason "parse error" — never crash the matching pipeline on

@@ -64,8 +64,8 @@ def create_streets_agendaitems_table(engine):
     return table
 
 
-def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=500):
-    # type: (Table, Table, int) -> int
+def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=500, gate=True):
+    # type: (Table, Table, int, bool) -> int
     """Add Street -> AgendaItem relations efficiently.
 
     Performance characteristics:
@@ -73,6 +73,10 @@ def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=50
     - preload existing relation pairs once instead of SELECT-per-match;
     - batch INSERT and COMMIT every `progress_every` AgendaItems;
     - print progress after each committed batch.
+
+    With *gate* (default), newly inserted links are classified by the LLM
+    GeoGate (change: geo-gating) — permissive: gate failures leave the rows
+    ungated (visible) for the cleanup pass.
     """
     engine = openDb()
     metadata = MetaData()
@@ -89,6 +93,7 @@ def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=50
             ).fetchall()
             if row.name
         ]
+        streets_by_id = {sid: name for sid, name in streets}
         matcher = prepare_street_matcher(streets)
 
         agendaitems = conn.execute(
@@ -106,6 +111,7 @@ def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=50
 
         inserted_count = 0
         pending = []
+        new_pairs = []  # change: geo-gating — for post-insert gating
         processed = 0
 
         for agendaitem_row in agendaitems:
@@ -135,11 +141,18 @@ def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=50
                             "name_match":agendaitem_name,
                             "created_at":now,
                         })
+                        new_pairs.append({
+                            "entity_id": int(street_id),
+                            "entity_name": streets_by_id.get(int(street_id), ""),
+                            "item_sid": agendaitem_id,
+                            "item_name": agendaitem_name or "",
+                        })
 
             if processed % progress_every == 0:
                 if pending:
                     conn.execute(ref_table.insert(), pending)
                     inserted_count += len(pending)
+                    conn.commit()
                     pending.clear()
                 conn.commit()
                 print(
@@ -154,13 +167,24 @@ def add_street_agendaitem_refs(street_table, agendaitem_table, progress_every=50
             pending.clear()
         conn.commit()
 
-        if processed % progress_every != 0:
-            print(
-                f"Processed {processed}/{total} AgendaItems; "
-                f"inserted {inserted_count} street references",
-                flush=True,
-            )
+        # change: geo-gating — gate the newly inserted links (permissive:
+        # gate failures leave rows ungated/visible)
+        if gate and new_pairs:
+            try:
+                from src.geoGate import GeoGate
+
+                GeoGate(engine=engine).gate_agenda_links(
+                    "Streets_items_AgendaItems", "street_id", new_pairs)
+            except Exception as exc:  # noqa: BLE001
+                print(f"  geo gate unavailable ({exc}) — rows left ungated",
+                      flush=True)
         return inserted_count
+
+def _no_gate_arg() -> bool:
+    import sys as _sys
+
+    return "--no-gate" in _sys.argv
+
 
 def main():
     # type: () -> None
@@ -187,7 +211,10 @@ def main():
     ref_table = create_streets_agendaitems_table(engine)
 
     # Add references
-    count = add_street_agendaitem_refs(street_table, agendaitem_table)
+    count = add_street_agendaitem_refs(
+        street_table, agendaitem_table,
+        gate=not _no_gate_arg(),
+    )
     print(f"Added {count} street-agendaitem references")
 
 

@@ -69,12 +69,24 @@ def geo_available_for_keys(engine, agenda_item_keys: Iterable[str], file_keys: I
             if not ids or not _has_table(conn, assoc_name):
                 continue
             tbl = Table(assoc_name, MetaData(), autoload_with=conn)
-            n = conn.execute(
-                select(sa.func.count()).select_from(tbl).where(tbl.c[col].in_(ids))
-            ).scalar()
+            q = select(sa.func.count()).select_from(tbl).where(tbl.c[col].in_(ids))
+            q = _gate_filter(tbl, q)
+            n = conn.execute(q).scalar()
             if n:
                 return True
     return False
+
+
+def _gate_filter(tbl, q):
+    """Exclude gate_status='boilerplate' rows (change: geo-gating).
+    Permissive: tables/columns without the gate (or NULL/unsure/content
+    verdicts) pass — only a confident 'boilerplate' is hidden."""
+    import sqlalchemy as sa
+
+    col = tbl.c.get("gate_status")
+    if col is None:
+        return q
+    return q.where(sa.or_(col.is_(None), col != "boilerplate"))
 
 
 def _has_table(conn, name: str) -> bool:
@@ -103,14 +115,14 @@ def _linked_features(
     agenda = Table("AgendaItem", metadata, autoload_with=engine)
 
     with engine.connect() as conn:
-        rows = conn.execute(
-            select(entity.c.id, entity.c.name, entity.c.geo, agenda.c.oparlKey, agenda.c.name)
-            .select_from(
-                assoc.join(entity, assoc.c[f"{entity_type.lower()}_id"] == entity.c.id)
-                .join(agenda, assoc.c.agendaitem_id == agenda.c.sid)
-            )
-            .where(assoc.c.agendaitem_id.in_(sids))
-        ).all()
+        q = (select(entity.c.id, entity.c.name, entity.c.geo, agenda.c.oparlKey, agenda.c.name)
+             .select_from(
+                 assoc.join(entity, assoc.c[f"{entity_type.lower()}_id"] == entity.c.id)
+                 .join(agenda, assoc.c.agendaitem_id == agenda.c.sid)
+             )
+             .where(assoc.c.agendaitem_id.in_(sids)))
+        q = _gate_filter(assoc, q)
+        rows = conn.execute(q).all()
 
     features: List[Dict[str, Any]] = []
     # group links per entity so agendaItems accumulate across agenda items
@@ -156,14 +168,14 @@ def _linked_file_features(
     file_tbl = Table("File", metadata, autoload_with=engine)
 
     with engine.connect() as conn:
-        rows = conn.execute(
-            select(entity.c.id, entity.c.name, entity.c.geo, file_tbl.c.oparlKey, file_tbl.c.name)
-            .select_from(
-                assoc.join(entity, assoc.c[f"{entity_type.lower()}_id"] == entity.c.id)
-                .join(file_tbl, assoc.c.file_id == file_tbl.c.sid)
-            )
-            .where(assoc.c.file_id.in_(file_sids))
-        ).all()
+        q = (select(entity.c.id, entity.c.name, entity.c.geo, file_tbl.c.oparlKey, file_tbl.c.name)
+             .select_from(
+                 assoc.join(entity, assoc.c[f"{entity_type.lower()}_id"] == entity.c.id)
+                 .join(file_tbl, assoc.c.file_id == file_tbl.c.sid)
+             )
+             .where(assoc.c.file_id.in_(file_sids)))
+        q = _gate_filter(assoc, q)
+        rows = conn.execute(q).all()
 
     features: List[Dict[str, Any]] = []
     per_entity: Dict[int, Dict[str, Any]] = {}
