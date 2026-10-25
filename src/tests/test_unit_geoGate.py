@@ -71,6 +71,77 @@ def test_gate_mentions_success(gate, monkeypatch):
     assert v["A"]["verdict"] == "boilerplate"
 
 
+def test_gate_mentions_regex_address_prefilter_no_llm(gate, monkeypatch):
+    """change: geo-gating, task 3.3 — a mention whose every occurrence sits
+    in an address block is verdict boilerplate WITHOUT an LLM call."""
+    calls = []
+
+    def boom(prompt):
+        calls.append(prompt)
+        raise AssertionError("LLM must not be called for regex-classified mentions")
+
+    monkeypatch.setattr(gate, "_chat", boom)
+    content = ("Antrag Nr. 170 DIE LINKE\n"
+               "Die Linke, Hebelstraße 13, 76133 Karlsruhe\n"
+               "Herrn Oberbürgermeister …")
+    v = gate.gate_mentions("doc", "Antrag", content,
+                           [{"entity": "Hebelstraße", "context": ""}])
+    assert v["Hebelstraße"] == {
+        "verdict": "boilerplate",
+        "reason": "regex: Adressblock (Hausnummer + PLZ Karlsruhe)",
+    }
+    assert calls == []
+
+
+def test_gate_mentions_mixed_document_reaches_llm(gate, monkeypatch):
+    """One non-address occurrence disqualifies the regex — the mention goes
+    to the LLM, and the verdicts merge into one result dict."""
+    captured = {}
+
+    def fake_chat(prompt):
+        captured["prompt"] = prompt
+        return '{"verdicts": [{"name": "Hebelstraße", "verdict": "content", "reason": "Haupttext"}]}'
+
+    monkeypatch.setattr(gate, "_chat", fake_chat)
+    content = ("Verkauf des Gebäudes in der Hebelstraße 13 an das "
+               "Studierendenwerk.\nAbsender: Fraktion X, Hebelstraße 13, "
+               "76133 Karlsruhe")
+    v = gate.gate_mentions("doc", "Antrag", content,
+                           [{"entity": "Hebelstraße", "context": ""}])
+    assert v["Hebelstraße"]["verdict"] == "content"
+    assert "Hebelstraße" in captured["prompt"]
+
+
+def test_gate_mentions_regex_and_llm_survivors_merge(gate, monkeypatch):
+    """Regex-classified and LLM-classified mentions land in one result."""
+    def fake_chat(prompt):
+        mentions_section = prompt[prompt.find("Gefundene Namen"):]
+        assert "Kaiserstraße" not in mentions_section  # regex-classified: not a mention
+        assert "Mühlburg" in mentions_section
+        return '{"verdicts": [{"name": "Mühlburg", "verdict": "content", "reason": "r"}]}'
+
+    monkeypatch.setattr(gate, "_chat", fake_chat)
+    content = ("Ortschaftsrat Mühlburg, Kaiserstraße 10, 76133 Karlsruhe\n"
+               "hier wird über Mühlburg beraten")
+    v = gate.gate_mentions("doc", "Antrag", content,
+                           [{"entity": "Kaiserstraße", "context": ""},
+                            {"entity": "Mühlburg", "context": ""}])
+    assert v["Kaiserstraße"]["verdict"] == "boilerplate"
+    assert v["Mühlburg"]["verdict"] == "content"
+
+
+def test_gate_mentions_all_regex_no_llm_call(gate, monkeypatch):
+    """When the regex classifies every mention, no LLM call happens."""
+    def boom(prompt):
+        raise AssertionError("no survivors → no LLM call")
+
+    monkeypatch.setattr(gate, "_chat", boom)
+    content = "Fraktion X, Hebelstraße 21, 76133 Karlsruhe"
+    v = gate.gate_mentions("doc", "Antrag", content,
+                           [{"entity": "Hebelstraße", "context": ""}])
+    assert v["Hebelstraße"]["verdict"] == "boilerplate"
+
+
 def test_write_verdicts_file_rows(gate):
     eng = create_engine("sqlite://")
     with eng.begin() as conn:

@@ -58,6 +58,51 @@ GATE_COLUMNS_DDL = [
     'ALTER TABLE "{table}" ADD COLUMN IF NOT EXISTS gate_model VARCHAR(64)',
 ]
 
+# ---------------------------------------------------------------------------
+# deterministic address-line pre-filter (change: geo-gating, task 3.3)
+# ---------------------------------------------------------------------------
+# A typical address mention: <street> + house number, then — separated by
+# blanks/commas/newlines — the postal code and city:
+#   "Hebelstraße 21, 76133 Karlsruhe" / "Hebelstraße 13\n76133 Karlsruhe"
+# Strictly permissive: a name counts as regex-boilerplate ONLY when EVERY
+# occurrence in the content sits in such an address pattern. One occurrence
+# outside address blocks → the mention goes to the LLM (protects genuine
+# content like "Verkauf des Hauses der Fraktionen in der Hebelstraße 13").
+# Applied in gate_mentions BEFORE the LLM call, so the write-time scripts
+# (pgAddFileGeoRefs / pgAddStreetRefs / pgAddDistrictRefs) and the cleanup
+# pass share one mechanism — the bulk run showed it classifying ~1.7k of
+# 21k street links correctly with zero LLM cost.
+
+REGEX_BOILERPLATE_REASON = "regex: Adressblock (Hausnummer + PLZ Karlsruhe)"
+
+_HOUSE_NUMBER = r"\d+\s*[a-zA-Z]?(?:\s*[-/]\s*\d+\s*[a-zA-Z]?)?"
+_SEPARATOR = r"[\s,;·]{0,8}"
+_PLZ_CITY = r"\d{5}\s+Karlsruhe"
+
+
+def _address_regex(name: str):
+    return re.compile(
+        rf"{re.escape(name)}\s*{_HOUSE_NUMBER}{_SEPARATOR}{_PLZ_CITY}",
+        re.IGNORECASE,
+    )
+
+
+def _name_occurrences(content: str, name: str) -> List[int]:
+    return [m.start() for m in re.finditer(
+        re.escape(name), content, re.IGNORECASE)]
+
+
+def regex_all_addresses(content: str, name: str) -> bool:
+    """True when the content mentions *name* at least once and EVERY
+    occurrence is part of an address block (house number + PLZ Karlsruhe
+    following). Strict: one non-address occurrence disqualifies."""
+    content = content or ""
+    occurrences = _name_occurrences(content, name)
+    if not occurrences:
+        return False  # not verbatim in content → let the LLM decide
+    addr = _address_regex(name)
+    return all(addr.match(content, pos) is not None for pos in occurrences)
+
 PROMPT_TEMPLATE = """Du prüfst Georeferenzen in Dokumenten des Ratsinformationssystems der Stadt Karlsruhe.
 
 Gegeben: der Inhalt eines Dokuments und eine Liste von Straßennamen bzw. Stadtteilen, die automatisiert im Text gefunden wurden.
@@ -208,21 +253,40 @@ class GeoGate:
     def gate_mentions(self, doc_name: str, doc_type: str, content: str,
                       mentions: List[Dict[str, str]]) -> Dict[str, Dict[str, str]]:
         """Classify *mentions* against the document content. Returns
-        {entity: {"verdict", "reason"}}. All-unsure on any failure."""
+        {entity: {"verdict", "reason"}}. All-unsure on any failure.
+
+        Deterministic pre-filter (change: geo-gating, task 3.3): mentions
+        whose every content occurrence sits in an address block (house
+        number + PLZ Karlsruhe) are verdict ``boilerplate`` without an LLM
+        call; only the survivors reach the model. If the regex classified
+        everything, no LLM call happens at all."""
         names = [m["entity"] for m in mentions]
         if not names:
             return {}
-        prompt = self.build_prompt(doc_name, doc_type, content or "", mentions)
+        verdicts: Dict[str, Dict[str, str]] = {}
+        survivors: List[Dict[str, str]] = []
+        for m in mentions:
+            if regex_all_addresses(content, m["entity"]):
+                verdicts[m["entity"]] = {
+                    "verdict": "boilerplate",
+                    "reason": REGEX_BOILERPLATE_REASON,
+                }
+            else:
+                survivors.append(m)
+        if not survivors:
+            return verdicts
+        prompt = self.build_prompt(doc_name, doc_type, content or "",
+                                   survivors)
         try:
             raw = self._chat(prompt)
         except Exception as exc:  # noqa: BLE001 - gate must never break matching
             logger.warning("GeoGate LLM call failed: %s", exc)
             raw = None
-        verdicts = self.parse_verdicts(raw, names)
+        verdicts.update(self.parse_verdicts(raw, [m["entity"] for m in survivors]))
         if raw is None:
             # LLM unavailable: permissive fallback, flagged for cleanup
-            verdicts = {n: {"verdict": "unsure", "reason": "llm error"}
-                        for n in names}
+            verdicts.update({m["entity"]: {"verdict": "unsure", "reason": "llm error"}
+                             for m in survivors})
         return verdicts
 
     def gate_file(self, file_sid: int,

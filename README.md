@@ -339,12 +339,14 @@ result carries `geo_available: true`; the SummaryCard header then shows a
 The map shows only georeferences backed by real content. Address-block
 mentions (letterheads, venue lines, contact blocks) are a known noise
 source — street references extracted from them flooded the map with
-streets that have nothing to do with the topic. The write-time scripts
-(`pgAddFileGeoRefs`, `pgAddStreetRefs`, `pgAddDistrictRefs`) and the
-batch cleanup (`pgGeoGateCleanup`) therefore LLM-gate every street/
-district reference (`GeoGate`, `src/geoGate.py`): a confident
-`boilerplate` verdict hides the link from the map (`gate_status` column
-on the four assoc tables; `NULL`/`unsure`/`content` stay visible — the
+streets that have nothing to do with the topic. Gating is two-layered: a
+deterministic address-line heuristic (house number + PLZ Karlsruhe after
+the name) classifies pure address mentions without an LLM, and the LLM
+gate (`GeoGate`, `src/geoGate.py`) decides the rest — applied both at
+write time (`pgAddFileGeoRefs`, `pgAddStreetRefs`, `pgAddDistrictRefs`)
+and in the batch cleanup (`pgGeoGateCleanup`). A confident `boilerplate`
+verdict hides the link from the map (`gate_status`
+column on the four assoc tables; `NULL`/`unsure`/`content` stay visible — the
 filter is deliberately permissive). Excluding or refusing a document via
 the SummaryCard re-fetches `/geo`, so the map always reflects the enabled
 document set. Re-run the cleanup after new imports:

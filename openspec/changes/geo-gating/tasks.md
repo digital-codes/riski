@@ -16,7 +16,7 @@
 
 - [x] 3.1 `pgAddFileGeoRefs.match_files`: after flushing new links per file, batch-gate via `GeoGate` (try/except → NULL on failure); `--no-gate` flag to skip; unit tests with stubbed gate (`pytest src/tests -m unit`).
 - [x] 3.2 `pgAddStreetRefs` / `pgAddDistrictRefs`: gate new agenda-item links against the item name; same failure semantics; unit tests (`pytest src/tests -m unit`).
-- [ ] 3.3 (deferred — gate-only per ops decision) Deterministic pre-filter: extend evidence extraction with an address-line heuristic (PLZ+Karlsruhe line blocks) feeding the gate's context; keep `_VENUE_NOISE`; unit tests (`pytest src/tests -m unit`).
+- [x] 3.3 Deterministic pre-filter: extend evidence extraction with an address-line heuristic (PLZ+Karlsruhe line blocks) feeding the gate's context; keep `_VENUE_NOISE`; unit tests (`pytest src/tests -m unit`). *(Was deferred as gate-only; promoted after the bulk run proved it: heuristic moved to `src/geoGate.py` and applied in `GeoGate.gate_mentions` BEFORE every LLM call — write-time scripts (`pgAddFileGeoRefs`/`pgAddStreetRefs`/`pgAddDistrictRefs`) and the cleanup share one mechanism; fully-classified docs make no LLM call at all. Cleanup imports the shared functions (duplicate definition removed). Bulk-run evidence: regex classified 1,734 of 20,930 street-file rows correctly at zero LLM cost.)*
 
 ## 4. Cleanup pass (`src/pgGeoGateCleanup.py`)
 

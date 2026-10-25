@@ -30,7 +30,6 @@ except ImportError:
 
 import argparse
 import json
-import re
 import sys
 from typing import Any, Dict, List, Optional
 
@@ -38,6 +37,17 @@ from sqlalchemy import MetaData, Table, create_engine, select, text
 
 from src.db import POSTGRES_URL, get_engine, get_logger
 from src.geoGate import GATED_TABLES, GeoGate
+
+# change: geo-gating, task 3.3 — the address-line heuristic lives in
+# geoGate (shared with gate_mentions, which applies it before every LLM
+# call); the cleanup keeps its own pre-filter pass for the removal report
+# and to skip fully-classified docs before batching. Re-exported here so
+# the existing unit tests' import path keeps working.
+from src.geoGate import (  # noqa: F401
+    REGEX_BOILERPLATE_REASON,
+    _address_regex,
+    regex_all_addresses,
+)
 
 logger = get_logger("riski.geoGateCleanup")
 
@@ -96,45 +106,6 @@ def _context_lines(content: str, name: str, lines: int = 3) -> str:
     return "(match not in content — from name/teaser)"
 
 
-# ---------------------------------------------------------------------------
-# regex pre-filter (bulk cleanup only, not the regular pipeline)
-# ---------------------------------------------------------------------------
-# A typical address mention: <street> + house number, then — separated by
-# blanks/commas/newlines — the postal code and city:
-#   "Hebelstraße 21, 76133 Karlsruhe" / "Hebelstraße 13\n76133 Karlsruhe"
-# Strictly permissive: a name counts as regex-boilerplate ONLY when EVERY
-# occurrence in the content sits in such an address pattern. One occurrence
-# outside address blocks → the mention goes to the LLM (protects genuine
-# content like "Verkauf des Hauses der Fraktionen in der Hebelstraße 13").
-
-_HOUSE_NUMBER = r"\d+\s*[a-zA-Z]?(?:\s*[-/]\s*\d+\s*[a-zA-Z]?)?"
-_SEPARATOR = r"[\s,;·]{0,8}"
-_PLZ_CITY = r"\d{5}\s+Karlsruhe"
-
-
-def _address_regex(name: str):
-    return re.compile(
-        rf"{re.escape(name)}\s*{_HOUSE_NUMBER}{_SEPARATOR}{_PLZ_CITY}",
-        re.IGNORECASE,
-    )
-
-
-def _name_occurrences(content: str, name: str) -> List[int]:
-    return [m.start() for m in re.finditer(
-        re.escape(name), content, re.IGNORECASE)]
-
-
-def regex_all_addresses(content: str, name: str) -> bool:
-    """True when the content mentions *name* at least once and EVERY
-    occurrence is part of an address block (house number + PLZ Karlsruhe
-    following). Strict: one non-address occurrence disqualifies."""
-    occurrences = _name_occurrences(content, name)
-    if not occurrences:
-        return False  # not verbatim in content → let the LLM decide
-    addr = _address_regex(name)
-    return all(addr.match(content, pos) is not None for pos in occurrences)
-
-
 def _verdict_from_evidence_context(row: Dict[str, Any],
                                    gate: GeoGate) -> Optional[str]:
     """Locate the mention's context in the content for the prompt."""
@@ -178,8 +149,11 @@ def run(assoc_tables: Optional[List[str]] = None, batch: int = 25,
         report_lines.append("")
 
         # one LLM call per document, its rows gated (and written) right away
-        # — but FIRST the regex pre-filter (bulk only): obvious address-block
-        # mentions never reach the LLM. by_doc holds ONLY the surviving rows:
+        # — but FIRST the regex pre-filter: obvious address-block
+        # mentions never reach the LLM. (gate_mentions applies the same
+        # heuristic to the survivors — defence in depth, no double counting:
+        # a mention surviving here is exactly one the regex does not
+        # classify.) by_doc holds ONLY the surviving rows:
         # a document whose every mention the regex classified as address
         # gets no LLM call at all.
         by_doc: Dict[Any, List[Dict[str, Any]]] = {}
@@ -196,7 +170,7 @@ def run(assoc_tables: Optional[List[str]] = None, batch: int = 25,
                     f"  context:\n    {_context_lines(content, r['entity_name'])}")
                 if not dry_run:
                     verdict = {"verdict": "boilerplate",
-                               "reason": "regex: Adressblock (Hausnummer + PLZ Karlsruhe)"}
+                               "reason": REGEX_BOILERPLATE_REASON}
                     gate.write_verdicts(table, [
                         {"entity_id": r["entity_id"],
                          "entity_name": r["entity_name"],
