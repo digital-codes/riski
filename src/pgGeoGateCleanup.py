@@ -179,7 +179,9 @@ def run(assoc_tables: Optional[List[str]] = None, batch: int = 25,
 
         # one LLM call per document, its rows gated (and written) right away
         # — but FIRST the regex pre-filter (bulk only): obvious address-block
-        # mentions never reach the LLM
+        # mentions never reach the LLM. by_doc holds ONLY the surviving rows:
+        # a document whose every mention the regex classified as address
+        # gets no LLM call at all.
         by_doc: Dict[Any, List[Dict[str, Any]]] = {}
         regex_stats = {"regex_boilerplate": 0}
         for r in rows:
@@ -207,7 +209,8 @@ def run(assoc_tables: Optional[List[str]] = None, batch: int = 25,
         for doc_sid, doc_rows in by_doc.items():
             first = doc_rows[0]
             is_file = "file_sid" in first
-            content = first.get("content") or ""
+            # agenda rows have no File.content — the item name IS the context
+            content = first.get("content") or first.get("doc_name") or ""
             mentions = [
                 {"entity": r["entity_name"],
                  "context": _verdict_from_evidence_context(r, gate)}

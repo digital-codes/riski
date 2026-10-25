@@ -4,9 +4,9 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
 
 ## Streets_items_Files — 20930 rows to gate
 
-[progress] Streets_items_Files: verdicts so far {"content": 73, "boilerplate": 1735, "unsure": 0, "error": 0} (of 20930 rows)
+[progress] Streets_items_Files: verdicts so far {"content": 246, "boilerplate": 1739, "unsure": 0, "error": 0} (of 20930 rows)
 
-### Removal candidates so far (1735):
+### Removal candidates so far (1739):
 - Am Alten Bahnhof ← TOP 2 Anlage1 [regex: Hausnummer + PLZ Karlsruhe | [content] …uptstr. 256  ![00589785_img_1_1.jpg](00589785_img_1_1.jpg)  Am Alten Bahnhof 7 76149 Karlsruhe-Neur]
   context:
     Am Alten Bahnhof 7
@@ -5897,3 +5897,19 @@ Permissive gate: only confident `boilerplate` verdicts hide a link; `unsure`/`co
   reason: Der Name erscheint ausschließlich im Metadaten-Bereich (Gremiumsangabe) und nicht im inhaltlichen Haupttext des Protokolls.
   context:
     **Gremium:** Gemeinderat Karlsruhe, Plenarsitzung am Marktplatz
+- Marktplatz ← Tagesordnung (öffentlich) Ausschuss/Ortschaftsrat [[content] …zungsantrag: CDU Vorlage: 2022/1068/4 - Vorberatung -  2.2. Marktplatz für die Zukunft mit Bäumen ausstatten ]
+  reason: Der Name stammt aus dem Veranstaltungsort-Boilerplate (Bürgersaal, Rathaus am Marktplatz).
+  context:
+    Bürgersaal, Rathaus am Marktplatz
+- Blütenweg ← Lageplan [[content] …rtenstadt Karlsruhe e.G.  Stadt Karlsruhe Liegenschaftsamt  Blütenweg 28  |  Maßstab: 1:500 bei DIN A4 | Gema]
+  reason: Die Straße wird ausschließlich in der Adresszeile des Liegenschaftsamts genannt, nicht im inhaltlichen Haupttext des Lageplans.
+  context:
+    Blütenweg 28
+- Hebelstraße ← DHH 2011/2012: Antrag 137: GRÜNE: Wirtschaftsförderung: Premiumworkshops [[content] ….2011  **Gremium, das die Sitzung oder Vorlage behandelt:** Hebelstraße 13, Gemeinderatsfraktion der Grünen, ]
+  reason: Die Straße wird nur im Kontext der Adresse des Gremiums genannt, nicht im Hauptinhalt des Antrags.
+  context:
+    **Gremium, das die Sitzung oder Vorlage behandelt:** Hebelstraße 13, Gemeinderatsfraktion der Grünen, Grundgesetz für Stadt und Land Baden-Württemberg (GGfuL), Bürgermeisterin Heinz Fenrich
+- Marktplatz ← DHH 2011/2012: Antrag 068: FDP: Änderung der "Grundsätze für die Förderung der freien Wohlfartspflege und freien Jugendhilfe" [[content] …Karlsruhe  Herrn Oberbürgermeister  Heinz Fenrich  Rathaus, Marktplatz  76124 Karlsruhe  18.1.2011  # Änderun]
+  reason: Der Name erscheint ausschließlich im Adressblock des Empfängers (Rathaus, Marktplatz) und nicht im inhaltlichen Teil des Antrags.
+  context:
+    Rathaus, Marktplatz
