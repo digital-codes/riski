@@ -1,16 +1,22 @@
 <template>
-  <div v-if="searchData" class="search-results-container">
+  <div class="search-results-container">
     <!-- Card 1: Files (First 3 visible, rest collapsed) -->
     <section class="card files-card">
       <h3 class="card-title">Dateien ({{ files.length }})</h3>
-      
-      <div class="files-list">
-        <div 
-          v-for="(file, index) in files" 
+
+      <!-- change: progressive-frontend-rendering — per-card loading state;
+           the file list arrives with the stage-1 response, before the rest -->
+      <div v-if="filesLoading && !files.length" class="pane-loading">
+        <span class="pane-spinner"></span>
+        <span>Dateien werden gesucht…</span>
+      </div>
+      <div v-else class="files-list">
+        <div
+          v-for="(file, index) in files"
           :key="file.oparlKey"
           class="file-item-wrapper"
         >
-          <a 
+          <a
             :href="file.downloadurl"
             target="_blank"
             class="file-link"
@@ -31,31 +37,37 @@
     <!-- Card 2: Timeline -->
     <section class="card timeline-card">
       <h3 class="card-title">Zeitachse ({{ timeline.length }})</h3>
-      
-      <div class="timeline-controls">
+
+      <!-- change: progressive-frontend-rendering — the timeline arrives
+           after the file list (stage 2), until then it shows its spinner -->
+      <div v-if="timelineLoading && !timeline.length" class="pane-loading">
+        <span class="pane-spinner"></span>
+        <span>Zeitachse wird erstellt…</span>
+      </div>
+      <div v-else class="timeline-controls">
         <button @click="scrollTimeline(-100)" class="nav-btn left">‹</button>
         <div class="timeline-wrapper" ref="timelineContainer">
           <div class="timeline-scroll-track" ref="timelineTrack">
-            <div 
-              v-for="(group, idx) in timeline" 
+            <div
+              v-for="(group, idx) in timeline"
               :key="idx"
               class="timeline-card-item"
             >
               <div class="date-range">
                 {{ formatRange(group.start_date, group.end_date) }}
               </div>
-              
+
               <div class="events-list">
-                <div 
-                  v-for="event in group.events" 
+                <div
+                  v-for="event in group.events"
                   :key="event.id"
                   class="event-chip"
                 >
                   <span class="tag">{{ formatType(event.type) }}</span>
                   <span class="title">{{ event.name }}</span>
                   <span class="sub-date">{{ formatTime(event.date) }}</span>
-                  
-                  <a 
+
+                  <a
                     v-if="event.oparlId"
                     :href="event.oparlId"
                     target="_blank"
@@ -78,10 +90,25 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 
+// change: progressive-frontend-rendering — the file list and the timeline
+// are independent stages now, so both cards take their own props and can
+// be filled (and show their loading state) separately
 const props = defineProps({
-  searchData: {
-    type: Object,
-    required: true
+  files: {
+    type: Array,
+    default: () => []
+  },
+  filesLoading: {
+    type: Boolean,
+    default: false
+  },
+  timeline: {
+    type: Array,
+    default: () => []
+  },
+  timelineLoading: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -89,11 +116,6 @@ const props = defineProps({
 const isMobile = ref(false);
 const timelineContainer = ref(null);
 const timelineTrack = ref(null);
-
-// Computed
-const query = computed(() => props.searchData.query);
-const files = computed(() => props.searchData.top_files || []);
-const timeline = computed(() => props.searchData.timeline || []);
 
 // Methods
 const openLink = (url) => {
@@ -217,6 +239,30 @@ onUnmounted(() => {
   color: #1f2937;
   border-bottom: 2px solid #667eea;
   padding-bottom: 8px;
+}
+
+/* change: progressive-frontend-rendering — per-card loading state */
+.pane-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 4px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.pane-spinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: pane-spin 0.8s linear infinite;
+}
+
+@keyframes pane-spin {
+  to { transform: rotate(360deg); }
 }
 
 /* Files List */

@@ -36,11 +36,19 @@
     </div>
   </div>
   <div class="wrapper">
+    <!-- change: progressive-frontend-rendering — the network view mounts
+         only when the graph stage has delivered; until then it shows a
+         loading card so the pane sequence (files → timeline → graph) is
+         visible -->
     <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph"
       :active-file-keys="activeFileKeys"
       :rejected-file-keys="rejectedFileKeys"
       :active-item-keys="activeItemKeys"
       @select="onSelect" />
+    <div v-else-if="loadingGraph" class="pane-loading-card">
+      <span class="pane-spinner"></span>
+      <span>Netzwerk wird aufgebaut…</span>
+    </div>
   </div>
   <DetailPanel
     :selection="selection"
@@ -61,8 +69,16 @@
   <div class="wrapper">
     <GeoMap v-if="geoAvailable && geoFC" :feature-collection="geoFC" />
   </div>
-  <div class="wrapper" v-if="rawData && answerMode !== 'list_topics'">
-    <TimeLine :search-data="rawData" />
+  <!-- change: progressive-frontend-rendering — the file list and timeline
+       cards fill in as their stages arrive; the wrapper is visible during
+       the search so the loading states are shown immediately -->
+  <div class="wrapper" v-if="answerMode !== 'list_topics' && (rawData || loadingFiles || loadingTimeline)">
+    <TimeLine
+      :files="files"
+      :files-loading="loadingFiles"
+      :timeline="timeline"
+      :timeline-loading="loadingTimeline"
+    />
   </div>
 </template>
 
@@ -73,7 +89,7 @@ import SummaryCard from './SummaryCard.vue';
 import DetailPanel from './DetailPanel.vue';
 import RouteInfo from './RouteInfo.vue';
 import TopicList from './TopicList.vue';
-import { ask as apiAsk, search as apiSearch, summarize as apiSummarize, expand as apiExpand, geoUrl } from '../api.js';
+import { ask as apiAsk, search as apiSearch, summarize as apiSummarize, expand as apiExpand, geoUrl, timeline as apiTimeline, graph as apiGraph } from '../api.js';
 // lazy: keeps echarts (large) out of the main bundle until the graph exists
 const NetworkView = defineAsyncComponent(() => import('./NetworkView.vue'));
 // lazy: keeps leaflet out until a georeferenced result arrives
@@ -114,6 +130,18 @@ const answerMode = ref(null);
 // graph is mutable state: search replaces it, /expand merges into it
 const graph = ref(null);
 
+// change: progressive-frontend-rendering — per-stage state: the file list
+// arrives with the stage-1 response, the timeline with stage 2, the graph
+// last; each pane shows its own loading state until then
+const files = ref([]);
+const timeline = ref([]);
+const loadingFiles = ref(false);
+const loadingTimeline = ref(false);
+const loadingGraph = ref(false);
+// monotonically increasing token — responses from a superseded search are
+// dropped instead of overwriting the newer search's panes
+let searchToken = 0;
+
 // change: network-highlighting — answer-list membership/rejection in the
 // network view, derived from the live summary state (updates on every
 // toggle/refine without a new search)
@@ -136,11 +164,17 @@ const onSelect = (sel) => {
 async function runSearch() {
   const q = query.value.trim();
   if (!q || loading.value) return;
+  const token = ++searchToken;
   loading.value = true;
   error.value = null;
   // clear all panes immediately — no stale data while the new search runs
   rawData.value = null;
   graph.value = null;
+  files.value = [];
+  timeline.value = [];
+  loadingFiles.value = true;
+  loadingTimeline.value = true;
+  loadingGraph.value = true;
   summary.value = null;
   summaryLoading.value = false;
   summaryFiles.value = [];
@@ -159,31 +193,75 @@ async function runSearch() {
   topics.value = [];
   answerMode.value = null;
   try {
-    // /ask routes the query (intent + filters); same result contract as
-    // /search — render results immediately, the summary arrives async
+    // stage 1: /ask routes the query (intent + filters) and runs recall —
+    // the file list renders as soon as this returns, timeline and graph
+    // follow via the staged endpoints (change: progressive-frontend-
+    // rendering)
     const result = await apiAsk(q, { sessionId: sessionId.value, topK: 10, summarize: false });
-    applyResult(result);
+    if (token !== searchToken) return;  // superseded by a newer search
+    applyStage1(result);
+    loadingFiles.value = false;  // stage-1 delivered the file list
     // design D10: meeting-centric answers show the topic list instead of
     // the LLM summary — skip the async summarize round-trip entirely
     if (result.sessionId && answerMode.value !== 'list_topics') {
       summaryLoading.value = true;
       apiSummarize(result.sessionId)
         .then((res) => {
+          if (token !== searchToken) return;
           if (res.summary) summary.value = res.summary;
           summaryFiles.value = res.files || [];
           summaryRefined.value = !!res.refined;
           summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
           summaryRefused.value = res.refused || summaryRefused.value;
           // the relevance verdict may gate the map — refresh it
-          if (geoAvailable.value) fetchGeo();
+          if (geoAvailable.value) fetchGeo(token);
         })
         .catch(() => { /* summary is optional — ignore failures */ })
         .finally(() => { summaryLoading.value = false; });
     }
+    loading.value = false;
+    // stage 2: timeline. Meeting-centric answers hide the timeline card —
+    // skip the fetch entirely.
+    if (answerMode.value === 'list_topics') {
+      loadingTimeline.value = false;
+    } else {
+      fetchTimeline(result.sessionId, token);
+    }
+    // stage 3: graph (also carries geo availability — the map is fetched
+    // after the graph, its scope is the graph-connected answer set)
+    fetchGraph(result.sessionId, token);
   } catch (e) {
     error.value = `Suche fehlgeschlagen (${e.message}). Läuft der API-Server? (uvicorn src.apiServer:app --port 8000)`;
-  } finally {
     loading.value = false;
+    loadingFiles.value = false;
+    loadingTimeline.value = false;
+    loadingGraph.value = false;
+  }
+}
+
+// change: progressive-frontend-rendering — stage 2/3 follow-ups. A failed
+// stage logs a warning and clears only its own loading flag, so no pane is
+// stuck spinning.
+async function fetchTimeline(sid, token) {
+  try {
+    const res = await apiTimeline(sid);
+    if (token !== searchToken) return;
+    timeline.value = res.timeline || [];
+  } catch (e) {
+    console.warn(`Zeitachse konnte nicht geladen werden (${e.message})`);
+  } finally {
+    if (token === searchToken) loadingTimeline.value = false;
+  }
+}
+
+async function fetchGraph(sid, token) {
+  try {
+    const res = await apiGraph(sid);
+    if (token !== searchToken) return;
+    applyGraph(res);
+  } catch (e) {
+    console.warn(`Netzwerk konnte nicht geladen werden (${e.message})`);
+    if (token === searchToken) loadingGraph.value = false;
   }
 }
 
@@ -235,10 +313,13 @@ const onToggleFile = ({ oparlKey, excluded }) => {
   runSummarize({ refine: true, exclude: summaryExclude.value });
 };
 
-function applyResult(result) {
+// change: progressive-frontend-rendering — stage-1 applier: intent fields,
+// facets, file list. Timeline and graph fill in later (applyTimeline /
+// applyGraph); geo availability only becomes known with the graph stage.
+function applyStage1(result) {
   rawData.value = result;
   summary.value = result.summary || null;
-  graph.value = result.graph || { nodes: [], edges: [] };
+  files.value = result.top_files || [];
   sessionId.value = result.sessionId || sessionId.value;
   // change: intent-router — routing fields (absent on plain /search)
   intent.value = result.intent || null;
@@ -250,10 +331,18 @@ function applyResult(result) {
   topics.value = result.topics || [];
   answerMode.value = result.answer_mode || null;
   summaryRefused.value = (result.summary_refused || []).map(r => r.oparlKey).filter(Boolean);
-  geoAvailable.value = !!result.geo_available && !!result.sessionId;
   geoFC.value = null;
-  if (geoAvailable.value) fetchGeo();
   selection.value = null;
+  // meeting-mode answers precompute their graph server-side — it arrives
+  // with the staged /graph call like any other session
+}
+
+// stage-3 applier: graph + geo availability
+function applyGraph(res) {
+  graph.value = res.graph || { nodes: [], edges: [] };
+  loadingGraph.value = false;
+  geoAvailable.value = !!res.geo_available && !!sessionId.value;
+  if (geoAvailable.value) fetchGeo();
 }
 
 // 2.2: merge /expand response into the current graph, by node id —
@@ -281,24 +370,36 @@ async function onExpand(nodeId) {
 }
 
 // fetch the map FeatureCollection; re-fetched when the summary verdict
-// arrives (refused documents are then excluded from the map)
-async function fetchGeo() {
+// arrives (refused documents are then excluded from the map);
+// token-guarded against superseded searches (change: progressive-
+// frontend-rendering)
+async function fetchGeo(token = searchToken) {
   try {
     const res = await fetch(geoUrl(sessionId.value));
     if (!res.ok) return;
     const fc = await res.json();
-    if (fc.features?.length) geoFC.value = fc;
+    if (token === searchToken && fc.features?.length) geoFC.value = fc;
   } catch { /* map is optional */ }
 }
 
-// offline fallback: static sample so the app still renders without the API
+// offline fallback: static sample so the app still renders without the API;
+// the sample carries all stages at once (change: progressive-frontend-
+// rendering — applies the staged slots directly)
 async function loadSampleFallback() {
   try {
     const data = await import('../assets/sampleData.json');
-    applyResult(data.default);
+    const result = data.default;
+    applyStage1(result);
+    loadingFiles.value = false;
+    timeline.value = result.timeline || [];
+    loadingTimeline.value = false;
+    applyGraph({ graph: result.graph, geo_available: result.geo_available });
     error.value = 'API nicht erreichbar — zeige gespeicherten Beispielsatz.';
   } catch (e) {
     error.value = 'Weder API noch Beispieldaten verfügbar.';
+    loadingFiles.value = false;
+    loadingTimeline.value = false;
+    loadingGraph.value = false;
   }
 }
 
@@ -405,6 +506,31 @@ onUnmounted(() => {
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+/* change: progressive-frontend-rendering — loading card for the network
+   view while the graph stage is pending */
+.pane-loading-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 24px;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.pane-loading-card .pane-spinner {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
 /* change: intent-router — honest empty state */

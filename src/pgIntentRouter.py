@@ -659,11 +659,20 @@ class IntentRouter:
 
     def run_search(self, session, query: str, resolved: Dict[str, Any],
                    top_k: int = 10, signals: Optional[Dict[str, bool]] = None,
-                   summarize: bool = True) -> Dict[str, Any]:
+                   summarize: bool = True,
+                   search_fn: Optional[callable] = None) -> Dict[str, Any]:
         """Execute the routed search with the empty-result fallback ladder:
         scoped search -> unscoped retry (if filters were applied) -> honest
-        empty response."""
+        empty response.
+
+        ``search_fn`` swaps the executed pipeline (change:
+        progressive-frontend-rendering): the default is the monolithic
+        ``search_and_summarize``; the /ask endpoint injects a stage-1-only
+        (recall) callable so the response carries no timeline/graph."""
         from src.pgTimeline import search_and_summarize
+
+        if search_fn is None:
+            search_fn = search_and_summarize
 
         notes: List[str] = list(resolved.get("notes") or [])
         filters = resolved.get("filters") or []
@@ -703,7 +712,7 @@ class IntentRouter:
             result["fallback_notes"] = notes
             return result
 
-        result = search_and_summarize(
+        result = search_fn(
             session, query, top_k=top_k, filters=filters or None,
             signals=signals, summarize=summarize,
         )
@@ -712,7 +721,7 @@ class IntentRouter:
                 "keine Treffer mit dem gefilterten Scope; Suche ohne Filter "
                 "wiederholt"
             )
-            result = search_and_summarize(
+            result = search_fn(
                 session, query, top_k=top_k, filters=None,
                 signals=signals, summarize=summarize,
             )
@@ -748,14 +757,19 @@ class IntentRouter:
 def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
         router: Optional[IntentRouter] = None, top_k: int = 10,
         signals: Optional[Dict[str, bool]] = None,
-        summarize: bool = True) -> Dict[str, Any]:
+        summarize: bool = True,
+        search_fn: Optional[callable] = None) -> Dict[str, Any]:
     """Convenience entry point for the /ask endpoint: decode + resolve +
     execute in one call.
 
     The query-embedding fetch and the decision-model decode are
     independent network waits — the embedding is pre-warmed on the
     parallel pool while the decoder runs (change:
-    api-latency-optimization, task 4.1)."""
+    api-latency-optimization, task 4.1).
+
+    ``search_fn`` is passed through to :meth:`IntentRouter.run_search`
+    (change: progressive-frontend-rendering) so the /ask endpoint can
+    execute the recall stage only."""
     router = router or IntentRouter(cfg=cfg)
 
     prewarm = None
@@ -778,7 +792,8 @@ def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
 
     resolved = router.resolve(decoded["intent"], decoded.get("slots") or {}, session)
     result = router.run_search(session, query, resolved, top_k=top_k,
-                               signals=signals, summarize=summarize)
+                               signals=signals, summarize=summarize,
+                               search_fn=search_fn)
     result["intent_scores"] = decoded.get("scores") or {}
     if decoded.get("error"):
         result["fallback_notes"] = list(result.get("fallback_notes") or []) + [

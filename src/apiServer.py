@@ -2,28 +2,34 @@
 
 Thin FastAPI layer over the search pipeline:
 
-  POST /search   hybrid search (+ optional summary) -> full result incl.
-                 timeline, graph, matched_entities, facets, applied_filters
+  POST /search   recall stage only (change: progressive-frontend-
+                 rendering): top_files, matched_entities, facets,
+                 applied_filters + sessionId — timeline and graph are
+                 fetched separately via /timeline and /graph
   POST /ask      intent-routed question answering: decodes the query via
                  the SystemOne decision model (config/intents.yaml),
                  derives structured filters (gremium meeting scope,
-                 decision-type documents), runs the search with an
-                 empty-result fallback ladder, and returns the search
-                 result contract plus intent, slots, applied_filters and
+                 decision-type documents), runs the recall stage with an
+                 empty-result fallback ladder, and returns the stage-1
+                 contract plus intent, slots, applied_filters and
                  fallback_notes. Falls back to plain search when the
                  decision model is unreachable. Accepts an optional
                  sessionId (context reserved for a follow-up conversation
                  mode; recorded but not yet consulted).
+  POST /timeline stage 2 for a session: traversal + grouped timeline
+  POST /graph    stage 3 for a session: serialized graph + geo
+                 availability (computes stage 2 first if needed, so
+                 out-of-order calls are safe)
   POST /expand   depth-1 neighborhood of a graph node (additive
-                nodes/edges for client-side merge-by-id)
+                 nodes/edges for client-side merge-by-id)
   GET  /facets   facet listing for filter UIs
   GET  /health   liveness
 
 Run (dev):
     uvicorn src.apiServer:app --port 8000
 
-Interactive clients (the web app) may hold a ``sessionId`` for future
-contextual endpoints; /search and /ask create one. Sessions are
+Interactive clients (the web app) may hold a ``sessionId`` for the
+staged follow-up endpoints; /search and /ask create one. Sessions are
 in-memory only.
 """
 
@@ -33,6 +39,7 @@ try:
 except ImportError:
     pass
 
+import threading
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -41,7 +48,7 @@ from pydantic import BaseModel, Field
 
 from src.db import get_engine
 from src.pgHybridSearch import FilterError, facets
-from src.pgTimeline import get_db_session, search_and_summarize
+from src.pgTimeline import get_db_session, search_stage
 
 app = FastAPI(title="RISKI Search API", version="0.1.0")
 
@@ -60,6 +67,15 @@ except ImportError:  # pragma: no cover
 
 # in-memory session store (no persistence for v1)
 _sessions: Dict[str, Dict[str, Any]] = {}
+
+
+def _run_summarizer(session, result: Dict[str, Any]) -> None:
+    """Run the result summarizer inline over a stage-1 result (the
+    ``summarize`` request flag — non-interactive consumers; the web app
+    always uses the async /summarize endpoint instead)."""
+    from src.pgResultSummarizer import ResultSummarizer
+
+    ResultSummarizer(session).summarize(result)
 
 
 class SearchRequest(BaseModel):
@@ -82,6 +98,9 @@ def health() -> Dict[str, Any]:
 
 @app.post("/search")
 def search(req: SearchRequest) -> Dict[str, Any]:
+    """Recall stage only (change: progressive-frontend-rendering): returns
+    top_files, matched_entities, facets, applied_filters + sessionId.
+    Timeline and graph follow via POST /timeline and POST /graph."""
     from src.db import get_engine as _ge  # noqa: F401 (import guard)
 
     try:
@@ -90,10 +109,12 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
 
     try:
-        result = search_and_summarize(
+        result = search_stage(
             session, req.query, top_k=req.top_k,
-            filters=req.filters, signals=req.signals, summarize=req.summarize,
+            filters=req.filters, signals=req.signals,
         )
+        if req.summarize:
+            _run_summarizer(session, result)
     except FilterError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     finally:
@@ -103,8 +124,11 @@ def search(req: SearchRequest) -> Dict[str, Any]:
     _sessions[session_id] = {
         "query": req.query,
         "filters": req.filters or [],
-        "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
-        "result": result,  # kept for the async /summarize + /geo steps
+        "stage1": result,      # full stage-1 payload (top_files with sids)
+        "timeline": None,      # filled by POST /timeline
+        "graph": None,         # filled by POST /graph (stage lock-guarded)
+        "result": result,      # client-facing fields; /summarize mutates in place
+        "stage_lock": threading.Lock(),
     }
     result["sessionId"] = session_id
     return result
@@ -118,14 +142,30 @@ class AskRequest(BaseModel):
     summarize: bool = True
 
 
+def _stage1_search_fn(session, query: str, top_k: int = 10,
+                      filters: Optional[List[Dict[str, Any]]] = None,
+                      signals: Optional[Dict[str, bool]] = None,
+                      summarize: bool = False) -> Dict[str, Any]:
+    """Recall-stage-only pipeline callable injected into the intent router
+    (change: progressive-frontend-rendering) — same signature as
+    ``search_and_summarize``, but runs :func:`search_stage` and never
+    builds timeline/graph. With ``summarize`` (request flag), the LLM
+    summarizer runs inline as before."""
+    result = search_stage(session, query, top_k=top_k, filters=filters, signals=signals)
+    if summarize:
+        _run_summarizer(session, result)
+    return result
+
+
 @app.post("/ask")
 def ask(req: AskRequest) -> Dict[str, Any]:
     """Intent-routed question answering (change: intent-router).
 
     Decodes the query via the SystemOne decision model, derives structured
-    filters, and runs the search with an empty-result fallback ladder.
-    Degrades to plain search (intent=search_topic) when the decision
-    model is unreachable."""
+    filters, and runs the recall stage with an empty-result fallback
+    ladder. Degrades to plain search (intent=search_topic) when the
+    decision model is unreachable. Timeline and graph follow via the
+    staged /timeline and /graph endpoints."""
     from src.pgIntentRouter import ask as route_ask
 
     try:
@@ -137,6 +177,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         result = route_ask(
             session, req.query, top_k=req.top_k,
             signals=req.signals, summarize=req.summarize,
+            search_fn=_stage1_search_fn,
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
@@ -144,16 +185,92 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         session.close()
 
     session_id = req.session_id or uuid.uuid4().hex
+    # meeting-centric answers (D10) build their graph synchronously in the
+    # router — stash it as the precomputed graph stage instead of sending
+    # it in the stage-1 response (change: progressive-frontend-rendering)
+    precomputed_graph = result.pop("graph", None)
     _sessions[session_id] = {
         "query": req.query,
         "filters": result.get("applied_filters") or [],
         "intent": result.get("intent"),
         "slots": result.get("slots") or {},
-        "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
-        "result": result,  # kept for the async /summarize + /geo steps
+        "stage1": result,           # full stage-1 payload (top_files with sids)
+        "timeline": None,           # filled by POST /timeline
+        "graph": precomputed_graph, # precomputed (meeting mode) or filled by POST /graph
+        "result": result,           # client-facing fields; /summarize mutates in place
+        "stage_lock": threading.Lock(),
     }
     result["sessionId"] = session_id
     return result
+
+
+class SessionRequest(BaseModel):
+    session_id: str = Field(min_length=1)
+
+
+def _get_session(session_id: str) -> Dict[str, Any]:
+    sess = _sessions.get(session_id)
+    if sess is None or "result" not in sess:
+        raise HTTPException(status_code=404, detail="unknown session")
+    return sess
+
+
+@app.post("/timeline")
+def timeline(req: SessionRequest) -> Dict[str, Any]:
+    """Stage 2 for a session (change: progressive-frontend-rendering):
+    traversal + grouped timeline for the session's recall results. Runs
+    the stage on first call; lock-guarded so concurrent callers wait for
+    the same computation instead of racing."""
+    sess = _get_session(req.session_id)
+    with sess["stage_lock"]:
+        _ensure_stage2(sess)
+    return {"sessionId": req.session_id, "query": sess["query"], "timeline": sess["timeline"]}
+
+
+def _ensure_stage2(sess: Dict[str, Any]) -> None:
+    """Compute stage 2 (traversal + timeline) once per session. Callers
+    must hold ``sess["stage_lock"]``. The full stage-2 payload is kept in
+    the session so /graph reuses the same ``find_related_objects``
+    traversal instead of walking the association tables again."""
+    if sess.get("_stage2") is not None:
+        return
+    db_session = get_db_session()
+    try:
+        from src.pgTimeline import timeline_stage
+
+        stage2 = timeline_stage(db_session, sess["stage1"])
+    finally:
+        db_session.close()
+    sess["_stage2"] = stage2
+    sess["timeline"] = stage2["timeline"]
+
+
+@app.post("/graph")
+def graph(req: SessionRequest) -> Dict[str, Any]:
+    """Stage 3 for a session (change: progressive-frontend-rendering):
+    serialized graph + geo availability. Computes stage 2 first when it
+    has not run yet, so out-of-order calls (graph before timeline) are
+    safe; a later /timeline call returns the already-computed result."""
+    sess = _get_session(req.session_id)
+    with sess["stage_lock"]:
+        if sess.get("graph") is None:
+            _ensure_stage2(sess)
+            db_session = get_db_session()
+            try:
+                from src.pgTimeline import graph_stage
+
+                stage3 = graph_stage(db_session, sess["stage1"], sess["_stage2"])
+            finally:
+                db_session.close()
+            sess["graph"] = stage3["graph"]
+            sess["geo_available"] = stage3["geo_available"]
+            sess["node_ids"] = [n["id"] for n in stage3["graph"].get("nodes", [])]
+    return {
+        "sessionId": req.session_id,
+        "query": sess["query"],
+        "graph": sess["graph"],
+        "geo_available": sess.get("geo_available", False),
+    }
 
 
 @app.get("/geo/{session_id}")
@@ -167,10 +284,14 @@ def geo(session_id: str) -> Dict[str, Any]:
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
+    # staged sessions carry the graph under its own key (filled by
+    # POST /graph); monolithic payloads (sample data, old clients) keep it
+    # in the result (change: progressive-frontend-rendering)
+    graph = sess.get("graph") or result.get("graph") or {}
     # map scope = the graph-connected answer set (not the matched_entities
     # long tail — weak recall matches drag in unrelated streets)
-    keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", []) if n.get("type") == "AgendaItem"]
-    file_keys = [n["oparlKey"] for n in result.get("graph", {}).get("nodes", [])
+    keys = [n["oparlKey"] for n in graph.get("nodes", []) if n.get("type") == "AgendaItem"]
+    file_keys = [n["oparlKey"] for n in graph.get("nodes", [])
                  if n.get("type") in ("File", "AuxFile")]
     # gate on the summarizer's relevance verdict AND the user's document
     # exclusion set (change: geo-gating): the map reflects exactly the
@@ -285,4 +406,7 @@ def get_facets() -> Dict[str, Any]:
 def get_session(session_id: str) -> Dict[str, Any]:
     if session_id not in _sessions:
         raise HTTPException(status_code=404, detail="unknown session")
-    return _sessions[session_id]
+    # internals: stage_lock is not serializable; _stage2 carries the raw
+    # traversal payload (large, debug-only dump keeps it out)
+    return {k: v for k, v in _sessions[session_id].items()
+            if k not in ("stage_lock", "_stage2")}

@@ -234,7 +234,9 @@ class TestParityWithLegacy:
         assert ours == theirs
 
     def test_result_structure_same_keys(self, legacy_tl):
-        """The no-results early return matches the legacy structure exactly."""
+        """The no-results early return matches the staged stage-1
+        contract (change: progressive-frontend-rendering): top_files plus
+        recall fields, no timeline/graph/results in the recall response."""
         class FakeSession:
             def get_bind(self):
                 raise RuntimeError("should not touch db")
@@ -253,9 +255,11 @@ class TestParityWithLegacy:
             legacy_res = legacy_tl.search_and_build_timeline(FakeSession(), "test query", hybrid=False)
         finally:
             monkey.undo()
-        assert set(legacy_res.keys()) <= set(res.keys())
-        # additive keys of the hybrid-search change must not alter legacy keys
         assert {"matched_entities", "facets", "applied_filters"} <= set(res.keys())
-        assert res["results"] == [] and res["timeline"] == []
+        assert res["timeline"] == [] and res["graph"] == {"nodes": [], "edges": []}
+        assert res["top_files"] == []
+        # the monolithic composition still exists for non-interactive
+        # consumers (semantic timeline CLI)
+        assert set(legacy_res.keys()) >= {"query", "top_files"}
 
 pytestmark = pytest.mark.unit

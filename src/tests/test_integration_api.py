@@ -81,15 +81,18 @@ class TestHealthAndFacets:
 
 
 class TestSearch:
-    def test_search_returns_contract_sections(self, client):
+    def test_search_returns_stage1_contract(self, client):
+        # change: progressive-frontend-rendering — /search is stage 1
+        # (recall) only; timeline and graph follow via /timeline and /graph
         r = client.post("/search", json={"query": "Digitalstrategie der Stadt Karlsruhe", "top_k": 5})
         assert r.status_code == 200
         body = r.json()
-        for key in ("query", "top_files", "timeline", "graph", "matched_entities",
+        for key in ("query", "top_files", "matched_entities",
                     "facets", "applied_filters", "sessionId"):
             assert key in body, f"missing {key}"
-        assert body["graph"]["nodes"]
-        assert body["graph"]["edges"]
+        assert body["top_files"]
+        assert "timeline" not in body
+        assert "graph" not in body
         # session was created
         r2 = client.get(f"/sessions/{body['sessionId']}")
         assert r2.status_code == 200
@@ -162,8 +165,14 @@ class TestAsk:
         assert any(f["facet"] == "organization" for f in body["applied_filters"])
         assert body["gremium"]["orgs"] == ["Ortschaftsrat Neureut"]
         assert body["gremium"]["meeting"] is not None
-        for key in ("top_files", "graph", "sessionId", "fallback_notes"):
+        # staged contract: no graph in the stage-1 response — the
+        # meeting-mode graph is precomputed and served by POST /graph
+        assert "graph" not in body
+        for key in ("top_files", "sessionId", "fallback_notes"):
             assert key in body
+        rg = client.post("/graph", json={"session_id": body["sessionId"]})
+        assert rg.status_code == 200
+        assert rg.json()["graph"]["nodes"]
 
     def test_decision_routed_query(self, client, stub_decoder):
         r = client.post("/ask", json={

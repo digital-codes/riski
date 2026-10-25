@@ -38,6 +38,17 @@ export async function summarize(sessionId, { refine = false, exclude = [] } = {}
 	return post('/summarize', { session_id: sessionId, refine, exclude });
 }
 
+// change: progressive-frontend-rendering — staged follow-ups: /timeline is
+// stage 2 (traversal + grouped timeline), /graph stage 3 (graph + geo
+// availability) of the session started by /ask or /search
+export async function timeline(sessionId) {
+	return post('/timeline', { session_id: sessionId });
+}
+
+export async function graph(sessionId) {
+	return post('/graph', { session_id: sessionId });
+}
+
 export async function expand(nodeId, limitPerRelation = 25) {
 	return post('/expand', { node_id: nodeId, limit_per_relation: limitPerRelation });
 }

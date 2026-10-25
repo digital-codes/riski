@@ -1,5 +1,6 @@
 #!/bin/bash
-REPO_DIR="/home/okl/projects/riski"
+# repo root = directory containing this script's parent (portable)
+REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PORT=11384
 APP="src.apiServer:app"
 
@@ -9,7 +10,8 @@ sleep 2
 
 echo "Starting API on http://127.0.0.1:$PORT..."
 cd "$REPO_DIR"
-setsid /usr/bin/python3 -m uvicorn "$APP" --host 127.0.0.1 --port "$PORT" </dev/null > "$REPO_DIR/apiServer.log" 2>&1 &
+PYTHON="${PYTHON:-$(command -v python3)}"
+setsid "$PYTHON" -m uvicorn "$APP" --host 127.0.0.1 --port "$PORT" </dev/null > "$REPO_DIR/apiServer.log" 2>&1 &
 echo "PID: $!"
 sleep 3
 curl -s "http://127.0.0.1:$PORT/health"

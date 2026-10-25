@@ -233,6 +233,76 @@ class TestSearchLadder:
         assert out["empty_response"]["message"]
         assert out["empty_response"]["intent"] == "search_topic"
 
+    def test_injected_search_fn_overrides_pipeline(self, cfg, monkeypatch):
+        """change: progressive-frontend-rendering — /ask injects a
+        stage-1-only callable; the fallback ladder must rerun through the
+        SAME injected callable and the result carries intent fields but
+        no graph/timeline."""
+        calls = []
+
+        def stage1_fn(session, query, top_k=10, filters=None, signals=None,
+                      summarize=True):
+            calls.append(filters)
+            if filters:
+                return {"top_files": [], "matched_entities": [],
+                        "applied_filters": filters}
+            return {"query": query, "top_files": [{"oparlKey": "f1"}],
+                    "matched_entities": [], "applied_filters": filters}
+
+        import src.pgTimeline as tl
+
+        # the default pipeline must NOT be consulted when search_fn is given
+        def boom(*a, **kw):
+            raise AssertionError("monolithic pipeline called despite search_fn")
+
+        monkeypatch.setattr(tl, "search_and_summarize", boom)
+
+        router = IntentRouter(cfg=cfg)
+        resolved = {
+            "intent": "ask_decision_date",
+            "handler": "search",
+            "answer_mode": "date",
+            "filters": [{"facet": "tag", "op": "in", "values": ["Beschlüsse"]}],
+            "gremium": None,
+            "notes": [],
+        }
+        out = router.run_search(_FakeSession(), "wann wurde x beschlossen",
+                                resolved, top_k=5, summarize=False,
+                                search_fn=stage1_fn)
+        assert calls == [resolved["filters"], None]  # ladder reran unscoped
+        assert out["top_files"] == [{"oparlKey": "f1"}]
+        assert "graph" not in out and "timeline" not in out
+        assert out["intent"] == "ask_decision_date"
+
+        # end-to-end ask(): injected fn wins, intent fields present
+        # (parallel pre-warm disabled so no embedding call is attempted)
+        monkeypatch.setenv("RISKI_PARALLEL_SIGNALS", "0")
+
+        class _StubRouter:
+            def __init__(self, cfg=None):
+                self.cfg = cfg
+
+            def decode(self, query):
+                return {"intent": "search_topic", "scores": {},
+                        "slots": {}, "error": None}
+
+            def resolve(self, intent, slots, session):
+                return {"intent": intent, "handler": "search",
+                        "answer_mode": "summary", "filters": [],
+                        "gremium": None, "notes": []}
+
+            def run_search(self, session, query, resolved, **kw):
+                assert kw.get("search_fn") is stage1_fn
+                out = stage1_fn(session, query, **{k: v for k, v in kw.items()
+                                                   if k != "search_fn"})
+                out["intent"] = resolved["intent"]
+                return out
+
+        out2 = ir.ask(_FakeSession(), "irgendwas", router=_StubRouter(),
+                      summarize=False, search_fn=stage1_fn)
+        assert out2["intent"] == "search_topic"
+        assert "graph" not in out2 and "timeline" not in out2
+
 
 class TestLiveDb:
     """Live read-only checks against the real RIS database."""
@@ -509,7 +579,7 @@ class TestDecodeEmbedOverlap:
                 return {"intent": intent, "handler": "search", "answer_mode": "summary",
                         "filters": [], "gremium": None, "notes": []}
 
-            def run_search(self, session, query, resolved, top_k=10, signals=None, summarize=True):
+            def run_search(self, session, query, resolved, top_k=10, signals=None, summarize=True, **kw):
                 tl.call_embedding_model(query)  # what the real search does
                 return {"top_files": [{"oparlKey": "f1"}], "matched_entities": []}
 

@@ -882,7 +882,20 @@ def group_timeline_events(timeline_events: List[Dict], window_days: int = TIMELI
     return grouped
 
 @timed
-def search_and_build_timeline(
+def _typed_objects(related_objects: Dict[str, List[Dict]]) -> Dict[str, List[Dict]]:
+    """Strip the internal keys (``edges``, ``_sid_maps``) that
+    ``find_related_objects`` mixes into its result, leaving only the
+    object-type → objects mapping consumed by ``build_timeline`` and
+    ``build_graph``. Deliberately non-mutating: the full dict (with the
+    edge log) stays intact for the later graph stage."""
+    return {
+        k: v for k, v in related_objects.items()
+        if k != "edges" and not k.startswith("_")
+    }
+
+
+@timed
+def search_stage(
     session,
     query: str,
     top_k: int = TOP_K,
@@ -891,23 +904,13 @@ def search_and_build_timeline(
     filters: Optional[List[Dict[str, Any]]] = None,
     signals: Optional[Dict[str, bool]] = None,
 ) -> Dict[str, Any]:
-    """
-    Main function to search files by embeddings and build a timeline of related OParl events.
+    """Stage 1 of the search pipeline (change: progressive-frontend-rendering):
+    recall — query embedding, hybrid candidate retrieval, reranking, and
+    the top-file list. Everything the file list pane needs; timeline and
+    graph are built by :func:`timeline_stage` and :func:`graph_stage`.
 
-    Args:
-        session: SQLAlchemy session
-        query: User search query
-        top_k: Number of top results to return
-        threshold: Similarity threshold for filtering results (legacy vector-only path)
-        hybrid: Use hybrid multi-signal recall (lexical + name vectors + content
-            vectors, RRF-fused). With False, falls back to the legacy
-            content-vector-only path with distance thresholding.
-        filters: Structured facet filters (see pgHybridSearch.parse_filters)
-        signals: Per-signal toggles {"lexical": bool, "name_vectors": bool,
-            "content_vectors": bool}; all default to True.
-
-    Returns:
-        Dictionary containing search results and timeline
+    Returns a dict with ``query``, ``top_files``, ``matched_entities``,
+    ``facets``, ``applied_filters`` and — on empty recall — a ``message``.
     """
     # Generate embedding for the query
     query_embedding = call_embedding_model(query, EMBEDDING_API_URL, EMBEDDING_API_KEY, EMBEDDING_MODEL)
@@ -955,10 +958,6 @@ def search_and_build_timeline(
             return {
                 "query": query,
                 "top_files": [],
-                "results": [],
-                "timeline": [],
-                "graph": {"nodes": [], "edges": []},
-                "geo_available": False,
                 "matched_entities": [],
                 "facets": facets_data,
                 "applied_filters": applied_filters,
@@ -974,13 +973,13 @@ def search_and_build_timeline(
 
         _ensure_log().debug(f"Top files (before thresholding): {file_scores}")  # Debugging line
         if not file_scores:
-            return {"query": query, "results": [], "timeline": [], "graph": {"nodes": [], "edges": []}, "geo_available": False, "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files with embeddings found"}
+            return {"query": query, "top_files": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files with embeddings found"}
 
         # filter by threshold
         top_scores = filter_by_threshold(file_scores, threshold=threshold)
         _ensure_log().debug(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
         if not top_scores:
-            return {"query": query, "top_files": [], "results": [], "timeline": [], "graph": {"nodes": [], "edges": []}, "geo_available": False, "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
+            return {"query": query, "top_files": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
 
     # run reranking on all files and append rerank score to file_score 
     top_scores_with_rerank = []
@@ -1065,39 +1064,6 @@ def search_and_build_timeline(
     } for row in result]
     top_files.sort(key=lambda f: key_rank.get(f["oparlKey"], len(key_rank)))
     _ensure_log().debug(f"Top files details: {top_files}")  # Debugging line
-    
-    file_sids = {item["oparlKey"]: item["sid"] for item in top_files}
-    _ensure_log().debug(f"Resolved file keys to sids: {file_sids}")  # Debugging line
-
-    
-    # Find all related OParl objects
-    related_objects = find_related_objects(session, file_sids)
-    _ensure_log().debug(f"Related objects found: { {k: len(v) for k, v in related_objects.items()} }")  # Debugging line
-
-    # Serialize the traversed graph (nodes + typed edges, add-network-view)
-    from src.graphModel import build_graph
-    graph = build_graph(related_objects, related_objects.pop("edges", []), top_files)
-
-    # georeferences: streets/districts linked to the GRAPH-connected answer
-    # set (seed files + traversal). Deliberately NOT the matched_entities
-    # long tail — weak recall matches (rank 11+) drag in unrelated streets
-    # and flood the map (analysis: query "rückbau herrenalber strasse":
-    # graph scope = 175 features/13 streets, tail scope = 1475/65).
-    from src.pgGeo import geo_available_for_keys
-    agenda_item_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] == "AgendaItem"]
-    file_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] in ("File", "AuxFile")]
-    file_keys = [k for k in file_keys if k]
-    geo_available = geo_available_for_keys(session.get_bind(), agenda_item_keys, file_keys)
-
-    # Build timeline from all related objects
-    timeline_events = build_timeline(related_objects)
-    _ensure_log().debug(f"Timeline events built: {len(timeline_events)}")  # Debugging line
-
-    # Group timeline events
-    grouped_timeline = group_timeline_events(timeline_events)
-    _ensure_log().debug(f"Grouped timeline events: {len(grouped_timeline)}")  # Debugging line
-    #print(f"Timeline groups: {[{'start_date': g['start_date'], 'end_date': g['end_date'], 'event_count': len(g['events'])} for g in grouped_timeline]}")  # Debugging line
-    #print(grouped_timeline)
 
     return {
         "query": query,
@@ -1112,17 +1078,147 @@ def search_and_build_timeline(
             "distance": f["distance"],
             "match": f.get("match")
         } for f in top_files],
-        "timeline": grouped_timeline,
-        "graph": graph,
-        "geo_available": geo_available,
         "matched_entities": matched_entities,
         "facets": facets_data,
         "applied_filters": applied_filters,
+    }
+
+
+@timed
+def timeline_stage(session, stage1: Dict[str, Any]) -> Dict[str, Any]:
+    """Stage 2 of the search pipeline (change: progressive-frontend-rendering):
+    traverse the association tables once (``find_related_objects``) and
+    build the grouped timeline. The traversal result (including the edge
+    log) is returned under ``related_objects`` so :func:`graph_stage` can
+    reuse it without a second traversal.
+
+    Returns ``{"timeline": ..., "related_objects": ..., "timeline_events":
+    ..., "typed_objects": ...}``, or empty results when recall found no
+    files.
+    """
+    top_files = stage1.get("top_files") or []
+    if not top_files:
+        return {"timeline": [], "related_objects": None, "timeline_events": [], "typed_objects": {}}
+
+    file_sids = {item["oparlKey"]: item["sid"] for item in top_files}
+    _ensure_log().debug(f"Resolved file keys to sids: {file_sids}")  # Debugging line
+
+    # Find all related OParl objects
+    related_objects = find_related_objects(session, file_sids)
+    _ensure_log().debug(f"Related objects found: { {k: len(v) for k, v in related_objects.items()} }")  # Debugging line
+
+    typed = _typed_objects(related_objects)
+
+    # Build timeline from all related objects
+    timeline_events = build_timeline(typed)
+    _ensure_log().debug(f"Timeline events built: {len(timeline_events)}")  # Debugging line
+
+    # Group timeline events
+    grouped_timeline = group_timeline_events(timeline_events)
+    _ensure_log().debug(f"Grouped timeline events: {len(grouped_timeline)}")  # Debugging line
+
+    return {
+        "timeline": grouped_timeline,
+        "related_objects": related_objects,
+        "timeline_events": timeline_events,
+        "typed_objects": typed,
+    }
+
+
+@timed
+def graph_stage(session, stage1: Dict[str, Any], stage2: Dict[str, Any]) -> Dict[str, Any]:
+    """Stage 3 of the search pipeline (change: progressive-frontend-rendering):
+    serialize the traversed objects into the graph contract and compute the
+    geo availability of the graph-connected answer set. Reuses the
+    traversal from :func:`timeline_stage` (one ``find_related_objects``
+    call per search); the edge list is copied, never popped, so both
+    stages see the full traversal result.
+
+    Returns ``{"graph": ..., "geo_available": ...}``.
+    """
+    from src.graphModel import build_graph
+
+    top_files = stage1.get("top_files") or []
+    related_objects = stage2.get("related_objects")
+    if not top_files or related_objects is None:
+        return {"graph": {"nodes": [], "edges": []}, "geo_available": False}
+
+    typed = stage2.get("typed_objects") or _typed_objects(related_objects)
+    edges = list(related_objects.get("edges") or [])
+
+    # Serialize the traversed graph (nodes + typed edges, add-network-view)
+    graph = build_graph(typed, edges, top_files)
+
+    # georeferences: streets/districts linked to the GRAPH-connected answer
+    # set (seed files + traversal). Deliberately NOT the matched_entities
+    # long tail — weak recall matches (rank 11+) drag in unrelated streets
+    # and flood the map (analysis: query "rückbau herrenalber strasse":
+    # graph scope = 175 features/13 streets, tail scope = 1475/65).
+    from src.pgGeo import geo_available_for_keys
+    agenda_item_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] == "AgendaItem"]
+    file_keys = [n["oparlKey"] for n in graph["nodes"] if n["type"] in ("File", "AuxFile")]
+    file_keys = [k for k in file_keys if k]
+    geo_available = geo_available_for_keys(session.get_bind(), agenda_item_keys, file_keys)
+
+    return {"graph": graph, "geo_available": geo_available}
+
+
+def search_and_build_timeline(
+    session,
+    query: str,
+    top_k: int = TOP_K,
+    threshold: float = 0.40,
+    hybrid: bool = True,
+    filters: Optional[List[Dict[str, Any]]] = None,
+    signals: Optional[Dict[str, bool]] = None,
+) -> Dict[str, Any]:
+    """
+    Main function to search files by embeddings and build a timeline of related OParl events.
+
+    Composed of the three pipeline stages (change:
+    progressive-frontend-rendering): :func:`search_stage` (recall),
+    :func:`timeline_stage` (traversal + timeline) and :func:`graph_stage`
+    (graph + geo availability). Interactive clients consume the stages
+    individually; this composition keeps the monolithic result contract
+    for the semantic timeline CLI and other non-interactive consumers.
+
+    Args:
+        session: SQLAlchemy session
+        query: User search query
+        top_k: Number of top results to return
+        threshold: Similarity threshold for filtering results (legacy vector-only path)
+        hybrid: Use hybrid multi-signal recall (lexical + name vectors + content
+            vectors, RRF-fused). With False, falls back to the legacy
+            content-vector-only path with distance thresholding.
+        filters: Structured facet filters (see pgHybridSearch.parse_filters)
+        signals: Per-signal toggles {"lexical": bool, "name_vectors": bool,
+            "content_vectors": bool}; all default to True.
+
+    Returns:
+        Dictionary containing search results and timeline
+    """
+    stage1 = search_stage(
+        session, query, top_k=top_k, threshold=threshold,
+        hybrid=hybrid, filters=filters, signals=signals,
+    )
+    stage2 = timeline_stage(session, stage1)
+    stage3 = graph_stage(session, stage1, stage2)
+
+    return {
+        "query": stage1["query"],
+        "top_files": stage1["top_files"],
+        "timeline": stage2["timeline"],
+        "graph": stage3["graph"],
+        "geo_available": stage3["geo_available"],
+        "matched_entities": stage1["matched_entities"],
+        "facets": stage1["facets"],
+        "applied_filters": stage1["applied_filters"],
         "stats": {
-            "total_files": len(top_files),
-            "total_events": len(timeline_events),
-            "event_types": {k: len(v) for k, v in related_objects.items() if v}
-        }
+            "total_files": len(stage1["top_files"]),
+            "total_events": len(stage2["timeline_events"]),
+            "event_types": {k: len(v) for k, v in stage2["typed_objects"].items() if v}
+        },
+        **({"message": stage1["message"]} if stage1.get("message") else {}),
     }
 
 @timed
@@ -1230,7 +1326,6 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--directory", default = os.getcwd(), help="Directory to save results (default: current directory)")
     parser.add_argument("-t", "--threshold", type=float, default=0.40, help="Similarity threshold (default: 0.40)")
     parser.add_argument("-k", "--top_k", type=int, default=TOP_K, help="Number of top results to return (default: TOP_K)")
-    parser.add_argument("-F", "--filters", type=str, default=None, help='Structured facet filters as JSON, e.g. \'[{"facet":"paperType","op":"in","values":["Antrag"]}]\'' )
     parser.add_argument("-F", "--filters", type=str, default=None, help='Structured facet filters as JSON, e.g. \'[{"facet":"paperType","op":"in","values":["Antrag"]}]\'' )
     args = parser.parse_args()
     main(args.directory, args.threshold, args.top_k, args.filters)
