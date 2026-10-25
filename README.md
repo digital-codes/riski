@@ -336,6 +336,23 @@ project's `SimpleMap.vue`) loads the layer lazily, only when the search
 result carries `geo_available: true`; the SummaryCard header then shows a
 "Karte verfügbar — weiter unten" note.
 
+The map shows only georeferences backed by real content. Address-block
+mentions (letterheads, venue lines, contact blocks) are a known noise
+source — street references extracted from them flooded the map with
+streets that have nothing to do with the topic. The write-time scripts
+(`pgAddFileGeoRefs`, `pgAddStreetRefs`, `pgAddDistrictRefs`) and the
+batch cleanup (`pgGeoGateCleanup`) therefore LLM-gate every street/
+district reference (`GeoGate`, `src/geoGate.py`): a confident
+`boilerplate` verdict hides the link from the map (`gate_status` column
+on the four assoc tables; `NULL`/`unsure`/`content` stay visible — the
+filter is deliberately permissive). Excluding or refusing a document via
+the SummaryCard re-fetches `/geo`, so the map always reflects the enabled
+document set. Re-run the cleanup after new imports:
+`python src/pgGeoGateCleanup.py --dry-run` to review, then without the
+flag to gate (see `docs/geo-gate-apply-2026-10-25.md` for the first full
+run: 44,918 rows gated, 5,060 boilerplate verdicts across the four assoc
+tables).
+
 Point layers (POIs) are future work: e.g. road constructions from
 transparenz.karlsruhe.de via the TBA geoserver WFS would add exactly the
 "where is the Baustelle on my street" dimension.
