@@ -33,14 +33,17 @@ try:
 except ImportError:
     pass
 
+import os
+import time
 import uuid
+import threading
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
 from src.db import get_engine
-from src.pgHybridSearch import FilterError, facets
+from src.pgHybridSearch import CapacityError, FilterError, facets
 from src.pgTimeline import get_db_session, search_and_summarize
 
 app = FastAPI(title="RISKI Search API", version="0.1.0")
@@ -58,15 +61,64 @@ try:
 except ImportError:  # pragma: no cover
     pass
 
-# in-memory session store (no persistence for v1)
+# in-memory session store (no persistence for v1) — bounded since
+# api-capacity-hardening: TTL + max size, lazy eviction on insert (no
+# background thread)
 _sessions: Dict[str, Dict[str, Any]] = {}
+_sessions_lock = threading.Lock()
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _session_ttl() -> int:
+    return max(1, _env_int("RISKI_SESSION_TTL", 2 * 60 * 60))
+
+
+def _session_max() -> int:
+    return max(1, _env_int("RISKI_SESSION_MAX", 1000))
+
+
+def _store_session(session_id: str, entry: Dict[str, Any]) -> None:
+    """Insert a session, evicting expired and (if still over the cap) the
+    oldest entries first."""
+    now = time.time()
+    with _sessions_lock:
+        ttl = _session_ttl()
+        cap = _session_max()
+        expired = [sid for sid, s in _sessions.items()
+                   if now - s.get("created", now) > ttl]
+        for sid in expired:
+            _sessions.pop(sid, None)
+        while len(_sessions) >= cap:
+            oldest = min(_sessions.items(), key=lambda kv: kv[1].get("created", 0))[0]
+            _sessions.pop(oldest, None)
+        entry["created"] = now
+        _sessions[session_id] = entry
+
+
+def _get_session(session_id: str) -> Optional[Dict[str, Any]]:
+    with _sessions_lock:
+        sess = _sessions.get(session_id)
+        if sess is not None and time.time() - sess.get("created", 0) > _session_ttl():
+            _sessions.pop(session_id, None)
+            return None
+        return sess
 
 
 class SearchRequest(BaseModel):
     query: str = Field(min_length=1)
     filters: Optional[List[Dict[str, Any]]] = None
     top_k: int = Field(default=10, ge=1, le=100)
-    summarize: bool = True
+    # change: api-capacity-hardening — default moved to False: the LLM
+    # summary belongs in the async /summarize follow-up, not the search hot
+    # path (each inline summary pins a thread + LLM slot for 10–90 s).
+    # Non-interactive callers pass summarize=True explicitly.
+    summarize: bool = False
     signals: Optional[Dict[str, bool]] = None
 
 
@@ -86,8 +138,8 @@ def search(req: SearchRequest) -> Dict[str, Any]:
 
     try:
         session = get_db_session()
-    except Exception as exc:  # pragma: no cover - db down
-        raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
+    except Exception:  # pragma: no cover - db down
+        raise HTTPException(status_code=503, detail="database temporarily unavailable")
 
     try:
         result = search_and_summarize(
@@ -96,16 +148,18 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         )
     except FilterError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    except CapacityError as exc:
+        raise HTTPException(status_code=503, detail=str(exc), headers={"Retry-After": "5"})
     finally:
         session.close()
 
     session_id = uuid.uuid4().hex
-    _sessions[session_id] = {
+    _store_session(session_id, {
         "query": req.query,
         "filters": req.filters or [],
         "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
         "result": result,  # kept for the async /summarize + /geo steps
-    }
+    })
     result["sessionId"] = session_id
     return result
 
@@ -130,28 +184,39 @@ def ask(req: AskRequest) -> Dict[str, Any]:
 
     try:
         session = get_db_session()
-    except Exception as exc:  # pragma: no cover - db down
-        raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
+    except Exception:  # pragma: no cover - db down
+        raise HTTPException(status_code=503, detail="database temporarily unavailable")
 
     try:
         result = route_ask(
             session, req.query, top_k=req.top_k,
             signals=req.signals, summarize=req.summarize,
         )
+    except CapacityError as exc:
+        raise HTTPException(status_code=503, detail=str(exc), headers={"Retry-After": "5"})
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
+        import logging
+
+        correlation_id = uuid.uuid4().hex
+        logging.getLogger("riski.api").exception(
+            "ask failed (correlation_id=%s): %s", correlation_id, exc
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"internal error (correlation_id={correlation_id})",
+        )
     finally:
         session.close()
 
     session_id = req.session_id or uuid.uuid4().hex
-    _sessions[session_id] = {
+    _store_session(session_id, {
         "query": req.query,
         "filters": result.get("applied_filters") or [],
         "intent": result.get("intent"),
         "slots": result.get("slots") or {},
         "node_ids": [n["id"] for n in result.get("graph", {}).get("nodes", [])],
         "result": result,  # kept for the async /summarize + /geo steps
-    }
+    })
     result["sessionId"] = session_id
     return result
 
@@ -163,7 +228,7 @@ def geo(session_id: str) -> Dict[str, Any]:
     has no georeferences."""
     from src.pgGeo import EMPTY_FEATURE_COLLECTION, collect_geo
 
-    sess = _sessions.get(session_id)
+    sess = _get_session(session_id)
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
@@ -197,7 +262,7 @@ def summarize(req: SummarizeRequest) -> Dict[str, Any]:
     document content; ``exclude`` drops files from the summary's document
     set and persists in the session. The response additionally carries the
     structured per-file metadata for the interactive file list."""
-    sess = _sessions.get(req.session_id)
+    sess = _get_session(req.session_id)
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
@@ -272,6 +337,7 @@ def get_facets() -> Dict[str, Any]:
 
 @app.get("/sessions/{session_id}")
 def get_session(session_id: str) -> Dict[str, Any]:
-    if session_id not in _sessions:
+    sess = _get_session(session_id)
+    if sess is None:
         raise HTTPException(status_code=404, detail="unknown session")
-    return _sessions[session_id]
+    return sess

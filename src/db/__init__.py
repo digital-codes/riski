@@ -88,13 +88,26 @@ def get_engine(url: str | None = None, readonly: bool = False) -> Engine:
         # pool sized for the hybrid-recall fan-out (up to 12 concurrent
         # per-signal queries per request, change: api-latency-optimization);
         # PostgreSQL-only — SQLite test URLs use incompatible pool classes
+        # Pool sizing/timeout configurable for deployment tuning
+        # (change: api-capacity-hardening).
         if url.startswith("postgresql"):
-            kwargs.update(pool_size=16, max_overflow=8)
+            kwargs.update(
+                pool_size=_env_int("RISKI_DB_POOL_SIZE", 16),
+                max_overflow=_env_int("RISKI_DB_MAX_OVERFLOW", 8),
+                pool_timeout=_env_int("RISKI_DB_POOL_TIMEOUT", 30),
+            )
         engine = create_engine(url, **kwargs)
         _engines[url] = engine
         if not readonly:
             Session.configure(bind=engine)
     return engine
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
 
 
 def table_exists(name: str, engine: Engine | None = None) -> bool:

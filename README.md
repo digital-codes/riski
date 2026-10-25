@@ -274,6 +274,12 @@ In production the API is expected under the same origin at `/api/...`
 (the dev setup proxies `/api` to `localhost:8000` via vite; override with
 `VITE_API_BASE`).
 
+API capacity/concurrency behaviour (summarize default, 503-on-saturation,
+bounded sessions, env tuning) is documented in `API.md` — note the
+`POST /search` default is now `summarize=false` (the web app uses the async
+`/summarize` follow-up; non-interactive callers opt in with
+`"summarize": true`).
+
 ### How search works
 
 Three recall signals are fused per entity type by reciprocal-rank fusion

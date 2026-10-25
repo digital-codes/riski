@@ -587,6 +587,56 @@ def _hybrid_executor():
     return _HYBRID_EXECUTOR
 
 
+# change: api-capacity-hardening — a process-wide budget bounds the total
+# recall connections held concurrently across requests (each parallel
+# request bursts up to the executor width of pool checkouts). A request
+# acquires its full burst up front (bounded by the DB pool timeout); when
+# the budget is exhausted within that time the request fails fast with a
+# typed CapacityError instead of queueing opaque pool-timeout 500s.
+class CapacityError(RuntimeError):
+    """The recall fan-out budget is exhausted; retry shortly."""
+
+
+_FANOUT_SEMAPHORE: "threading.BoundedSemaphore | None" = None
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _fanout_budget() -> int:
+    return max(1, _env_int("RISKI_FANOUT_BUDGET", 24))
+
+
+def _fanout_pool_timeout() -> int:
+    # mirrors src.db's RISKI_DB_POOL_TIMEOUT: waiting longer than the pool
+    # itself would wait never helps
+    return max(1, _env_int("RISKI_DB_POOL_TIMEOUT", 30))
+
+
+def _fanout_semaphore() -> "threading.BoundedSemaphore":
+    global _FANOUT_SEMAPHORE
+    if _FANOUT_SEMAPHORE is None:
+        import threading
+
+        _FANOUT_SEMAPHORE = threading.BoundedSemaphore(_fanout_budget())
+    return _FANOUT_SEMAPHORE
+
+
+def _reset_fanout_semaphore_for_tests() -> None:
+    """Test hook: drop the cached semaphore so env changes apply."""
+    global _FANOUT_SEMAPHORE
+    _FANOUT_SEMAPHORE = None
+
+
+def _hybrid_permits(task_count: int) -> int:
+    """Connections one parallel request can hold simultaneously."""
+    return min(task_count, _hybrid_executor()._max_workers)
+
+
 def _parallel_signals_enabled() -> bool:
     import os as _os
 
@@ -712,7 +762,25 @@ def hybrid_candidates(
                 )
         tasks.append((f"recall[{table}]", _task))
 
-    results = _run_all(tasks)
+    acquired = False
+    if _parallel_signals_enabled() and tasks:
+        permits = _hybrid_permits(len(tasks))
+        sem = _fanout_semaphore()
+        # acquire the full burst up front: either the whole fan-out fits the
+        # budget (≤ pool timeout) or the request fails fast — a partial
+        # acquisition would only queue inside the executor and exceed the
+        # pool timeout anyway
+        if not sem.acquire(timeout=_fanout_pool_timeout()):
+            raise CapacityError(
+                f"recall fan-out budget exhausted (needed {permits} of "
+                f"{_fanout_budget()} permits within {_fanout_pool_timeout()}s)"
+            )
+        acquired = True
+    try:
+        results = _run_all(tasks)
+    finally:
+        if acquired:
+            _fanout_semaphore().release()
 
     for result in results:  # submission order == CANDIDATE_TABLES order
         if result is None:
