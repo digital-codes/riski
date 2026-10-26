@@ -277,10 +277,25 @@ async function fetchGraph(sid, token) {
 // change: summary-refine-file-control — user actions re-run the summarizer
 // with full content; the current summary stays visible until the new one
 // replaces it. The exclusion set sent here is authoritative (replace
-// semantics server-side), so one run per click is enough.
+// semantics server-side), so one run per click is enough — unless a toggle
+// happens while a refine is in flight: the request would carry a stale
+// set (lost update), so a set change is re-sent after the in-flight run.
+let lastSentExclude = null;
+let resummarizeQueued = false;
+let queuedExclude = null;
 async function runSummarize({ refine = false, exclude = [] } = {}) {
-  if (refining.value || !sessionId.value) return;
+  if (!sessionId.value) return;
+  if (refining.value) {
+    // a run is in flight — remember that the exclusion set changed under
+    // it and re-send the CURRENT set when the run finishes
+    if (JSON.stringify(exclude) !== JSON.stringify(lastSentExclude)) {
+      resummarizeQueued = true;
+      queuedExclude = [...exclude];
+    }
+    return;
+  }
   refining.value = true;
+  lastSentExclude = [...exclude];
   try {
     const res = await apiSummarize(sessionId.value, { refine, exclude });
     if (res.in_progress) {
@@ -290,13 +305,34 @@ async function runSummarize({ refine = false, exclude = [] } = {}) {
       return;
     }
     if (res.summary) summary.value = res.summary;
-    summaryFiles.value = res.files || [];
+    if (resummarizeQueued) {
+      // a toggle happened while this refine ran: the user's newer local
+      // state stays authoritative — do not let the (stale) response
+      // revert it; the queued re-send below applies it server-side
+      summaryFiles.value = (res.files || []).map(f => ({
+        ...f, excluded: summaryExclude.value.includes(f.oparlKey),
+      }));
+    } else {
+      summaryFiles.value = res.files || [];
+      summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
+    }
     summaryRefined.value = !!res.refined;
-    summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
     summaryRefused.value = res.refused || summaryRefused.value;
     if (geoAvailable.value) fetchGeo();
-  } catch (e) { /* keep the previous summary on failure */ }
-  finally { refining.value = false; }
+  } catch (e) {
+    // the exclusion set was already recorded server-side (request-time),
+    // so the map must refetch even when the refine itself failed —
+    // otherwise deselected documents linger on the map
+    if (geoAvailable.value) fetchGeo();
+  } finally {
+    refining.value = false;
+    if (resummarizeQueued && sessionId.value) {
+      resummarizeQueued = false;
+      const exclude = queuedExclude || summaryExclude.value;
+      queuedExclude = null;
+      runSummarize({ refine: true, exclude });
+    }
+  }
 }
 
 const onRefine = () => runSummarize({ refine: true, exclude: summaryExclude.value });
