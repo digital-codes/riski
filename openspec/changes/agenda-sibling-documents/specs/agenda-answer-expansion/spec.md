@@ -54,3 +54,26 @@ at `top_k` documents.
 - **WHEN** the search returns 10 hits whose agenda items link 6 further
   documents
 - **THEN** the answer set contains 16 documents
+
+### Requirement: Content-referenced block expansion
+
+A block document SHALL only join the answer set if its stored text
+(content and/or chunks) references the query subject: all stop-term-
+stripped query tokens (length ≥ 3) SHALL appear in the document text.
+Blocks whose documents cannot be verified (no distinctive query tokens, or
+no stored text) SHALL NOT contribute siblings. The expansion SHALL be
+deduplicated and SHALL NOT traverse further relations of the appended
+documents.
+
+#### Scenario: Unrelated block documents filtered by content reference
+
+- **WHEN** the query is "Bauantrag Am Knittelberg 107" and a touched block
+  contains other-location building applications (no "Knittelberg" in their
+  text)
+- **THEN** those documents do NOT enter the answer set
+
+#### Scenario: Referencing sibling joins
+
+- **WHEN** a block document's stored text mentions all distinctive query
+  tokens
+- **THEN** it enters the answer set marked with the block provenance

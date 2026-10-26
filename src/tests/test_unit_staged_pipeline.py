@@ -44,7 +44,7 @@ class TestTimelineStage:
     def test_single_traversal_feeds_timeline(self, monkeypatch):
         calls = []
 
-        def fake_find(session, file_sids):
+        def fake_find(session, file_sids, agenda_item_sids=None):
             calls.append(file_sids)
             return _fake_related()
 
@@ -70,7 +70,7 @@ class TestGraphStage:
         run before the graph stage still sees the edges and vice versa."""
         related = _fake_related()
 
-        monkeypatch.setattr(tl, "find_related_objects", lambda s, f: related)
+        monkeypatch.setattr(tl, "find_related_objects", lambda s, f, agenda_item_sids=None: related)
         import src.pgGeo as geo_mod
         monkeypatch.setattr(geo_mod, "geo_available_for_keys", lambda *a, **k: True)
 
@@ -96,7 +96,7 @@ class TestCompositionParity:
         contract as before the split (stage-wise vs monolithic keys)."""
         related = _fake_related()
 
-        monkeypatch.setattr(tl, "find_related_objects", lambda s, f: related)
+        monkeypatch.setattr(tl, "find_related_objects", lambda s, f, agenda_item_sids=None: related)
         import src.pgGeo as geo_mod
         monkeypatch.setattr(geo_mod, "geo_available_for_keys", lambda *a, **k: False)
 
