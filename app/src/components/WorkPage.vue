@@ -64,10 +64,14 @@
       :topics="topics"
       @select="onSelect"
     />
-    <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" :files="summaryFiles" :refining="refining" :refined="summaryRefined" @refine="onRefine" @toggle-file="onToggleFile" />
+    <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="hasGeo" :files="summaryFiles" :refining="refining" :refined="summaryRefined" @refine="onRefine" @toggle-file="onToggleFile" />
   </div>
   <div class="wrapper">
-    <GeoMap v-if="geoAvailable && geoFC" :feature-collection="geoFC" :summary-files="summaryFiles" />
+    <!-- change: geo-gating (map scope = selected documents) — the pane and
+         the summary's "Karte verfügbar" hint follow the ACTUAL /geo
+         content: the graph-stage geo_available flag is a superset
+         (agenda/aux links) and no longer decides visibility -->
+    <GeoMap v-if="hasGeo" :feature-collection="geoFC" :summary-files="summaryFiles" />
   </div>
   <!-- change: progressive-frontend-rendering — the file list and timeline
        cards fill in as their stages arrive; the wrapper is visible during
@@ -114,6 +118,10 @@ const summaryExclude = ref([]);
 const summaryRefused = ref([]);
 const geoAvailable = ref(false);
 const geoFC = ref(null);
+// the pane + the summary's "Karte verfügbar" hint follow the ACTUAL /geo
+// content — the graph-stage geo_available flag is a superset (agenda/aux
+// links) and only decides whether fetching /geo is worthwhile
+const hasGeo = computed(() => !!(geoFC.value?.features?.length));
 const error = ref(null);
 const sessionId = ref(null);
 // change: intent-router — routing outcome of the last /ask call
