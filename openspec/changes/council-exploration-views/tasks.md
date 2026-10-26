@@ -17,7 +17,7 @@
 
 - [ ] 3.1 Browse-Endpoint: `GET /papers` mit Filtern (Jahr, Typ, Einbringer, Beschluss-Status, Stadtteil), Paginierung, Sortierung; DB-Indizes prüfen/setzen; Integrationstest (`pytest src/tests -m integration`).
 - [ ] 3.2 Detail-Endpoint: `GET /papers/{reference}` mit Metadaten, Consultation-Kette (Sitzungen/TOPs mit Datum + Beschluss-Status), zugehörigen Dateien (inkl. Anlagen) und Folgevorlagen-Kette (subordinatedPaper/superordinatedPaper — Assoc-Tabellen existieren, Join-Semantik verifizieren); Integrationstest (`pytest src/tests -m integration`).
-- [ ] 3.3 Frontend `/vorlagen`-Seite: Filterleiste + Kartenliste (Mock der GemeinderatsRadar-Struktur, eigenes Styling); Detailseite mit Kette; Menu-Eintrag; `npm run build` + manuelle Prüfung.
+- [ ] 3.3 Frontend `/vorlagen`-Seite: Filterleiste + Kartenliste (GemeinderatsRadar-Struktur als Vorbild, eigenes Styling); Detailseite mit Kette; Menu-Eintrag; `npm run build` + manuelle Prüfung.
 - [ ] 3.4 Verifikation mit den Testsqueries: „klimaschutzkonzept“ → Jahrbrowse trennt 2013/2017/2020; „forum recht“ → Einbringer-Filter auf CDU/FW-FÜR; dokumentierte Smoke-Checks.
 
 ## 4. Sitzungs-Ansicht
@@ -26,23 +26,18 @@
 - [ ] 4.2 `.ics`-Download je Sitzung (`GET /meetings/{id}/calendar.ics`, öffentliche TOPs als Untereinträge, Europe/Berlin); Unit-Test auf ICS-Struktur (`pytest src/tests -m unit`).
 - [ ] 4.3 Frontend `/sitzungen`: kommende Sitzungen, Agenda-Aufklapper, .ics-Button; Menu-Eintrag; `npm run build` + manuelle Prüfung.
 
-## 5. Update-Feeds
-
-- [ ] 5.1 Feed-Endpoint: RSS/XML je Gremium und je Stadtteil (`GET /feeds/{type}/{key}.rss`) — neue/geänderte Vorlagen und Sitzungen seit N Tagen (Basis: `modified` + oparlUpdateRuns-Baseline); Unit-Test auf Feed-Struktur (`pytest src/tests -m unit`).
-- [ ] 5.2 Frontend `/feeds`-Übersicht mit Abo-Links (Feedreader-/Browser-Handhabung dokumentieren); `npm run build`.
-
-## 6. SEPARAT: Abstimmungspanel-Parsing (Vision, Go/No-Go)
+## 5. SEPARAT: Abstimmungspanel-Parsing (Vision, Go/No-Go)
 
 > Bewusst als eigener, vom Rest unabhängiger Task. Der Beschluss-Status (Task 1)
 > deckt das Ergebnis-Level bereits ab; hier geht es um Namensaufrufe
 > (ja/nein/enthaltung pro Mitglied) aus den bildbasierten
 > „Abstimmungsergebnis“-PDFs und Live-Ticker-Panels.
 
-- [ ] 6.1 Spike-Dokumentation: DIS-Ansatz präzise erfassen (`vote_parse.py`: PDF-Seite 1 → Bild → OpenRouter-Vision-Modell, deutscher Layout-Prompt mit Zähler + farbcodiertem Member-Raster, JSON `{ja, nein, enthaltung, members[]}`, Aliase-Normalisierung, PDF-Quelle autoritativ vor Live-Re-Parse); bekannte Grenzen: Layoutwechsel über Zeit, angeschnittene Zähler, Farb kodierung (GELB/ROT/GRAU) — reines OCR (auch Mistral-OCR-Endpoint) ist ungeeignet, da kein Farb-/Layoutverstehen. Lieferung: `docs/vote-parse-spike.md`.
-- [ ] 6.2 Spike-Implementierung an 10–20 realen Panels aus unserer DB (Protokoll-/Abstimmungsdateien): (a) Mistral-Vision-Chatmodell (Bild-Content-Part im bestehenden `remote.chat`) gegen (b) OpenRouter + Gemini-Flash (wie DIS); Qualität = Zähler-Plausibilisierung (Summe der Member-Stimmen muss den drei Zählern entsprechen) + Stichproben gegen AgendaItem.result; Ergebnis dokumentiert (`docs/vote-parse-spike.md`).
-- [ ] 6.3 Go/No-Go: nur bei nachweisbar stabiler Zähler-Genauigkeit Weiterbau (Speicherung pro Sitzung+TOP, PDF-Quelle autoritativ, Anzeige im DetailPanel). Bei No-Go: Task hier abhaken und im Spike-Dokument begründet beenden.
+- [ ] 5.1 Spike-Dokumentation: DIS-Ansatz präzise erfassen (`vote_parse.py`: PDF-Seite 1 → Bild → OpenRouter-Vision-Modell, deutscher Layout-Prompt mit Zähler + farbcodiertem Member-Raster, JSON `{ja, nein, enthaltung, members[]}`, Aliase-Normalisierung, PDF-Quelle autoritativ vor Live-Re-Parse); bekannte Grenzen: Layoutwechsel über Zeit, angeschnittene Zähler, Farb kodierung (GELB/ROT/GRAU) — reines OCR (auch Mistral-OCR-Endpoint) ist ungeeignet, da kein Farb-/Layoutverstehen. Lieferung: `docs/vote-parse-spike.md`.
+- [ ] 5.2 Spike-Implementierung an 10–20 realen Panels aus unserer DB (Protokoll-/Abstimmungsdateien): (a) Mistral-Vision-Chatmodell (Bild-Content-Part im bestehenden `remote.chat`) gegen (b) OpenRouter + Gemini-Flash (wie DIS); Qualität = Zähler-Plausibilisierung (Summe der Member-Stimmen muss den drei Zählern entsprechen) + Stichproben gegen AgendaItem.result; Ergebnis dokumentiert (`docs/vote-parse-spike.md`).
+- [ ] 5.3 Go/No-Go: nur bei nachweisbar stabiler Zähler-Genauigkeit Weiterbau (Speicherung pro Sitzung+TOP, PDF-Quelle autoritativ, Anzeige im DetailPanel). Bei No-Go: Task hier abhaken und im Spike-Dokument begründet beenden.
 
-## 7. Verifikation
+## 6. Verifikation
 
-- [ ] 7.1 Gesamtdurchlauf: Browse → Detail → Sitzung → Feed mit den Testsqueries („sanierung theater“, „forum recht“, „klimaschutzkonzept“); Volltext-Suite grün (`python -m pytest src/tests -q`).
-- [ ] 7.2 `openspec validate council-exploration-views --strict`; README (Site structure + API) ergänzen.
+- [ ] 6.1 Gesamtdurchlauf: Browse → Detail → Sitzung mit den Testsqueries („sanierung theater“, „forum recht“, „klimaschutzkonzept“); Volltext-Suite grün (`python -m pytest src/tests -q`).
+- [ ] 6.2 `openspec validate council-exploration-views --strict`; README (Site structure + API) ergänzen.

@@ -35,8 +35,6 @@ Hybridsuche, nutzergesteuerte Dokumentenmenge) bleibt bestehen.
   Dateien, Folgevorlagen-Kette via `subordinatedPaper`/`superordinatedPaper`).
 - **Sitzungs-Ansicht** — kommende Sitzungen (177 in der DB), Tagesordnung der
   Sitzung, Download einer Sitzung als `.ics`-Kalendereintrag.
-- **Update-Feeds** — RSS-Feeds pro Gremium und pro Stadtteil (neue/geänderte
-  Vorlagen und Sitzungen), abonnierbar.
 - **SEPARAT / EXPERIMENTELL — Abstimmungspanel-Parsing**: Abstimmungsergebnisse
   mit Namensaufruf aus den bildbasierten „Abstimmungsergebnis“-PDFs und
   Live-Ticker-Panels rekonstruieren. Das Panel ist farbcodiert (GELB = Ja,
@@ -56,8 +54,6 @@ Hybridsuche, nutzergesteuerte Dokumentenmenge) bleibt bestehen.
   Beratungskette, Dateien und Folgevorlagen-Kette.
 - `meeting-calendar`: kommende Sitzungen mit Tagesordnung und `.ics`-Download
   je Sitzung.
-- `update-feeds`: RSS-Feeds pro Gremium und Stadtteil für neue/geänderte
-  Vorlagen und Sitzungen.
 
 ### Modified Capabilities
 
@@ -80,3 +76,18 @@ Hybridsuche, nutzergesteuerte Dokumentenmenge) bleibt bestehen.
 - **Abhängigkeiten**: keine neuen externen Dienste für 1–5; der separate
   Abstimmungs-Spike braucht wahlweise ein Vision-Modell (Mistral-Vision-
   Chatmodell testen; OCR-Endpoint taugt nicht — kein Farb-/Layoutverstehen).
+
+## Credits
+
+Diese Ausbaustufe ist von bestehenden Projekten inspiriert:
+
+- **GemeinderatsRadar** (https://maxliesegang.github.io/karlsruhe-oparl-viewer/,
+  von Max Liesegang) — Vorlagen-Browse mit Filtern, Stadtteil-Sicht,
+  Sitzungskalender-Download; die Datenbasis teilt es über das
+  karlsruhe-oparl-syndication-Mirror-Repository.
+- **Sitzungskalender der Stadt Karlsruhe**
+  (https://sitzungskalender.karlsruhe.de) — die offizielle Quelle; riski
+  ersetzt ihn nicht, sondern ergänzt ihn um Aufbereitung und Beantwortung.
+- **Desinformationssystem** (https://dis.delphi.tools) — Regel-Einbringer-
+  Erkennung und der Vision-Ansatz für Abstimmungspanel-Parsing (Task 6)
+  folgen den dort dokumentierten Mechaniken.
