@@ -295,6 +295,9 @@ class ResultSummarizer:
                 "downloadUrl": download_url,
                 "refused": f["oparlKey"] in refused_keys,
                 "excluded": f["oparlKey"] in excluded,
+                # change: agenda-sibling-documents — provenance for
+                # agenda-block sibling documents (e.g. "TOP 13")
+                "via": f.get("via"),
             })
         return files
 

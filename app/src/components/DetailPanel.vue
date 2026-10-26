@@ -135,10 +135,11 @@ const related = computed(() => {
 <style scoped>
 .detail-panel {
   position: fixed;
-  top: 16px;
+  /* below the sticky navbar (its close button sat behind it) */
+  top: 72px;
   right: 16px;
   width: 380px;
-  max-height: calc(100vh - 32px);
+  max-height: calc(100vh - 88px);
   overflow-y: auto;
   background: white;
   border: 1px solid #e5e7eb;

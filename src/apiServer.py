@@ -343,6 +343,14 @@ def summarize(req: SummarizeRequest) -> Dict[str, Any]:
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     result = sess["result"]
+    # change: agenda-sibling-documents — the summarizer's document set is
+    # the block-expanded answer set: search hits + all documents of touched
+    # agenda-item blocks (e.g. TOP 13.1/13.2/13.3), even beyond top_k.
+    # Idempotent per session (re-runs/refines reuse the expansion).
+    if not sess.get("top_files_expanded"):
+        from src.pgTimeline import block_expand_top_files
+
+        block_expand_top_files(get_db_session(), result, sess)
     # the request carries the COMPLETE desired exclusion set (the frontend
     # maintains it) — replace, never union: re-including a file must remove
     # it from the set (user finding: a union merge made re-inclusion

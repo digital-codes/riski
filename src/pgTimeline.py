@@ -313,9 +313,208 @@ def get_db_session(db_url: str = None):
 
 
 @timed
-def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]:
+def _block_prefix(number):
+    if not number:
+        return None
+    head = str(number).split(".")[0].strip()
+    try:
+        return int(head)
+    except ValueError:
+        return None
+
+
+def _block_reference(number):
+    if not number:
+        return None
+    head = str(number).split(".")[0].strip()
+    return f"TOP {head}" if head else None
+
+
+def agenda_item_seeds(session, matched_entities: List[Dict[str, Any]]) -> List[int]:
+    """Sids of agenda items matched by name search (change:
+    agenda-sibling-documents) — they become traversal seeds so their block
+    documents enter the answer set."""
+    keys = [m.get("oparlKey") for m in (matched_entities or [])
+            if m.get("type") == "AgendaItem" and m.get("oparlKey")]
+    if not keys:
+        return []
+    from sqlalchemy import text as _text
+    rows = session.execute(_text(
+        'SELECT sid FROM "AgendaItem" WHERE "oparlKey" = ANY(:k)'),
+        {"k": keys}).fetchall()
+    return [r[0] for r in rows]
+
+
+def expand_top_files_by_agenda_block(related_objects, edges, top_files,
+                                     query_terms: Optional[List[str]] = None,
+                                     text_provider=None) -> List[Dict[str, Any]]:
+    """Append agenda-block sibling documents to the answer set (change:
+    agenda-sibling-documents). Returns the expanded top_files list.
+
+    Touched blocks: agenda items that carry at least one search-hit file, or
+    that were matched by name (their documents arrive as edges to AuxFile
+    nodes). For each touched block (same meetingSid + integer number
+    prefix) all linked documents of the block's agenda items are appended
+    unless already present; entries carry ``distance: None``,
+    ``match: None`` and ``via`` = block reference (e.g. 'TOP 13').
+
+    Content reference (verification finding, Knittelberg case): when
+    ``query_terms`` is given, a sibling document joins ONLY if its stored
+    text (content/chunks via ``text_provider``) contains ALL of the terms —
+    block membership alone is not sufficient, since scattered search hits
+    across a meeting would otherwise flood the answer set with unrelated
+    documents. Without ``query_terms``/``text_provider`` no expansion runs
+    (relevance cannot be verified)."""
+    seed_keys = {f["oparlKey"] for f in top_files}
+    if not query_terms or text_provider is None:
+        # without distinctive query terms relevance cannot be verified —
+        # no expansion (protects against unrelated-block floods)
+        return list(top_files)
+    name_seed_agenda = {a["oparlKey"] for a in related_objects.get("AgendaItem", [])
+                        if a.get("_name_seed")}
+
+    # agenda item -> linked files (from the edge log); seed File nodes are
+    # included so a TOP whose ONLY document is the search hit still counts
+    # as touched (its block siblings must be expanded)
+    file_by_node: Dict[str, Dict[str, Any]] = {
+        f"File_{f['oparlKey']}": f for f in top_files
+    }
+    for obj in related_objects.get("AuxFile", []):
+        file_by_node[f"AuxFile_{obj['oparlKey']}"] = obj
+    agenda_files: Dict[str, List[Dict[str, Any]]] = {}
+    for e in edges:
+        if e.get("relation") != "auxiliaryFile":
+            continue
+        source, target = e.get("source", ""), e.get("target", "")
+        if not source.startswith("AgendaItem_"):
+            continue
+        obj = file_by_node.get(target)
+        if obj is not None:
+            agenda_files.setdefault(source, []).append(obj)
+
+    # touched agenda items: carry a seed file, or were matched by name
+    touched_blocks: set = set()
+    for a in related_objects.get("AgendaItem", []):
+        linked = agenda_files.get(f"AgendaItem_{a['oparlKey']}", [])
+        if a["oparlKey"] in name_seed_agenda or any(
+                o["oparlKey"] in seed_keys for o in linked):
+            prefix = _block_prefix(a.get("number"))
+            if prefix is not None:
+                touched_blocks.add((a.get("meetingSid"), prefix))
+
+    def in_touched_block(a) -> bool:
+        prefix = _block_prefix(a.get("number"))
+        return prefix is not None and (a.get("meetingSid"), prefix) in touched_blocks
+
+    expanded = list(top_files)
+    present = set(seed_keys)
+    added = 0
+    for a in related_objects.get("AgendaItem", []):
+        if not in_touched_block(a):
+            continue
+        via = _block_reference(a.get("number")) or "TOP"
+        for obj in agenda_files.get(f"AgendaItem_{a['oparlKey']}", []):
+            if obj["oparlKey"] in present:
+                continue  # seed hit or already appended
+            if query_terms is not None and text_provider is not None:
+                doc_text = (text_provider(obj["oparlKey"]) or "").lower()
+                if not all(t in doc_text for t in query_terms):
+                    continue  # does not reference the query subject
+            present.add(obj["oparlKey"])
+            added += 1
+            expanded.append({
+                "sid": obj["sid"],
+                "oparlKey": obj["oparlKey"],
+                "name": obj.get("name"),
+                "fileName": obj.get("fileName"),
+                "downloadurl": obj.get("downloadurl"),
+                "oparlId": obj.get("oparlId"),
+                "date": obj.get("date"),
+                "distance": None,
+                "match": None,
+                "via": via,
+            })
+    if added:
+        _ensure_log().debug(f"Agenda block expansion: +{added} sibling documents")
+    return expanded
+
+
+def block_expand_top_files(session, result: Dict[str, Any],
+                           sess: Optional[Dict[str, Any]] = None) -> None:
+    """Expand ``result["top_files"]`` with agenda-block sibling documents,
+    in place (change: agenda-sibling-documents).
+
+    Called from the /summarize path: the summarizer consumes
+    ``result["top_files"]``, so the expansion must happen there — after the
+    search response, possibly before the timeline stage has run. Reuses the
+    timeline stage's traversal when available, otherwise runs
+    ``find_related_objects`` for the answer set's files plus the
+    name-matched agenda items. Idempotent per session via
+    ``sess["top_files_expanded"]``.
+
+    Content reference (verification finding, Knittelberg case): sibling
+    documents must reference the query subject — the query's stop-term-
+    stripped tokens must all appear in the document's stored text. Without
+    distinctive tokens no expansion runs.
     """
-    Find all OParl objects related to the given file sids through junction tables.
+    if sess is not None and sess.get("top_files_expanded"):
+        return
+    top_files = result.get("top_files") or []
+    if not top_files:
+        return
+
+    from sqlalchemy import text as _sqltext
+
+    from src.pgHybridSearch import load_stop_terms, _strip_terms_py
+
+    stripped = _strip_terms_py(result.get("query") or "", load_stop_terms())
+    query_terms = [w.lower() for w in stripped.split() if len(w) >= 3]
+
+    def text_provider(oparl_key: str) -> Optional[str]:
+        parts: List[str] = []
+        row = session.execute(_sqltext(
+            'SELECT content FROM "File" WHERE "oparlKey" = :k'),
+            {"k": oparl_key}).first()
+        if row and row[0]:
+            parts.append(row[0])
+        rows = session.execute(_sqltext(
+            'SELECT fc.text FROM "File_chunks" fc '
+            'JOIN "File" f ON f.sid = fc.file_sid '
+            'WHERE f."oparlKey" = :k ORDER BY fc.chunk_index'),
+            {"k": oparl_key}).fetchall()
+        parts += [r[0] for r in rows]
+        return "\n".join(parts)
+
+    stage2 = (sess or {}).get("_stage2")
+    if stage2 and stage2.get("related_objects") is not None:
+        ro = stage2["related_objects"]
+        edges = ro.get("edges", [])
+    else:
+        file_sids = {f["oparlKey"]: f["sid"] for f in top_files
+                     if f.get("oparlKey") and f.get("sid")}
+        name_seeds = agenda_item_seeds(session, result.get("matched_entities") or [])
+        ro = find_related_objects(session, file_sids, agenda_item_sids=name_seeds)
+        edges = ro.get("edges", [])
+
+    if query_terms:
+        result["top_files"] = expand_top_files_by_agenda_block(
+            ro, edges, top_files, query_terms=query_terms,
+            text_provider=text_provider)
+    else:
+        _ensure_log().debug("Agenda block expansion skipped: no distinctive query tokens")
+    if sess is not None:
+        sess["top_files_expanded"] = True
+
+
+def find_related_objects(session, file_sids: List[str],
+                         agenda_item_sids: Optional[List[int]] = None) -> Dict[str, List[Dict]]:
+    """
+    Find all related OParl objects related to the given file sids through junction tables.
+
+    ``agenda_item_sids`` (change: agenda-sibling-documents) adds name-matched
+    agenda items as traversal seeds: their nodes, block siblings (same
+    meeting, same integer number prefix) and all linked documents enter the
+    answer set.
 
     Traverses the OParl association tables and logs every relationship it
     walks as a typed edge (add-network-view tasks 1.2/1.3). The returned
@@ -422,6 +621,162 @@ def find_related_objects(session, file_sids: List[str]) -> Dict[str, List[Dict]]
                  sid_to_file_key.get(row.fileSid), "AgendaItem__auxiliaryFile__File")
 
     _ensure_log().debug(f"Found {len(related_objects['AgendaItem'])} agenda items related to files")  # Debugging line
+
+    # 1.a change: agenda-sibling-documents — agenda items matched by name
+    # search arrive as extra seeds; load them into the traversal so their
+    # nodes and documents enter the answer set
+    agenda_item_sids = agenda_item_sids or []
+    known_agenda_sids = {a["sid"] for a in related_objects["AgendaItem"]}
+    seed_agenda_sids = [s for s in agenda_item_sids if s not in known_agenda_sids]
+    if seed_agenda_sids:
+        stmt = (
+            select(
+                agenda_tbl.c.sid,
+                agenda_tbl.c.id,
+                agenda_tbl.c.oparlKey,
+                agenda_tbl.c.oparlId,
+                agenda_tbl.c.name,
+                agenda_tbl.c.start_date,
+                agenda_tbl.c.end_date,
+                agenda_tbl.c.meetingSid,
+                agenda_tbl.c.number,
+                agenda_tbl.c.result,
+            )
+            .where(agenda_tbl.c.sid.in_(seed_agenda_sids))
+        )
+        with engine.connect() as conn:
+            for row in conn.execute(stmt).fetchall():
+                related_objects["AgendaItem"].append({
+                    "sid": row.sid,
+                    "id": row.id,
+                    "oparlKey": row.oparlKey,
+                    "oparlId": row.oparlId,
+                    "name": row.name,
+                    "start_date": row.start_date,
+                    "end_date": row.end_date,
+                    "meetingSid": row.meetingSid,
+                    "number": row.number,
+                    "result": row.result,
+                    "_name_seed": True  # change: agenda-sibling-documents
+                })
+        _ensure_log().debug(f"Added {len(related_objects['AgendaItem']) - len(known_agenda_sids)} name-matched agenda items as traversal seeds")
+
+    # 1.b change: agenda-sibling-documents — block expansion: all agenda
+    # items of the same meeting sharing the integer prefix of the number
+    # (TOP 13.2 -> 13, 13.1, 13.2, 13.3, ...) belong to the same topic
+    # block; their documents are collected as AuxFile. Other agenda items
+    # of the meeting (different prefix) are unrelated.
+    def _block_prefix(number):
+        if not number:
+            return None
+        head = str(number).split(".")[0].strip()
+        try:
+            return int(head)
+        except ValueError:
+            return None
+
+    all_agenda = related_objects["AgendaItem"]
+    # group collected TOPs by (meetingSid, block prefix)
+    blocks: Dict[tuple, List[Dict[str, Any]]] = {}
+    for a in all_agenda:
+        prefix = _block_prefix(a.get("number"))
+        if prefix is None:
+            continue
+        blocks.setdefault((a.get("meetingSid"), prefix), []).append(a)
+
+    collected_agenda_sids = {a["sid"] for a in all_agenda}
+    block_siblings: List[Dict[str, Any]] = []
+    for (meeting_sid, prefix), members in blocks.items():
+        member_sids = {m["sid"] for m in members}
+        # find sibling TOPs of the same block not yet collected
+        stmt = (
+            select(
+                agenda_tbl.c.sid,
+                agenda_tbl.c.id,
+                agenda_tbl.c.oparlKey,
+                agenda_tbl.c.oparlId,
+                agenda_tbl.c.name,
+                agenda_tbl.c.start_date,
+                agenda_tbl.c.end_date,
+                agenda_tbl.c.meetingSid,
+                agenda_tbl.c.number,
+                agenda_tbl.c.result,
+            )
+            .where(
+                agenda_tbl.c.meetingSid == meeting_sid,
+                agenda_tbl.c.sid.not_in(collected_agenda_sids),
+            )
+        )
+        with engine.connect() as conn:
+            for row in conn.execute(stmt).fetchall():
+                if _block_prefix(row.number) != prefix:
+                    continue
+                block_siblings.append({
+                    "sid": row.sid,
+                    "id": row.id,
+                    "oparlKey": row.oparlKey,
+                    "oparlId": row.oparlId,
+                    "name": row.name,
+                    "start_date": row.start_date,
+                    "end_date": row.end_date,
+                    "meetingSid": row.meetingSid,
+                    "number": row.number,
+                    "result": row.result
+                })
+    for sibling in block_siblings:
+        all_agenda.append(sibling)
+    if block_siblings:
+        _ensure_log().debug(f"Block expansion: added {len(block_siblings)} sibling agenda items")
+
+    # 1.b (files): collect ALL files linked to the collected (and block)
+    # agenda items as AuxFile — the missing counterpart to the paper
+    # treatment in step 2.b
+    all_agenda_sids = [a["sid"] for a in all_agenda]
+    agenda_key_by_sid = {a["sid"]: a["oparlKey"] for a in all_agenda}
+    if all_agenda_sids:
+        stmt = (
+            select(
+                file_tbl.c.sid,
+                file_tbl.c.oparlKey,
+                file_tbl.c.name,
+                file_tbl.c.filename,
+                file_tbl.c.oparlId,
+                file_tbl.c.downloadurl,
+                file_tbl.c.date,
+                af_assoc_tbl.c.srcSid.label("agendaSid"),
+            )
+            .select_from(
+                af_assoc_tbl.join(
+                    file_tbl, af_assoc_tbl.c.tgtSid == file_tbl.c.sid
+                )
+            )
+            .where(af_assoc_tbl.c.srcSid.in_(all_agenda_sids))
+        )
+        with engine.connect() as conn:
+            agenda_files = conn.execute(stmt).fetchall()
+
+        seed_sids = set(file_sids.values())
+        aux_via_block = set()
+        for row in agenda_files:
+            if row.sid in seed_sids:
+                continue  # seed documents stay as-is (top_files)
+            if not any(f["sid"] == row.sid for f in related_objects["AuxFile"]):
+                agenda = next((a for a in all_agenda if a["sid"] == row.agendaSid), None)
+                related_objects["AuxFile"].append({
+                    "sid": row.sid,
+                    "oparlKey": row.oparlKey,
+                    "name": row.name,
+                    "fileName": row.filename,
+                    "oparlId": row.oparlId,
+                    "downloadurl": row.downloadurl,
+                    "date": row.date,
+                    "via": _block_reference(agenda.get("number")) if agenda else None,
+                })
+            aux_via_block.add(row.sid)
+            log_edge("AgendaItem", agenda_key_by_sid.get(row.agendaSid),
+                     "auxiliaryFile", "AuxFile", row.oparlKey,
+                     "AgendaItem__auxiliaryFile__File")
+        _ensure_log().debug(f"Block expansion: {len(aux_via_block)} agenda-item documents collected as AuxFile")
 
     # 2. Find Papers connected to Files
     stmt = (
@@ -1119,7 +1474,10 @@ def timeline_stage(session, stage1: Dict[str, Any]) -> Dict[str, Any]:
     _ensure_log().debug(f"Resolved file keys to sids: {file_sids}")  # Debugging line
 
     # Find all related OParl objects
-    related_objects = find_related_objects(session, file_sids)
+    related_objects = find_related_objects(
+        session, file_sids,
+        agenda_item_sids=agenda_item_seeds(session, stage1.get("matched_entities")),
+    )
     _ensure_log().debug(f"Related objects found: { {k: len(v) for k, v in related_objects.items()} }")  # Debugging line
 
     typed = _typed_objects(related_objects)

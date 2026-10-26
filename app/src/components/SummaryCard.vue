@@ -33,6 +33,7 @@
 		<div v-if="!loading && files.length" class="file-list">
 			<ul class="file-items">
 				<li v-for="f in files" :key="f.oparlKey" :class="{ excluded: f.excluded }">
+					<div v-if="f.via" class="via-label">{{ f.via }}</div>
 					<label class="file-item">
 						<input type="checkbox" :checked="!f.excluded"
 							   :disabled="refining"
@@ -319,6 +320,15 @@ const downloadPdf = () => {
 	font-size: 0.85rem;
 	cursor: pointer;
 	padding: 4px 0;
+}
+
+.via-label {
+	margin: 8px 0 2px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: #764ba2;
 }
 
 .file-items {
