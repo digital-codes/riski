@@ -87,6 +87,33 @@ const planned = {
   body: 'riski ist ein Forschungsprototyp — wir arbeiten an weiteren Funktionen. Insbesondere planen wir, strukturiertes Wissen aus den Dokumenten zu extrahieren, um die Suche schneller und zuverlässiger zu machen (Stichwort: Wissensgraph). Mehr dazu auf der Seite Wissen.',
 };
 
+const related = {
+  title: 'Verwandte Projekte & Quellen',
+  intro: 'riski steht nicht im Vakuum — mehrere Projekte erschließen das Karlsruher Ratsinformationssystem und RAG-Forschung begleitet unsere Entwicklung:',
+  items: [
+    {
+      name: 'Sitzungskalender der Stadt Karlsruhe',
+      url: 'https://sitzungskalender.karlsruhe.de/db/ratsinformation/start',
+      text: 'die offizielle Quelle (Kalender, Gremien, Mandate, Recherche) — riski ersetzt ihn nicht, sondern baut auf denselben OParl-Daten auf und ergänzt Aufbereitung und Beantwortung.',
+    },
+    {
+      name: 'GemeinderatsRadar',
+      url: 'https://maxliesegang.github.io/karlsruhe-oparl-viewer/',
+      text: 'Vorlagen-Browse mit Filtern (Jahr, Typ, Stadtteil), Sitzungskalender-Download und Feeds — Lob für die saubere Explorationssicht.',
+    },
+    {
+      name: 'Desinformationssystem (DIS)',
+      url: 'https://dis.delphi.tools',
+      text: 'tägliches Volltext-Archiv mit Facetten, Einbringer-Erkennung und Abstimmungs-Auswertung — Pionier beim HTML-Scraping des RIS.',
+    },
+    {
+      name: 'LightRAG',
+      url: 'https://github.com/HKUDS/LightRAG',
+      text: 'Forschungs-Framework für graph-basiertes RAG (Entitäten/Beziehungen per LLM, dual-level retrieval) — verwandt mit unserem Netzwerk-Ansatz; die zuverlässige Graph-Extraktion aus unstrukturierten Ratstexten bleibt die offene Kernfrage, an der wir arbeiten.',
+    },
+  ],
+};
+
 // hash router owns location.hash — section jumps must scroll manually
 // (href="#section" would navigate away to the home route)
 function scrollTo(id) {
@@ -124,6 +151,17 @@ function scrollTo(id) {
       <h2>{{ planned.title }}</h2>
       <p>{{ planned.body }}</p>
       <a href="#/wissen" class="planned-link" @click="$emit('navigate', '/wissen')">Zur Seite Wissen →</a>
+    </section>
+
+    <section class="docs-related">
+      <h2>{{ related.title }}</h2>
+      <p>{{ related.intro }}</p>
+      <ul>
+        <li v-for="r in related.items" :key="r.name">
+          <a :href="r.url" target="_blank" rel="noopener noreferrer" class="related-name">{{ r.name }}</a>
+          — {{ r.text }}
+        </li>
+      </ul>
     </section>
   </div>
 </template>
@@ -238,6 +276,45 @@ function scrollTo(id) {
 }
 
 .planned-link:hover {
+  text-decoration: underline;
+}
+
+.docs-related {
+  margin-top: 24px;
+}
+
+.docs-related h2 {
+  font-size: 1.05rem;
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #764ba2;
+}
+
+.docs-related p {
+  margin: 0 0 10px;
+  line-height: 1.6;
+  font-size: 0.93rem;
+  color: #6b7280;
+}
+
+.docs-related ul {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.65;
+  font-size: 0.93rem;
+}
+
+.docs-related li {
+  margin-bottom: 8px;
+}
+
+.related-name {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.related-name:hover {
   text-decoration: underline;
 }
 </style>

@@ -30,6 +30,45 @@
       <p class="stay-tuned">Bleiben Sie dran.</p>
       <a href="#/dokumentation" class="back-link" @click="$emit('navigate', '/dokumentation')">← Zur Dokumentation</a>
     </section>
+
+    <section class="knowledge-card related">
+      <h2>Verwandte Ansätze</h2>
+      <p>
+        Wir schauen regelmäßig, wie andere RAG-Systeme dieses Problem
+        angehen:
+      </p>
+      <ul>
+        <li>
+          <a href="https://github.com/HKUDS/LightRAG" target="_blank" rel="noopener noreferrer">LightRAG</a>
+          (HKUDS, <a href="https://arxiv.org/abs/2410.05779" target="_blank" rel="noopener noreferrer">arXiv 2410.05779</a>) —
+          graph-basiertes RAG: Entitäten und Beziehungen werden per LLM aus
+          den Texten extrahiert und als Wissensgraph neben den Vektor-
+          Index gestellt („dual-level retrieval“). Damit verfolgt LightRAG
+          eine ähnliche Richtung wie unser Netzwerk- und Belegansatz —
+          löst aber nicht die Kernschwierigkeit, aus unstrukturierten,
+          realen Ratsdokumenten ein <em>zuverlässiges</em> Graphen-Wissen zu
+          gewinnen. Genau daran arbeiten wir: Unser Graph entsteht zuerst
+          aus der autoritativen OParl-Struktur, die Dokumentenanalyse soll
+          ihn schrittweise um geprüftes Wissen erweitern.
+        </li>
+        <li>
+          <a href="https://microsoft.github.io/graphrag/" target="_blank" rel="noopener noreferrer">Microsoft GraphRAG</a> —
+          der ursprüngliche Referenzansatz für Community-basierte
+          Wissensgraph-RAG-Systeme, auf den sich LightRAG als schlanke
+          Alternative bezieht.
+        </li>
+      </ul>
+      <p class="related-note">
+        Auch bei den RIS-Zugängen schauen wir uns ab, was funktioniert
+        (Details siehe <a href="#/dokumentation" class="inline-link" @click="$emit('navigate', '/dokumentation')">Dokumentation</a>):
+        der offizielle
+        <a href="https://sitzungskalender.karlsruhe.de/db/ratsinformation/start" target="_blank" rel="noopener noreferrer">Sitzungskalender der Stadt Karlsruhe</a>,
+        das <a href="https://maxliesegang.github.io/karlsruhe-oparl-viewer/" target="_blank" rel="noopener noreferrer">GemeinderatsRadar</a>
+        (Vorlagen-Browse, Filter, Feeds) und das
+        <a href="https://dis.delphi.tools" target="_blank" rel="noopener noreferrer">Desinformationssystem</a>
+        (Volltext-Facetten, Abstimmungs-Erkennung).
+      </p>
+    </section>
   </div>
 </template>
 
@@ -90,6 +129,40 @@
 .stay-tuned {
   font-weight: 600;
   color: #5b21b6;
+}
+
+.knowledge-card.related {
+  margin-top: 20px;
+  background: #fff;
+  border-color: #e5e7eb;
+}
+
+.knowledge-card.related h2 {
+  font-size: 1.05rem;
+}
+
+.knowledge-card.related ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  line-height: 1.65;
+  font-size: 0.93rem;
+}
+
+.knowledge-card.related li {
+  margin-bottom: 10px;
+}
+
+.knowledge-card.related a {
+  color: #667eea;
+}
+
+.related-note {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.inline-link {
+  color: #667eea;
 }
 
 .back-link {
