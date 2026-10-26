@@ -347,7 +347,11 @@ write time (`pgAddFileGeoRefs`, `pgAddStreetRefs`, `pgAddDistrictRefs`)
 and in the batch cleanup (`pgGeoGateCleanup`). A confident `boilerplate`
 verdict hides the link from the map (`gate_status`
 column on the four assoc tables; `NULL`/`unsure`/`content` stay visible — the
-filter is deliberately permissive). Excluding or refusing a document via
+filter is deliberately permissive). The map scope is the summary pane's
+**selected** documents (excluded/refused drop out live) — graph-side
+auxiliary files and agenda-item links do not contribute once the summary
+verdicts exist, so every popup label correlates with the document list.
+Excluding or refusing a document via
 the SummaryCard re-fetches `/geo`, so the map always reflects the enabled
 document set. Re-run the cleanup after new imports:
 `python src/pgGeoGateCleanup.py --dry-run` to review, then without the

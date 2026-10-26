@@ -288,22 +288,36 @@ def geo(session_id: str) -> Dict[str, Any]:
     # POST /graph); monolithic payloads (sample data, old clients) keep it
     # in the result (change: progressive-frontend-rendering)
     graph = sess.get("graph") or result.get("graph") or {}
-    # map scope = the graph-connected answer set (not the matched_entities
-    # long tail — weak recall matches drag in unrelated streets)
-    keys = [n["oparlKey"] for n in graph.get("nodes", []) if n.get("type") == "AgendaItem"]
-    file_keys = [n["oparlKey"] for n in graph.get("nodes", [])
-                 if n.get("type") in ("File", "AuxFile")]
-    # gate on the summarizer's relevance verdict AND the user's document
-    # exclusion set (change: geo-gating): the map reflects exactly the
-    # enabled document set — the frontend re-fetches /geo after every
-    # toggle/refine, so the map updates live with the list
+    # user's document set state (change: geo-gating): the summary_refused
+    # + summary_excluded keys, authoritative for the enabled document set
     refused = {r["oparlKey"] for r in result.get("summary_refused", [])}
     excluded = set(result.get("summary_excluded") or [])
-    # files not yet in summary_files cannot have been disabled by the user:
-    # only files the summarizer has seen can be excluded/refused
-    seen = {f.get("oparlKey") for f in result.get("summary_files", []) if isinstance(f, dict)}
-    blocked = (refused | excluded) & seen
-    file_keys = [k for k in file_keys if k not in blocked]
+
+    summary_files = result.get("summary_files") or []
+    if summary_files:
+        # change: geo-gating (map scope = summary document list) — once the
+        # summarizer has produced the document list, the map uses ONLY the
+        # selected (enabled) documents from that list. Graph-side auxiliary
+        # files and agenda-item links no longer contribute: their names
+        # cannot be correlated with the document list (user finding), and
+        # weak traversal matches flooded the map.
+        seen = {f.get("oparlKey") for f in summary_files if isinstance(f, dict)}
+        blocked = (refused | excluded) & seen
+        keys = []
+        file_keys = [f.get("oparlKey") for f in summary_files
+                     if isinstance(f, dict) and f.get("oparlKey")
+                     and f["oparlKey"] not in blocked]
+    else:
+        # no summary verdicts yet (pre-summary fetch, meeting-mode answers):
+        # map scope = the graph-connected answer set (not the
+        # matched_entities long tail — weak recall matches drag in
+        # unrelated streets); files not yet in summary_files cannot have
+        # been disabled by the user — only files the summarizer has seen
+        # can be excluded/refused
+        keys = [n["oparlKey"] for n in graph.get("nodes", []) if n.get("type") == "AgendaItem"]
+        file_keys = [n["oparlKey"] for n in graph.get("nodes", [])
+                     if n.get("type") in ("File", "AuxFile")]
+        file_keys = [k for k in file_keys if k not in (refused | excluded)]
     engine = get_engine(readonly=True)
     return collect_geo(engine, keys, file_keys)
 
