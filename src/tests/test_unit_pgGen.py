@@ -103,10 +103,12 @@ class TestHelpers:
     def test_infer_scalar_types(self):
         from sqlalchemy import BigInteger, Boolean, DateTime, Float, String
 
-        assert infer_scalar_type([1, 2, 3]) == BigInteger
-        assert infer_scalar_type([1, 2.5]) == Float
-        assert infer_scalar_type([True, False]) == Boolean
-        assert infer_scalar_type(["2024-01-01", "2024-01-02"]) == DateTime
+        # change: geo-gating follow-up — infer_scalar_type returns TypeEngine
+        # instances (bare classes broke .compile() in add_missing_scalar_columns)
+        assert type(infer_scalar_type([1, 2, 3])) is BigInteger
+        assert type(infer_scalar_type([1, 2.5])) is Float
+        assert type(infer_scalar_type([True, False])) is Boolean
+        assert type(infer_scalar_type(["2024-01-01", "2024-01-02"])) is DateTime
         assert infer_scalar_type(["a", "b"]).length == 256
         assert type(infer_scalar_type(["a", "b"])) is String
         assert infer_scalar_type([None, None]).length == 256

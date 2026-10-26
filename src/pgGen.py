@@ -40,7 +40,12 @@ from sqlalchemy.dialects.postgresql import JSONB as PGJSON, insert
 from sqlalchemy.orm import sessionmaker
 
 # Read JSON files whose filename starts with an uppercase letter AND ends with .json
-READ_FILENAME_FILTER = lambda fn: fn.endswith('.json') and fn[0].isupper()
+# change: geo-gating follow-up bug fix — the crawl names its output files
+# by md5 hexdigest; older crawler versions wrote UPPERCASE hex, the current
+# one lowercase. Matching only uppercase-first names silently dropped every
+# lowercase-named crawl file (9,788 files / 2026-10-14..26 never imported).
+# Accept any non-hidden .json.
+READ_FILENAME_FILTER = lambda fn: fn.endswith('.json') and not fn.startswith('.')
 
 # Do not drop existing tables by default – keep custom tables (e.g. vector tables) safe
 DROP_ALL = False  # set True only for a clean rebuild
@@ -141,17 +146,21 @@ def is_scalar(value: Any) -> bool:
 
 
 def infer_scalar_type(values: List[Any]):
+    # always return TypeEngine *instances* — bare classes (e.g. Boolean)
+    # break `type.compile(dialect=...)` in add_missing_scalar_columns
+    # (hit when a post-creation import adds a non-string scalar column,
+    # e.g. Consultation.deleted from the 2026-10-26 update crawl)
     non_null = [v for v in values if v is not None]
     if not non_null:
         return String(STRING_SIZE)
     if all(isinstance(v, int) and not isinstance(v, bool) for v in non_null):
-        return BigInteger
+        return BigInteger()
     if all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in non_null):
-        return Float
+        return Float()
     if all(isinstance(v, bool) for v in non_null):
-        return Boolean
+        return Boolean()
     if all(parse_datetime_maybe(v) is not None for v in non_null if isinstance(v, str)):
-        return DateTime
+        return DateTime()
     return String(STRING_SIZE)
 
 
@@ -833,10 +842,10 @@ def add_missing_scalar_columns(engine, metadata, scalar_colnames, scalar_types, 
             if colname not in existing_cols:
                 print(f"  Adding missing column '{colname}' (original key: '{orig_key}') to table '{table_name}'")
                 sa_type = scalar_types[table_name][orig_key]
-                quote = scalar_quote[table_name][orig_key]
-                ddl = f'ALTER TABLE "{table_name}" ADD COLUMN "{colname}" {sa_type.compile(dialect=engine.dialect)}'
-                if quote:
-                    ddl = f'ALTER TABLE "{table_name}" ADD COLUMN "{colname}" {sa_type.compile(dialect=engine.dialect)}'
+                ddl = text(
+                    f'ALTER TABLE "{table_name}" ADD COLUMN '
+                    f'"{colname}" {sa_type.compile(dialect=engine.dialect)}'
+                )
                 with engine.begin() as conn:
                     conn.execute(ddl)
 
