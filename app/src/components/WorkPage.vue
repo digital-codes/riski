@@ -67,7 +67,7 @@
     <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="geoAvailable" :files="summaryFiles" :refining="refining" :refined="summaryRefined" @refine="onRefine" @toggle-file="onToggleFile" />
   </div>
   <div class="wrapper">
-    <GeoMap v-if="geoAvailable && geoFC" :feature-collection="geoFC" />
+    <GeoMap v-if="geoAvailable && geoFC" :feature-collection="geoFC" :summary-files="summaryFiles" />
   </div>
   <!-- change: progressive-frontend-rendering — the file list and timeline
        cards fill in as their stages arrive; the wrapper is visible during

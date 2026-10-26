@@ -12,7 +12,7 @@
 // The component is a pure renderer: the FeatureCollection comes in as a
 // prop (App.vue fetches it — and refetches when the summarizer's relevance
 // verdict arrives, so refused documents drop off the map).
-import { onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -21,6 +21,12 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 const props = defineProps({
   featureCollection: { type: Object, required: true },
+  // change: geo-gating popup correlation — the summary document list; its
+  // entries carry the canonical document number ("Datei N", also used in
+  // the summary text) so popups can reference documents the user can find
+  // in the list. Graph-connected auxiliary files are not in this list —
+  // their popups say so explicitly.
+  summaryFiles: { type: Array, default: () => [] },
 });
 
 const mapEl = ref(null);
@@ -28,20 +34,49 @@ let map = null;
 let geoLayer = null;
 let resizeObserver = null;
 
+// oparlKey -> { index, name, excluded }
+const docIndex = computed(() => {
+  const m = new Map();
+  for (const f of props.summaryFiles) {
+    if (f?.oparlKey) {
+      m.set(f.oparlKey, {
+        index: f.index ?? null,
+        name: f.name,
+        excluded: !!(f.excluded || f.refused),
+      });
+    }
+  }
+  return m;
+});
+
 const STYLES = {
   street: { color: '#667eea', weight: 5, opacity: 0.85 },
   district: { color: '#764ba2', weight: 2, fillOpacity: 0.15 },
 };
 
 function popupHtml(p) {
-  const docs = [
-    ...(p.fileNames || []).map((n) => `Dokument: ${n}`),
-    ...(p.agendaItemNames || []).map((n) => `TOP: ${n}`),
-  ];
+  const keys = p.files || [];
+  const names = p.fileNames || [];
+  // document lines: numbered by their position in the summary's document
+  // list when the document is part of it; auxiliary files outside the
+  // list are marked as such (user finding: popup names could not be
+  // related to the document list)
+  const docs = (keys.length ? keys : names).map((key, i) => {
+    const name = keys.length ? (names[i] || key) : key;
+    const entry = docIndex.value.get(key);
+    if (entry) {
+      const num = entry.index != null ? ` ${entry.index}` : '';
+      const mark = entry.excluded ? ' (nicht berücksichtigt)' : '';
+      return `Dokument${num}${mark}: ${entry.name || name}`;
+    }
+    return `Dokument (nicht in der Liste): ${name}`;
+  });
+  const tops = (p.agendaItemNames || []).map((n) => `TOP: ${n}`);
+  const all = [...docs, ...tops];
   return (
     `<b>${p.name || ''}</b><br>` +
     `<em>${p.type === 'district' ? 'Stadtteil' : 'Straße'}</em><br>` +
-    (docs.length ? docs.map((d) => `${d}<br>`).join('') : '')
+    (all.length ? all.map((d) => `${d}<br>`).join('') : '')
   );
 }
 
@@ -86,6 +121,10 @@ onUnmounted(() => {
 });
 
 watch(() => props.featureCollection, render, { deep: false });
+// the summary (with document numbers) usually arrives after the first map
+// render — re-render so the popups pick the numbers up without waiting
+// for the next geo refetch
+watch(docIndex, render, { deep: false });
 </script>
 
 <style scoped>
