@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 
 // hash-based routes; default is home
-export const ROUTES = ['/', '/work', '/datenschutz', '/impressum'];
+export const ROUTES = ['/', '/work', '/dokumentation', '/wissen', '/datenschutz', '/impressum'];
 
 const current = ref('/');
 

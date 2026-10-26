@@ -2,9 +2,10 @@
 const year = new Date().getFullYear();
 
 const links = [
+  { path: '/dokumentation', label: 'Dokumentation' },
+  { path: '/wissen', label: 'Wissen' },
   { path: '/datenschutz', label: 'Datenschutz' },
   { path: '/impressum', label: 'Impressum' },
-
 ];
 
 defineEmits(['navigate']);

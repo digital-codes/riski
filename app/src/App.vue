@@ -4,6 +4,8 @@ import SiteNav from './components/SiteNav.vue';
 import SiteFooter from './components/SiteFooter.vue';
 import HomePage from './components/HomePage.vue';
 import WorkPage from './components/WorkPage.vue';
+import DocsPage from './components/DocsPage.vue';
+import KnowledgePage from './components/KnowledgePage.vue';
 import LegalPage from './components/LegalPage.vue';
 
 const { route, navigate } = useHashRoute();
@@ -15,6 +17,8 @@ const { route, navigate } = useHashRoute();
     <main class="site-content">
       <HomePage v-if="route === '/'" @navigate="navigate" />
       <WorkPage v-else-if="route === '/work'" />
+      <DocsPage v-else-if="route === '/dokumentation'" @navigate="navigate" />
+      <KnowledgePage v-else-if="route === '/wissen'" @navigate="navigate" />
       <LegalPage v-else :key="route" :page="route" />
     </main>
     <SiteFooter @navigate="navigate" />
