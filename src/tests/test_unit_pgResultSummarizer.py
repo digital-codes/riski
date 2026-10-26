@@ -535,3 +535,50 @@ class TestFullContentRefinement:
         assert result["summary_refined"] is False
         ResultSummarizer(rich_session).summarize(result, force=True, use_full_content=True)
         assert result["summary_refined"] is True
+
+
+class TestLlmFailureRebuild:
+    """change: geo-gating (map scope = selected documents) — an LLM failure
+    on a (re)finement run must still rebuild the document list from the
+    exclusion set, so a document the user re-included is not blocked by a
+    stale refusal verdict."""
+
+    @pytest.fixture()
+    def rich_session(self):
+        return FakeSession({
+            "100": ("Teaser 100", "Volltext 100", "https://dl/f0.pdf"),
+            "101": ("Teaser 101", "Volltext 101", "https://dl/f1.pdf"),
+        })
+
+    def test_reincluded_refused_doc_unblocked_on_dummy(self, rich_session, result, monkeypatch):
+        # previous run: doc 100 refused and pre-excluded
+        result["summary_refused"] = [{"oparlKey": "100", "name": "File 0"}]
+        result["summary_excluded"] = ["100"]
+        result["summary_files"] = [
+            {"oparlKey": "100", "excluded": True},
+            {"oparlKey": "101", "excluded": True},
+        ]
+        # user re-includes 100 (exclude = [101] only); the LLM fails
+        monkeypatch.setattr(pc.remote, "chat",
+                            lambda *a, **k: {"content": "[dummy response]"})
+        ResultSummarizer(rich_session).summarize(
+            result, force=True, use_full_content=True, exclude=["101"])
+        assert result["summary_refused"] == []
+        assert "100" not in result["summary_excluded"]
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["100"]["excluded"] is False
+        assert files["101"]["excluded"] is True
+
+    def test_refusal_kept_for_still_excluded_docs_on_dummy(self, rich_session, result, monkeypatch):
+        result["summary_refused"] = [{"oparlKey": "100", "name": "File 0"}]
+        result["summary_excluded"] = ["100"]
+        monkeypatch.setattr(pc.remote, "chat",
+                            lambda *a, **k: {"content": "[dummy response]"})
+        ResultSummarizer(rich_session).summarize(
+            result, force=True, use_full_content=True, exclude=["100"])
+        # 100 stays excluded -> its refusal verdict is kept
+        assert [r["oparlKey"] for r in result["summary_refused"]] == ["100"]
+        assert result["summary_excluded"] == ["100"]
+        files = {f["oparlKey"]: f for f in result["summary_files"]}
+        assert files["100"]["excluded"] is True
+        assert files["101"]["excluded"] is False

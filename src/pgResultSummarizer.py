@@ -201,7 +201,25 @@ class ResultSummarizer:
         ]
         response = remote.chat(messages, model=self.model, temperature=self.temperature)
         summary = response.get("content", "")
-        if summary and summary != "[dummy response]":
+        if not summary or summary == "[dummy response]":
+            # LLM failure on a (re)finement run: the exclusion set was
+            # already recorded server-side — rebuild the document list so
+            # it matches the user's selection. Previous refusal verdicts
+            # are kept for everything still excluded, but a document the
+            # user explicitly re-included MUST NOT stay blocked (user
+            # finding: re-selecting a refused document left the map empty)
+            prev_refused = result.get("summary_refused") or []
+            kept_refused = [r for r in prev_refused
+                            if r.get("oparlKey") in set(exclude or set())]
+            result["summary_refused"] = kept_refused
+            final_excluded = set(exclude or set()) | {r["oparlKey"] for r in kept_refused}
+            result["summary_excluded"] = sorted(final_excluded)
+            result["summary_files"] = self._summary_files(
+                result.get("top_files") or [], kept_refused, final_excluded, full_index)
+            log.warning("Summary LLM call failed (dummy response) — "
+                        "document list rebuilt from the exclusion set")
+            return result
+        if summary:
             # the summary must state the input query — prepended
             # deterministically, not left to the model
             header = f"**Frage:** {query}\n\n" if query else ""
