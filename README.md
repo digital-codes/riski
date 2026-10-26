@@ -285,6 +285,22 @@ the PDF download (files) and the public meeting-calendar page (meetings,
 agenda items with their TOP anchor). "Nachbarn laden" expands a node's
 depth-1 neighborhood into the graph (merge-by-id, positions preserved).
 
+### Site structure
+
+The shell is a hash-routed single-page app with a **menu button** in the
+navbar (dropdown with all pages, like klimaDashboard's header) instead of
+a link row:
+
+- `/` — home page with the search entry point
+- `/work` — the search/exploration UI (summary, document list, network,
+  timeline, map, detail panel)
+- `/dokumentation` — German documentation: what riski is, the implemented
+  RAG operations (OParl reverse-engineering, hybrid vector+fuzzy search,
+  summaries/teasers, enrichments, query-guided result summary) and how to
+  interact with it; ends with an outlook on knowledge extraction
+- `/wissen` — future-work teaser (knowledge graph, stay tuned)
+- `/datenschutz`, `/impressum` — placeholder legal pages
+
 In production the API is expected under the same origin at `/api/...`
 (the dev setup proxies `/api` to `localhost:8000` via vite; override with
 `VITE_API_BASE`).
