@@ -141,6 +141,12 @@ python src/syncIncremental.py
 #    disables the cap). Skips existing outputs; failures are logged.
 python src/pgOcr.py
 
+# 2b) Chunk + embed oversized documents (> 8.000 bytes): heading-aware
+#    plaintext chunks in File_chunks, one embedding per chunk; NO LLM
+#    summary for these documents. Resumable; File.content keeps the
+#    document head, contentKind = 'chunked'.
+python src/pgChunks.py
+
 # 3) Summaries: for markdown >8000 chars, store an LLM summary
 #    (≤8000 chars, mistral-small) instead of the full text; smaller
 #    files are copied unchanged. Run from the data directory (relative
@@ -314,7 +320,14 @@ and re-ranked by the LLM reranker:
    columns (Paper, File, AgendaItem, Meeting).
 2. **Name vectors** — pgvector cosine over `{item}_name_vecs` (embedded
    from raw names).
-3. **Content vectors** — pgvector cosine over `contentEmbeddings`.
+3. **Content vectors** — pgvector cosine over `contentEmbeddings` at chunk
+   granularity (change: content-chunking): oversized documents (> 8.000
+   bytes) are stored as heading-aware plaintext chunks (`File_chunks`) with
+   one embedding per chunk; a file is recalled via its best-matching chunk,
+   which is also the reranker's input (instead of the formerly clipped or
+   LLM-summarized 8k text). Smaller documents keep a single vector
+   (`chunk_index = 0`). Rollback switch: `RISKI_CHUNK_RECALL=0` restricts
+   the signal to single/head vectors.
 
 Structured filters (`paperType`, year range, `AgendaItem.result`,
 `Consultation.role`/`authoritative`, tags by scheme, district,

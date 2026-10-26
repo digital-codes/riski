@@ -35,14 +35,14 @@ const sections = [
   },
   {
     id: 'zusammenfassungen',
-    title: 'Dokumenten-Zusammenfassungen und Teaser',
+    title: 'Dokumenten-Chunks, Zusammenfassungen und Teaser',
     paragraphs: [
-      'Vollständige PDFs sind für die Suche zu unhandlich. Deshalb erzeugt riski zwei verdichtete Ebenen:',
+      'Vollständige PDFs sind für die Suche zu unhandlich. Deshalb erzeugt riski verdichtete und zerlegte Ebenen:',
     ],
     bullets: [
-      'Teaser — ein kurzer, automatisch generierter Einstiegstext pro Dokument (schnelle erste Ebene, Basis der schnellen Suche).',
-      'Zusammenfassungen — eine komprimierte Inhaltsangabe (bis ~8.000 Zeichen) statt des Volltextes; große Dokumente werden zuvor per OCR in Text überführt (standardmäßig nur die ersten Seiten).',
-      'Rückführung — beide Ebenen schreibt riski in die Datenbank zurück; die Suche arbeitet dann über die verdichteten Inhalte, die Volltexte bleiben abrufbar.',
+      'Chunks — große Dokumente (über ~8.000 Zeichen) werden in sinnvolle Abschnitte (an Überschriften orientiert) zerlegt und jeder Abschnitt separat eingebettet: die Suche findet damit auch Inhalte tief im Dokument, und Belege können genau zitiert werden.',
+      'Teaser — ein kurzer, automatisch generierter Einstiegstext pro Dokument (schnelle erste Ebene).',
+      'Rückführung — alle Ebenen schreibt riski in die Datenbank zurück; die Suche arbeitet über Chunks und Teaser, die Volltexte bleiben abrufbar.',
     ],
   },
   {

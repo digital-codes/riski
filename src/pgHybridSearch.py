@@ -29,7 +29,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 import re
 
 import sqlalchemy as sa
-from sqlalchemy import Column, MetaData, Table, select
+from sqlalchemy import Column, MetaData, Table, select, text
 from pgvector.sqlalchemy import Vector
 
 from src.db import _load_private
@@ -262,33 +262,86 @@ def name_vector_candidates(
 
 
 @timed
+def _chunk_recall_enabled() -> bool:
+    """Kill switch for chunk-level content recall (change: content-chunking).
+    Default ON; ``RISKI_CHUNK_RECALL=0`` restricts the content signal to
+    single/head vectors (chunk_index = 0) — the pre-chunking behaviour — for
+    emergency rollback. Note: files whose oversized documents were backfilled
+    have their legacy vector replaced, so they drop out of the content signal
+    in that mode until the switch is re-enabled."""
+    import os
+
+    return os.getenv("RISKI_CHUNK_RECALL", "1").strip().lower() not in {
+        "0", "false", "no", "off",
+    }
+
+
 def content_vector_candidates(
     conn,
     query_embedding: Sequence[float],
     limit: int = DEFAULT_CANDIDATES_PER_SIGNAL,
     extra_where: Optional[List] = None,
     file_tbl=None,
-) -> List[Tuple[str, float]]:
+) -> List[Tuple[str, float, Optional[int]]]:
     """Content-vector nearest neighbors from ``contentEmbeddings`` (File only).
 
-    Returns ``(oparlKey, cosine_distance)``. When ``file_tbl`` is given
-    (shared Table object), filters referencing File columns are applied via
-    a join — the embeddings table itself carries no metadata.
+    Chunk granularity (change: content-chunking): a file is represented by
+    its best-matching chunk. Implementation: an HNSW top-N over *vectors*
+    (oversampled — a file has ~1–70 chunks) followed by per-file dedup in
+    the application; a ``DISTINCT ON (oparlKey)`` aggregation would force an
+    oparlKey-first sort that the HNSW index cannot serve (8.5s vs 0.02s).
+    Returns ``(oparlKey, cosine_distance, chunk_index)``; legacy single
+    vectors carry ``chunk_index = 0``. When ``file_tbl`` is given (shared
+    Table object), filters referencing File columns are applied via a join —
+    the embeddings table itself carries no metadata.
     """
     # Declared explicitly: reflection would drop the pgvector comparator.
     emb = Table(
         "contentEmbeddings", MetaData(),
         Column("oparlKey", sa.String(500)),
         Column("value", Vector(1024)),
+        Column("chunk_index", sa.Integer),
     )
+    if not _chunk_recall_enabled():
+        # legacy mode: single/head vectors only (exact old behaviour)
+        emb = Table(
+            "contentEmbeddings", MetaData(),
+            Column("oparlKey", sa.String(500)),
+            Column("value", Vector(1024)),
+            Column("chunk_index", sa.Integer),
+        )
+        dist = emb.c.value.cosine_distance(query_embedding).label("distance")
+        stmt = select(emb.c.oparlKey, dist, emb.c.chunk_index)
+        if file_tbl is not None:
+            stmt = stmt.join(file_tbl, emb.c.oparlKey == file_tbl.c.oparlKey)
+        for f in extra_where or []:
+            stmt = stmt.where(f)
+        stmt = stmt.where(emb.c.chunk_index == 0)
+        stmt = stmt.order_by(sa.asc(dist), sa.asc(emb.c.oparlKey)).limit(limit)
+        return [
+            (row.oparlKey, float(row.distance), row.chunk_index)
+            for row in conn.execute(stmt)
+        ]
+
+    # chunk mode: oversample the HNSW window (a file contributes up to
+    # dozens of chunk vectors) so enough DISTINCT files survive the dedup;
+    # widen ef_search accordingly for the scan
+    oversample = min(max(limit * 6, 300), 1000)
+    conn.execute(text(f"SET hnsw.ef_search = {oversample}"))
     dist = emb.c.value.cosine_distance(query_embedding).label("distance")
-    stmt = select(emb.c.oparlKey, dist)
+    stmt = select(emb.c.oparlKey, dist, emb.c.chunk_index)
     if file_tbl is not None:
         stmt = stmt.join(file_tbl, emb.c.oparlKey == file_tbl.c.oparlKey)
     for f in extra_where or []:
         stmt = stmt.where(f)
-    stmt = stmt.order_by(sa.asc("distance"), sa.asc(emb.c.oparlKey)).limit(limit)
-    return [(row.oparlKey, float(row.distance)) for row in conn.execute(stmt)]
+    stmt = stmt.order_by(sa.asc(dist)).limit(oversample)
+
+    best: Dict[str, Tuple[float, Optional[int]]] = {}
+    for oparl_key, distance, chunk_index in conn.execute(stmt):
+        if oparl_key not in best or distance < best[oparl_key][0]:
+            best[oparl_key] = (float(distance), chunk_index)
+    ranked = sorted(best.items(), key=lambda kv: kv[1][0])[:limit]
+    return [(k, d, c) for k, (d, c) in ranked]
 
 
 # ----------------------------------------------------------------------
@@ -651,17 +704,19 @@ def _table_recall(conn, table, query, nv_embedding, query_embedding,
             nv_dist = dict(pairs)
     vc: List[str] = []
     vc_dist: Dict[str, float] = {}
+    vc_chunk: Dict[str, Optional[int]] = {}
     if use_content and table == "File":
         with timed_block(f"hybrid.content_vecs[{table}]"):
-            pairs = content_vector_candidates(
+            triples = content_vector_candidates(
                 conn, query_embedding, per_signal, extra_where=extra, file_tbl=tbl
             )
-            vc = [k for k, _d in pairs]
-            vc_dist = dict(pairs)
+            vc = [k for k, _d, _c in triples]
+            vc_dist = {k: d for k, d, _c in triples}
+            vc_chunk = {k: c for k, _d, c in triples if c}
 
     fused = rrf_fuse([l for l in (lex, nv, vc) if l])
     names = _names_for(conn, tbl, list(fused)[: per_signal * 2])
-    return table, fused, required, lex, nv, vc, nv_dist, vc_dist, names
+    return table, fused, required, lex, nv, vc, nv_dist, vc_dist, vc_chunk, names
 
 
 @timed
@@ -717,7 +772,7 @@ def hybrid_candidates(
     for result in results:  # submission order == CANDIDATE_TABLES order
         if result is None:
             continue  # task failed: that table contributes nothing
-        (table, fused, required, lex, nv, vc, nv_dist, vc_dist, names) = result
+        (table, fused, required, lex, nv, vc, nv_dist, vc_dist, vc_chunk, names) = result
         if required is not None:
             fused = {k: v for k, v in fused.items() if k in required}
         if not fused:
@@ -734,6 +789,9 @@ def hybrid_candidates(
                 signals_hit["name"] = round(nv_dist[oparl_key], 4)
             if oparl_key in vc_set:
                 signals_hit["content"] = round(vc_dist[oparl_key], 4)
+                chunk_index = vc_chunk.get(oparl_key)
+                if chunk_index:
+                    signals_hit["content_chunk"] = int(chunk_index)
             if table == "File":
                 file_fused[oparl_key] = score
                 file_signals[oparl_key] = signals_hit

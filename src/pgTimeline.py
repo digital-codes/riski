@@ -48,6 +48,7 @@ def _ensure_log():
             log.setLevel(logging.WARNING)
     return log
 from src import remote
+from src.pgChunks import chunk_text
 
 
 # Configuration
@@ -952,6 +953,11 @@ def search_stage(
         hybrid_distances = {
             c["oparlKey"]: c["signals"].get("content") for c in candidates
         }
+        # change: content-chunking — best-matching chunk per file (reranker
+        # input); None for legacy single-vector files
+        hybrid_chunks = {
+            c["oparlKey"]: c["signals"].get("content_chunk") for c in candidates
+        }
         hybrid_match_info = {c["oparlKey"]: c["signals"] for c in candidates}
         _ensure_log().debug(f"Hybrid recall: {len(matched_entities)} entities, {len(candidates)} file candidates")
         if not candidates:
@@ -988,10 +994,15 @@ def search_stage(
     if RERANK_MODE == "chat":
         for oparlKey, score in top_scores:
             _ensure_log().debug(f"Processing file {oparlKey} with initial score {score:.4f}")  # Debugging line
-            # get file content for reranking
-            file_content = session.query(File.content).filter(File.oparlKey == oparlKey).first()
-            if file_content and file_content[0]:  # Check if content exists and is not None
-                rerank_score = call_reranking_chat_model(query, file_content[0])
+            # rerank input (change: content-chunking): the best-matching
+            # chunk for chunked documents — more discriminative than the
+            # stored summary/head; legacy files keep File.content
+            file_content = chunk_text(session, oparlKey, hybrid_chunks.get(oparlKey))
+            if file_content is None:
+                row = session.query(File.content).filter(File.oparlKey == oparlKey).first()
+                file_content = row[0] if row and row[0] else None
+            if file_content:  # content exists and is not None
+                rerank_score = call_reranking_chat_model(query, file_content)
                 _ensure_log().debug(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
                 if rerank_score is not None and isinstance(rerank_score, (int, float)) and rerank_score >= .8:
                     top_scores_with_rerank.append((oparlKey, score))
@@ -1009,9 +1020,13 @@ def search_stage(
         # we call the real reranker with the full list of documents and the query, and it will return a list of scores for each document
         documents = []
         for oparlKey, score in top_scores:
-            file_content = session.query(File.content).filter(File.oparlKey == oparlKey).first()
-            if file_content and file_content[0]:  # Check if content exists and is not None
-                documents.append(file_content[0])
+            # rerank input (change: content-chunking): best chunk first
+            file_content = chunk_text(session, oparlKey, hybrid_chunks.get(oparlKey))
+            if file_content is None:
+                row = session.query(File.content).filter(File.oparlKey == oparlKey).first()
+                file_content = row[0] if row and row[0] else None
+            if file_content:
+                documents.append(file_content)
             else:
                 _ensure_log().debug(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
                 documents.append("")  # Append empty string to maintain order

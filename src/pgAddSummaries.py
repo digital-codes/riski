@@ -32,6 +32,7 @@ from pgvector.sqlalchemy import Vector
 # ----------------------------------------------------------------------
 from src.db import get_engine
 from src import remote
+from src.pgChunks import SIZE_CUTOFF, chunk_markdown, ensure_tables, store_chunks
 
 # Define the embedding table (own metadata, as in the original script)
 Base = declarative_base()
@@ -42,6 +43,9 @@ class Embedding(Base):
     id = Column(Integer, primary_key=True)
     oparlKey = Column(String)
     value = Column(Vector(1024))  # 1024-dimensional vector
+    # change: content-chunking — 0 = single/head vector (small documents),
+    # 1..n = chunk vectors of oversized documents
+    chunk_index = Column(Integer, nullable=False, default=0)
     __table_args__ = (UniqueConstraint('oparlKey', name='uq_embedding_oparlKey'),)
 
 
@@ -97,24 +101,13 @@ def content_kind_for(md_path: Path, sums_dir: Path, full_dir: Path) -> str:
 
 
 def ensure_embedding_unique_constraint(engine) -> None:
-    """Ensure the declared unique constraint on contentEmbeddings.oparlKey.
-
-    Tables created before the constraint existed (e.g. by older pgAddVecs
-    loads) lack it, which makes the ON CONFLICT upsert fail with
-    ``no unique constraint matching the ON CONFLICT specification`` and
-    aborts the surrounding transaction. Self-healing: add the constraint
-    when absent (duplicates must not exist — verified before adding).
-    """
-    insp = inspect(engine)
-    uqs = {u["name"] for u in insp.get_unique_constraints("contentEmbeddings")}
-    if "uq_embedding_oparlKey" in uqs:
-        return
-    with engine.begin() as conn:
-        conn.execute(text(
-            'ALTER TABLE "contentEmbeddings" '
-            'ADD CONSTRAINT uq_embedding_oparlKey UNIQUE ("oparlKey")'
-        ))
-    print("Added missing unique constraint uq_embedding_oparlKey on contentEmbeddings")
+    """Migrate the embedding schema for chunked content (change:
+    content-chunking): uniqueness moves from ``oparlKey``-only to
+    ``(oparlKey, chunk_index)``, and the chunk tables/columns are ensured.
+    Delegates to :func:`src.pgChunks.ensure_tables` (idempotent)."""
+    ensure_tables(engine)
+    print("Embedding schema ensured for chunked content "
+          "(unique (oparlKey, chunk_index))")
 
 
 def run(
@@ -130,6 +123,7 @@ def run(
     stmt_files = select(file_tbl.c.sid, file_tbl.c.oparlKey, file_tbl.c.filename)
 
     matched = updated = 0
+    chunked = 0
     skipped_no_md = skipped_no_filename = 0
     # --embed-missing: embed only files that have no contentEmbeddings row
     # yet (targeted incremental pass instead of re-embedding everything).
@@ -166,11 +160,67 @@ def run(
             continue
 
         matched += 1
+
+        # change: content-chunking — oversized documents (OCR markdown above
+        # the cutoff) are chunked and embedded per chunk; NO LLM summary is
+        # generated. Source of truth is the full ko_extracted markdown, not
+        # the ko_sums copy. File.content carries the document head for
+        # backward compatibility (teasers, offline fallback).
+        full_md = full_dir / (base + ".md") if full_dir else None
+        if full_md is not None and full_md.is_file() \
+                and full_md.stat().st_size > SIZE_CUTOFF and not dry_run:
+            text_full = full_md.read_text(encoding="utf-8", errors="replace")
+            chunks = chunk_markdown(text_full)
+            head = chunks[0]["text"] if chunks else text_full[:SIZE_CUTOFF]
+            conn.execute(
+                update(file_tbl)
+                .where(file_tbl.c.sid == file_sid)
+                .values(content=head, contentKind="chunked")
+            )
+            store_chunks(conn, file_sid, chunks)
+            updated += 1
+            chunked += 1
+
+            if embeddings:
+                # per-chunk resume: embed only chunk indexes without a vector
+                existing_idx = {
+                    r[0] for r in conn.execute(
+                        select(Embedding.chunk_index)
+                        .where(Embedding.oparlKey == oparlKey))
+                }
+                all_embedded = True
+                for c in chunks:
+                    if c["chunk_index"] in existing_idx:
+                        continue
+                    try:
+                        vec = embed(c["text"])
+                        conn.execute(
+                            pg_insert(Embedding)
+                            .values(oparlKey=oparlKey, value=vec,
+                                    chunk_index=c["chunk_index"])
+                            .on_conflict_do_update(
+                                index_elements=["oparlKey", "chunk_index"],
+                                set_={"value": vec})
+                        )
+                    except Exception as e:
+                        print(f"Error embedding chunk {c['chunk_index']} "
+                              f"of {oparlKey}: {e}")
+                        all_embedded = False
+                        continue
+                if all_embedded and chunks:
+                    # chunk vectors replace the superseded legacy single
+                    # vector (embedded from the lossy summary/clipped text)
+                    conn.execute(text(
+                        'DELETE FROM "contentEmbeddings" '
+                        'WHERE "oparlKey" = :k AND chunk_index = 0'),
+                        {"k": oparlKey})
+            continue
+
         print(f"Reading from file: {md_path} for File.sid={file_sid}, fileName={file_name}")
-        text = md_path.read_text(encoding="utf-8", errors="replace")
+        md_text = md_path.read_text(encoding="utf-8", errors="replace")
 
         if not dry_run:
-            values = {"content": text}
+            values = {"content": md_text}
             if sums_dir is not None and full_dir is not None:
                 values["contentKind"] = content_kind_for(md_path, sums_dir, full_dir)
             conn.execute(
@@ -184,7 +234,7 @@ def run(
                 embed_missing_only and oparlKey in existing_embeddings
             ):
                 try:
-                    vec = embed(text)
+                    vec = embed(md_text)
                     print(f"Generated embedding for {oparlKey}, vector length: {len(vec)}")
                     conn.execute(
                         pg_insert(Embedding)
@@ -200,6 +250,7 @@ def run(
     print("\nSummary")
     print(f"  matched md/files   : {matched}")
     print(f"  updated            : {updated}")
+    print(f"  chunked (>cutoff)  : {chunked}")
     print(f"  skipped no fileName: {skipped_no_filename}")
     print(f"  skipped no md      : {skipped_no_md}")
 

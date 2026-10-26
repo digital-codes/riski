@@ -251,6 +251,27 @@ def embed(text: str, model: str | None = None, dimensions: int | None = None) ->
     return arr / norm
 
 
+def embed_batch(texts: list, model: str | None = None,
+                dimensions: int | None = None) -> list:
+    """Normalised embeddings for a batch of texts in ONE API call.
+
+    Preserves input order (sorted by the API's ``index`` field). Raises on
+    endpoint failure; no fabricated vector is ever returned.
+    """
+    payload = {
+        "model": model or EMBED_MODEL,
+        "input": [t[:8100] for t in texts],
+        "dimensions": dimensions or EMBED_DIM,
+    }
+    data = _post("embeddings", payload)
+    out: list = [None] * len(texts)
+    for item in data["data"]:
+        arr = np.array(item["embedding"], dtype=np.float64)
+        norm = np.linalg.norm(arr) + 1e-9
+        out[item.get("index", 0)] = arr / norm
+    return out
+
+
 def ocr(document: bytes | str, model: str | None = None,
         pages: str | list[int] | None = None) -> Dict[str, Any]:
     """Perform OCR on a PDF.
