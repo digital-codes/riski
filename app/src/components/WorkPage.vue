@@ -436,7 +436,10 @@ async function fetchGeo(token = searchToken) {
     const res = await fetch(geoUrl(sessionId.value));
     if (!res.ok) return;
     const fc = await res.json();
-    if (token === searchToken && seq === geoFetchSeq && fc.features?.length) geoFC.value = fc;
+    // assign even when EMPTY: an empty FeatureCollection is a real state
+    // (the last geo-bearing document was deselected) — keeping the previous
+    // payload here left deselected POIs on the map (user finding)
+    if (token === searchToken && seq === geoFetchSeq) geoFC.value = fc;
   } catch { /* map is optional */ }
 }
 

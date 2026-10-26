@@ -2,6 +2,10 @@
   <div class="card geo-card">
     <h3 class="card-title">Karte</h3>
     <div ref="mapEl" class="map" role="application" aria-label="Karte der im Suchergebnis genannten Straßen und Stadtteile"></div>
+    <!-- change: geo-gating (map scope = selected documents) — after
+         deselecting the last geo-bearing document the FeatureCollection is
+         empty; say so instead of showing a blank grey map -->
+    <p v-if="isEmpty" class="map-empty">Keine Georeferenzen in den ausgewählten Dokumenten.</p>
   </div>
 </template>
 
@@ -48,6 +52,9 @@ const docIndex = computed(() => {
   }
   return m;
 });
+
+const isEmpty = computed(() =>
+  !(props.featureCollection?.features?.length));
 
 const STYLES = {
   street: { color: '#667eea', weight: 5, opacity: 0.85 },
@@ -153,6 +160,13 @@ watch(docIndex, render, { deep: false });
   height: 480px;
   border-radius: 8px;
   z-index: 0;
+}
+
+/* change: geo-gating (map scope = selected documents) */
+.map-empty {
+  margin: 12px 0 0;
+  color: #6b7280;
+  font-size: 0.88rem;
 }
 
 @media (max-width: 768px) {
