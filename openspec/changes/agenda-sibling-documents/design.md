@@ -46,15 +46,26 @@ Parameter `agenda_item_sids` an `find_related_objects` weiter. Dort werden
 diese TOPs vorab in `related_objects["AgendaItem"]` geladen (mit denselben
 Feldern wie step 1), damit step 1.b sie einsammelt.
 
-### 3. Erweiterung von `top_files` nach dem Graph-Build
+### 3. Erweiterung von `top_files` nach dem Graph-Build — TOP-Block-Ebene
 
-Mapping TOP→Dateien aus den Kanten (`edges`: source = `AgendaItem_<key>`,
-target = `AuxFile_<key>`); betroffene TOPs = solche, die mindestens einen
-Seed-File tragen oder Name-Treffer sind. Deren nicht-seed-Dateien werden
-als vollständige top_files-Einträge (gleiche Feldform, `distance: None`,
-`match: None`, `via: <TOP-Nummer/Name>`) **angehängt** — Reihenfolge:
-Suchtreffer, dann Geschwister gruppiert je TOP. `full_index`/Nummerierung
-im Summarizer bleibt unangetastet (kontinuierlich über beide Gruppen).
+Betroffen ist der gesamte **TOP-Block**: Trifft ein Seed-File (oder ein
+Name-Treffer) TOP 13.2, umfasst die Erweiterung alle TOPs derselben
+Sitzung mit gleichem Nummern-Präfix (13, 13.1, 13.2, 13.3, …). Gruppierung:
+`meetingSid` gleich UND ganzzahliger Präfix von `number` vor dem ersten
+Punkt identisch; TOPs ohne Nummer bleiben Einzelobjekte. Andere TOPs der
+Sitzung (3, 5, 11, …) zählen nicht als verwandt (User-Klarstellung:
+Dokumente unter einem Block sind verwandt, die TOPs der Sitzung darunter
+nicht).
+
+Umsetzung: die Traversierung (step 1 + 1.b) sammelt je Meeting bereits die
+Block-Nummern — nach dem Graph-Build wird das TOP→Dateien-Mapping aus den
+Kanten (`edges`: source = `AgendaItem_<key>`, target = `AuxFile_<key>`)
+um die Block-Präfixregel erweitert. Die nicht-seed-Dateien aller Block-TOPs
+werden als vollständige top_files-Einträge (gleiche Feldform,
+`distance: None`, `match: None`, `via: "TOP 13"`) **angehängt** —
+Reihenfolge: Suchtreffer, dann Geschwister gruppiert je Block.
+`full_index`/Nummerierung im Summarizer bleibt unangetastet
+(kontinuierlich über beide Gruppen).
 
 ### 4. Keine Cap, kein Reranking der Geschwister
 
@@ -76,9 +87,10 @@ Netzwerk folgen der bestehenden Logik ohne Änderung.
   Dokumentenliste“; Nutzersteuerung (Abwählen) greift wie bisher.
 - [Doppelte Traversierung von TOP↔Dateien bei vielen Seeds] → eine SQL-
   Abfrage mit IN-Liste je Schritt; Kardinalität wie step 2.b.
-- [TOP-Nummer „13.2“ vs. Eltern-TOP „13“] → v1: nur der exakte TOP;
-  Elterneinbezug wäre Mehrdeutigkeit (andere Unterpunkte) — bewusst
-  nicht Teil des Umfangs.
+- [Nummern-Formate variieren („13.2“, „13.2a“, „13 “, leere Nummer)] →
+  Präfix-Regel: ganzzahliger Teil vor dem ersten Punkt; leere/unklare
+  Nummern bleiben Einzelobjekte (kein Block); Häufigkeitsanalyse der
+  Nummernformate in Task 1.2.
 
 ## Migration Plan
 

@@ -30,11 +30,15 @@ alle Daten eine Join-Ebene entfernt liegen.
   `find_related_objects` übergeben; ihre Knoten und Dokumente gelangen in
   Graph und Antwortmenge.
 - **Erweiterte Antwortmenge für den Summarizer** — `top_files` wird um die
-  Geschwister-Dokumente der betroffenen TOPs erweitert (Dedup gegen die
-  Suchtreffer, angehängt hinter den relevanzsortierten Treffern, mit
-  Provenienz-Marker `via` = TOP-Name/Nummer); `top_k` gilt nur für die
-  Suchtreffer, nicht für die erweiterte Menge. Der Summarizer selbst bleibt
-  unverändert — er konsumiert weiterhin `top_files`.
+  Dokumente des gesamten TOP-Blocks erweitert: trifft die Suche ein Dokument
+  von TOP 13.2, kommen alle Dokumente von 13.1, 13.2, 13.3, … derselben
+  Sitzung dazu (gleicher Nummern-Präfix vor dem ersten Punkt). Andere TOPs
+  derselben Sitzung (3, 5, 11, …) gelten als unverwandt und bleiben
+  ausgeschlossen. Dedup gegen die Suchtreffer, angehängt hinter den
+  relevanzsortierten Treffern, mit Provenienz-Marker `via` = TOP-Block;
+  `top_k` gilt nur für die Suchtreffer, nicht für die erweiterte Menge.
+  Der Summarizer selbst bleibt unverändert — er konsumiert weiterhin
+  `top_files`.
 - **Frontend-Kennzeichnung** — Dokumente aus der TOP-Erweiterung sind in der
   Dokumentenliste gekennzeichnet (gruppiert hinter den Suchtreffern).
 
