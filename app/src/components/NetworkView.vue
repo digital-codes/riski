@@ -9,16 +9,21 @@
            natively toggles category visibility with the same colors. The
            relation (Kanten) chips stay: ECharts has no native edge-type
            legend, and they actually filter visibleEdges. -->
-      <div class="filter-row" v-if="allRelations.length > 1">
-        <!-- "Beziehungen", not "Kanten": the chips are OParl relations
-             (directional verbs), several of which sound like node types —
-             the arrow makes the direction explicit -->
+      <div class="filter-row">
+        <!-- change: agenda-sibling-documents follow-up — "Nachbarn laden"
+             expansions accumulate (an organization pulls in ALL its
+             meetings ever); without a reset there was no way back -->
+        <button v-if="canReset" type="button" class="chip reset-btn"
+                title="Expansierte Nachbarn entfernen — zurück zum Suchergebnis"
+                @click="$emit('reset')">↺ Zurücksetzen</button>
+        <template v-if="allRelations.length > 1">
         <span class="filter-label">Beziehungen:</span>
         <button v-for="r in allRelations" :key="r" type="button"
                 class="chip" :class="{ off: !enabledRelations.has(r) }"
                 @click="toggleRelation(r)">
           → {{ relationLabel(r) }}
         </button>
+        </template>
       </div>
     </div>
 
@@ -44,6 +49,10 @@ const onResize = () => {
 
 const props = defineProps({
   graph: { type: Object, required: true },
+  // change: agenda-sibling-documents follow-up — reset control appears
+  // once expansions modified the graph (WorkPage compares with the
+  // search-time snapshot)
+  canReset: { type: Boolean, default: false },
   // change: network-highlighting — answer-list membership + rejection
   // state, passed as plain oparlKey arrays and derived into Sets here
   activeFileKeys: { type: Array, default: () => [] },   // enabled docs of the summary list
@@ -51,7 +60,8 @@ const props = defineProps({
   activeItemKeys: { type: Array, default: () => [] },   // meeting-view topics
 });
 
-const emit = defineEmits(['select']);
+const emit = defineEmits(['select', 'reset']);
+
 
 // node-type presentation: stable palette + German labels (consistent with TimeLine.vue)
 const TYPE_COLORS = {
@@ -444,7 +454,18 @@ watch(() => props.graph, render, { deep: true });
     max-width: 100% !important;
     height: auto !important;
   }
-  /* interactive-only controls add nothing on paper */
+  .chip.reset-btn {
+  color: #6b7280;
+  border-color: #e5e7eb;
+}
+
+.chip.reset-btn:hover {
+  color: #b91c1c;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+/* interactive-only controls add nothing on paper */
   .network-card .filter-row,
   .network-card .chip {
     display: none;

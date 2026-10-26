@@ -44,7 +44,8 @@
       :active-file-keys="activeFileKeys"
       :rejected-file-keys="rejectedFileKeys"
       :active-item-keys="activeItemKeys"
-      @select="onSelect" />
+      :can-reset="graph !== baseGraph"
+      @select="onSelect" @reset="onResetGraph" />
     <div v-else-if="loadingGraph" class="pane-loading-card">
       <span class="pane-spinner"></span>
       <span>Netzwerk wird aufgebaut…</span>
@@ -137,6 +138,10 @@ const answerMode = ref(null);
 
 // graph is mutable state: search replaces it, /expand merges into it
 const graph = ref(null);
+// change: agenda-sibling-documents follow-up — search-time snapshot; the
+// network view's reset control restores it after "Nachbarn laden"
+// expansions (an organization pulls in ALL its meetings ever)
+const baseGraph = ref(null);
 
 // change: progressive-frontend-rendering — per-stage state: the file list
 // arrives with the stage-1 response, the timeline with stage 2, the graph
@@ -178,6 +183,7 @@ async function runSearch() {
   // clear all panes immediately — no stale data while the new search runs
   rawData.value = null;
   graph.value = null;
+  baseGraph.value = null;
   files.value = [];
   timeline.value = [];
   loadingFiles.value = true;
@@ -395,6 +401,7 @@ function applyStage1(result) {
 // stage-3 applier: graph + geo availability
 function applyGraph(res) {
   graph.value = res.graph || { nodes: [], edges: [] };
+  baseGraph.value = graph.value;  // reset anchor (onExpand replaces, not mutates)
   loadingGraph.value = false;
   geoAvailable.value = !!res.geo_available && !!sessionId.value;
   // the summary usually arrives after the graph — its .then fetches /geo
@@ -428,6 +435,14 @@ async function onExpand(nodeId) {
   } finally {
     expanding.value = false;
   }
+}
+
+// change: agenda-sibling-documents follow-up — restore the search-time
+// graph after "Nachbarn laden" expansions
+function onResetGraph() {
+  if (!baseGraph.value) return;
+  graph.value = baseGraph.value;
+  selection.value = null;
 }
 
 // fetch the map FeatureCollection; re-fetched when the summary verdict
