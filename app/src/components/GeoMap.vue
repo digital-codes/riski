@@ -60,17 +60,19 @@ function popupHtml(p) {
   // document lines: numbered by their position in the summary's document
   // list when the document is part of it; auxiliary files outside the
   // list are marked as such (user finding: popup names could not be
-  // related to the document list)
+  // related to the document list). Documents toggled off / refused are
+  // never rendered — the backend already excludes them from the scope,
+  // this also hides them while a stale pre-summary payload is on screen.
   const docs = (keys.length ? keys : names).map((key, i) => {
     const name = keys.length ? (names[i] || key) : key;
     const entry = docIndex.value.get(key);
     if (entry) {
+      if (entry.excluded) return null;
       const num = entry.index != null ? ` ${entry.index}` : '';
-      const mark = entry.excluded ? ' (nicht berücksichtigt)' : '';
-      return `Dokument${num}${mark}: ${entry.name || name}`;
+      return `Dokument${num}: ${entry.name || name}`;
     }
     return `Dokument (nicht in der Liste): ${name}`;
-  });
+  }).filter(Boolean);
   const tops = (p.agendaItemNames || []).map((n) => `TOP: ${n}`);
   const all = [...docs, ...tops];
   return (

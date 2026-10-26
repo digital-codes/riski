@@ -213,10 +213,16 @@ async function runSearch() {
           summaryRefined.value = !!res.refined;
           summaryExclude.value = (res.files || []).filter(f => f.excluded).map(f => f.oparlKey);
           summaryRefused.value = res.refused || summaryRefused.value;
-          // the relevance verdict may gate the map — refresh it
+          // the summary narrows the map scope to the selected documents —
+          // always refresh (unconditional: geoAvailable may still be unset
+          // when the summary wins the race against the graph response)
+          fetchGeo(token);
+        })
+        .catch(() => {
+          // summary is optional — but the map scope decision (fallback vs
+          // summary) must still be made once the outcome is known
           if (geoAvailable.value) fetchGeo(token);
         })
-        .catch(() => { /* summary is optional — ignore failures */ })
         .finally(() => { summaryLoading.value = false; });
     }
     loading.value = false;
@@ -277,7 +283,12 @@ async function runSummarize({ refine = false, exclude = [] } = {}) {
   refining.value = true;
   try {
     const res = await apiSummarize(sessionId.value, { refine, exclude });
-    if (res.in_progress) return;  // another refine owns the session
+    if (res.in_progress) {
+      // another refine owns the session — but the exclusion set was
+      // already updated server-side, so the map must still catch up
+      if (geoAvailable.value) fetchGeo();
+      return;
+    }
     if (res.summary) summary.value = res.summary;
     summaryFiles.value = res.files || [];
     summaryRefined.value = !!res.refined;
@@ -342,7 +353,13 @@ function applyGraph(res) {
   graph.value = res.graph || { nodes: [], edges: [] };
   loadingGraph.value = false;
   geoAvailable.value = !!res.geo_available && !!sessionId.value;
-  if (geoAvailable.value) fetchGeo();
+  // the summary usually arrives after the graph — its .then fetches /geo
+  // with the summary-scope (selected documents only). Fetching here too
+  // would race: whichever response resolves last wins, and the stale
+  // pre-summary payload (agenda-item/aux-file POIs) could overwrite the
+  // corrected one (user finding: Rintheim polygon without a document, not
+  // going away on deselect). Only fetch when the summary is already done.
+  if (geoAvailable.value && !summaryLoading.value) fetchGeo();
 }
 
 // 2.2: merge /expand response into the current graph, by node id —
@@ -370,15 +387,20 @@ async function onExpand(nodeId) {
 }
 
 // fetch the map FeatureCollection; re-fetched when the summary verdict
-// arrives (refused documents are then excluded from the map);
-// token-guarded against superseded searches (change: progressive-
-// frontend-rendering)
+// arrives (the scope narrows to the selected documents) and after every
+// toggle/refine. Two guards prevent stale payloads from winning:
+// - the search token (a newer search invalidates in-flight fetches)
+// - a per-search sequence number: the LAST ISSUED fetch wins, even when
+//   an earlier fetch resolves later (user finding: the pre-summary
+//   graph-scope payload overwrote the summary-scope one)
+let geoFetchSeq = 0;
 async function fetchGeo(token = searchToken) {
+  const seq = ++geoFetchSeq;
   try {
     const res = await fetch(geoUrl(sessionId.value));
     if (!res.ok) return;
     const fc = await res.json();
-    if (token === searchToken && fc.features?.length) geoFC.value = fc;
+    if (token === searchToken && seq === geoFetchSeq && fc.features?.length) geoFC.value = fc;
   } catch { /* map is optional */ }
 }
 
