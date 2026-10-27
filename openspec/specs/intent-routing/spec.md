@@ -5,9 +5,10 @@
 Routes natural-language user questions to appropriate answer handlers using a
 fast decision model (SystemOne protocol): decodes the question into an intent
 via `config/intents.yaml`, resolves slot vocabularies from the database and
-config, derives structured filters, scopes gremium questions to the correct
-meeting, and guarantees a useful fallback (unscoped search or an honest
-"nothing found") for every query.
+config (exact/regex and trigram free-text sources), derives structured
+filters, scopes gremium questions to the correct meeting, and guarantees a
+useful fallback (unscoped search or an honest "nothing found") for every
+query.
 
 ## Requirements
 
@@ -63,7 +64,10 @@ SHALL exist and be used when no other intent matches confidently.
 ### Requirement: Database-backed slot vocabularies
 Slot vocabularies SHALL be resolvable from a list of value sources: database
 queries (table, column, optional filter, e.g. councils from `Organization`,
-factions from `Person`) and hard-coded config values. Loaded values SHALL be
+factions from `Person`), trigram similarity matches against a database table
+(table, column, acceptance threshold — resolving a free-text query to the
+best-matching rows rather than exact or regex matches, e.g. locations from
+`Street`/`District`), and hard-coded config values. Loaded values SHALL be
 normalised (trimmed, lowercased); the user query SHALL be lowercased before
 the decoder call. Vocabularies SHALL be loaded per request (no cache required).
 
@@ -78,6 +82,14 @@ the decoder call. Vocabularies SHALL be loaded per request (no cache required).
   leading whitespace (" CDU-Fraktion")
 - **THEN** matching is performed in normalised lowercase space and still
   succeeds
+
+#### Scenario: Trigram source resolves free text to table rows
+- **WHEN** a slot declares a trigram source (e.g. the `location` slot against
+  `Street.name` / `District.name`) and the query contains an approximate or
+  embedded location name ("was passiert am freidrichsplatz")
+- **THEN** the slot resolves to the best-matching table rows above the
+  source's acceptance threshold, with similarity scores, instead of requiring
+  an exact or regex match
 
 ### Requirement: Gremium meeting resolution
 Gremium-scoped questions with a relative time expression ("letzter", "letzte
