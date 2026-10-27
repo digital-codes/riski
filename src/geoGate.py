@@ -73,18 +73,39 @@ GATE_COLUMNS_DDL = [
 # pass share one mechanism — the bulk run showed it classifying ~1.7k of
 # 21k street links correctly with zero LLM cost.
 
-REGEX_BOILERPLATE_REASON = "regex: Adressblock (Hausnummer + PLZ Karlsruhe)"
+def regex_boilerplate_reason() -> str:
+    """Machine-readable verdict reason (city from the instance config)."""
+    from src.instanceConfig import section
+
+    city = section("rules").get("address_regex_city") or "Karlsruhe"
+    return f"regex: Adressblock (Hausnummer + PLZ {city})"
 
 _HOUSE_NUMBER = r"\d+\s*[a-zA-Z]?(?:\s*[-/]\s*\d+\s*[a-zA-Z]?)?"
 _SEPARATOR = r"[\s,;·]{0,8}"
-_PLZ_CITY = r"\d{5}\s+Karlsruhe"
+
+
+def _plz_city() -> str:
+    """``<PLZ> <city>`` pattern from the instance config
+    (rules.address_regex_city — change: instance-agnostic-config)."""
+    from src.instanceConfig import section
+
+    city = section("rules").get("address_regex_city") or "Karlsruhe"
+    return rf"\d{{5}}\s+{re.escape(city)}"
 
 
 def _address_regex(name: str):
     return re.compile(
-        rf"{re.escape(name)}\s*{_HOUSE_NUMBER}{_SEPARATOR}{_PLZ_CITY}",
+        rf"{re.escape(name)}\s*{_HOUSE_NUMBER}{_SEPARATOR}{_plz_city()}",
         re.IGNORECASE,
     )
+
+
+_EXAMPLE_PLZ = {"Karlsruhe": "76133"}
+
+
+def _example_plz(city: str) -> str:
+    """An example postal code for the prompt's address-line example."""
+    return _EXAMPLE_PLZ.get(city, "12345")
 
 
 def _name_occurrences(content: str, name: str) -> List[int]:
@@ -103,7 +124,7 @@ def regex_all_addresses(content: str, name: str) -> bool:
     addr = _address_regex(name)
     return all(addr.match(content, pos) is not None for pos in occurrences)
 
-PROMPT_TEMPLATE = """Du prüfst Georeferenzen in Dokumenten des Ratsinformationssystems der Stadt Karlsruhe.
+PROMPT_TEMPLATE = """Du prüfst Georeferenzen in Dokumenten des Ratsinformationssystems der Stadt {city}.
 
 Gegeben: der Inhalt eines Dokuments und eine Liste von Straßennamen bzw. Stadtteilen, die automatisiert im Text gefunden wurden.
 
@@ -120,7 +141,7 @@ Als BEILAGE/METADATEN gelten und werden als "boilerplate" eingestuft:
 WICHTIG: Auch wenn eine Straße politisch relevant erscheint (z. B. die
 "Hebelstraße", in der das Haus der Fraktionen liegt und viele Fraktionen
 ihre Geschäftsstelle haben): Eine Adresszeile eines Antragstellers
-("Fraktion X, Hebelstraße 21, 76133 Karlsruhe") ist BOILERPLATE, egal
+("Fraktion X, Hebelstraße 21, {plz} {city}") ist BOILERPLATE, egal
 welche Partei oder Behörde dort sitzt. Entscheidend ist allein, ob der
 HAUPTTEXT des Dokuments diese Straße inhaltlich behandelt. Nur wenn der
 Haupttext selbst von der Straße handelt (z. B. Verkauf des "ehemaligen
@@ -191,7 +212,14 @@ class GeoGate:
         for m in mentions:
             ctx = m.get("context") or ""
             mention_lines.append(f"- {m['entity']}" + (f" (Fundkontext: {ctx})" if ctx else ""))
+        # instance config: the gate prompt names the configured city and a
+        # matching example postal code (change: instance-agnostic-config)
+        from src.instanceConfig import section
+
+        city = section("rules").get("address_regex_city") or "Karlsruhe"
         return PROMPT_TEMPLATE.format(
+            city=city,
+            plz=_example_plz(city),
             doc_type=doc_type or "unbekannt",
             doc_name=doc_name or "unbekannt",
             content=content[: self.max_content_chars],
@@ -269,7 +297,7 @@ class GeoGate:
             if regex_all_addresses(content, m["entity"]):
                 verdicts[m["entity"]] = {
                     "verdict": "boilerplate",
-                    "reason": REGEX_BOILERPLATE_REASON,
+                    "reason": regex_boilerplate_reason(),
                 }
             else:
                 survivors.append(m)

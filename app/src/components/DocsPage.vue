@@ -1,6 +1,8 @@
 <script setup>
 // change: site-menu — Dokumentationsseite: was riski ist, welche
 // RAG-Operationen implementiert sind und wie Nutzer:innen damit arbeiten.
+import { instance } from '../instanceStore.js';
+
 const sections = [
   {
     id: 'was-ist-riski',
@@ -89,11 +91,12 @@ const planned = {
 
 const related = {
   title: 'Verwandte Projekte & Quellen',
-  intro: 'riski steht nicht im Vakuum — mehrere Projekte erschließen das Karlsruher Ratsinformationssystem und RAG-Forschung begleitet unsere Entwicklung:',
+  intro: 'riski steht nicht im Vakuum — mehrere Projekte erschließen das Ratsinformationssystem und RAG-Forschung begleitet unsere Entwicklung:',
   items: [
+    // first entry from the instance config (data sources); KA default below
     {
-      name: 'Sitzungskalender der Stadt Karlsruhe',
-      url: 'https://sitzungskalender.karlsruhe.de/db/ratsinformation/start',
+      name: instance.dataSources[0]?.name || 'Sitzungskalender der Stadt Karlsruhe',
+      url: instance.dataSources[0]?.url || 'https://sitzungskalender.karlsruhe.de/db/ratsinformation/start',
       text: 'die offizielle Quelle (Kalender, Gremien, Mandate, Recherche) — riski ersetzt ihn nicht, sondern baut auf denselben OParl-Daten auf und ergänzt Aufbereitung und Beantwortung.',
     },
     {

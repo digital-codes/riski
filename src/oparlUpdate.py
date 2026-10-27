@@ -18,62 +18,103 @@ from urllib.parse import urlparse, urlunparse, quote
 from datetime import datetime, timedelta, timezone
 
 # ----------------------------------------------------------------------
-# CONFIGURATION
+# CONFIGURATION (change: instance-agnostic-config)
+#
+# All instance-specific values come from the instance config
+# (src/instanceConfig: env RISKI_*__* > config/instance.yaml > Karlsruhe
+# defaults). The module constants below are the Karlsruhe defaults, kept
+# for backwards-compatible imports (syncIncremental) and CLI help; the
+# crawl reads the live config via _oparl()/_paths() so env/config-file
+# overrides apply without code edits. CLI flags still win over both.
 # ----------------------------------------------------------------------
-SYSTEM_URL = "https://web1.karlsruhe.de/ris/oparl"
-# use same folders as initial fetch to allow overwriting with updated data; unchanged resources will be skipped
-OUTPUT_FOLDER = "/mnt_ai/data/odd26/ris/ko"
-OUTPUT_PDF_FOLDER = "/mnt_ai/data/odd26/ris/ko_pdf"
-LOG_FILENAME = "ko_update_crawl.log"
+from src.instanceConfig import section as _instance_section
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILENAME, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
+DEFAULT_SYSTEM_URL = "https://web1.karlsruhe.de/ris/oparl"
+DEFAULT_OUTPUT_FOLDER = "/mnt_ai/data/odd26/ris/ko"
+DEFAULT_OUTPUT_PDF_FOLDER = "/mnt_ai/data/odd26/ris/ko_pdf"
+DEFAULT_LOG_FILENAME = "ko_update_crawl.log"
+
+# backwards-compatible aliases (Karlsruhe defaults; live values via config)
+SYSTEM_URL = DEFAULT_SYSTEM_URL
+OUTPUT_FOLDER = DEFAULT_OUTPUT_FOLDER
+OUTPUT_PDF_FOLDER = DEFAULT_OUTPUT_PDF_FOLDER
+LOG_FILENAME = DEFAULT_LOG_FILENAME
+
+
+def _oparl() -> dict:
+    """The instance config's ``oparl`` section (system URL, bodies, page
+    size, delay, URL rewrites)."""
+    return _instance_section("oparl")
+
+
+def _paths() -> dict:
+    """The instance config's ``paths`` section (data directories, log
+    name)."""
+    return _instance_section("paths")
+
+
+def _configure_logging():
+    """(Re)configure root logging with the configured log file name —
+    idempotent, called at crawl start (not at import, so a second instance
+    gets its own log file even when the module was imported earlier)."""
+    filename = _paths()["log_filename"]
+    root = logging.getLogger()
+    for h in root.handlers:
+        if isinstance(h, logging.FileHandler) and getattr(h, "baseFilename", "") != os.path.abspath(filename):
+            root.removeHandler(h)
+            h.close()
+    if not any(isinstance(h, logging.FileHandler) for h in root.handlers):
+        root.addHandler(logging.FileHandler(filename, encoding="utf-8"))
+    root.setLevel(logging.INFO)
+    if not any(isinstance(h, logging.StreamHandler) and not isinstance(h, logging.FileHandler) for h in root.handlers):
+        root.addHandler(logging.StreamHandler())
+
 
 # ----------------------------------------------------------------------
-# URL FIXES (unchanged)
+# URL REWRITES (change: instance-agnostic-config)
 # ----------------------------------------------------------------------
-def fix_karlsruhe_url(url: str) -> str:
-    """
-    If the URL is on web1.karlsruhe.de but missing '/ris/' in the path,
-    insert '/ris' at the start of the path.
-    """
-    if "web1.karlsruhe.de" in url.lower():
-        parsed = urlparse(url)
-        if "/ris/" not in parsed.path.lower():
-            new_path = "/ris" + parsed.path
-            fixed_url = urlunparse((
-                parsed.scheme,
-                parsed.netloc,
-                new_path,
-                parsed.params,
-                parsed.query,
-                parsed.fragment
-            ))
+def rewrite_url(url: str, rules=None) -> str:
+    """Apply the instance config's ordered regex rewrites to *url*.
+
+    Each rule is ``{pattern, replacement}``. The Karlsruhe default restores
+    the ``/ris`` prefix on web1.karlsruhe.de URLs that lack it (same effect
+    as the former ``fix_karlsruhe_url``); an empty rule list means no
+    rewriting (other backends). Pass *rules* to override the config
+    (used by tests)."""
+    if rules is None:
+        rules = _oparl().get("url_rewrites") or []
+    for rule in rules:
+        try:
+            new_url = re.sub(rule["pattern"], rule["replacement"], url)
+        except (KeyError, TypeError, re.error):
+            logging.warning("Skipping invalid URL rewrite rule: %r", rule)
+            continue
+        if new_url != url:
             logging.warning(
-                "Fixed Karlsruhe URL:\n  Original: %s\n  Fixed:    %s",
-                url, fixed_url
+                "Rewrote URL:\n  Original: %s\n  Fixed:    %s", url, new_url
             )
-            return fixed_url
+            url = new_url
     return url
 
+
+# former name, kept for backwards compatibility (Karlsruhe-specific fix is
+# now the default rewrite rule)
+fix_karlsruhe_url = rewrite_url
+
+
 def fix_urls_in_data(data):
-    """Recursively fix all Karlsruhe URLs in the supplied data structure."""
+    """Recursively apply the configured URL rewrites to the supplied data
+    structure."""
     if isinstance(data, dict):
         for k, v in data.items():
             if isinstance(v, str) and v.startswith("http"):
-                data[k] = fix_karlsruhe_url(v)
+                data[k] = rewrite_url(v)
             elif isinstance(v, (dict, list)):
                 fix_urls_in_data(v)
     elif isinstance(data, list):
         for i, item in enumerate(data):
             if isinstance(item, str) and item.startswith("http"):
-                data[i] = fix_karlsruhe_url(item)
+                data[i] = rewrite_url(item)
             elif isinstance(item, (dict, list)):
                 fix_urls_in_data(item)
 
@@ -226,10 +267,16 @@ def should_save(data: dict, url: str) -> bool:
 # Politeness delay between consecutive API requests and 429 handling:
 # the earlier full-graph crawls produced thousands of HTTP 429 errors,
 # and every rate-limited resource was silently skipped ("No data").
-REQUEST_DELAY = 0.25  # seconds between requests
+# Delay and page size come from the instance config (oparl section);
+# Karlsruhe defaults: 0.25 s / 1000 items per page.
 MAX_RETRIES = 5       # 429 retries per request
 
 _last_request_time = [0.0]
+
+
+def _request_delay() -> float:
+    """Politeness delay from the instance config (oparl.request_delay)."""
+    return float(_oparl().get("request_delay", 0.25))
 
 
 def _http_get(url: str, timeout: int = 15):
@@ -240,8 +287,9 @@ def _http_get(url: str, timeout: int = 15):
     other HTTP/network errors are left to the caller.
     """
     since = time.monotonic() - _last_request_time[0]
-    if 0.0 <= since < REQUEST_DELAY:
-        time.sleep(REQUEST_DELAY - since)
+    delay = _request_delay()
+    if 0.0 <= since < delay:
+        time.sleep(delay - since)
     _last_request_time[0] = time.monotonic()
 
     resp = requests.get(url, timeout=timeout)
@@ -339,9 +387,63 @@ def process_resource(data, url: str, recorder=None) -> list:
     return extract_links(data)
 
 # ----------------------------------------------------------------------
-# CRAWL (updated for incremental start)
+# CRAWL (updated for incremental start; bodies enumerated from the system,
+# change: instance-agnostic-config)
 # ----------------------------------------------------------------------
-# Collections crawled under bodies/0001. Every collection is requested
+def resolve_body_ids(root_url: str) -> list[str]:
+    """The body IDs to crawl, enumerated from the OParl system's bodies
+    collection (never constructed from a hardcoded ID — e.g. Dresden's
+    IDs are zero-padded and a non-padded request fails with HTTP 500).
+
+    The bodies collection URL is resolved spec-conformantly: from the
+    system object's ``bodies`` link (the root may be the base URL as for
+    Karlsruhe or the system URL itself as for Dresden). Falls back to
+    ``{root}/bodies`` when the system object cannot be fetched.
+
+    The instance config's ``oparl.bodies`` list optionally filters the
+    discovered bodies (empty list = all). Raises RuntimeError when
+    enumeration fails or yields no bodies: silently crawling a wrong body
+    would poison the whole instance.
+    """
+    root = root_url.rstrip("/")
+    bodies_url = None
+    system_url = root if root.endswith("/system") else root + "/system"
+    system = fetch_json(_with_limit(system_url))
+    if isinstance(system, dict):
+        # spec-conformant systems advertise "bodies"; some backends
+        # (Dresden/SOMACOS) use the singular "body" for the collection
+        bodies_url = system.get("bodies") or system.get("body")
+    if not bodies_url:
+        bodies_url = f"{root}/bodies"
+
+    url = _with_limit(bodies_url)
+    ids: list[str] = []
+    while url:
+        data = fetch_json(url)
+        if not isinstance(data, dict):
+            raise RuntimeError(f"bodies collection {url} returned no JSON object")
+        for body in data.get("data", []) or []:
+            bid = str(body.get("id") or "").rstrip("/").rsplit("/", 1)[-1]
+            if bid:
+                ids.append(bid)
+        url = data.get("next")
+        if url:
+            url = _with_limit(url)
+    if not ids:
+        raise RuntimeError(
+            f"no OParl bodies discovered under {bodies_url} — aborting "
+            "(check the configured system_url; refusing to guess a body ID)")
+    configured = _oparl().get("bodies") or []
+    if configured:
+        filtered = [b for b in ids if b in {str(x) for x in configured}]
+        if not filtered:
+            raise RuntimeError(
+                f"configured bodies {configured} not among discovered bodies {ids}")
+        return filtered
+    return ids
+
+
+# Collections crawled under each body. Every collection is requested
 # with a timestamp filter (modified_since first, created_since fallback);
 # endpoints that provably ignore the filter fall back to a full fetch.
 # OParl 1.1 update mechanism: the filtered collections are the ONLY
@@ -372,7 +474,10 @@ FILTER_PARAMS = ["modified_since", "created_since"]
 
 # Karlsruhe accepts large page sizes: 1000 items/page instead of the
 # default 10 (verified live; the syndication project uses the same).
-PAGE_LIMIT = 1000
+# The live value comes from the instance config (oparl.page_limit).
+def _page_limit() -> int:
+    """Page size from the instance config (oparl.page_limit)."""
+    return int(_oparl().get("page_limit", 1000))
 
 MODE_FULL = "full"
 
@@ -385,10 +490,10 @@ def _normalise_ts(ts: datetime) -> datetime:
 
 
 def _with_limit(url: str) -> str:
-    """Ensure *url* requests the large page size (see PAGE_LIMIT)."""
+    """Ensure *url* requests the configured page size (see _page_limit)."""
     if "limit=" in url:
         return url
-    return url + ("&" if "?" in url else "?") + f"limit={PAGE_LIMIT}"
+    return url + ("&" if "?" in url else "?") + f"limit={_page_limit()}"
 
 
 def _param_of(url: str) -> str | None:
@@ -461,11 +566,18 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
     after the import phase.
     """
     visited = set()
+    _configure_logging()
     baseline_dt = iso_to_dt(start_from)
-    capabilities: dict[str, str] = {}  # collection type -> decided mode
+    capabilities: dict[tuple[str, str], str] = {}  # (body, collection) -> decided mode
 
-    def collection_url(collection: str, param: str | None = None) -> str:
-        url = f"{root_url}/bodies/0001/{collection}"
+    body_ids = resolve_body_ids(root_url)
+    logging.info(
+        "Crawling %d OParl body(ies): %s", len(body_ids), ", ".join(body_ids)
+    )
+
+    def collection_url(collection: str, param: str | None = None,
+                       body_id: str | None = None) -> str:
+        url = f"{root_url}/bodies/{body_id or body_ids[0]}/{collection}"
         if param:
             url += f"?{param}=" + quote(start_from, safe='')
         return _with_limit(url)
@@ -482,9 +594,12 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
                 return collection
         return None
 
-    queue = deque([f"{root_url}/bodies/0001?created_since=" + quote(start_from, safe='')])
-    for collection in COLLECTIONS:
-        queue.append(collection_url(collection, FILTER_PARAMS[0]))
+    queue = deque()
+    for bid in body_ids:
+        queue.append(f"{root_url}/bodies/{bid}?created_since=" + quote(start_from, safe=''))
+    for bid in body_ids:
+        for collection in COLLECTIONS:
+            queue.append(collection_url(collection, FILTER_PARAMS[0], body_id=bid))
 
     # Keep the latest timestamp seen during this run – start with the provided
     # baseline so that we only ever move forward.
@@ -531,8 +646,11 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
         # parameter must not contain items older than the baseline.
         collection = collection_of(current_url)
         attempted = _param_of(current_url)
+        body_match = re.search(r"/bodies/([^/?]+)/", current_url)
+        page_body = body_match.group(1) if body_match else (body_ids[0] if body_ids else None)
+        cap_key = (page_body, collection) if page_body else collection
         if collection is not None and attempted is not None \
-                and capabilities.get(collection) != MODE_FULL and data:
+                and capabilities.get(cap_key) != MODE_FULL and data:
             if not _page_filter_ok(data, baseline_dt, attempted):
                 idx = FILTER_PARAMS.index(attempted)
                 next_param = FILTER_PARAMS[idx + 1] if idx + 1 < len(FILTER_PARAMS) else None
@@ -542,14 +660,15 @@ def crawl_oparl(root_url: str, start_from: str, recorder=None,
                         "than the baseline); falling back to %s",
                         collection, attempted, next_param,
                     )
-                    capabilities[collection] = next_param
-                    queue.appendleft(collection_url(collection, next_param))
+                    capabilities[cap_key] = next_param
+                    queue.appendleft(collection_url(collection, next_param,
+                                                    body_id=page_body))
                     continue
                 logging.warning(
                     "Collection %s ignores all timestamp filters; fetching in full",
                     collection,
                 )
-                capabilities[collection] = MODE_FULL
+                capabilities[cap_key] = MODE_FULL
                 if recorder is not None:
                     recorder.record_full_fetch(collection)
                 # fall through: this page is part of the full listing
@@ -616,16 +735,18 @@ def main():
     import argparse
     from src.oparlRunLog import RunRecorder, resolve_baseline
 
-    global SYSTEM_URL, OUTPUT_FOLDER, OUTPUT_PDF_FOLDER
-    parser = argparse.ArgumentParser(description="Incremental OParl crawler for Karlsruhe RIS.")
-    parser.add_argument("--system-url", default=SYSTEM_URL, help="Base URL of the OParl system (default: %(default)s)")
-    parser.add_argument("--output-folder", default=OUTPUT_FOLDER, help="Folder to save JSON files (default: %(default)s)")
-    parser.add_argument("--output-pdf-folder", default=OUTPUT_PDF_FOLDER, help="Folder to save PDF files (default: %(default)s)")
+    global OUTPUT_FOLDER, OUTPUT_PDF_FOLDER
+    parser = argparse.ArgumentParser(description="Incremental OParl crawler (instance-configurable).")
+    parser.add_argument("--system-url", default=None, help="Base URL of the OParl system (default: instance config, Karlsruhe: %(default)s)")
+    parser.add_argument("--output-folder", default=None, help="Folder to save JSON files (default: instance config)")
+    parser.add_argument("--output-pdf-folder", default=None, help="Folder to save PDF files (default: instance config)")
     parser.add_argument("--last-date", default=None, help="ISO timestamp overriding the tracked baseline (default: latest tracked run)")
     args = parser.parse_args()
-    SYSTEM_URL = args.system_url
-    OUTPUT_FOLDER = args.output_folder
-    OUTPUT_PDF_FOLDER = args.output_pdf_folder
+    # resolution order: CLI flag > instance config (env > file > default)
+    SYSTEM_URL = args.system_url or _oparl()["system_url"]
+    OUTPUT_FOLDER = args.output_folder or _paths()["json_dir"]
+    OUTPUT_PDF_FOLDER = args.output_pdf_folder or _paths()["pdf_dir"]
+    _configure_logging()
 
     logging.info("Starting OParl incremental crawl at %s", SYSTEM_URL)
 

@@ -27,6 +27,9 @@ from src.db import get_engine
 # Name-regex rules -> classification value. First match wins; evaluated in
 # listed order (most specific first). Values follow the style of the OParl
 # provided classifications ("Beschließender Ausschuss", "Beirat und Stiftung").
+# Karlsruhe rules — the live rules come from the instance config
+# (rules.org_classification + rules.org_classification_fallback, change:
+# instance-agnostic-config); these constants are the defaults.
 CLASSIFICATION_RULES = [
     (r"^ortschaftsrat\b", "Ortschaftsrat"),
     (r"ausschuss", "Ausschuss"),
@@ -45,16 +48,32 @@ CLASSIFICATION_RULES = [
 FALLBACK_CLASSIFICATION = "Sonstiges"
 
 
+def _configured_rules():
+    """(pattern, label) rules + fallback from the instance config; the
+    module constants above are the Karlsruhe defaults."""
+    from src.instanceConfig import section
+
+    rules_cfg = section("rules")
+    entries = rules_cfg.get("org_classification")
+    if not entries:
+        return CLASSIFICATION_RULES, FALLBACK_CLASSIFICATION
+    rules = [(e["pattern"], e["label"]) for e in entries
+             if isinstance(e, dict) and e.get("pattern") and e.get("label")]
+    fallback = rules_cfg.get("org_classification_fallback") or FALLBACK_CLASSIFICATION
+    return (rules or CLASSIFICATION_RULES), fallback
+
+
 def derive_classification(name: Optional[str]) -> Optional[str]:
     """Map an organization name to a classification value (first rule match,
     else fallback). Case-insensitive; None input yields None."""
     if not name or not name.strip():
         return None
     value = name.strip()
-    for pattern, classification in CLASSIFICATION_RULES:
+    rules, fallback = _configured_rules()
+    for pattern, classification in rules:
         if re.search(pattern, value, re.IGNORECASE):
             return classification
-    return FALLBACK_CLASSIFICATION
+    return fallback
 
 
 def run(engine=None, dry_run: bool = False, count: Optional[int] = None) -> dict:

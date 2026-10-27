@@ -1,4 +1,6 @@
 <script setup>
+import { instance } from '../instanceStore.js';
+
 const year = new Date().getFullYear();
 
 const links = [
@@ -15,8 +17,7 @@ defineEmits(['navigate']);
   <footer class="site-footer">
     <div class="footer-inner">
       <p class="footer-text">
-        riski — das Karlsruher Ratsinformationssystem erklären. Prototyp;
-        Datenbasis: offene OParl-Daten der Stadt Karlsruhe.
+        {{ instance.footer }}
       </p>
       <div class="footer-links">
         <a

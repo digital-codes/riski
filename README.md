@@ -366,6 +366,59 @@ an unreachable decision model degrades the same way. The decoder test
 harness (`utils/test_intent_decoder_extended.py`) classifies example
 utterances from the same config file.
 
+### Running a second instance
+
+The pipeline is instance-configurable (change `instance-agnostic-config`):
+one config file + environment variables cover the OParl endpoint, data
+directories, geo sources, city-specific matching rules and frontend
+branding — no source edits needed for a second city. Resolution order per
+value: **environment variable** (`RISKI_<SECTION>__<KEY>`, double
+underscore nests, e.g. `RISKI_OPARL__SYSTEM_URL`, `RISKI_GEO__CITY`) →
+**`config/instance.yaml`** (path override: `RISKI_INSTANCE_CONFIG`) →
+**code defaults** (= today's Karlsruhe deployment; with no config file
+everything behaves exactly as before). Database name/credentials resolve
+via `DB_*`/`POSTGRES_URL` (env wins over `private.py`), model endpoints
+via the `EMB_*`/`SUMMARY_*`/`CHAT_*`/`OCR_*` env vars.
+
+```bash
+# one-time: point at another OParl backend (verified public OParl 1.1
+# target: Dresden — https://oparl.dresden.de/system, SOMACOS Session,
+# single body "0001"; body IDs are zero-padded and MUST come from the
+# system's bodies list, never be constructed)
+export RISKI_INSTANCE_CONFIG=config/instances/dresden.yaml
+export DB_NAME=riski_dresden                    # own database ...
+# ... and own download folders via the config's paths.* section
+
+# full bootstrap: schema, crawl+import, OCR, summaries/embeddings, geo
+scripts/bootstrap_instance.sh          # --dry-run to print the plan first
+
+# or serve an already-populated instance database
+DB_NAME=riski_dresden uvicorn src.apiServer:app --port 8001
+```
+
+The second instance needs its **own database and own download folders** —
+never share either with the Karlsruhe instance. The frontend reads
+branding, legal links, map center and the default query from
+`GET /instance` at startup (falls back to the Karlsruhe defaults when the
+API is unreachable). City-specific matching rules in the config:
+`rules.address_regex_city` (the geo-gate address-block heuristic),
+`rules.venue_noise` (venue-boilerplate regexes),
+`rules.haushalt_codes` (Karlsruhe `Haushalt THH <n>` document-type
+codes — off for other backends), `rules.org_classification`
+(organization name-regex rules), `geo.district_columns` (attribute names
+of the districts GeoJSON), and `oparl.url_rewrites` (ordered regex
+rewrites for fetched URLs; Karlsruhe's `/ris`-prefix fix is the default).
+
+**Known limits:** LLM prompts stay German (per design). Creating the
+second database works with the app role (CREATEDB), but the PostgreSQL
+server's `pg_hba.conf` on this deployment only accepts the app role for
+the one configured database name — adding a host rule for a new database
+(or widening it to `host all <role> ...`, so future instances need no
+server edits) is a one-time server-admin step the script checks for and
+reports. Verified without that step: instance config resolution, live
+body enumeration (Karlsruhe + Dresden), a real crawl into the configured
+Dresden folders (no database involved), and full-suite Karlsruhe parity.
+
 ### Deployment-specific configuration (`config/`)
 
 Two config files keep city-specific knowledge out of the code:

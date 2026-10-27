@@ -1,5 +1,6 @@
 <script setup>
 import logo from '../assets/riski-logo.png';
+import { instance } from '../instanceStore.js';
 
 defineEmits(['navigate']);
 </script>
@@ -10,7 +11,7 @@ defineEmits(['navigate']);
       <img :src="logo" alt="riski Logo" class="hero-logo" />
       <h1 class="hero-title">riski</h1>
       <p class="hero-sub">
-        Das Karlsruher Ratsinformationssystem — erklärt.
+        {{ instance.heading }}
       </p>
       <a href="#/work" class="cta" @click="$emit('navigate', '/work')">
         Ratsinformationen erkunden
@@ -20,8 +21,8 @@ defineEmits(['navigate']);
     <section class="section">
       <h2>Was ist riski?</h2>
       <p>
-        riski macht den Zugriff auf den Karlsruher
-        <a href="https://web1.karlsruhe.de/ris/oparl" target="_blank" rel="noopener">Ratsinformationssystems (RIS)</a>
+        riski macht den Zugriff auf das
+        <a :href="instance.oparlLink" target="_blank" rel="noopener">Ratsinformationssystem (RIS)</a>
         durchsuchbar und verständlich: Beschlüsse, Vorlagen, Sitzungen und
         Drucksachen des Gemeinderats werden aus dem offenen OParl-Portal
         geladen, mit KI-generierten deutschen Zusammenfassungen, Schlagwörtern

@@ -61,12 +61,27 @@ def main():
 
     df = gp.read_file(args.input_file)
 
+    # attribute column names from the instance config (geo.district_columns,
+    # change: instance-agnostic-config) — source GeoJSON schemas differ
+    # between cities
+    from src.instanceConfig import section
+
+    cols = section("geo").get("district_columns") or {}
+    name_col = cols.get("name", "NAME")
+    number_col = cols.get("number", "NUMMER")
+    for col in (name_col, number_col):
+        if col not in df.columns:
+            raise SystemExit(
+                f"districts GeoJSON {args.input_file} has no attribute "
+                f"column {col!r} (instance config geo.district_columns); "
+                f"available: {list(df.columns)}")
+
     with engine.connect() as conn:
-        for n in list(df.NAME.values):
-            g = df[df.NAME == n]
+        for n in list(df[name_col].values):
+            g = df[df[name_col] == n]
             stmt = district_table.insert().values(
                 name=n,
-                number=g.NUMMER.iloc[0],
+                number=g[number_col].iloc[0],
                 geo=g.to_json().encode("utf-8"),
                 timestamp=datetime.now(timezone.utc)
             )

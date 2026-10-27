@@ -44,9 +44,9 @@ from src.geoGate import GATED_TABLES, GeoGate
 # and to skip fully-classified docs before batching. Re-exported here so
 # the existing unit tests' import path keeps working.
 from src.geoGate import (  # noqa: F401
-    REGEX_BOILERPLATE_REASON,
     _address_regex,
     regex_all_addresses,
+    regex_boilerplate_reason,
 )
 
 logger = get_logger("riski.geoGateCleanup")
@@ -163,14 +163,17 @@ def run(assoc_tables: Optional[List[str]] = None, batch: int = 25,
             if use_regex and regex_all_addresses(content, r["entity_name"]):
                 regex_stats["regex_boilerplate"] += 1
                 counts["boilerplate"] += 1
+                from src.instanceConfig import section
+
+                _city = section("rules").get("address_regex_city") or "Karlsruhe"
                 removals.append(
                     f"- {r['entity_name']} ← "
                     f"{r.get('doc_name') or r.get('item_sid')} "
-                    f"[regex: Hausnummer + PLZ Karlsruhe | {r['evidence'][:110]}]\n"
+                    f"[regex: Hausnummer + PLZ {_city} | {r['evidence'][:110]}]\n"
                     f"  context:\n    {_context_lines(content, r['entity_name'])}")
                 if not dry_run:
                     verdict = {"verdict": "boilerplate",
-                               "reason": REGEX_BOILERPLATE_REASON}
+                               "reason": regex_boilerplate_reason()}
                     gate.write_verdicts(table, [
                         {"entity_id": r["entity_id"],
                          "entity_name": r["entity_name"],

@@ -62,3 +62,15 @@ export async function facets() {
 export function geoUrl(sessionId) {
 	return `${API_BASE}/geo/${sessionId}`;
 }
+
+// change: instance-agnostic-config — deployment instance settings
+// (branding, map center, legal links); null when unreachable
+export async function getInstance() {
+	try {
+		const res = await fetch(`${API_BASE}/instance`);
+		if (!res.ok) return null;
+		return await res.json();
+	} catch {
+		return null;
+	}
+}

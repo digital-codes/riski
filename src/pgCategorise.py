@@ -79,16 +79,30 @@ _HAUSHALT_RE = re.compile(r"^Haushalt\b", re.IGNORECASE)
 _HAUSHALT_CODE_RE = re.compile(r"^Haushalt\s+(?:THH\s+)?([0-9]{3,4})$", re.IGNORECASE)
 
 
+def _haushalt_codes_enabled() -> bool:
+    """Karlsruhe ``THH <n>`` product-code folding on/off (instance config,
+    rules.haushalt_codes — change: instance-agnostic-config). When off,
+    document types pass through verbatim."""
+    from src.instanceConfig import section
+
+    return bool(section("rules").get("haushalt_codes", True))
+
+
 def canonicalize_document_type(paper_type: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
     """Map a ``Paper.paperType`` value to a canonical document-type tag.
 
     Returns ``(tag, haushalt_code)``. ``Haushalt THH <n>`` variants fold
     into the single ``Haushalt`` category with the THH code preserved as an
-    association attribute. Unmapped/empty input yields ``(None, None)``.
+    association attribute — enabled by the instance config
+    (``rules.haushalt_codes``, Karlsruhe default on; off = pass-through for
+    backends without this convention). Unmapped/empty input yields
+    ``(None, None)``.
     """
     if not paper_type or not paper_type.strip():
         return None, None
     value = paper_type.strip()
+    if not _haushalt_codes_enabled():
+        return value, None
     m = _HAUSHALT_CODE_RE.match(value)
     if m:
         return "Haushalt", m.group(1)

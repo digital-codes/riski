@@ -96,6 +96,26 @@ def health() -> Dict[str, Any]:
     return {"status": "ok"}
 
 
+@app.get("/instance")
+def instance_config() -> Dict[str, Any]:
+    """Deployment-instance settings for the frontend (change:
+    instance-agnostic-config): branding, legal links, data sources, map
+    view center/zoom and the default search query. Served from the
+    instance config (env > config/instance.yaml > Karlsruhe defaults)."""
+    from src.instanceConfig import get_instance_config
+
+    cfg = get_instance_config()
+    geo = cfg.get("geo") or {}
+    return {
+        "frontend": cfg.get("frontend") or {},
+        "geo": {
+            "city": geo.get("city"),
+            "map_center": geo.get("map_center"),
+            "map_zoom": geo.get("map_zoom"),
+        },
+    }
+
+
 @app.post("/search")
 def search(req: SearchRequest) -> Dict[str, Any]:
     """Recall stage only (change: progressive-frontend-rendering): returns

@@ -21,22 +21,48 @@ except ImportError:
 import argparse
 import logging
 
-from src.oparlUpdate import SYSTEM_URL, OUTPUT_FOLDER, crawl_oparl
+from src.oparlUpdate import crawl_oparl  # module attr: monkeypatchable in tests
 
 logger = logging.getLogger(__name__)
 
 
-def sync(system_url: str = SYSTEM_URL,
-         output_folder: str = OUTPUT_FOLDER,
+def _default_system_url() -> str:
+    """Instance-config-resolved OParl system URL (env > config file >
+    Karlsruhe default)."""
+    from src.instanceConfig import section
+
+    return section("oparl")["system_url"]
+
+
+def _default_output_folder() -> str:
+    from src.instanceConfig import section
+
+    return section("paths")["json_dir"]
+
+
+def sync(system_url: str | None = None,
+         output_folder: str | None = None,
          last_date: str | None = None,
          recorder=None) -> int:
     """Crawl incrementally, then import the crawled JSON into PostgreSQL.
 
-    Returns a process exit code: 0 on success, 1 when either phase failed.
-    A *recorder* can be injected for tests; by default a real
-    ``RunRecorder`` (DB-backed run tracking) is used.
+    ``system_url``/``output_folder`` default to the instance config (env
+    override > config file > Karlsruhe defaults). Returns a process exit
+    code: 0 on success, 1 when either phase failed. A *recorder* can be
+    injected for tests; by default a real ``RunRecorder`` (DB-backed run
+    tracking) is used.
     """
     from src.oparlRunLog import RunRecorder, resolve_baseline
+
+    system_url = system_url or _default_system_url()
+    output_folder = output_folder or _default_output_folder()
+    # direct sync() calls bypass the crawler's main(): the PDF folder and
+    # log file must follow the same instance config
+    from src import oparlUpdate
+
+    oparlUpdate.OUTPUT_FOLDER = output_folder
+    oparlUpdate.OUTPUT_PDF_FOLDER = oparlUpdate._paths()["pdf_dir"]
+    oparlUpdate._configure_logging()
 
     if recorder is None:
         recorder = RunRecorder()
@@ -97,10 +123,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="One-command incremental OParl synchronisation (crawl + pgGen import)."
     )
-    parser.add_argument("--system-url", default=SYSTEM_URL,
-                        help="Base URL of the OParl system (default: %(default)s)")
-    parser.add_argument("--output-folder", default=OUTPUT_FOLDER,
-                        help="Folder with crawled JSON files (default: %(default)s)")
+    parser.add_argument("--system-url", default=None,
+                        help="Base URL of the OParl system (default: instance config)")
+    parser.add_argument("--output-folder", default=None,
+                        help="Folder with crawled JSON files (default: instance config)")
     parser.add_argument("--last-date", default=None,
                         help="ISO timestamp overriding the tracked baseline")
     args = parser.parse_args()

@@ -26,11 +26,16 @@ _pr = _load_private()
 
 
 def _get(attr: str, env_key: str, default: str = "") -> str:
+    """Env first, then private.py, then default — a second instance never
+    needs an edited source file (change: instance-agnostic-config)."""
+    value = os.getenv(env_key)
+    if value:
+        return value
     if _pr is not None:
         value = getattr(_pr, attr, None)
         if value:
             return value
-    return os.getenv(env_key, default)
+    return default
 
 
 def _get_first(pairs, default: str = "") -> str:

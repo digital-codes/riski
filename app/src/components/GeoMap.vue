@@ -18,6 +18,7 @@ import 'leaflet/dist/leaflet.css';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { instance } from '../instanceStore.js';
 
 const props = defineProps({
   featureCollection: { type: Object, required: true },
@@ -106,7 +107,7 @@ onMounted(() => {
     iconUrl: markerIcon,
     shadowUrl: markerShadow,
   });
-  map = L.map(mapEl.value).setView([49.0069, 8.4037], 12); // Karlsruhe
+  map = L.map(mapEl.value).setView(instance.mapCenter, instance.mapZoom); // instance config
   L.tileLayer('https://sgx.geodatenzentrum.de/wmts_basemapde/tile/1.0.0/de_basemapde_web_raster_farbe/default/GLOBAL_WEBMERCATOR/{z}/{y}/{x}.png', {
     maxZoom: 19,
     attribution: '&copy; <a href="https://www.bkg.bund.de" target="_blank">GeoBasis-DE/BKG</a> | <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC BY 4.0</a> | © OpenStreetMap contributors',

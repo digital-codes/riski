@@ -95,12 +95,14 @@ import DetailPanel from './DetailPanel.vue';
 import RouteInfo from './RouteInfo.vue';
 import TopicList from './TopicList.vue';
 import { ask as apiAsk, search as apiSearch, summarize as apiSummarize, expand as apiExpand, geoUrl, timeline as apiTimeline, graph as apiGraph } from '../api.js';
+import { instance } from '../instanceStore.js';
 // lazy: keeps echarts (large) out of the main bundle until the graph exists
 const NetworkView = defineAsyncComponent(() => import('./NetworkView.vue'));
 // lazy: keeps leaflet out until a georeferenced result arrives
 const GeoMap = defineAsyncComponent(() => import('./GeoMap.vue'));
 
-const DEFAULT_QUERY = 'wo liegt die Governance für Digitalisierung bei der Stadt Karlsruhe';
+// default query from the instance config (falls back to Karlsruhe default)
+const DEFAULT_QUERY = instance.defaultQuery;
 
 const query = ref(DEFAULT_QUERY);
 const rawData = ref(null);

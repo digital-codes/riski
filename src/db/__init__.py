@@ -8,10 +8,10 @@ from sqlalchemy.engine import Engine, Connection
 from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base
 
 # ----------------------------------------------------------------------
-# Configuration – resolution order:
+# Configuration – resolution order (env wins, change: instance-agnostic-config):
 #   1. POSTGRES_URL / POSTGRES_RO_URL env vars (full URL, wins everything)
-#   2. src/private.py module attributes (DB_*, RO_*)
-#   3. environment variables (DB_*, RO_*)
+#   2. environment variables (DB_*, RO_*)
+#   3. src/private.py module attributes (DB_*, RO_*)
 #   4. safe local defaults
 # ----------------------------------------------------------------------
 
@@ -32,18 +32,22 @@ def build_url(user: str, pwd: str, host: str, name: str) -> str:
 def _resolve_config() -> dict:
     """Resolve connection settings.
 
-    Order: private.py attribute -> environment variable -> safe default.
+    Order: environment variable -> private.py attribute -> safe default.
     The full-URL env vars ``POSTGRES_URL`` / ``POSTGRES_RO_URL`` override
-    everything.
+    everything. Env-first so a second instance never needs an edited
+    source file (change: instance-agnostic-config).
     """
     pr = _load_private()
 
     def _get(attr: str, env_key: str, default: str | None = None) -> str | None:
+        value = os.getenv(env_key)
+        if value:
+            return value
         if pr is not None:
             value = getattr(pr, attr, None)
             if value:
                 return value
-        return os.getenv(env_key, default)
+        return default
 
     user = _get("DB_USER", "DB_USER", "riski")
     pwd = _get("DB_PWD", "DB_PWD", "riski")

@@ -27,6 +27,157 @@ class TestFixKarlsruheUrl:
         url = "https://schema.oparl.org/1.1/Meeting"
         assert ou.fix_karlsruhe_url(url) == url
 
+
+class TestUrlRewrites:
+    """Instance-configured URL rewrites (change: instance-agnostic-config):
+    the Karlsruhe default reproduces fix_karlsruhe_url; an empty rule list
+    disables rewriting."""
+
+    def test_empty_rules_disable_rewriting(self):
+        url = "https://web1.karlsruhe.de/oparl/bodies"
+        assert ou.rewrite_url(url, rules=[]) == url
+
+    def test_karlsruhe_default_from_config(self, monkeypatch):
+        import src.instanceConfig as ic
+
+        monkeypatch.setenv("RISKI_INSTANCE_CONFIG", "/nonexistent")
+        ic.clear_cache()
+        try:
+            url = "https://web1.karlsruhe.de/oparl/bodies"
+            assert ou.rewrite_url(url) == "https://web1.karlsruhe.de/ris/oparl/bodies"
+            assert ou.rewrite_url(
+                "https://web1.karlsruhe.de/ris/oparl/bodies") == \
+                "https://web1.karlsruhe.de/ris/oparl/bodies"
+            assert ou.rewrite_url("https://example.org/x") == "https://example.org/x"
+        finally:
+            ic.clear_cache()
+
+    def test_custom_rule_set(self):
+        rules = [{"pattern": r"http://old\.example", "replacement": "https://new.example"}]
+        assert ou.rewrite_url(
+            "http://old.example/a", rules=rules) == "https://new.example/a"
+
+    def test_invalid_rules_skipped(self):
+        url = "https://x.example/a"
+        assert ou.rewrite_url(
+            url, rules=[{"nope": 1}, {"pattern": "([", "replacement": "x"}]) == url
+
+
+class TestBodyEnumeration:
+    """Bodies come from the system's bodies collection, never a hardcoded
+    ID (change: instance-agnostic-config)."""
+
+    def _bodies_page(self, ids, next_url=None):
+        data = {"data": [{"id": f"https://x/oparl/bodies/{i}"} for i in ids]}
+        if next_url:
+            data["next"] = next_url
+        return _json_response(data)
+
+    def test_enumerates_from_bodies_collection(self, monkeypatch):
+        requested = []
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            if "page=2" in url:
+                return self._bodies_page(["0002"])
+            return self._bodies_page(["0001"], next_url="https://x/oparl/bodies?page=2")
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        assert ou.resolve_body_ids("https://x/oparl") == ["0001", "0002"]
+        assert any(u.startswith("https://x/oparl/bodies?") for u in requested)
+
+    def test_bodies_link_from_system_object(self, monkeypatch):
+        """Spec-conformant root (the system URL itself, e.g. Dresden):
+        the bodies collection URL comes from the system object's
+        ``bodies`` link, not from {root}/bodies."""
+        requested = []
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            if url.startswith("https://oparl.example/system"):
+                return _json_response({"id": url, "bodies": "http://oparl.example/bodies"})
+            if "bodies?" in url or url.endswith("/bodies"):
+                return self._bodies_page(["0042"])
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        assert ou.resolve_body_ids("https://oparl.example/system") == ["0042"]
+        assert any(u.startswith("http://oparl.example/bodies?") for u in requested)
+        assert not any("oparl.example/system/bodies" in u for u in requested)
+
+    def test_singular_body_link_accepted(self, monkeypatch):
+        """Non-conformant backends (Dresden/SOMACOS) advertise the bodies
+        collection under the singular ``body`` key."""
+        monkeypatch.setattr(
+            ou.requests, "get",
+            lambda url, timeout=None: _json_response(
+                {"id": url, "body": "http://oparl.example/bodies"})
+            if url.startswith("https://oparl.example/system")
+            else self._bodies_page(["0001"]))
+        assert ou.resolve_body_ids("https://oparl.example/system") == ["0001"]
+
+    def test_system_fetch_failure_falls_back(self, monkeypatch):
+        def fake_get(url, timeout=None):
+            if url.startswith("https://x/oparl/system"):
+                raise requests.ConnectionError("no system object")
+            return self._bodies_page(["0001"])
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        assert ou.resolve_body_ids("https://x/oparl") == ["0001"]
+
+    def test_configured_subset_filters(self, monkeypatch):
+        import src.instanceConfig as ic
+
+        monkeypatch.setenv("RISKI_OPARL__BODIES", '["0001"]')
+        ic.clear_cache()
+        try:
+            monkeypatch.setattr(
+                ou.requests, "get",
+                lambda url, timeout=None: self._bodies_page(["0001", "0002"]))
+            assert ou.resolve_body_ids("https://x/oparl") == ["0001"]
+        finally:
+            ic.clear_cache()
+
+    def test_aborts_when_no_bodies(self, monkeypatch):
+        monkeypatch.setattr(
+            ou.requests, "get",
+            lambda url, timeout=None: _json_response({"data": [], "links": {}}))
+        with pytest.raises(RuntimeError, match="no OParl bodies"):
+            ou.resolve_body_ids("https://x/oparl")
+
+    def test_aborts_when_configured_subset_missing(self, monkeypatch):
+        import src.instanceConfig as ic
+
+        monkeypatch.setenv("RISKI_OPARL__BODIES", '["0099"]')
+        ic.clear_cache()
+        try:
+            monkeypatch.setattr(
+                ou.requests, "get",
+                lambda url, timeout=None: self._bodies_page(["0001"]))
+            with pytest.raises(RuntimeError, match="not among"):
+                ou.resolve_body_ids("https://x/oparl")
+        finally:
+            ic.clear_cache()
+
+    def test_crawl_targets_enumerated_bodies(self, crawl_env, monkeypatch):
+        """The crawl queue builds per-body collection URLs from the
+        enumerated IDs (Dresden-style zero-padded IDs must not be
+        constructed)."""
+        requested, _ = crawl_env
+        monkeypatch.setattr(ou, "resolve_body_ids",
+                            lambda root_url: ["0042", "0043"])
+
+        def fake_get(url, timeout=None):
+            requested.append(url)
+            return _json_response({"data": [], "links": {}})
+
+        monkeypatch.setattr(ou.requests, "get", fake_get)
+        ou.crawl_oparl("https://x/oparl", "2026-10-01T00:00:00Z",
+                       recorder=_FakeRecorder())
+        assert any("/bodies/0042/papers?" in u for u in requested)
+        assert any("/bodies/0043/papers?" in u for u in requested)
+        assert not any("/bodies/0001/" in u for u in requested)
+
     def test_fixes_urls_recursively_in_data(self):
         data = {
             "links": ["https://web1.karlsruhe.de/oparl/a", "https://other.example/x"],
@@ -134,12 +285,20 @@ class _FakeRecorder:
 
 @pytest.fixture()
 def crawl_env(tmp_path, monkeypatch):
-    """Shared crawl environment: output folders in tmp_path, request log."""
+    """Shared crawl environment: output folders in tmp_path, no politeness
+    sleep, and a stubbed body enumeration (the real enumeration has its
+    own tests below). The stubbed system has one body "0001" — the
+    Karlsruhe-style ID, so existing URL assertions stay valid."""
+    import src.instanceConfig as ic
+
     monkeypatch.setattr(ou, "OUTPUT_FOLDER", str(tmp_path / "json"))
     monkeypatch.setattr(ou, "OUTPUT_PDF_FOLDER", str(tmp_path / "pdf"))
-    monkeypatch.setattr(ou, "REQUEST_DELAY", 0.0)  # no politeness sleep in tests
+    monkeypatch.setenv("RISKI_OPARL__REQUEST_DELAY", "0")
+    ic.clear_cache()
+    monkeypatch.setattr(ou, "resolve_body_ids", lambda root_url: ["0001"])
     requested = []
-    return requested, tmp_path
+    yield requested, tmp_path
+    ic.clear_cache()
 
 
 class TestCrawlIncremental:

@@ -1,0 +1,87 @@
+# Instance configuration (change: instance-agnostic-config).
+#
+# Deployment-instance settings for running the pipeline against a specific
+# OParl backend: system URL, data directories, geo sources, city-specific
+# matching rules, and frontend branding. Every value here can be
+# overridden by environment variables: RISKI_<SECTION>__<KEY> (double
+# underscore nests, e.g. RISKI_OPARL__SYSTEM_URL, RISKI_GEO__CITY).
+# Resolution order per value: environment → this file → code defaults
+# (src/instanceConfig.py DEFAULTS — identical to this file's values).
+# Path override for this file itself: RISKI_INSTANCE_CONFIG.
+#
+# When this file is absent (or every value commented out), the pipeline
+# behaves exactly like the current Karlsruhe deployment.
+#
+# NOTE: one config per process/instance. A second instance (e.g. Dresden,
+# https://oparl.dresden.de/system — public OParl 1.1, vendor SOMACOS
+# Session) MUST get its own database name (DB_NAME/POSTGRES_URL in
+# private.py/env) and its own download folders — never share either with
+# the Karlsruhe instance.
+
+oparl:
+  system_url: "https://web1.karlsruhe.de/ris/oparl"
+  bodies: []              # empty = crawl every body the system reports
+  page_limit: 1000
+  request_delay: 0.25
+  url_rewrites:           # ordered regex rewrites for fetched URLs
+    - pattern: "(https?://web1\\.karlsruhe\\.de)(?!/ris(/|$))"
+      replacement: "\\1/ris"
+
+paths:
+  json_dir: "/mnt_ai/data/odd26/ris/ko"
+  pdf_dir: "/mnt_ai/data/odd26/ris/ko_pdf"
+  extracted_dir: "/mnt_ai/data/odd26/ris/ko_extracted"
+  sums_dir: "/mnt_ai/data/odd26/ris/ko_sums"
+  log_filename: "ko_update_crawl.log"
+  intents_file: "config/intents.yaml"
+  lexical_stop_terms_file: "config/lexical_stop_terms.txt"
+  meeting_web_url_file: "config/meeting_web_url.txt"
+
+geo:
+  streets_file: "docs/streetNames.json"
+  districts_file: "references/geo/stadtteile.geojson"
+  district_columns:       # attribute names in the districts GeoJSON
+    name: "NAME"
+    number: "NUMMER"
+  city: "Karlsruhe"
+  map_center: [49.0069, 8.4037]
+  map_zoom: 12
+
+rules:
+  address_regex_city: "Karlsruhe"   # address-block heuristic: "<PLZ> <city>"
+  venue_noise:                      # venue-boilerplate regexes (geo matching)
+    - "(Bürgerssa?al\\s*[,\\s]+\\s*)?Rath(aus|auses)(\\s+(?:am|auf dem))?\\s+Marktplatz\\b"
+  haushalt_codes: true              # Karlsruhe "Haushalt THH <n>" codes
+  org_classification:               # ordered (pattern → label) rules
+    - {pattern: "^ortschaftsrat\\b", label: "Ortschaftsrat"}
+    - {pattern: "ausschuss", label: "Ausschuss"}
+    - {pattern: "beirat", label: "Beirat und Stiftung"}
+    - {pattern: "^gemeinderat\\b", label: "Gemeinderat"}
+    - {pattern: "^ortsverwaltung\\b", label: "Ortsverwaltung"}
+    - {pattern: "^dezernat\\b", label: "Dezernat"}
+    - {pattern: "\\beamt\\b|amt für|amt$", label: "Amt"}
+    - {pattern: "^eigenbetrieb\\b", label: "Eigenbetrieb"}
+    - {pattern: "fraktion", label: "Fraktion"}
+    - {pattern: "gmbh|ggmbh|gmbh \\(| ag\\b|verbund|stadtwerke|volkswohnung|betriebe", label: "Beteiligungsgesellschaft"}
+    - {pattern: "^stabsstelle\\b", label: "Stabsstelle"}
+    - {pattern: "^personalrat\\b", label: "Personalrat"}
+  org_classification_fallback: "Sonstiges"
+
+web:
+  cors_origins:
+    - "http://localhost:5173"
+    - "http://localhost:4173"
+    - "http://localhost:5199"
+  meeting_url_template: "{base}termin-{number}"
+
+frontend:
+  title: "RISKI Karlsruhe"
+  heading: "Das Karlsruher Ratsinformationssystem — erklärt."
+  footer: "riski — das Karlsruher Ratsinformationssystem erklären … offene OParl-Daten der Stadt Karlsruhe"
+  default_query: "wo liegt die Governance für Digitalisierung bei der Stadt Karlsruhe"
+  oparl_link: "https://web1.karlsruhe.de/ris/oparl"
+  imprint_url: "/#/impressum"
+  privacy_url: "/#/datenschutz"
+  data_sources:
+    - name: "Sitzungskalender der Stadt Karlsruhe"
+      url: "https://sitzungskalender.karlsruhe.de/db/ratsinformation/start"

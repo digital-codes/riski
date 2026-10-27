@@ -104,10 +104,23 @@ def _iter_files(engine, limit: int, batch_size: int = 500):
 # every meeting protocol teaser and would link every protocol to the
 # streets its venue sits on — stripped before matching. Requires the
 # Rathaus context, so genuine content mentions of the Marktplatz survive.
-_VENUE_NOISE = re.compile(
-    r"(Bürgerssa?al\s*[,\s]+\s*)?Rath(aus|auses)(\s+(?:am|auf dem))?\s+Marktplatz\b",
-    re.IGNORECASE,
-)
+# The patterns come from the instance config (rules.venue_noise — change:
+# instance-agnostic-config); Karlsruhe's town-hall rule is the default.
+def _venue_noise_patterns():
+    from src.instanceConfig import section
+
+    return section("rules").get("venue_noise") or []
+
+
+def _venue_noise_regexes():
+    return [re.compile(p, re.IGNORECASE) for p in _venue_noise_patterns()]
+
+
+def strip_venue_noise(text: str) -> str:
+    """Remove the configured venue-boilerplate patterns from *text*."""
+    for rx in _venue_noise_regexes():
+        text = rx.sub("", text)
+    return text
 
 
 def match_files(engine, limit: int | None = None, dry_run: bool = False,
@@ -209,7 +222,7 @@ def match_files(engine, limit: int | None = None, dry_run: bool = False,
             scanned += 1
             # venue boilerplate first: "Bürgersaal, Rathaus am Marktplatz"
             # appears in every protocol teaser and must not create links
-            text_ = _VENUE_NOISE.sub("", f"{name or ''}\n{content or ''}")
+            text_ = strip_venue_noise(f"{name or ''}\n{content or ''}")
             if len(text_) < 3:
                 continue
             name_field = name or ""
