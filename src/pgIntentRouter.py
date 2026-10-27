@@ -370,6 +370,109 @@ def resolve_gremium(session, term: Optional[str],
     return out
 
 
+# ----------------------------------------------------------------------
+# Location resolution (change: add-location-intent)
+# ----------------------------------------------------------------------
+DEFAULT_LOCATION_THRESHOLD = 0.5
+DEFAULT_SUFFIX_THRESHOLD = 0.4
+DEFAULT_AMBIGUITY_DELTA = 0.1
+DEFAULT_LOCATION_SUFFIXES = [
+    "strasse", "straße", "platz", "weg", "allee", "gasse", "ring", "ufer",
+    "markt", "damm", "bruecke", "brücke", "tunnel", "kai", "berg", "tal",
+    "steige", "wall", "insel", "feld", "wald", "acker", "hof",
+]
+
+
+def _location_slot_spec(intent: Dict[str, Any]) -> Dict[str, Any]:
+    """The location slot's trigram source spec (tables/column/thresholds)."""
+    slot = (intent.get("slots") or {}).get("location") or {}
+    for src in slot.get("sources") or []:
+        if "trigram" in src:
+            return src["trigram"] or {}
+    return {}
+
+
+def _query_has_suffix(norm_query: str, suffixes: List[str]) -> bool:
+    """True when the normalized query contains a location suffix as a word."""
+    for suf in suffixes or []:
+        if re.search(r"\b\w*" + re.escape(suf) + r"\b", norm_query):
+            return True
+    return False
+
+
+def resolve_location(session, query: str,
+                     intent: Dict[str, Any]) -> Dict[str, Any]:
+    """Resolve place references in the query against the location vocabulary
+    (streets, districts) via trigram word similarity — typo-tolerant, no
+    tokenization: the full normalized query is compared against each name.
+
+    Config lives on the intent's ``location`` slot (``trigram`` source):
+    tables, column, threshold, suffix_threshold, suffixes, ambiguity_delta,
+    top_k. The suffix list only lowers the acceptance threshold — a query is
+    never rejected for lacking one.
+
+    Returns {locations, alternates, note, threshold}; ``locations`` holds
+    every vocabulary row matching the best name (a street and a district may
+    share a name), ``alternates`` the runner-ups within the ambiguity delta.
+    """
+    spec = _location_slot_spec(intent)
+    tables = spec.get("tables") or ["Street", "District"]
+    column = spec.get("column") or "name"
+    suffixes = spec.get("suffixes") or DEFAULT_LOCATION_SUFFIXES
+    threshold = float(spec.get("threshold", DEFAULT_LOCATION_THRESHOLD))
+    suffix_threshold = float(spec.get("suffix_threshold", DEFAULT_SUFFIX_THRESHOLD))
+    delta = float(spec.get("ambiguity_delta", DEFAULT_AMBIGUITY_DELTA))
+    limit = int(spec.get("top_k", 5))
+
+    norm_query = normalize_value(query)
+    out = {"locations": [], "alternates": [], "note": "", "threshold": threshold}
+    if not norm_query:
+        out["note"] = "kein Ort in der Anfrage erkannt"
+        return out
+
+    used = suffix_threshold if _query_has_suffix(norm_query, suffixes) else threshold
+    out["threshold"] = used
+
+    meta = MetaData()
+    rows: List[Dict[str, Any]] = []
+    for tname in tables:
+        tbl = Table(tname, meta, autoload_with=session.bind)
+        col = getattr(tbl.c, column)
+        sim = sa.func.word_similarity(sa.func.lower(col), norm_query).label("sim")
+        stmt = (
+            select(tbl.c.id, col, sim)
+            .where(sim > used)
+            .order_by(sa.desc("sim"), sa.asc(tbl.c.id))
+            .limit(limit)
+        )
+        for rid, name, s in session.execute(stmt):
+            rows.append({
+                "type": tname.lower(), "id": rid, "name": name,
+                "score": round(float(s), 4),
+            })
+
+    if not rows:
+        out["note"] = "kein Ort in der Anfrage erkannt"
+        return out
+
+    rows.sort(key=lambda r: (-r["score"], r["name"]))
+    best = rows[0]
+    best_name = normalize_value(best["name"])
+    out["locations"] = [r for r in rows if normalize_value(r["name"]) == best_name]
+    out["alternates"] = [
+        r for r in rows
+        if normalize_value(r["name"]) != best_name
+        and r["score"] >= best["score"] - delta
+    ]
+    if out["alternates"]:
+        names = ", ".join(a["name"] for a in out["alternates"])
+        out["note"] = (
+            f"mehrere Orte passend zu '{query}' gefunden; "
+            f"'{best['name']}' verwendet (auch gefunden: {names})"
+        )
+    return out
+
+
 def _future_meeting_file_keys(session) -> set:
     """oparlKeys of files that are ONLY linked to meetings in the future."""
     meta = MetaData()
@@ -630,8 +733,12 @@ class IntentRouter:
         return decoded
 
     def resolve(self, intent_name: str, slots: Dict[str, Any],
-                session) -> Dict[str, Any]:
-        """Derive filters/scope for the decoded intent."""
+                session, query: str = "") -> Dict[str, Any]:
+        """Derive filters/scope for the decoded intent.
+
+        ``query`` is needed by slots resolved DB-side against the raw query
+        (the location slot's trigram match) rather than via decoder choice.
+        """
         intent = find_intent(self.cfg, intent_name) or {}
         route = intent.get("route") or {}
         resolved: Dict[str, Any] = {
@@ -640,6 +747,7 @@ class IntentRouter:
             "answer_mode": route.get("answer_mode", "summary"),
             "filters": list(route.get("filters") or []),
             "gremium": None,
+            "location": None,
             "notes": [],
         }
         if "gremium" in (intent.get("slots") or {}):
@@ -655,6 +763,12 @@ class IntentRouter:
                 # unknown gremium: fall through to unscoped search
                 resolved["filters"] = []
                 resolved["notes"].append(grem["note"])
+        if "location" in (intent.get("slots") or {}):
+            loc = resolve_location(session, query, intent)
+            resolved["location"] = loc
+            if not loc["locations"]:
+                # unresolved location: fall through to unscoped search
+                resolved["notes"].append(loc["note"])
         return resolved
 
     def run_search(self, session, query: str, resolved: Dict[str, Any],
@@ -712,10 +826,32 @@ class IntentRouter:
             result["fallback_notes"] = notes
             return result
 
-        result = search_fn(
-            session, query, top_k=top_k, filters=filters or None,
-            signals=signals, summarize=summarize,
-        )
+        # add-location-intent: location answers retrieve through the geo
+        # association tables; an unresolvable location falls through to the
+        # unscoped search path below
+        if (resolved.get("handler") == "location_scoped_search"
+                and (resolved.get("location") or {}).get("locations")):
+            from src.pgLocationSearch import location_search_stage
+
+            result = location_search_stage(
+                session, query, resolved["location"]["locations"],
+                top_k=top_k, summarize=summarize)
+            notes.extend(result.pop("notes", None) or [])
+            if not (result.get("top_files") or []) and not (
+                    result.get("matched_entities") or []):
+                notes.append(
+                    "keine Treffer im Ortsscope; Suche ohne Ortsscope "
+                    "wiederholt"
+                )
+                result = search_fn(
+                    session, query, top_k=top_k, filters=None,
+                    signals=signals, summarize=summarize,
+                )
+        else:
+            result = search_fn(
+                session, query, top_k=top_k, filters=filters or None,
+                signals=signals, summarize=summarize,
+            )
         if filters and not (result.get("top_files") or []):
             notes.append(
                 "keine Treffer mit dem gefilterten Scope; Suche ohne Filter "
@@ -739,6 +875,7 @@ class IntentRouter:
         result["answer_mode"] = resolved["answer_mode"]
         result["applied_filters"] = filters
         result["gremium"] = resolved.get("gremium")
+        result["location"] = resolved.get("location")
         result["fallback_notes"] = notes
         if empty:
             notes.append(
@@ -790,7 +927,8 @@ def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
         except Exception:  # noqa: BLE001 - search path embeds on its own
             pass
 
-    resolved = router.resolve(decoded["intent"], decoded.get("slots") or {}, session)
+    resolved = router.resolve(decoded["intent"], decoded.get("slots") or {},
+                              session, query=query)
     result = router.run_search(session, query, resolved, top_k=top_k,
                                signals=signals, summarize=summarize,
                                search_fn=search_fn)

@@ -13,7 +13,7 @@ The pipeline has four stages, all built on two shared layers in `src/`:
 | **1. Acquire** | `oparlUpdate` | Incremental crawl of the OParl API (JSON + PDFs), with URL fixing and run-state bookkeeping. |
 | **2. Import** | `pgGen` | Schema generator: detects entity types, relationships and scalar columns from the observed OParl JSON, creates main + association tables and imports everything (additive, non-destructive re-runs). |
 | **3. Enrich** | `pgAddSummaries`, `pgAddNameVectors`, `pgBackfillNameVecs`, `pgAddVecs`, `pgAddStreets`/`pgAddDistricts` (+ `pgAddStreetRefs`/`pgAddDistrictRefs`), `pgTagMgr`, `pgCategorise`, `pgAddTags`, `pgSummarize`, `pgTeasers`, `pgCoverage` | Load streets/districts, link agenda items that mention them, manage tags with provenance (scheme/source/confidence), derive canonical document-type categories, update file contents, generate LLM summaries and teasers, compute pgvector embeddings (content + name vectors), report enrichment-layer coverage. |
-| **4. Search & analyse** | `pgVecSearch`, `pgHybridSearch`, `pgTimeline`, `pgFileQuery`, `graphModel`, `pgResultSummarizer`, `apiServer` | Hybrid multi-signal search (trigram lexical + name vectors + content vectors, RRF-fused, faceted filters), query-guided German summaries, graph serialization/expansion over the OParl association tables, and a FastAPI layer serving the interactive web app. |
+| **4. Search & analyse** | `pgVecSearch`, `pgHybridSearch`, `pgTimeline`, `pgFileQuery`, `graphModel`, `pgResultSummarizer`, `pgIntentRouter`, `pgLocationSearch`, `apiServer` | Hybrid multi-signal search (trigram lexical + name vectors + content vectors, RRF-fused, faceted filters), intent-routed question answering (`/ask`: gremium sessions, decision dates, locations), query-guided German summaries, graph serialization/expansion over the OParl association tables, and a FastAPI layer serving the interactive web app. |
 
 ### Shared layers
 
@@ -335,6 +335,37 @@ organization) are applied pre-fusion; results carry a match-type
 provenance (`match`/`signals`: which signals found each entry and at what
 distance) and a facet listing for filter dropdowns.
 
+### Intent routing (`POST /ask`)
+
+Natural-language questions are routed by a fast decision model (SystemOne
+protocol, `src/pgIntentRouter.py`) against the intent definitions in
+`config/intents.yaml` and answered by dedicated handlers:
+
+- `ask_gremium_recent` — "was wurde im letzten Ortschaftsrat beschlossen":
+  resolves the council (slot vocabularies from the DB), scopes to its most
+  recently **held** meeting and answers meeting-centric (agenda topics +
+  session documents).
+- `ask_decision_date` — "wann wurde X beschlossen": scopes to
+  decision-type documents and drops documents only linked to future
+  meetings.
+- `ask_location` — "informationen zum friedrichsplatz", "was passiert am
+  friedrichsplatz", "friedrichsplatz": the query is matched against the
+  street/district vocabulary via typo-tolerant trigram `word_similarity`
+  (the full sentence is compared to each name — no tokenization; a
+  location-suffix list only lowers the acceptance threshold). The matched
+  location's geo association tables then become the retrieval path: all
+  non-boilerplate-gated linked files and agenda items are candidates
+  (deterministic recall, independent of embedding similarity), reranked as
+  usual. Broad locations are truncated newest-first (by attached meeting
+  date) with the total hit count reported in the notes; narrowing is
+  possible via the summary's exclude toggles or a more specific query.
+  Unresolved locations fall back to unscoped topic search.
+
+Unmatched queries answer as plain `search_topic` (hybrid search + summary);
+an unreachable decision model degrades the same way. The decoder test
+harness (`utils/test_intent_decoder_extended.py`) classifies example
+utterances from the same config file.
+
 ### Deployment-specific configuration (`config/`)
 
 Two config files keep city-specific knowledge out of the code:
@@ -532,8 +563,20 @@ with per-file include/exclude toggles (exclusion set is authoritative
 server-side), download URLs on every file, and the model's refusal note
 parsed but no longer displayed.
 
+**Recently implemented** (2026-10-27): intent-routed question answering
+(`POST /ask`) extended with the `ask_location` intent — typo-tolerant
+location resolution via trigram word similarity over the street/district
+vocabulary, retrieval through the geo association tables (deterministic
+recall of all gated-linked documents), newest-first truncation with a hit
+count for broad locations, and ambiguity notes for similar place names
+(change `add-location-intent`).
+
 **Still open:**
 
+- **Location clarification dialog** — broad location answers currently
+  truncate to the newest documents with a hit-count note; an interaction
+  loop (present the count, ask for period/topic, re-search the linked set)
+  would give directed search over the full hit set.
 - **LLM tag backfill for remaining items** — name-regex misses escalate
   to the teaser-based LLM pass; `python src/pgCategorise.py all`
   continues it (idempotent/resumable). File coverage is at ~99.8%,

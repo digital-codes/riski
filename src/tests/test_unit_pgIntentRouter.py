@@ -286,7 +286,7 @@ class TestSearchLadder:
                 return {"intent": "search_topic", "scores": {},
                         "slots": {}, "error": None}
 
-            def resolve(self, intent, slots, session):
+            def resolve(self, intent, slots, session, query=""):
                 return {"intent": intent, "handler": "search",
                         "answer_mode": "summary", "filters": [],
                         "gremium": None, "notes": []}
@@ -575,7 +575,7 @@ class TestDecodeEmbedOverlap:
                 calls["decode"] += 1
                 return {"intent": "search_topic", "scores": {}, "slots": {}, "error": None}
 
-            def resolve(self, intent, slots, session):
+            def resolve(self, intent, slots, session, query=""):
                 return {"intent": intent, "handler": "search", "answer_mode": "summary",
                         "filters": [], "gremium": None, "notes": []}
 
@@ -610,7 +610,7 @@ class TestDecodeEmbedOverlap:
             cfg = load_intents_config()
             def decode(self, query, engine=None):
                 return {"intent": "search_topic", "scores": {}, "slots": {}, "error": None}
-            def resolve(self, intent, slots, session):
+            def resolve(self, intent, slots, session, query=""):
                 return {"intent": intent, "handler": "search", "answer_mode": "summary",
                         "filters": [], "gremium": None, "notes": []}
             def run_search(self, session, query, resolved, **kw):

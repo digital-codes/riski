@@ -96,7 +96,11 @@ consumers); the web app leaves it `false` and calls `POST /summarize`.
 
 Same request shape as `/search` plus optional `session_id`; the response adds
 `intent`, `slots`, `applied_filters`, `fallback_notes` (and `topics` /
-`answer_mode` for meeting-centric answers). Same staged contract: no
+`answer_mode` for meeting-centric answers). Location-scoped answers
+(`intent: "ask_location"`) additionally carry `location` — the resolved
+place(s) `{type, id, name, score}`, `alternates`, and the resolution note
+(also mirrored in `fallback_notes` when a location could not be resolved and
+the query was answered as an unscoped search). Same staged contract: no
 `timeline`/`graph` in the response.
 
 ### `POST /timeline` — stage 2 (per session)

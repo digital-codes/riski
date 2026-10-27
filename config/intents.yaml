@@ -67,6 +67,55 @@ intents:
     negative:
       - "wer hat für die 2. rheinbrücke gestimmt"
 
+  - name: ask_location
+    description: "Es wird ausschliesslich nach einem Ort gefragt (Strasse, Platz, Weg, Stadtteil), ohne dass ein Vorhaben, Projekt oder Thema am Ort genannt wird; Fragen zu einem Thema oder Vorhaben an einem Ort sind keine Ortsfragen"
+    slots:
+      location:
+        sources:
+          - trigram:
+              tables: ["Street", "District"]
+              column: name
+              threshold: 0.5
+              suffix_threshold: 0.4
+              ambiguity_delta: 0.1
+              top_k: 5
+              suffixes:
+                - strasse
+                - straße
+                - platz
+                - weg
+                - allee
+                - gasse
+                - ring
+                - ufer
+                - markt
+                - damm
+                - bruecke
+                - brücke
+                - tunnel
+                - kai
+                - berg
+                - tal
+                - steige
+                - wall
+                - insel
+                - feld
+                - wald
+                - acker
+                - hof
+    route:
+      handler: location_scoped_search
+      answer_mode: summary
+    choices:
+      - "informationen zum friedrichsplatz"
+      - "was passiert am friedrichsplatz"
+      - "friedrichsplatz"
+      - "was gibt es zum messplatz zu berichten"
+      - "themen rund um den oberwald"
+    negative:
+      - "was gibt es neues zum radweg am terrainkurweg"
+      - "mangelnde bepflanzung am messplatz"
+
   - name: ask_decision_date
     description: "Fragt nach dem Zeitpunkt oder Datum, wann ein Beschluss gefasst wurde; typisch 'wann wurde X beschlossen/beschlossen/gebilligt'"
     slots:
