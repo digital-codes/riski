@@ -16,6 +16,7 @@ const DEFAULTS = {
 	oparlLink: 'https://web1.karlsruhe.de/ris/oparl',
 	imprintUrl: '/#/impressum',
 	privacyUrl: '/#/datenschutz',
+	aiDisclaimer: 'KI-generierte Inhalte! Keine Gewähr für Richtigkeit.',
 	city: 'Karlsruhe',
 	mapCenter: [49.0069, 8.4037],
 	mapZoom: 12,

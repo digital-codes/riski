@@ -2,7 +2,7 @@
 	<section class="summary-card">
 		<header class="summary-header">
 			<h2>
-				Summary
+				Zusammenfassung. <span class="disclaimer">{{ instanceStore.aiDisclaimer }}</span>
 				<span v-if="loading" class="loading-note">
 					<span class="header-spinner"></span> Zusammenfassung wird erstellt…
 				</span>
@@ -51,6 +51,9 @@
 <script setup>
 import { computed, ref } from 'vue';
 import MarkdownIt from 'markdown-it';
+import { useInstanceStore } from '../instanceStore';
+
+const instanceStore = useInstanceStore();
 
 const props = defineProps({
 	summary: {
@@ -239,6 +242,14 @@ const downloadPdf = () => {
 	justify-content: space-between;
 	gap: 12px;
 	flex: 1;
+}
+
+.disclaimer {
+	font-weight: 600;
+	color: red;
+	margin-left: 8px;
+	margin-right:auto;
+
 }
 
 .loading-note {

@@ -18,6 +18,7 @@ defineEmits(['navigate']);
     <div class="footer-inner">
       <p class="footer-text">
         {{ instance.footer }}
+        <span class="disclaimer">{{ instance.aiDisclaimer }}</span>
       </p>
       <div class="footer-links">
         <a
@@ -84,6 +85,13 @@ defineEmits(['navigate']);
   margin: 0;
   font-size: 0.8rem;
   color: #9ca3af;
+}
+.disclaimer {
+	font-weight: 600;
+	color: red;
+	margin-left: 8px;
+	margin-right:auto;
+
 }
 
 @media (max-width: 768px) {
