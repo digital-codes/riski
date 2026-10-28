@@ -2,7 +2,7 @@
 	<section class="summary-card">
 		<header class="summary-header">
 			<h2>
-				Zusammenfassung. <span class="disclaimer">{{ instanceStore.aiDisclaimer }}</span>
+				Zusammenfassung. <span class="disclaimer">{{ instance.aiDisclaimer }}</span>
 				<span v-if="loading" class="loading-note">
 					<span class="header-spinner"></span> Zusammenfassung wird erstellt…
 				</span>
@@ -51,9 +51,7 @@
 <script setup>
 import { computed, ref } from 'vue';
 import MarkdownIt from 'markdown-it';
-import { useInstanceStore } from '../instanceStore';
-
-const instanceStore = useInstanceStore();
+import { instance } from '../instanceStore.js';
 
 const props = defineProps({
 	summary: {
