@@ -125,6 +125,10 @@ def _post(
     url = base_url.rstrip("/")
     if not url.endswith("/" + endpoint):
         url = f"{url}/{endpoint}"
+    # Ollama's default context window is small; request a larger one so long
+    # prompts are not silently truncated.
+    if "localhost:11434" in url:
+        json_body.setdefault("num_ctx", 16384)
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -133,6 +137,9 @@ def _post(
     base_delay = float(os.getenv("REMOTE_BASE_DELAY", "1.0"))
 
     last_exc: Exception | None = None
+    
+    
+    
     for attempt in range(1, max_retries + 1):
         try:
             resp = requests.post(url, headers=headers, json=json_body, timeout=timeout)
