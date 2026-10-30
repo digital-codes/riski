@@ -74,6 +74,35 @@ ADJACENCY: Dict[str, List[Dict[str, str]]] = {
     "Person": [],  # future: via Membership (2-hop, collapsed to typed edge)
 }
 
+# Expansion control (change: disable-organisation-expansion).
+# EXPANSION_SKIP_TYPES: node types the multi-round graph ACCUMULATION
+# (meeting-centric answers, seed-block traversal) shall not add — no nodes
+# and no edges of these types. Disabled, not dropped: remove an entry to
+# re-enable, or extend for selective per-node expansion later.
+EXPANSION_SKIP_TYPES: set = {"Organization"}
+# EXPANSION_DISABLED: node types whose interactive "Nachbarn laden"
+# expansion is disabled (they may still appear as leaf nodes).
+EXPANSION_DISABLED: set = {"Organization"}
+
+
+def expandable_types() -> List[str]:
+    """Node types the client may expand: types with adjacency relations,
+    minus the explicitly disabled ones (single source of truth for the
+    API's expandable_types payload field and the frontend button state)."""
+    return [t for t in ADJACENCY if ADJACENCY[t] and t not in EXPANSION_DISABLED]
+
+
+def filter_skip_types(graph: Dict[str, Any]) -> Dict[str, Any]:
+    """Remove nodes of ``EXPANSION_SKIP_TYPES`` and every edge touching them
+    from a partial graph (used before merging accumulated expansions — a
+    session whose consultations share one organisation must not produce a
+    high-degree hub)."""
+    nodes = [n for n in graph.get("nodes", []) if n["type"] not in EXPANSION_SKIP_TYPES]
+    skip_ids = {n["id"] for n in graph.get("nodes", []) if n["type"] in EXPANSION_SKIP_TYPES}
+    edges = [e for e in graph.get("edges", [])
+             if e.get("source") not in skip_ids and e.get("target") not in skip_ids]
+    return {"nodes": nodes, "edges": edges}
+
 # per-type date field precedence for node serialization
 _DATE_FIELDS = {
     "Meeting": ("start_date", "end_date"),
@@ -295,8 +324,11 @@ def expand_neighbors(engine, node_id_str: str, limit_per_relation: int = 25) -> 
     from sqlalchemy import MetaData, Table, select
 
     node_type, oparl_key = parse_node_id(node_id_str)
-    if node_type not in ADJACENCY or not ADJACENCY[node_type]:
-        raise ValueError(f"No adjacency defined for node type {node_type!r}")
+    if node_type in EXPANSION_DISABLED or node_type not in ADJACENCY or not ADJACENCY[node_type]:
+        # defined outcome, not an error (change: disable-organisation-
+        # expansion) — the client disables the control via expandable_types;
+        # direct API callers get a graceful empty response
+        return {"nodes": [], "edges": [], "expandable": False}
 
     metadata = MetaData()
     with engine.connect() as conn:
@@ -361,4 +393,6 @@ def expand_neighbors(engine, node_id_str: str, limit_per_relation: int = 25) -> 
         if src_row is not None:
             related.setdefault(node_type, []).extend(_objs_from_rows(node_type, [src_row]))
 
-    return build_graph(related, edges, [])
+    result = build_graph(related, edges, [])
+    result["expandable"] = True
+    return result

@@ -24,9 +24,18 @@
         <a v-if="oparlId" :href="oparlId" target="_blank" rel="noopener" class="action-btn">
           OParl-Datensatz öffnen
         </a>
-        <button v-if="node" type="button" class="action-btn" :disabled="expanding" @click="$emit('expand', node.id)">
-          {{ expanding ? 'Lade Nachbarn…' : `Nachbarn laden` }}
-        </button>
+        <!-- change: disable-organisation-expansion — expansion is
+             disabled for types the backend reports as not expandable
+             (Organisation for now): the control explains instead of
+             failing with "Erweiterung fehlgeschlagen" -->
+        <template v-if="node">
+          <button type="button" class="action-btn" :disabled="expanding || !nodeExpandable"
+                  :title="nodeExpandable ? '' : 'Dieser Knotentyp wird nicht weiter expandiert'"
+                  @click="$emit('expand', node.id)">
+            {{ expanding ? 'Lade Nachbarn…' : `Nachbarn laden` }}
+          </button>
+          <p v-if="!nodeExpandable" class="expand-hint">Organisationen werden nicht weiter expandiert.</p>
+        </template>
       </div>
 
       <section v-if="related.length" class="panel-related">
@@ -51,6 +60,10 @@ const props = defineProps({
   graph: { type: Object, default: null },
   isMobile: { type: Boolean, default: false },
   expanding: { type: Boolean, default: false },
+  // change: disable-organisation-expansion — expandable node types from the
+  // graph payload (backend-owned; empty list ⇒ fall back to expandable,
+  // matching the staggered-rollout contract in the design)
+  expandableTypes: { type: Array, default: () => [] },
 });
 
 defineEmits(['close', 'expand']);
@@ -74,6 +87,15 @@ const TYPE_COLORS = {
 };
 
 const node = computed(() => (props.selection?.kind === 'node' ? props.selection.data : null));
+
+// change: disable-organisation-expansion — derive the expansion control
+// state from the payload's expandable_types (single source of truth);
+// without the field (old payload) the button stays enabled
+const nodeExpandable = computed(() => {
+  if (!node.value) return false;
+  if (!props.expandableTypes.length) return true;
+  return props.expandableTypes.includes(node.value.type);
+});
 const edge = computed(() => (props.selection?.kind === 'edge' ? props.selection.data : null));
 
 const raw = computed(() => node.value?.raw || node.value || {});
@@ -213,6 +235,9 @@ const related = computed(() => {
 .action-btn:hover { border-color: #667eea; color: #667eea; }
 .action-btn.primary { background: #667eea; border-color: #667eea; color: white; }
 .action-btn.primary:hover { background: #5a6fd6; color: white; }
+.action-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.action-btn:disabled:hover { border-color: #e5e7eb; color: #374151; }
+.expand-hint { margin: 2px 0 0; font-size: 0.78rem; color: #6b7280; }
 
 .panel-related h4 {
   margin: 0 0 8px 0;

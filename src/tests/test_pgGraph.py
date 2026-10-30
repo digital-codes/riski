@@ -197,3 +197,50 @@ class TestFindRelatedObjectsEdgeLog:
                 assert e["relation"] in valid_relations, e
         finally:
             session.close()
+
+
+class TestExpansionControl:
+    """change: disable-organisation-expansion — expandability is derived
+    from the adjacency map minus the disabled registry; accumulation skips
+    EXPANSION_SKIP_TYPES; /expand on a disabled type is a defined outcome."""
+
+    def test_expandable_types_exclude_disabled_and_leaf_types(self):
+        from src.graphModel import expandable_types
+        exp = set(expandable_types())
+        assert {"Paper", "File", "Meeting", "AgendaItem", "Consultation"} <= exp
+        assert "Organization" not in exp  # explicitly disabled
+        assert "Person" not in exp        # no adjacency
+
+    def test_filter_skip_types_drops_nodes_and_touching_edges(self, monkeypatch):
+        import src.graphModel as gm
+        monkeypatch.setattr(gm, "EXPANSION_SKIP_TYPES", {"Organization"})
+        graph = {
+            "nodes": [
+                {"id": "Consultation_1", "type": "Consultation"},
+                {"id": "Organization_5", "type": "Organization"},
+                {"id": "Meeting_7", "type": "Meeting"},
+            ],
+            "edges": [
+                {"source": "Consultation_1", "target": "Organization_5", "relation": "organization"},
+                {"source": "Consultation_1", "target": "Meeting_7", "relation": "meeting"},
+            ],
+        }
+        out = gm.filter_skip_types(graph)
+        ids = {n["id"] for n in out["nodes"]}
+        assert ids == {"Consultation_1", "Meeting_7"}
+        assert [(e["source"], e["target"]) for e in out["edges"]] == [
+            ("Consultation_1", "Meeting_7")]
+
+    def test_filter_skip_types_honours_registry(self, monkeypatch):
+        import src.graphModel as gm
+        monkeypatch.setattr(gm, "EXPANSION_SKIP_TYPES", set())
+        graph = {"nodes": [{"id": "Organization_5", "type": "Organization"}], "edges": []}
+        out = gm.filter_skip_types(graph)
+        assert {n["id"] for n in out["nodes"]} == {"Organization_5"}
+
+    def test_expand_neighbors_disabled_type_is_graceful(self):
+        """Defined outcome instead of ValueError — no engine access needed
+        (the check precedes any DB work)."""
+        from src.graphModel import expand_neighbors
+        out = expand_neighbors(engine=None, node_id_str="Organization_32130")
+        assert out == {"nodes": [], "edges": [], "expandable": False}

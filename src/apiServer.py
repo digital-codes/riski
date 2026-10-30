@@ -228,6 +228,12 @@ class SessionRequest(BaseModel):
     session_id: str = Field(min_length=1)
 
 
+class GraphRequest(SessionRequest):
+    # change: disable-organisation-expansion — "documents" (default) or
+    # "full"; see POST /graph docstring
+    scope: Optional[str] = None
+
+
 def _get_session(session_id: str) -> Dict[str, Any]:
     sess = _sessions.get(session_id)
     if sess is None or "result" not in sess:
@@ -266,11 +272,17 @@ def _ensure_stage2(sess: Dict[str, Any]) -> None:
 
 
 @app.post("/graph")
-def graph(req: SessionRequest) -> Dict[str, Any]:
+def graph(req: GraphRequest) -> Dict[str, Any]:
     """Stage 3 for a session (change: progressive-frontend-rendering):
     serialized graph + geo availability. Computes stage 2 first when it
     has not run yet, so out-of-order calls (graph before timeline) are
-    safe; a later /timeline call returns the already-computed result."""
+    safe; a later /timeline call returns the already-computed result.
+
+    ``scope`` (change: disable-organisation-expansion): "documents" (the
+    default — traversal seeded by the top_k answer documents only) or
+    "full" (complete result-list traversal incl. agenda-item seed blocks).
+    Both scopes are computed once per stage-2 run; switching serves the
+    stored graph without re-traversal."""
     sess = _get_session(req.session_id)
     with sess["stage_lock"]:
         if sess.get("graph") is None:
@@ -282,14 +294,22 @@ def graph(req: SessionRequest) -> Dict[str, Any]:
                 stage3 = graph_stage(db_session, sess["stage1"], sess["_stage2"])
             finally:
                 db_session.close()
-            sess["graph"] = stage3["graph"]
+            sess["graph"] = stage3["graph"]                  # full scope (back-compat)
+            sess["graph_documents"] = stage3.get("graph_documents") or stage3["graph"]
             sess["geo_available"] = stage3["geo_available"]
             sess["node_ids"] = [n["id"] for n in stage3["graph"].get("nodes", [])]
+    from src.graphModel import expandable_types
+
+    scope = req.scope or "documents"
+    selected = (sess.get("graph_documents") if scope == "documents" else sess["graph"]) \
+        or sess["graph"]
     return {
         "sessionId": req.session_id,
         "query": sess["query"],
-        "graph": sess["graph"],
+        "scope": scope,
+        "graph": selected,
         "geo_available": sess.get("geo_available", False),
+        "expandable_types": expandable_types(),
     }
 
 

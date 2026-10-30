@@ -45,6 +45,7 @@
       :rejected-file-keys="rejectedFileKeys"
       :active-item-keys="activeItemKeys"
       :can-reset="graph !== baseGraph"
+      :scope="graphScope" @toggle-scope="onToggleScope"
       @select="onSelect" @reset="onResetGraph" />
     <div v-else-if="loadingGraph" class="pane-loading-card">
       <span class="pane-spinner"></span>
@@ -56,6 +57,7 @@
     :graph="graph"
     :is-mobile="isMobile"
     :expanding="expanding"
+    :expandable-types="expandableTypes"
     @close="selection = null"
     @expand="onExpand"
   />
@@ -186,6 +188,7 @@ async function runSearch() {
   rawData.value = null;
   graph.value = null;
   baseGraph.value = null;
+  graphScope.value = 'documents';  // change: disable-organisation-expansion — default scope per search
   files.value = [];
   timeline.value = [];
   loadingFiles.value = true;
@@ -276,15 +279,30 @@ async function fetchTimeline(sid, token) {
   }
 }
 
-async function fetchGraph(sid, token) {
+// change: disable-organisation-expansion — graph scope state: the default
+// view shows only the nodes related to the top_k answer documents; the
+// toggle switches to the full result-list traversal. Both are computed
+// once per session server-side, switching just re-serves.
+const graphScope = ref('documents');
+const expandableTypes = ref([]);
+
+async function fetchGraph(sid, token, scope = graphScope.value) {
   try {
-    const res = await apiGraph(sid);
+    const res = await apiGraph(sid, scope);
     if (token !== searchToken) return;
     applyGraph(res);
   } catch (e) {
     console.warn(`Netzwerk konnte nicht geladen werden (${e.message})`);
     if (token === searchToken) loadingGraph.value = false;
   }
+}
+
+async function onToggleScope() {
+  if (!sessionId.value) return;
+  const next = graphScope.value === 'documents' ? 'full' : 'documents';
+  loadingGraph.value = graph.value === null;
+  graphScope.value = next;
+  await fetchGraph(sessionId.value, searchToken, next);
 }
 
 // change: summary-refine-file-control — user actions re-run the summarizer
@@ -405,6 +423,9 @@ function applyGraph(res) {
   graph.value = res.graph || { nodes: [], edges: [] };
   baseGraph.value = graph.value;  // reset anchor (onExpand replaces, not mutates)
   loadingGraph.value = false;
+  // change: disable-organisation-expansion — expandability is derived from
+  // the payload (single source of truth, no per-type frontend list)
+  expandableTypes.value = res.expandable_types || expandableTypes.value;
   geoAvailable.value = !!res.geo_available && !!sessionId.value;
   // the summary usually arrives after the graph — its .then fetches /geo
   // with the summary-scope (selected documents only). Fetching here too

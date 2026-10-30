@@ -45,8 +45,11 @@ export async function timeline(sessionId) {
 	return post('/timeline', { session_id: sessionId });
 }
 
-export async function graph(sessionId) {
-	return post('/graph', { session_id: sessionId });
+// change: disable-organisation-expansion — scope selects the graph view:
+// "documents" (default; top_k answer documents only) or "full" (complete
+// result-list traversal). Both are computed once per session server-side.
+export async function graph(sessionId, scope = 'documents') {
+	return post('/graph', { session_id: sessionId, scope });
 }
 
 export async function expand(nodeId, limitPerRelation = 25) {

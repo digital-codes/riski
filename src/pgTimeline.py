@@ -1468,17 +1468,23 @@ def timeline_stage(session, stage1: Dict[str, Any]) -> Dict[str, Any]:
     """
     top_files = stage1.get("top_files") or []
     if not top_files:
-        return {"timeline": [], "related_objects": None, "timeline_events": [], "typed_objects": {}}
+        return {"timeline": [], "related_objects": None, "timeline_events": [], "typed_objects": {},
+                "related_objects_documents": None}
 
     file_sids = {item["oparlKey"]: item["sid"] for item in top_files}
     _ensure_log().debug(f"Resolved file keys to sids: {file_sids}")  # Debugging line
 
-    # Find all related OParl objects
+    # change: disable-organisation-expansion — two graph scopes per session:
+    # `documents` = traversal seeded by the top_k answer documents only;
+    # `full` = complete result-list traversal (agenda-item name-seed blocks).
+    # Both traversals run in this stage; /graph serves them by scope.
     related_objects = find_related_objects(
         session, file_sids,
         agenda_item_sids=agenda_item_seeds(session, stage1.get("matched_entities")),
     )
     _ensure_log().debug(f"Related objects found: { {k: len(v) for k, v in related_objects.items()} }")  # Debugging line
+
+    related_objects_documents = find_related_objects(session, file_sids)
 
     typed = _typed_objects(related_objects)
 
@@ -1493,6 +1499,7 @@ def timeline_stage(session, stage1: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "timeline": grouped_timeline,
         "related_objects": related_objects,
+        "related_objects_documents": related_objects_documents,
         "timeline_events": timeline_events,
         "typed_objects": typed,
     }
@@ -1509,18 +1516,34 @@ def graph_stage(session, stage1: Dict[str, Any], stage2: Dict[str, Any]) -> Dict
 
     Returns ``{"graph": ..., "geo_available": ...}``.
     """
-    from src.graphModel import build_graph
+    from src.graphModel import build_graph, filter_skip_types
 
     top_files = stage1.get("top_files") or []
     related_objects = stage2.get("related_objects")
     if not top_files or related_objects is None:
-        return {"graph": {"nodes": [], "edges": []}, "geo_available": False}
+        return {"graph": {"nodes": [], "edges": []},
+                "graph_documents": {"nodes": [], "edges": []},
+                "geo_available": False}
 
     typed = stage2.get("typed_objects") or _typed_objects(related_objects)
     edges = list(related_objects.get("edges") or [])
 
-    # Serialize the traversed graph (nodes + typed edges, add-network-view)
-    graph = build_graph(typed, edges, top_files)
+    # Serialize the traversed graph (nodes + typed edges, add-network-view).
+    # Full scope: the accumulation stops at Organisation (change:
+    # disable-organisation-expansion) — no org hub from many consultations
+    # sharing one organisation.
+    graph = filter_skip_types(build_graph(typed, edges, top_files))
+
+    # documents scope (change: disable-organisation-expansion): the
+    # traversal seeded by the top_k answer documents only — the default
+    # view. Organisation leaves are kept here (no hub at this scale).
+    related_docs = stage2.get("related_objects_documents")
+    if related_docs is not None:
+        typed_docs = _typed_objects(related_docs)
+        edges_docs = list(related_docs.get("edges") or [])
+        graph_documents = build_graph(typed_docs, edges_docs, top_files)
+    else:
+        graph_documents = graph
 
     # georeferences: streets/districts linked to the GRAPH-connected answer
     # set (seed files + traversal). Deliberately NOT the matched_entities
@@ -1533,7 +1556,7 @@ def graph_stage(session, stage1: Dict[str, Any], stage2: Dict[str, Any]) -> Dict
     file_keys = [k for k in file_keys if k]
     geo_available = geo_available_for_keys(session.get_bind(), agenda_item_keys, file_keys)
 
-    return {"graph": graph, "geo_available": geo_available}
+    return {"graph": graph, "graph_documents": graph_documents, "geo_available": geo_available}
 
 
 def search_and_build_timeline(

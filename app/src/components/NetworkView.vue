@@ -10,6 +10,16 @@
            relation (Kanten) chips stay: ECharts has no native edge-type
            legend, and they actually filter visibleEdges. -->
       <div class="filter-row">
+        <!-- change: disable-organisation-expansion — scope toggle: default
+             view = nodes related to the top_k answer documents only; the
+             full result-list traversal (agenda-item seed blocks) is opt-in -->
+        <button type="button" class="chip scope-btn"
+                :title="scope === 'documents'
+                  ? 'Gesamtes Ergebnis anzeigen (auch TOP-Blöcke der Trefferliste)'
+                  : 'Nur die Knoten rund um die Treffer-Dokumente anzeigen'"
+                @click="$emit('toggle-scope')">
+          {{ scope === 'documents' ? 'Gesamtes Ergebnis' : 'Nur Treffer-Dokumente' }}
+        </button>
         <!-- change: agenda-sibling-documents follow-up — "Nachbarn laden"
              expansions accumulate (an organization pulls in ALL its
              meetings ever); without a reset there was no way back -->
@@ -58,9 +68,11 @@ const props = defineProps({
   activeFileKeys: { type: Array, default: () => [] },   // enabled docs of the summary list
   rejectedFileKeys: { type: Array, default: () => [] }, // excluded ∪ summarizer-refused
   activeItemKeys: { type: Array, default: () => [] },   // meeting-view topics
+  // change: disable-organisation-expansion — 'documents' (default) or 'full'
+  scope: { type: String, default: 'documents' },
 });
 
-const emit = defineEmits(['select', 'reset']);
+const emit = defineEmits(['select', 'reset', 'toggle-scope']);
 
 
 // node-type presentation: stable palette + German labels (consistent with TimeLine.vue)

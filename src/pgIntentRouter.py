@@ -578,8 +578,13 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
     meeting_id = f"Meeting_{meeting_key}"
     # depth 1: agenda items, Tagesordnung + aux files, organizations, then
     # the agenda items' children (files, consultations -> papers -> files)
+    # change: disable-organisation-expansion — the accumulation stops at
+    # Organisation (no org hub from many consultations sharing one org):
+    # every partial is filtered through EXPANSION_SKIP_TYPES before merging
+    from src.graphModel import filter_skip_types
+
     partials: List[Dict[str, Any]] = [
-        expand_neighbors(session.bind, meeting_id, limit_per_relation)
+        filter_skip_types(expand_neighbors(session.bind, meeting_id, limit_per_relation))
     ]
     graph = _merge_graph_partials(partials)
     for round_type in ("AgendaItem", "Consultation", "Paper"):
@@ -587,7 +592,7 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
         for nid in ids:
             try:
                 partials.append(
-                    expand_neighbors(session.bind, nid, limit_per_relation)
+                    filter_skip_types(expand_neighbors(session.bind, nid, limit_per_relation))
                 )
             except ValueError:
                 continue

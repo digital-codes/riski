@@ -71,10 +71,30 @@ class TestStagedFlow:
         assert rt.status_code == 200
         timeline = rt.json()["timeline"]
 
-        rg = client.post("/graph", json={"session_id": sid})
+        # change: disable-organisation-expansion — the default /graph scope
+        # is "documents" (top_k-seeded traversal); the monolithic payload
+        # keeps the FULL graph, so parity is asserted against scope=full
+        rg = client.post("/graph", json={"session_id": sid, "scope": "full"})
         assert rg.status_code == 200
         graph = rg.json()["graph"]
+        assert "expandable_types" in rg.json()  # backend-owned expandability
         geo_available = rg.json()["geo_available"]
+
+        rd = client.post("/graph", json={"session_id": sid, "scope": "documents"})
+        assert rd.status_code == 200
+        assert rd.json()["scope"] == "documents"
+        doc_graph = rd.json()["graph"]
+        # the full scope carries no organisations (hub prevention)…
+        assert not any(n["type"] == "Organization" for n in graph["nodes"])
+        # …while the documents scope keeps them as leaves (they belong to
+        # the top_k documents; no hub at that scale)
+        assert any(n["type"] == "Organization" for n in doc_graph["nodes"])
+        # the documents scope is the far smaller seed-free traversal
+        assert len(doc_graph["nodes"]) < len(graph["nodes"])
+        # seed files are present in both scopes
+        seed_ids = {n["id"] for n in graph["nodes"]
+                    if n["type"] == "File" and n.get("attrs", {}).get("match")}
+        assert seed_ids <= {n["id"] for n in doc_graph["nodes"]}
 
         rsum = client.post("/summarize", json={"session_id": sid})
         assert rsum.status_code == 200
