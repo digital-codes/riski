@@ -111,19 +111,16 @@ class ResultSummarizer:
         self.temperature = temperature
         self.content_chars = content_chars
 
-    def __init__(self, session, model: str | None = None,
-                 temperature: float = 0.1, content_chars: int = _MAX_CONTENT_CHARS) -> None:
-        self._session = session
-        self.model = model or remote.CHAT_MODEL
-        self.temperature = temperature
-        self.content_chars = content_chars
-
-    def _file_text(self, oparl_key: str, full: bool = False) -> tuple[str | None, str | None]:
+    def _file_text(self, oparl_key: str, full: bool = False,
+                   chunk_index: int | None = None) -> tuple[str | None, str | None]:
         """Return ``(text, downloadUrl)`` for a file.
 
-        Context layer: with ``full=True`` the full ``content`` is preferred
-        (capped by the full-content budget) over the teaser; otherwise the
-        teaser layer is preferred, falling back to content (change:
+        Context layer: with ``full=True`` the refinement reads the file's
+        content layer — the MATCHED chunk when the search phase determined
+        one (``chunk_index`` from the file's match metadata), otherwise the
+        legacy ``content`` column, falling back to the teaser (change:
+        fix-result-summarizer). With ``full=False`` the teaser layer is
+        preferred, falling back to content (change:
         summary-refine-file-control).
         """
         row = self._session.execute(
@@ -134,10 +131,28 @@ class ResultSummarizer:
             return None, None
         teaser, content, download_url = row[0], row[1], row[2]
         if full:
-            chosen = (content[: self.full_content_chars] if content else None) or teaser or None
+            chosen = None
+            if chunk_index:
+                chosen = self._chunk_text(oparl_key, chunk_index)
+            chosen = chosen or (content[: self.full_content_chars] if content else None) \
+                or teaser or None
         else:
             chosen = teaser or content or None
         return chosen, download_url
+
+    def _chunk_text(self, oparl_key: str, chunk_index: int) -> str | None:
+        """Text of the file's matched chunk (refinement context piece),
+        capped by the full-content budget; ``None`` when the chunk row is
+        absent (callers fall back to the content column)."""
+        row = self._session.execute(
+            text('SELECT fc.text FROM "File_chunks" fc '
+                 'JOIN "File" f ON f.sid = fc.file_sid '
+                 'WHERE f."oparlKey" = :k AND fc.chunk_index = :i'),
+            {"k": oparl_key, "i": chunk_index},
+        ).first()
+        if row is None or not row[0]:
+            return None
+        return row[0][: self.full_content_chars]
 
     def _model_available(self) -> bool:
         return bool(remote.CHAT_BASE_URL and self.model)
@@ -185,7 +200,12 @@ class ResultSummarizer:
         else:  # defensive: no query in the result — generic shape
             prompt = f"\nDokumente ({layer}):\n"
         for file in top_files:
-            text_, _url = self._file_text(file["oparlKey"], full=use_full_content)
+            # matched chunk from the search phase (change: content-chunking
+            # + fix-result-summarizer): the refinement reads the piece of
+            # the document that matched the query, not the stored head
+            match = file.get("match") or {}
+            text_, _url = self._file_text(file["oparlKey"], full=use_full_content,
+                                          chunk_index=match.get("content_chunk"))
             prompt += f"\nDatei {full_index[file['oparlKey']]}: {file['name']} ({file['fileName']})\n"
             if text_:
                 cap = self.full_content_chars if use_full_content else self.content_chars
