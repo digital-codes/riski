@@ -87,19 +87,6 @@ def embed(text: str):
     return remote.embed(text)
 
 
-def content_kind_for(md_path: Path, sums_dir: Path, full_dir: Path) -> str:
-    """Classify the provenance of a markdown source file.
-
-    Files resolving under ``full_dir`` are stored full text; everything
-    else (resolved from ``sums_dir``) is an LLM-generated summary.
-    """
-    try:
-        md_path.relative_to(full_dir)
-        return "fulltext"
-    except ValueError:
-        return "summary"
-
-
 def ensure_embedding_unique_constraint(engine) -> None:
     """Migrate the embedding schema for chunked content (change:
     content-chunking): uniqueness moves from ``oparlKey``-only to
@@ -171,12 +158,8 @@ def run(
                 and full_md.stat().st_size > SIZE_CUTOFF and not dry_run:
             text_full = full_md.read_text(encoding="utf-8", errors="replace")
             chunks = chunk_markdown(text_full)
-            head = chunks[0]["text"] if chunks else text_full[:SIZE_CUTOFF]
-            conn.execute(
-                update(file_tbl)
-                .where(file_tbl.c.sid == file_sid)
-                .values(content=head, contentKind="chunked")
-            )
+            # change: unify-file-content-in-chunks — chunks are the text
+            # store; File.content (head for backward compat) is retired
             store_chunks(conn, file_sid, chunks)
             updated += 1
             chunked += 1
@@ -220,14 +203,14 @@ def run(
         md_text = md_path.read_text(encoding="utf-8", errors="replace")
 
         if not dry_run:
-            values = {"content": md_text}
-            if sums_dir is not None and full_dir is not None:
-                values["contentKind"] = content_kind_for(md_path, sums_dir, full_dir)
-            conn.execute(
-                update(file_tbl)
-                .where(file_tbl.c.sid == file_sid)
-                .values(**values)
-            )
+            # change: unify-file-content-in-chunks — the text goes into
+            # File_chunks (chunk 0 = the complete small document);
+            # File.content is retired and no longer written
+            conn.execute(text(
+                'INSERT INTO "File_chunks" (file_sid, chunk_index, char_start, char_end, text) '
+                'VALUES (:s, 0, 0, :e, :t) '
+                'ON CONFLICT (file_sid, chunk_index) DO UPDATE SET text = :t, char_end = :e'),
+                {"s": file_sid, "e": len(md_text), "t": md_text})
             updated += 1
 
             if embeddings and not (
@@ -255,45 +238,6 @@ def run(
     print(f"  skipped no md      : {skipped_no_md}")
 
 
-def backfill_content_kind(engine, sums_dir: Path, full_dir: Path, dry_run: bool = False) -> None:
-    """Set ``contentKind`` for legacy rows from their markdown sources.
-
-    Deterministic: the kind is derived from which directory the matched
-    markdown file lives in (full_dir → fulltext, else summary), not from
-    guessing by content length. Rows without a matched markdown source are
-    left unchanged and reported.
-    """
-    md_map = iter_md_files(sums_dir, full_dir)
-    metadata = MetaData()
-    file_tbl = Table("File", metadata, autoload_with=engine)
-
-    updated = unmatched = 0
-    with engine.begin() as conn:
-        rows_ = conn.execute(
-            select(file_tbl.c.sid, file_tbl.c.filename).where(file_tbl.c.content.isnot(None))
-        ).all()
-        for file_sid, file_name in rows_:
-            base = normalize_file_basename(file_name)
-            md_path = md_map.get(base) if base else None
-            if md_path is None:
-                unmatched += 1
-                continue
-            if not dry_run:
-                conn.execute(
-                    update(file_tbl)
-                    .where(file_tbl.c.sid == file_sid)
-                    .values(contentKind=content_kind_for(md_path, sums_dir, full_dir))
-                )
-            updated += 1
-
-    print("\ncontentKind backfill")
-    print(f"  files with content      : {len(rows_)}")
-    print(f"  updated (matched md)    : {updated}")
-    print(f"  unmatched (left as NULL): {unmatched}")
-    if dry_run:
-        print("  dry run - nothing written")
-
-
 def main() -> None:
     ap = argparse.ArgumentParser(description="Fill File.content from markdown files.")
     ap.add_argument("-s", "--sums_dir", required=True, help='Directory containing markdown files like "00123456.md"')
@@ -304,11 +248,6 @@ def main() -> None:
         help="Embed only files without a contentEmbeddings row (targeted incremental pass)",
     )
     ap.add_argument("--dry-run", action="store_true", help="Do not write to DB; just report actions.")
-    ap.add_argument(
-        "--backfill-kind",
-        action="store_true",
-        help="Only (re)derive contentKind for existing content rows from the markdown sources.",
-    )
     args = ap.parse_args()
 
     sums_dir = Path(args.sums_dir).expanduser().resolve()
@@ -333,10 +272,6 @@ def main() -> None:
 
     metadata = MetaData()
     file_tbl = Table("File", metadata, autoload_with=engine)
-
-    if args.backfill_kind:
-        backfill_content_kind(engine, sums_dir, full_dir, dry_run=args.dry_run)
-        return
 
     if args.dry_run:
         with engine.connect() as conn:

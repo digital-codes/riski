@@ -97,11 +97,16 @@ def run(conn, file_tbl, md_map, embeddings: bool = False, dry_run: bool = False,
         text = md_path.read_text(encoding="utf-8", errors="replace")
 
         if not dry_run:
-            conn.execute(
-                update(file_tbl)
-                .where(file_tbl.c.sid == file_sid)
-                .values(content=text)
-            )
+            # change: unify-file-content-in-chunks — text goes into
+            # File_chunks (chunk 0 = the complete small document);
+            # File.content is retired and no longer written
+            from sqlalchemy import text as sqltext
+
+            conn.execute(sqltext(
+                'INSERT INTO "File_chunks" (file_sid, chunk_index, char_start, char_end, text) '
+                'SELECT sid, 0, 0, length(:t), :t FROM "File" WHERE sid = :s '
+                'ON CONFLICT (file_sid, chunk_index) DO UPDATE SET text = :t'),
+                {"t": text, "s": file_sid})
             updated += 1
 
             if embeddings:

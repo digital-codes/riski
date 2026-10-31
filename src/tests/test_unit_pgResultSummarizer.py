@@ -10,7 +10,8 @@ from src.pgResultSummarizer import ResultSummarizer
 
 class FakeSession:
     """Minimal stand-in: File (teaser, content, downloadurl) by oparlKey,
-    plus optional File_chunks rows (oparlKey -> {chunk_index: text})."""
+    plus File_chunks rows (oparlKey -> {chunk_index: text}) — the single
+    text store (change: unify-file-content-in-chunks)."""
 
     def __init__(self, contents: dict, chunks: dict | None = None):
         self._contents = contents  # oparlKey -> (teaser, content[, downloadurl])
@@ -27,16 +28,20 @@ class FakeSession:
                 v = self._value
                 if v is None:
                     return None
-                if isinstance(v, list):  # chunk text row
-                    return v
+                if isinstance(v, list):
+                    return v  # chunk text row
                 if v is None or (v[0] is None and v[1] is None and len(v) < 3):
                     return None if v is None else [v[0], v[1], None]
                 if len(v) < 3:
                     return [v[0], v[1], None]
                 return list(v)
 
-        if "File_chunks" in str(stmt):  # chunk text lookup
-            return R([self._chunks.get(key, {}).get(params["i"])])
+        if "File_chunks" in str(stmt):
+            chunks = self._chunks.get(key, {})
+            if "string_agg" in str(stmt):  # document_text: all chunks joined
+                joined = "\n".join(t for _, t in sorted(chunks.items())) if chunks else None
+                return R([joined])
+            return R([chunks.get(params["i"])])
         r = R(self._contents.get(key, (None, None)))
         return r
 
@@ -180,7 +185,8 @@ class TestTeaserLayer:
             return {"content": "S."}
 
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
-        session = FakeSession({"100": (None, "Voller Inhalt")})
+        # change: unify-file-content-in-chunks — text lives in File_chunks
+        session = FakeSession({"100": (None, None)}, {"100": {0: "Voller Inhalt"}})
         ResultSummarizer(session).summarize(result)
         assert "Voller Inhalt" in seen["user"]
 
@@ -376,10 +382,12 @@ class TestFullContentRefinement:
     @pytest.fixture()
     def rich_session(self):
         contents = {
-            "100": ("Teaser 100", "Volltext 100", "https://dl/f0.pdf"),
-            "101": ("Teaser 101", "Volltext 101", "https://dl/f1.pdf"),
+            "100": ("Teaser 100", None, "https://dl/f0.pdf"),
+            "101": ("Teaser 101", None, "https://dl/f1.pdf"),
         }
-        return FakeSession(contents)
+        # text lives in File_chunks (chunk 0 = complete small document)
+        return FakeSession(contents, {
+            "100": {0: "Volltext 100"}, "101": {0: "Volltext 101"}})
 
     def test_full_content_preferred_on_refine(self, rich_session, result, monkeypatch):
         captured = {}
@@ -408,8 +416,9 @@ class TestFullContentRefinement:
 
     def test_full_content_capped(self, rich_session, result, monkeypatch):
         long_content = "X" * 50_000
-        session = FakeSession({"100": ("Teaser", long_content, None),
-                               "101": ("Teaser 101", None, None)})
+        session = FakeSession({"100": ("Teaser", None, None),
+                               "101": ("Teaser 101", None, None)},
+                              {"100": {0: long_content}})
         captured = {}
 
         def fake_chat(messages, **kwargs):
@@ -583,14 +592,12 @@ class TestMatchedChunkRefinement:
 
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
         ResultSummarizer(chunked_session).summarize(matched_result, use_full_content=True)
+        # change: unify-file-content-in-chunks — file 100 (chunk signal)
+        # contributes ONLY its matched chunk; file 101 (no signal) falls
+        # back to its complete document text (all chunks)
         assert "TREFFER Chunk zwei" in captured["prompt"]
-        # the head chunk (stored in content) must NOT be used for the file
-        # with a chunk signal
-        head_100 = "Datei 1:" in captured["prompt"] and "KOPF Chunk eins" in captured["prompt"]
-        # head text may appear for file 101 (no chunk signal) but file 100's
-        # head must not appear next to its matched chunk
-        assert not head_100 or "TREFFER Chunk zwei" not in captured["prompt"]
-        assert "TREFFER f1 zwei" not in captured["prompt"]  # 101 has no chunk index
+        assert "Chunk drei" not in captured["prompt"]  # not the matched chunk
+        assert "TREFFER f1 zwei" in captured["prompt"]  # 101's document text
 
     def test_matched_chunk_only_for_signalled_file(self, chunked_session, matched_result, monkeypatch):
         captured = {}
@@ -601,9 +608,13 @@ class TestMatchedChunkRefinement:
 
         monkeypatch.setattr(pc.remote, "chat", fake_chat)
         ResultSummarizer(chunked_session).summarize(matched_result, use_full_content=True)
-        # file 100: matched chunk; file 101: legacy content fallback
+        # file 100: matched chunk only; file 101 (no chunk signal): the
+        # complete document text from all chunks (fallback)
         assert "TREFFER Chunk zwei" in captured["prompt"]
-        assert "KOPF f1 eins" in captured["prompt"]  # 101 keeps content path
+        assert "KOPF f1 eins" in captured["prompt"] and "TREFFER f1 zwei" in captured["prompt"]
+        # file 100's document_text fallback must not leak its other chunks
+        prompt_100 = captured["prompt"].split("Datei 2:")[0]
+        assert "Chunk drei" not in prompt_100
 
     def test_missing_chunk_row_falls_back_to_content(self, chunked_session, monkeypatch):
         captured = {}

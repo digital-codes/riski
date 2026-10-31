@@ -1,0 +1,38 @@
+{
+ "mode": "backfill",
+ "preflight": {
+  "timestamp": "2026-10-31T15:56:23",
+  "kinds": {
+   "summary": 833,
+   "null": 1274,
+   "fulltext": 40785,
+   "chunked": 10198
+  },
+  "chunks_total": 95485,
+  "embeddings_total": 95513,
+  "files_with_content": 51816,
+  "files_without_chunks": 28
+ },
+ "backfill": {
+  "chunks_inserted": 28
+ },
+ "integrity": {
+  "embeddings_without_chunk_row": 0,
+  "files_with_vec_but_no_chunks": 0,
+  "sampled_text_mismatches": 0,
+  "sample_size": 200
+ },
+ "postflight": {
+  "timestamp": "2026-10-31T15:56:24",
+  "kinds": {
+   "summary": 833,
+   "null": 1274,
+   "fulltext": 40785,
+   "chunked": 10198
+  },
+  "chunks_total": 95513,
+  "embeddings_total": 95513,
+  "files_with_content": 51816,
+  "files_without_chunks": 0
+ }
+}

@@ -213,16 +213,36 @@ def store_chunks(conn, file_sid: int, chunks: List[Dict[str, Any]]) -> int:
 
 
 def chunk_text(conn, oparl_key: str, chunk_index: Optional[int]) -> Optional[str]:
-    """Text of a file's best-matching chunk (reranker input). Legacy files
-    (no chunk index) yield ``None`` — callers fall back to ``File.content``."""
-    if chunk_index is None or chunk_index <= 0:
+    """Text of a file's best-matching chunk (reranker input). Change:
+    unify-file-content-in-chunks — chunk_index 0 is a first-class chunk
+    (the single chunk of a non-oversized document); only ``None`` means
+    "no chunk known", yielding ``None`` (callers fall back to
+    ``document_text``)."""
+    if chunk_index is None or chunk_index < 0:
         return None
-    row = conn.execute(text(
-        'SELECT fc.text FROM "File_chunks" fc '
-        'JOIN "File" f ON f.sid = fc.file_sid '
-        'WHERE f."oparlKey" = :k AND fc.chunk_index = :i'),
+    row = conn.execute(
+        text('SELECT fc.text FROM "File_chunks" fc '
+             'JOIN "File" f ON f.sid = fc.file_sid '
+             'WHERE f."oparlKey" = :k AND fc.chunk_index = :i'),
         {"k": oparl_key, "i": chunk_index}).first()
-    return row[0] if row else None
+    return row[0] if row and row[0] else None
+
+
+def document_text(conn, oparl_key: str) -> Optional[str]:
+    """Complete document text from File_chunks (change:
+    unify-file-content-in-chunks — File_chunks is the single text store):
+    all chunk texts joined in index order. A non-oversized document yields
+    its complete text from its single chunk 0. ``None`` when the file has
+    no chunk rows."""
+    rows = conn.execute(
+        text('SELECT fc.text FROM "File_chunks" fc '
+             'JOIN "File" f ON f.sid = fc.file_sid '
+             'WHERE f."oparlKey" = :k ORDER BY fc.chunk_index'),
+        {"k": oparl_key}).fetchall()
+    texts = [r[0] for r in rows if r[0]]
+    if not texts:
+        return None
+    return "\n".join(texts)
 
 
 # ----------------------------------------------------------------------
@@ -345,11 +365,8 @@ def run_backfill(directory: str, limit: Optional[int] = None,
 
             with engine.begin() as conn:
                 store_chunks(conn, fid["sid"], chunks)
-                # content = document head (first chunk), backward compat
-                head = chunks[0]["text"] if chunks else text_[:SIZE_CUTOFF]
-                conn.execute(text(
-                    'UPDATE "File" SET content = :c, "contentKind" = \'chunked\' '
-                    'WHERE sid = :s'), {"c": head, "s": fid["sid"]})
+                # change: unify-file-content-in-chunks — File_chunks is the
+                # text store; File.content (head for backward compat) retired
 
             # batched embedding of the chunks that lack a vector
             with engine.connect() as conn:
@@ -487,7 +504,9 @@ def fix_small_contents(directory: str, dry_run: bool = False,
             batch = keys[i:i + 500]
             oparl_keys = [k[1] for k in batch]
             contents = dict(conn.execute(text(
-                'SELECT "oparlKey", content FROM "File" WHERE "oparlKey" = ANY(:k)'),
+                'SELECT fc."oparlKey", fc.text FROM "File_chunks" fc '
+                'JOIN "File" f ON f.sid = fc.file_sid '
+                'WHERE fc.chunk_index = 0 AND fc."oparlKey" = ANY(:k)'),
                 {"k": oparl_keys}).fetchall())
             fixes: List[Dict[str, Any]] = []
             for stem, oparlKey in batch:
@@ -504,10 +523,15 @@ def fix_small_contents(directory: str, dry_run: bool = False,
             for fx in fixes:
                 try:
                     with engine.begin() as conn2:
+                        # change: unify-file-content-in-chunks — the text
+                        # goes into File_chunks (chunk 0 = the complete
+                        # small document); File.content is retired
                         conn2.execute(text(
-                            'UPDATE "File" SET content = :c, '
-                            '"contentKind" = \'fulltext\' WHERE "oparlKey" = :k'),
-                            {"c": fx["text"], "k": fx["oparlKey"]})
+                            'INSERT INTO "File_chunks" (file_sid, chunk_index, char_start, char_end, text) '
+                            'SELECT sid, 0, 0, :e, :t FROM "File" WHERE "oparlKey" = :k '
+                            'ON CONFLICT (file_sid, chunk_index) DO UPDATE '
+                            'SET text = :t, char_end = :e'),
+                            {"e": len(fx["text"]), "t": fx["text"], "k": fx["oparlKey"]})
                     vec = embed_batch([fx["text"]])[0]
                     with engine.begin() as conn2:
                         conn2.execute(text(

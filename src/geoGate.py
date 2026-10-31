@@ -324,8 +324,14 @@ class GeoGate:
         from sqlalchemy import text as _text
 
         with self.engine.connect() as conn:
+            # change: unify-file-content-in-chunks — contentKind (storage
+            # provenance) is dropped; the gate prompt's document-type field
+            # falls back to "unbekannt" (same as agenda-item gating)
             row = conn.execute(_text(
-                'SELECT name, contentkind, content FROM "File" WHERE sid = :s'
+                'SELECT name, NULL AS contentkind, '
+                '(SELECT string_agg(fc.text, chr(10) ORDER BY fc.chunk_index) '
+                'FROM "File_chunks" fc WHERE fc.file_sid = f.sid) AS content '
+                'FROM "File" f WHERE f.sid = :s'
             ), {"s": file_sid}).first()
         if row is None:
             return {m["entity"]: {"verdict": "unsure", "reason": "file missing"}

@@ -131,15 +131,14 @@ def candidate_agenda_items(conn, locations, query_norm, cap=AGENDA_ITEM_CAP):
 
 def _rerank_file(session, query: str, file_tbl, oparl_key: str) -> float:
     """Rerank score for one file. The location path has no content-vector
-    recall, hence no best-chunk index — the reranker input is File.content
-    (same as search_stage's legacy path). Returns None when the file has no
-    content — the caller keeps such files, mirroring search_stage."""
+    recall, hence no best-chunk index — the reranker input is the
+    document's text from File_chunks (chunk 0 = the complete small
+    document; change: unify-file-content-in-chunks). Returns None when the
+    file has no text — the caller keeps such files, mirroring search_stage."""
+    from src.pgChunks import document_text
     from src.pgTimeline import RERANK_MODE, call_reranking_chat_model, call_reranking_model
 
-    row = session.execute(
-        select(file_tbl.c.content).where(file_tbl.c.oparlKey == oparl_key)
-    ).first()
-    content = row[0] if row and row[0] else None
+    content = document_text(session, oparl_key)
     if content is None:
         return None
     if RERANK_MODE == "chat":

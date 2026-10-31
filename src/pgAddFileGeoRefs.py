@@ -23,6 +23,7 @@ import sys
 import time
 from datetime import datetime
 
+import sqlalchemy as sa
 from sqlalchemy import Column, Integer, MetaData, String, Table, Text, DateTime, delete, select, text
 
 from src.db import get_engine
@@ -72,20 +73,29 @@ def _load_entities(engine, table: str):
 def _iter_files(engine, limit: int, batch_size: int = 500):
     """Yield (file_sid, name, content) batches.
 
-    change: geo-gating ops review — matching runs over File **content**
-    (the markdown-derived full text), not the teaser. The teaser-based
-    matching was a divergence from the original design (pre-teaser code
-    matched the full text; teasers only cover the content start, which is
-    exactly where the Briefkopf addresses live). Content is the more
-    complete reference and the gate's authoritative field. Smaller batches:
-    content rows are ~8 KB each."""
+    change: geo-gating ops review — matching runs over the document's
+    **text** (the markdown-derived full text), not the teaser. The
+    teaser-based matching was a divergence from the original design
+    (pre-teaser code matched the full text; teasers only cover the content
+    start, which is exactly where the Briefkopf addresses live). Text is
+    the more complete reference and the gate's authoritative field.
+    change: unify-file-content-in-chunks — the text comes from
+    ``File_chunks`` (the single text store), assembled per file via a
+    correlated aggregate. Smaller batches: text rows are ~8 KB each."""
     md = MetaData()
     f = Table("File", md, autoload_with=engine)
+    fc = Table("File_chunks", md, autoload_with=engine)
+    text_sq = (
+        select(sa.func.string_agg(fc.c.text, sa.literal_column("chr(10) ORDER BY fc.chunk_index")))
+        .where(fc.c.file_sid == f.c.sid)
+        .correlate(f)
+        .scalar_subquery()
+    )
     last_sid = 0
     with engine.connect() as conn:
         while True:
             stmt = (
-                select(f.c.sid, f.c.name, f.c.content)
+                select(f.c.sid, f.c.name, text_sq.label("content"))
                 .where(f.c.sid > last_sid)
                 .order_by(f.c.sid)
                 .limit(batch_size)

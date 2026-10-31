@@ -48,7 +48,7 @@ def _ensure_log():
             log.setLevel(logging.WARNING)
     return log
 from src import remote
-from src.pgChunks import chunk_text
+from src.pgChunks import chunk_text, document_text
 
 
 # Configuration
@@ -471,19 +471,10 @@ def block_expand_top_files(session, result: Dict[str, Any],
     query_terms = [w.lower() for w in stripped.split() if len(w) >= 3]
 
     def text_provider(oparl_key: str) -> Optional[str]:
-        parts: List[str] = []
-        row = session.execute(_sqltext(
-            'SELECT content FROM "File" WHERE "oparlKey" = :k'),
-            {"k": oparl_key}).first()
-        if row and row[0]:
-            parts.append(row[0])
-        rows = session.execute(_sqltext(
-            'SELECT fc.text FROM "File_chunks" fc '
-            'JOIN "File" f ON f.sid = fc.file_sid '
-            'WHERE f."oparlKey" = :k ORDER BY fc.chunk_index'),
-            {"k": oparl_key}).fetchall()
-        parts += [r[0] for r in rows]
-        return "\n".join(parts)
+        # change: unify-file-content-in-chunks — text comes exclusively
+        # from File_chunks (the union with File.content double-counted the
+        # head chunk of chunked documents)
+        return document_text(session, oparl_key)
 
     stage2 = (sess or {}).get("_stage2")
     if stage2 and stage2.get("related_objects") is not None:
@@ -1354,8 +1345,9 @@ def search_stage(
             # stored summary/head; legacy files keep File.content
             file_content = chunk_text(session, oparlKey, hybrid_chunks.get(oparlKey))
             if file_content is None:
-                row = session.query(File.content).filter(File.oparlKey == oparlKey).first()
-                file_content = row[0] if row and row[0] else None
+                # change: unify-file-content-in-chunks — File_chunks is the
+                # single text store (chunk 0 = the complete small document)
+                file_content = document_text(session, oparlKey)
             if file_content:  # content exists and is not None
                 rerank_score = call_reranking_chat_model(query, file_content)
                 _ensure_log().debug(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
@@ -1378,8 +1370,9 @@ def search_stage(
             # rerank input (change: content-chunking): best chunk first
             file_content = chunk_text(session, oparlKey, hybrid_chunks.get(oparlKey))
             if file_content is None:
-                row = session.query(File.content).filter(File.oparlKey == oparlKey).first()
-                file_content = row[0] if row and row[0] else None
+                # change: unify-file-content-in-chunks — File_chunks is the
+                # single text store (chunk 0 = the complete small document)
+                file_content = document_text(session, oparlKey)
             if file_content:
                 documents.append(file_content)
             else:

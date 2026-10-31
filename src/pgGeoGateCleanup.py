@@ -61,8 +61,10 @@ def _rows_to_gate(conn, assoc_table: str, entity_col: str,
             SELECT a.id AS assoc_id, a.{entity_col} AS entity_id,
                    e.name AS entity_name, a.file_id AS file_sid,
                    a.name_match AS evidence,
-                   f.name AS doc_name, f."contentKind" AS doc_type,
-                   f.content AS content
+                   f.name AS doc_name,
+                   NULL AS doc_type,
+                   (SELECT string_agg(fc.text, chr(10) ORDER BY fc.chunk_index)
+                    FROM "File_chunks" fc WHERE fc.file_sid = f.sid) AS content
             FROM "{assoc_table}" a
             JOIN "File" f ON f.sid = a.file_id
             JOIN "{ 'Street' if 'Streets' in assoc_table else 'District' }" e

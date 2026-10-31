@@ -129,26 +129,42 @@ class ResultSummarizer:
         ).first()
         if row is None:
             return None, None
-        teaser, content, download_url = row[0], row[1], row[2]
+        teaser, _content, download_url = row[0], row[1], row[2]
+        # change: unify-file-content-in-chunks — File_chunks is the single
+        # text store (chunk 0 = the complete small document); File.content
+        # is retired. The teaser layer stays the first choice.
         if full:
             chosen = None
             if chunk_index:
                 chosen = self._chunk_text(oparl_key, chunk_index)
-            chosen = chosen or (content[: self.full_content_chars] if content else None) \
-                or teaser or None
+            chosen = chosen or self._document_text(oparl_key) or teaser or None
         else:
-            chosen = teaser or content or None
+            chosen = teaser or self._document_text(oparl_key) or None
         return chosen, download_url
 
     def _chunk_text(self, oparl_key: str, chunk_index: int) -> str | None:
         """Text of the file's matched chunk (refinement context piece),
         capped by the full-content budget; ``None`` when the chunk row is
-        absent (callers fall back to the content column)."""
+        absent (callers fall back to the document text)."""
         row = self._session.execute(
             text('SELECT fc.text FROM "File_chunks" fc '
                  'JOIN "File" f ON f.sid = fc.file_sid '
                  'WHERE f."oparlKey" = :k AND fc.chunk_index = :i'),
             {"k": oparl_key, "i": chunk_index},
+        ).first()
+        if row is None or not row[0]:
+            return None
+        return row[0][: self.full_content_chars]
+
+    def _document_text(self, oparl_key: str) -> str | None:
+        """Complete document text from File_chunks (all chunks in order),
+        capped by the full-content budget; ``None`` when absent."""
+        row = self._session.execute(
+            text('SELECT string_agg(fc.text, chr(10) ORDER BY fc.chunk_index) '
+                 'FROM "File_chunks" fc '
+                 'JOIN "File" f ON f.sid = fc.file_sid '
+                 'WHERE f."oparlKey" = :k'),
+            {"k": oparl_key},
         ).first()
         if row is None or not row[0]:
             return None

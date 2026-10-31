@@ -269,7 +269,12 @@ def main():
 
         conn.commit()
 
-        where_clauses = ["content IS NOT NULL"]
+        # change: unify-file-content-in-chunks — File_chunks is the single
+        # text store: select files that HAVE chunk text (chunk 0 = the
+        # complete small document, 1..n = chunks of oversized ones)
+        where_clauses = ['EXISTS (SELECT 1 FROM "File_chunks" fc '
+                         'JOIN "File" f2 ON f2.sid = fc.file_sid '
+                         'WHERE f2.id = "File".id)']
         query_params = []
 
         # Filter out files with existing teasers before processing if not forcing.
@@ -286,7 +291,9 @@ def main():
             where_clauses.append(
                 'EXISTS (SELECT 1 FROM "File_chunks" fc WHERE fc.file_sid = "File".sid)')
 
-        query = f'''SELECT id, "oparlKey", content, length(content) FROM "File" WHERE {' AND '.join(where_clauses)} ORDER BY length(content) DESC'''
+        # change: unify-file-content-in-chunks — order by the document's
+        # chunk text length (File.content is retired)
+        query = f'''SELECT id, "oparlKey", COALESCE((SELECT sum(length(fc.text)) FROM "File_chunks" fc WHERE fc.file_sid = "File".sid), 0) AS total_len FROM "File" WHERE {' AND '.join(where_clauses)} ORDER BY total_len DESC'''
         cursor.execute(query, tuple(query_params))
 
         files = list(cursor.fetchall())
@@ -310,53 +317,32 @@ def main():
         skipped_api = 0
         total = len(files)
 
-        for i, (file_id, oparl_key, content, size) in enumerate(files):
+        for i, (file_id, oparl_key, total_len) in enumerate(files):
 
-            try:
-                text = str(content)
-                words = text.split()
-                word_count = len(words)
-            except:
-                text = ""
-                word_count = 0
-
-            # chunk-aware teaser (change: fix-result-summarizer): chunked
-            # documents are summarized map-reduce over ALL chunks so the
-            # single teaser covers the whole document, not just the head
-            # chunk stored in content.
+            # change: unify-file-content-in-chunks — ALL text comes from
+            # File_chunks (chunk 0 = the complete small document, 1..n =
+            # chunks of oversized ones); the map-reduce path covers every
+            # document so the single teaser covers the whole text.
             chunk_texts = get_chunk_texts(cursor, oparl_key)
-            if chunk_texts:
-                print(f"[\n[{i+1:3d}] File #{file_id} ({oparl_key}): chunked, "
-                      f"{len(chunk_texts)} chunks ({size} bytes) [l={args.lang}]...")
+            if not chunk_texts:
+                print(f"[\n[{i+1:3d}] File #{file_id}: no chunk text, skipping")
+                skipped_api += 1
+                continue
+
+            text = "\n".join(chunk_texts)
+            word_count = len(text.split())
+            if word_count <= DEFAULT_MAX_LEN:
+                # tiny documents keep their verbatim-text teaser
+                print(f"[\n[{i+1:3d}] File #{file_id} ({oparl_key}): short ({word_count} words)")
+                teaser = _cap_teaser(text.replace('\n', ' '))
+            else:
+                print(f"[\n[{i+1:3d}] File #{file_id} ({oparl_key}): "
+                      f"{len(chunk_texts)} chunks ({total_len} bytes) [l={args.lang}]...")
                 teaser = generate_chunked_teaser(chunk_texts, args.lang)
                 if not teaser:
                     print("  API failed permanently after retries")
                     skipped_api += 1
                     continue
-            else:
-                if word_count <= DEFAULT_MAX_LEN:
-                    print(f"[\n[{i+1:3d}] File #{file_id}: short ({word_count} words)")
-                    teaser = _cap_teaser(text.replace('\n', ' '))
-                else:
-                    print(f"[\n[{i+1:3d}] File #{file_id}: processing ({size} bytes) [l={args.lang}]...")
-                    result = make_request(text, args.lang, DEFAULT_MAX_LEN)
-                    if result is None:
-                        print(f"  API failed permanently after {MAX_RETRIES} retries")
-                        skipped_api += 1
-                        continue
-                    else:
-                        print(f"  Success: {len(result)} chars, {len(result.split())} words")
-                        if len(result.split()) == 1:
-                            print(f"  API returned only one word, skipping")
-                            print("result:", result)
-                            result = None
-
-                    if result:
-                        teaser = result
-                        if len(teaser.split()) > DEFAULT_MAX_LEN:
-                            teaser = ' '.join(teaser.split()[:DEFAULT_MAX_LEN])
-                    else:
-                        teaser = _cap_teaser(text[:TEXT_EXCERPT_MAXLEN].replace('\n', ' '))
 
             print(f"  {len(teaser)} chars, {len(str(teaser).split())} words")
             preview = str(teaser)[:40] + "..." if len(str(teaser)) > 40 else (str(teaser) or "None")

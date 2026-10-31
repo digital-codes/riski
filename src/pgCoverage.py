@@ -1,7 +1,7 @@
 """Coverage report over the enrichment layers (change: categorization-indexing).
 
 Reports, per item table and per layer, what fraction of rows is populated:
-content / teaser / contentKind (File), content embeddings, name vectors and
+content (chunk coverage) / teaser (File), content embeddings, name vectors and
 tags (with scheme breakdown). Read-only; safe to run against production.
 """
 
@@ -49,13 +49,13 @@ def coverage(engine, item_tables=ITEM_TABLES) -> dict:
             entry: dict = {"total": total, "layers": {}}
 
             if t == "File":
-                for col in ("content", "teaser"):
-                    n = _scalar(conn, f'SELECT count(*) FROM "{t}" WHERE "{col}" IS NOT NULL') or 0
-                    entry["layers"][col] = {"count": n, "pct": round(n / total * 100, 1) if total else 0.0}
-                kinds = conn.execute(
-                    sa.text('SELECT "contentKind", count(*) FROM "File" WHERE "contentKind" IS NOT NULL GROUP BY 1')
-                ).all()
-                entry["layers"]["contentKind"] = {k: v for k, v in kinds}
+                # change: unify-file-content-in-chunks — text coverage is
+                # chunk coverage (File_chunks is the single text store;
+                # File.content/contentKind are retired). "teaser" unchanged.
+                n = _scalar(conn, 'SELECT count(DISTINCT fc.file_sid) FROM "File_chunks" fc') or 0
+                entry["layers"]["content"] = {"count": n, "pct": round(n / total * 100, 1) if total else 0.0}
+                n = _scalar(conn, 'SELECT count(*) FROM "File" WHERE teaser IS NOT NULL') or 0
+                entry["layers"]["teaser"] = {"count": n, "pct": round(n / total * 100, 1) if total else 0.0}
 
             if "contentEmbeddings" in tables and t == "File":
                 n = _scalar(conn, 'SELECT count(*) FROM "contentEmbeddings"') or 0
@@ -101,8 +101,6 @@ def _print(report: dict) -> None:
         for layer, data in entry["layers"].items():
             if isinstance(data, dict) and "count" in data:
                 print(f"  {layer:20s} {data['count']:>8}  ({data['pct']}%)")
-            elif layer == "contentKind":
-                print(f"  {'contentKind':20s} " + ", ".join(f"{k}={v}" for k, v in data.items()))
             elif layer == "tags":
                 print(f"  {'tags':20s} {data['tagged_items']:>8}  ({data['pct']}%)")
                 for scheme, n in data.get("by_scheme", {}).items():

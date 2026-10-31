@@ -1,0 +1,427 @@
+{
+ "Digitalstrategie der Stadt Karlsruhe": {
+  "order": [
+   {
+    "oparlKey": "635289",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.2782
+    }
+   },
+   {
+    "oparlKey": "635290",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.2795
+    }
+   },
+   {
+    "oparlKey": "666326",
+    "distance": 0.3206,
+    "match": {
+     "name": 0.4922,
+     "content": 0.3206,
+     "content_chunk": 2
+    }
+   },
+   {
+    "oparlKey": "663596",
+    "distance": 0.3105,
+    "match": {
+     "content": 0.3105,
+     "content_chunk": 1
+    }
+   },
+   {
+    "oparlKey": "9913",
+    "distance": null,
+    "match": {
+     "name": 0.3077
+    }
+   },
+   {
+    "oparlKey": "636469",
+    "distance": 0.3281,
+    "match": {
+     "content": 0.3281,
+     "content_chunk": 1
+    }
+   },
+   {
+    "oparlKey": "620590",
+    "distance": null,
+    "match": {
+     "name": 0.346
+    }
+   },
+   {
+    "oparlKey": "631077",
+    "distance": 0.3281,
+    "match": {
+     "content": 0.3281,
+     "content_chunk": 1
+    }
+   },
+   {
+    "oparlKey": "149984",
+    "distance": null,
+    "match": {
+     "name": 0.3756
+    }
+   },
+   {
+    "oparlKey": "625561",
+    "distance": 0.3281,
+    "match": {
+     "content": 0.3281,
+     "content_chunk": 1
+    }
+   }
+  ],
+  "n": 10
+ },
+ "Ortschaftsrat Mühlburg": {
+  "order": [
+   {
+    "oparlKey": "32174",
+    "distance": 0.4067,
+    "match": {
+     "lexical": true,
+     "name": 0.257,
+     "content": 0.4067
+    }
+   },
+   {
+    "oparlKey": "589167",
+    "distance": 0.4226,
+    "match": {
+     "lexical": true,
+     "name": 0.2571,
+     "content": 0.4226
+    }
+   },
+   {
+    "oparlKey": "602589",
+    "distance": 0.4517,
+    "match": {
+     "lexical": true,
+     "name": 0.2569,
+     "content": 0.4517
+    }
+   },
+   {
+    "oparlKey": "2713",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.2219
+    }
+   },
+   {
+    "oparlKey": "43072",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.2219
+    }
+   },
+   {
+    "oparlKey": "148251",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.257
+    }
+   },
+   {
+    "oparlKey": "594421",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.257
+    }
+   },
+   {
+    "oparlKey": "617682",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.257
+    }
+   },
+   {
+    "oparlKey": "145754",
+    "distance": 0.4361,
+    "match": {
+     "name": 0.3042,
+     "content": 0.4361
+    }
+   },
+   {
+    "oparlKey": "18300",
+    "distance": 0.4342,
+    "match": {
+     "name": 0.3391,
+     "content": 0.4342
+    }
+   }
+  ],
+  "n": 10
+ },
+ "themen rund um die 2. rheinbruecke": {
+  "order": [
+   {
+    "oparlKey": "21883",
+    "distance": 0.4871,
+    "match": {
+     "lexical": true,
+     "name": 0.4401,
+     "content": 0.4871,
+     "content_chunk": 2
+    }
+   },
+   {
+    "oparlKey": "593911",
+    "distance": 0.4679,
+    "match": {
+     "name": 0.4528,
+     "content": 0.4679
+    }
+   },
+   {
+    "oparlKey": "4445",
+    "distance": 0.4701,
+    "match": {
+     "name": 0.4488,
+     "content": 0.4701
+    }
+   },
+   {
+    "oparlKey": "594098",
+    "distance": 0.4788,
+    "match": {
+     "name": 0.4641,
+     "content": 0.4788
+    }
+   },
+   {
+    "oparlKey": "504931",
+    "distance": 0.4808,
+    "match": {
+     "name": 0.468,
+     "content": 0.4808
+    }
+   },
+   {
+    "oparlKey": "604768",
+    "distance": null,
+    "match": {
+     "name": 0.434
+    }
+   },
+   {
+    "oparlKey": "502611",
+    "distance": 0.4412,
+    "match": {
+     "content": 0.4412,
+     "content_chunk": 2
+    }
+   },
+   {
+    "oparlKey": "500587",
+    "distance": 0.4499,
+    "match": {
+     "content": 0.4499,
+     "content_chunk": 1
+    }
+   },
+   {
+    "oparlKey": "624552",
+    "distance": null,
+    "match": {
+     "name": 0.4451
+    }
+   },
+   {
+    "oparlKey": "601271",
+    "distance": 0.4515,
+    "match": {
+     "content": 0.4515,
+     "content_chunk": 3
+    }
+   }
+  ],
+  "n": 10
+ },
+ "radweg am terrainkurweg": {
+  "order": [
+   {
+    "oparlKey": "143775",
+    "distance": 0.4882,
+    "match": {
+     "name": 0.4514,
+     "content": 0.4882
+    }
+   },
+   {
+    "oparlKey": "618290",
+    "distance": 0.48,
+    "match": {
+     "name": 0.4608,
+     "content": 0.48,
+     "content_chunk": 2
+    }
+   },
+   {
+    "oparlKey": "618388",
+    "distance": 0.4883,
+    "match": {
+     "name": 0.4745,
+     "content": 0.4883
+    }
+   },
+   {
+    "oparlKey": "607791",
+    "distance": 0.4903,
+    "match": {
+     "name": 0.4696,
+     "content": 0.4903
+    }
+   },
+   {
+    "oparlKey": "648321",
+    "distance": 0.4996,
+    "match": {
+     "name": 0.4715,
+     "content": 0.4996,
+     "content_chunk": 2
+    }
+   },
+   {
+    "oparlKey": "633201",
+    "distance": 0.5011,
+    "match": {
+     "name": 0.4686,
+     "content": 0.5011
+    }
+   },
+   {
+    "oparlKey": "601203",
+    "distance": 0.5,
+    "match": {
+     "name": 0.4841,
+     "content": 0.5
+    }
+   },
+   {
+    "oparlKey": "22275",
+    "distance": null,
+    "match": {
+     "name": 0.3777
+    }
+   },
+   {
+    "oparlKey": "25027",
+    "distance": 0.4548,
+    "match": {
+     "content": 0.4548
+    }
+   },
+   {
+    "oparlKey": "622417",
+    "distance": null,
+    "match": {
+     "name": 0.396
+    }
+   }
+  ],
+  "n": 10
+ },
+ "Haushalt 2024": {
+  "order": [
+   {
+    "oparlKey": "650275",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.2738
+    }
+   },
+   {
+    "oparlKey": "619697",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3461
+    }
+   },
+   {
+    "oparlKey": "14378",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3829
+    }
+   },
+   {
+    "oparlKey": "642902",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3067
+    }
+   },
+   {
+    "oparlKey": "653776",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3517
+    }
+   },
+   {
+    "oparlKey": "13925",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3982
+    }
+   },
+   {
+    "oparlKey": "585927",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3981
+    }
+   },
+   {
+    "oparlKey": "31570",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3982
+    }
+   },
+   {
+    "oparlKey": "594773",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3982
+    }
+   },
+   {
+    "oparlKey": "622524",
+    "distance": null,
+    "match": {
+     "lexical": true,
+     "name": 0.3981
+    }
+   }
+  ],
+  "n": 10
+ }
+}

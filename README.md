@@ -149,8 +149,10 @@ python src/pgOcr.py
 
 # 2b) Chunk + embed oversized documents (> 8.000 bytes): heading-aware
 #    plaintext chunks in File_chunks, one embedding per chunk; NO LLM
-#    summary for these documents. Resumable; File.content keeps the
-#    document head, contentKind = 'chunked'.
+#    summary for these documents. Resumable.
+#    Since change unify-file-content-in-chunks, File_chunks is the SINGLE
+#    text store: smaller documents carry their complete text as chunk 0,
+#    File.content is retired (NULL) and no pipeline step reads or writes it.
 python src/pgChunks.py
 
 # 3) Summaries: for markdown >8000 chars, store an LLM summary
@@ -161,7 +163,8 @@ python src/pgSummarize.py --src-dir /mnt_ai/data/odd26/ris/ko_extracted \
                           --dst-dir /mnt_ai/data/odd26/ris/ko_sums
 
 # 4) File contents + embeddings: match ko_sums markdown to File rows
-#    (by filename stem) and update File.content/contentKind.
+#    (by filename stem) and store the text in File_chunks (small files as
+#    chunk 0, oversized as chunks 1..n — change unify-file-content-in-chunks).
 #    --embed-missing embeds ONLY files without a contentEmbeddings row.
 python src/pgAddSummaries.py -s /mnt_ai/data/odd26/ris/ko_sums \
                              -f /mnt_ai/data/odd26/ris/ko_extracted \
@@ -213,7 +216,8 @@ outputs, `pgAddFileGeoRefs`/street/district refs preload existing pairs,
   ```
 - File matching in step 4 works on the numeric filename stem
   (`00030895.md` ↔ `File.filename = "00030895.pdf"`); files without a
-  markdown source keep `content IS NULL` (they are skipped by search).
+  markdown source keep no text (no `File_chunks` rows — they are skipped
+  by search).
 - `pgGen` detects new scalar columns/tables from the observed JSON and
   adds them additively — new OParl fields never require a rebuild.
 
@@ -346,8 +350,12 @@ and re-ranked by the LLM reranker:
    one embedding per chunk; a file is recalled via its best-matching chunk,
    which is also the reranker's input (instead of the formerly clipped or
    LLM-summarized 8k text). Smaller documents keep a single vector
-   (`chunk_index = 0`). Rollback switch: `RISKI_CHUNK_RECALL=0` restricts
-   the signal to single/head vectors.
+   (`chunk_index = 0`). Since change `unify-file-content-in-chunks`,
+   `File_chunks` is the SINGLE text store — small documents carry their
+   complete text as chunk 0, and the legacy `File.content`/`contentKind`
+   columns are dropped (retrieval-equality verified pre/post migration,
+   reports under `results/content-unification-*.json`). Rollback switch:
+   `RISKI_CHUNK_RECALL=0` restricts the signal to single/head vectors.
 
 Structured filters (`paperType`, year range, `AgendaItem.result`,
 `Consultation.role`/`authoritative`, tags by scheme, district,
