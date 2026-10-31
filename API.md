@@ -76,6 +76,14 @@ Request:
 { "query": "Digitalstrategie Karlsruhe", "top_k": 5, "filters": null, "signals": null, "summarize": false }
 ```
 
+**Query sanitation** (change: sanitize-queries-and-initial-response):
+`/search` and `/ask` accept letters (German umlauts included), digits,
+whitespace and common punctuation only, max 250 characters, non-empty.
+Violations respond **400** with a German message and run no pipeline
+stage — e.g. `"<script>"` → `"Die Suchanfrage enthält unzulässige
+Zeichen…"`, a 251-char query → `"…zu lang (maximal 250 Zeichen)…"`,
+whitespace-only → `"Die Suchanfrage ist leer."`.
+
 Response (recall only — no `timeline`, no `graph`):
 
 ```json
@@ -110,16 +118,25 @@ Response: `{ "sessionId": "...", "query": "...", "timeline": [ { "start_date": "
 
 ### `POST /graph` — stage 3 (per session)
 
-Request: `{ "session_id": "hex-session-id" }`
-Response: `{ "sessionId": "...", "query": "...", "graph": { "nodes": [], "edges": [] }, "geo_available": true }`
+Request: `{ "session_id": "hex-session-id", "scope": "documents" }`
+
+Response: `{ "sessionId": "...", "query": "...", "scope": "documents", "graph": { "nodes": [], "edges": [] }, "geo_available": true, "expandable_types": ["File", "AgendaItem", "Paper", "Meeting", "Consultation"] }`
+
+`scope` (change: disable-organisation-expansion) selects the view:
+**`documents`** (default — the traversal seeded by the top_k answer
+documents only) or **`full`** (the complete result-list traversal
+including agenda-item seed blocks). Both scopes are computed once per
+stage-2 run; switching serves the stored graph without re-traversal.
+`expandable_types` is the backend-owned list the client derives the
+"Nachbarn laden" button state from.
 
 Out-of-order calls are safe: `/graph` computes stage 2 first if it has not
 run yet, and a later `/timeline` call returns the already-computed result.
 
 ### Unchanged endpoints
 
-- `POST /summarize { session_id, refine?, exclude? }` — LLM summary + per-file metadata (async fill-in)
-- `POST /expand { node_id }` — depth-1 graph neighborhood for client-side merge
+- `POST /summarize { session_id, refine?, exclude? }` — LLM summary + per-file metadata (async fill-in). With `refine: true` the context per file is the query-matched chunk (chunk index from the search phase's match metadata; content/teaser fallback — change: fix-result-summarizer)
+- `POST /expand { node_id }` — depth-1 graph neighborhood for client-side merge. Node types without adjacency or in the disabled registry (Organisation) respond gracefully with `{ "nodes": [], "edges": [], "expandable": false }` instead of an error
 - `GET /geo/{session_id}` — map FeatureCollection (fetch after `/graph`; the map scope is the graph-connected answer set)
 - `GET /facets`, `GET /health`, `GET /sessions/{id}` (debug dump)
 
