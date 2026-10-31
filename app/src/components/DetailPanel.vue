@@ -29,12 +29,16 @@
              (Organisation for now): the control explains instead of
              failing with "Erweiterung fehlgeschlagen" -->
         <template v-if="node">
-          <button type="button" class="action-btn" :disabled="expanding || !nodeExpandable"
-                  :title="nodeExpandable ? '' : 'Dieser Knotentyp wird nicht weiter expandiert'"
+          <button type="button" class="action-btn"
+                  :disabled="expanding || !nodeExpandable || snapshotMode"
+                  :title="snapshotMode
+                    ? 'Beispielsatz — starten Sie eine Suche für Live-Ergebnisse'
+                    : (!nodeExpandable ? 'Dieser Knotentyp wird nicht weiter expandiert' : '')"
                   @click="$emit('expand', node.id)">
             {{ expanding ? 'Lade Nachbarn…' : `Nachbarn laden` }}
           </button>
-          <p v-if="!nodeExpandable" class="expand-hint">Organisationen werden nicht weiter expandiert.</p>
+          <p v-if="snapshotMode" class="expand-hint">Beispielsatz — starten Sie eine Suche für Live-Ergebnisse.</p>
+          <p v-else-if="!nodeExpandable" class="expand-hint">Organisationen werden nicht weiter expandiert.</p>
         </template>
       </div>
 
@@ -64,6 +68,9 @@ const props = defineProps({
   // graph payload (backend-owned; empty list ⇒ fall back to expandable,
   // matching the staggered-rollout contract in the design)
   expandableTypes: { type: Array, default: () => [] },
+  // change: sanitize-queries-and-initial-response — snapshot mode has no
+  // live session: expansion is disabled with a hint (not silently dead)
+  snapshotMode: { type: Boolean, default: false },
 });
 
 defineEmits(['close', 'expand']);

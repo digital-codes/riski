@@ -234,3 +234,34 @@ class TestAskDegraded:
         assert body["intent"] == "search_topic"
         assert body["applied_filters"] == []
         assert any("unreachable" in n for n in body["fallback_notes"])
+
+
+class TestQuerySanitation:
+    """change: sanitize-queries-and-initial-response — /search and /ask
+    reject invalid queries with 400 + German message; valid queries pass."""
+
+    @pytest.mark.parametrize("bad", [
+        "<script>alert(1)</script>",
+        "Frage\x00mit Steuerzeichen",
+        "A" * 251,
+        "   ",
+        "emoji 😄 query",
+    ])
+    def test_search_rejects_invalid_query(self, client, bad):
+        r = client.post("/search", json={"query": bad})
+        assert r.status_code == 400
+        detail = r.json()["detail"]
+        assert any(w in detail for w in ("unzulässige", "zu lang", "leer"))
+
+    def test_ask_rejects_invalid_query(self, client):
+        r = client.post("/ask", json={"query": "<script>x</script>"})
+        assert r.status_code == 400
+        assert "unzulässige" in r.json()["detail"]
+
+    def test_boundary_lengths(self, client):
+        assert client.post("/search", json={"query": "A" * 250}).status_code == 200
+        assert client.post("/search", json={"query": "A" * 251}).status_code == 400
+
+    def test_german_letters_numbers_punctuation_accepted(self, client):
+        q = "Digitalisierung beim Gemeinderat 2024 (Beschlüsse): Haushalt, §42 & Fußnoten!"
+        assert client.post("/search", json={"query": q}).status_code == 200

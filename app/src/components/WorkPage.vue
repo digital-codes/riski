@@ -1,18 +1,30 @@
 <template>
   <div class="wrapper">
     <form class="search-bar" @submit.prevent="runSearch">
-      <input
-        v-model="query"
-        class="search-input"
-        type="search"
-        placeholder="Frage an das Ratsinformationssystem…"
-        :disabled="loading"
-      />
+      <div class="search-input-wrap">
+        <input
+          v-model="query"
+          class="search-input"
+          type="search"
+          placeholder="Frage an das Ratsinformationssystem…"
+          :disabled="loading"
+        />
+        <!-- change: sanitize-queries-and-initial-response — clear symbol at
+             the end of the input line -->
+        <button v-if="query" type="button" class="search-clear"
+                aria-label="Eingabe löschen" title="Eingabe löschen"
+                @click="clearQuery">✕</button>
+      </div>
       <button class="search-btn" type="submit" :disabled="loading || !query.trim()">
         {{ loading ? 'Suche…' : 'Suchen' }}
       </button>
     </form>
     <p v-if="error" class="api-error">{{ error }}</p>
+    <!-- change: sanitize-queries-and-initial-response — canned landing view:
+         visible but calm, directs to a live search for fresh results -->
+    <p v-if="snapshotMode && !error" class="snapshot-hint">
+      Gespeicherter Beispielsatz für die Startseite — suchen Sie für aktuelle Ergebnisse.
+    </p>
   </div>
 
   <div class="wrapper" v-if="rawData || loading">
@@ -58,6 +70,7 @@
     :is-mobile="isMobile"
     :expanding="expanding"
     :expandable-types="expandableTypes"
+    :snapshot-mode="snapshotMode"
     @close="selection = null"
     @expand="onExpand"
   />
@@ -139,6 +152,9 @@ const emptyResponse = ref(null);
 // the LLM summary, no map
 const topics = ref([]);
 const answerMode = ref(null);
+// change: sanitize-queries-and-initial-response — the landing view for the
+// default query is served from the bundled snapshot (no live session)
+const snapshotMode = ref(false);
 
 // graph is mutable state: search replaces it, /expand merges into it
 const graph = ref(null);
@@ -178,9 +194,17 @@ const onSelect = (sel) => {
   selection.value = sel;
 };
 
+// change: sanitize-queries-and-initial-response — clear the input line
+function clearQuery() {
+  query.value = '';
+}
+
 async function runSearch() {
   const q = query.value.trim();
   if (!q || loading.value) return;
+  // change: sanitize-queries-and-initial-response — "Suchen" always runs
+  // the LIVE pipeline (the snapshot is only the initial landing view);
+  // this also makes the button respond for an unchanged input field
   const token = ++searchToken;
   loading.value = true;
   error.value = null;
@@ -211,6 +235,7 @@ async function runSearch() {
   emptyResponse.value = null;
   topics.value = [];
   answerMode.value = null;
+  snapshotMode.value = false;
   try {
     // stage 1: /ask routes the query (intent + filters) and runs recall —
     // the file list renders as soon as this returns, timeline and graph
@@ -369,7 +394,17 @@ async function runSummarize({ refine = false, exclude = [] } = {}) {
   }
 }
 
-const onRefine = () => runSummarize({ refine: true, exclude: summaryExclude.value });
+const onRefine = () => {
+  // change: sanitize-queries-and-initial-response — in snapshot mode the
+  // refine click upgrades to a LIVE run of the current query (the snapshot
+  // has no session to refine); afterwards the button refines for real
+  if (snapshotMode.value) {
+    snapshotMode.value = false;
+    runSearch();
+    return;
+  }
+  runSummarize({ refine: true, exclude: summaryExclude.value });
+};
 
 // change: intent-router — human-readable tried-scope for the empty state
 const scopeText = computed(() => {
@@ -384,6 +419,7 @@ const scopeText = computed(() => {
 });
 
 const onToggleFile = ({ oparlKey, excluded }) => {
+  if (snapshotMode.value) return;  // snapshot: no live session to re-run
   const current = new Set(summaryExclude.value);
   if (excluded) current.add(oparlKey); else current.delete(oparlKey);
   summaryExclude.value = [...current];
@@ -439,7 +475,9 @@ function applyGraph(res) {
 // 2.2: merge /expand response into the current graph, by node id —
 // existing nodes/edges are kept (and keep their layout), only new ones append
 async function onExpand(nodeId) {
-  if (expanding.value) return;
+  // snapshot mode: no live session behind the nodes — the control is
+  // disabled; this guard covers programmatic calls
+  if (expanding.value || snapshotMode.value) return;
   expanding.value = true;
   error.value = null;
   try {
@@ -477,6 +515,9 @@ function onResetGraph() {
 //   graph-scope payload overwrote the summary-scope one)
 let geoFetchSeq = 0;
 async function fetchGeo(token = searchToken) {
+  // snapshot mode has no session — the FeatureCollection comes from the
+  // snapshot file (change: sanitize-queries-and-initial-response)
+  if (snapshotMode.value || !sessionId.value) return;
   const seq = ++geoFetchSeq;
   try {
     const res = await fetch(geoUrl(sessionId.value));
@@ -489,25 +530,46 @@ async function fetchGeo(token = searchToken) {
   } catch { /* map is optional */ }
 }
 
-// offline fallback: static sample so the app still renders without the API;
-// the sample carries all stages at once (change: progressive-frontend-
-// rendering — applies the staged slots directly)
-async function loadSampleFallback() {
+// change: sanitize-queries-and-initial-response — the snapshot carries all
+// staged payloads at once (captured live for the default query by
+// scripts/capture_initial_response.py). Used directly for the landing
+// view (offline=false: no error banner, subtle hint instead) and as the
+// offline fallback when the API is unreachable (offline=true: banner).
+async function applySnapshot(offline) {
   try {
-    const data = await import('../assets/sampleData.json');
-    const result = data.default;
+    const data = (await import('../assets/sampleData.json')).default;
+    const result = data;
+    sessionId.value = null;  // snapshot mode has no live session
     applyStage1(result);
     loadingFiles.value = false;
     timeline.value = result.timeline || [];
     loadingTimeline.value = false;
-    applyGraph({ graph: result.graph, geo_available: result.geo_available });
-    error.value = 'API nicht erreichbar — zeige gespeicherten Beispielsatz.';
+    applyGraph({
+      graph: result.graph,
+      geo_available: result.geo_available,
+      expandable_types: result.expandable_types,
+    });
+    // per-file metadata for the interactive list: the snapshot is capture
+    // time's verdict (refused docs start excluded, as after a live run)
+    summaryFiles.value = (result.top_files || []).map(f => ({
+      oparlKey: f.oparlKey, name: f.name, fileName: f.fileName,
+      downloadUrl: f.downloadurl || f.oparlId,
+      refused: (result.summary_refused || []).some(r => r.oparlKey === f.oparlKey),
+      excluded: (result.summary_refused || []).some(r => r.oparlKey === f.oparlKey),
+    }));
+    geoFC.value = result.geo || null;
+    snapshotMode.value = true;
+    error.value = offline ? 'API nicht erreichbar — zeige gespeicherten Beispielsatz.' : null;
   } catch (e) {
     error.value = 'Weder API noch Beispieldaten verfügbar.';
     loadingFiles.value = false;
     loadingTimeline.value = false;
     loadingGraph.value = false;
   }
+}
+
+async function loadSampleFallback() {
+  await applySnapshot(true);
 }
 
 const checkMobile = () => {
@@ -517,8 +579,10 @@ const checkMobile = () => {
 onMounted(async () => {
   checkMobile();
   window.addEventListener('resize', checkMobile);
-  await runSearch();
-  if (!rawData.value) await loadSampleFallback();
+  // change: sanitize-queries-and-initial-response — the landing view is
+  // served from the bundled snapshot WITHOUT any API call; a live run
+  // happens only on user action ("Suchen"/"Verfeinern")
+  await applySnapshot(false);
 });
 
 onUnmounted(() => {
@@ -543,14 +607,36 @@ onUnmounted(() => {
   gap: 10px;
 }
 
+.search-input-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+}
+
 .search-input {
   flex: 1;
-  padding: 12px 16px;
+  padding: 12px 36px 12px 16px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   font-size: 1rem;
   font-family: inherit;
 }
+
+/* change: sanitize-queries-and-initial-response — clear symbol */
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: #6b7280;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+}
+.search-clear:hover { color: #1f2937; }
 
 .search-input:focus {
   outline: none;
@@ -579,6 +665,13 @@ onUnmounted(() => {
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 0.88rem;
+}
+
+/* change: sanitize-queries-and-initial-response — canned landing hint */
+.snapshot-hint {
+  color: #6b7280;
+  font-size: 0.82rem;
+  margin: 6px 2px 0;
 }
 
 /* Query header (moved from TimeLine.vue — sits above all result panes) */

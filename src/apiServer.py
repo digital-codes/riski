@@ -40,6 +40,7 @@ except ImportError:
     pass
 
 import threading
+import unicodedata
 import uuid
 from typing import Any, Dict, List, Optional
 
@@ -86,6 +87,43 @@ class SearchRequest(BaseModel):
     signals: Optional[Dict[str, bool]] = None
 
 
+# ----------------------------------------------------------------------
+# Query sanitation (change: sanitize-queries-and-initial-response)
+# ----------------------------------------------------------------------
+MAX_QUERY_CHARS = 250
+# allow-list: Unicode letters (covers German umlauts/ß), digits, whitespace,
+# and common punctuation. Everything else (control characters, zero-width
+# characters, emoji, angle brackets / markup) is rejected.
+_QUERY_ALLOWED_PUNCT = set(".,;:!?()[]{}„“«»\"'’`-–—/&%+*#@=_|~°§$€")
+
+
+def validate_user_query(query: str) -> str:
+    """Sanitize a user query; returns the trimmed query or raises
+    HTTPException 400 with a clear German message. Applied to every
+    user-facing query field before any retrieval or decision-model work."""
+    q = (query or "").strip()
+    if not q:
+        raise HTTPException(status_code=400, detail="Die Suchanfrage ist leer.")
+    if len(q) > MAX_QUERY_CHARS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Die Suchanfrage ist zu lang (maximal {MAX_QUERY_CHARS} Zeichen). "
+                   "Bitte kürzen Sie die Anfrage.")
+    for ch in q:
+        if ch.isspace():
+            continue
+        cat = unicodedata.category(ch)
+        if cat.startswith("L") or cat.startswith("N"):
+            continue
+        if ch in _QUERY_ALLOWED_PUNCT:
+            continue
+        raise HTTPException(
+            status_code=400,
+            detail="Die Suchanfrage enthält unzulässige Zeichen. Bitte nur "
+                   "Buchstaben, Zahlen und übliche Satzzeichen verwenden.")
+    return q
+
+
 class ExpandRequest(BaseModel):
     node_id: str = Field(min_length=1, description="Graph node id, '{Type}_{oparlKey}'")
     limit_per_relation: int = Field(default=25, ge=1, le=100)
@@ -121,6 +159,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
     """Recall stage only (change: progressive-frontend-rendering): returns
     top_files, matched_entities, facets, applied_filters + sessionId.
     Timeline and graph follow via POST /timeline and POST /graph."""
+    query = validate_user_query(req.query)  # change: sanitize-queries…
     from src.db import get_engine as _ge  # noqa: F401 (import guard)
 
     try:
@@ -130,7 +169,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
 
     try:
         result = search_stage(
-            session, req.query, top_k=req.top_k,
+            session, query, top_k=req.top_k,
             filters=req.filters, signals=req.signals,
         )
         if req.summarize:
@@ -142,7 +181,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
 
     session_id = uuid.uuid4().hex
     _sessions[session_id] = {
-        "query": req.query,
+        "query": query,
         "filters": req.filters or [],
         "stage1": result,      # full stage-1 payload (top_files with sids)
         "timeline": None,      # filled by POST /timeline
@@ -188,6 +227,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     staged /timeline and /graph endpoints."""
     from src.pgIntentRouter import ask as route_ask
 
+    query = validate_user_query(req.query)  # change: sanitize-queries…
     try:
         session = get_db_session()
     except Exception as exc:  # pragma: no cover - db down
@@ -195,7 +235,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
 
     try:
         result = route_ask(
-            session, req.query, top_k=req.top_k,
+            session, query, top_k=req.top_k,
             signals=req.signals, summarize=req.summarize,
             search_fn=_stage1_search_fn,
         )
@@ -210,7 +250,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     # it in the stage-1 response (change: progressive-frontend-rendering)
     precomputed_graph = result.pop("graph", None)
     _sessions[session_id] = {
-        "query": req.query,
+        "query": query,
         "filters": result.get("applied_filters") or [],
         "intent": result.get("intent"),
         "slots": result.get("slots") or {},
