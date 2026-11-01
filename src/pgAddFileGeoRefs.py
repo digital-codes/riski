@@ -84,23 +84,20 @@ def _iter_files(engine, limit: int, batch_size: int = 500):
     correlated aggregate. Smaller batches: text rows are ~8 KB each."""
     md = MetaData()
     f = Table("File", md, autoload_with=engine)
-    fc = Table("File_chunks", md, autoload_with=engine)
-    text_sq = (
-        select(sa.func.string_agg(fc.c.text, sa.literal_column("chr(10) ORDER BY fc.chunk_index")))
-        .where(fc.c.file_sid == f.c.sid)
-        .correlate(f)
-        .scalar_subquery()
-    )
     last_sid = 0
     with engine.connect() as conn:
         while True:
-            stmt = (
-                select(f.c.sid, f.c.name, text_sq.label("content"))
-                .where(f.c.sid > last_sid)
-                .order_by(f.c.sid)
-                .limit(batch_size)
-            )
-            rows = conn.execute(stmt).fetchall()
+            # correlated string_agg over the file's chunks — raw SQL: the
+            # ORDER BY inside string_agg cannot be expressed portably via
+            # the SQLAlchemy expression language
+            stmt = text(
+                'SELECT f.sid, f.name, (SELECT string_agg(fc.text, chr(10) '
+                'ORDER BY fc.chunk_index) FROM "File_chunks" fc '
+                'WHERE fc.file_sid = f.sid) AS content '
+                'FROM "File" f WHERE f.sid > :last_sid '
+                'ORDER BY f.sid LIMIT :batch')
+            rows = conn.execute(
+                stmt, {"last_sid": last_sid, "batch": batch_size}).fetchall()
             if not rows:
                 return
             yield rows
