@@ -172,12 +172,11 @@ python src/pgAddSummaries.py -s /mnt_ai/data/odd26/ris/ko_sums \
 #    (use -e instead of --embed-missing to re-embed everything)
 
 # 5) Teasers: LLM teaser for every File that has content but no teaser.
-#    Needs DB credentials + an OpenAI-compatible LLM endpoint
-#    (local ollama by default; override for hosted APIs):
-RISKI_USER=riski RISKI_PASSWORD=... \
-RISKI_LLM_URL=https://api.mistral.ai RISKI_LLM_MDL=mistral-small-2603 \
-RISKI_LLM_API_KEY=... \
+#    DB via the shared src.db layer; LLM via the shared src.remote client —
+#    the configured summary model by default (SUMMARY_URL/SUMMARY_MDL,
+#    legacy LLM_URL/LLM_MDL honoured), or --model for one run:
 python src/pgTeasers.py
+# python src/pgTeasers.py --model mistral-small-2603
 
 # 6) Geo references (idempotent, existing pairs are skipped):
 python src/pgAddFileGeoRefs.py --prune   # file name/teaser → streets/districts
@@ -679,6 +678,16 @@ mismatch, aborted the run); the small-document path now targets
 carries the matching constraint, and both embedding paths run in
 savepoints so a failed embedding no longer aborts the whole transaction;
 `pgTeasers` rolls back after a failed teaser `UPDATE` for the same reason.
+
+**Recently implemented** (2026-11-01, teasers-cli-parity): `pgTeasers` now
+uses the shared infrastructure like every other backfill script — the
+database connection resolves via `src.db` (the `-u`/`-p` credential flags
+are gone) and LLM calls go through `src.remote` with the configured
+**summary model** (`SUMMARY_URL`/`SUMMARY_MDL`, legacy `LLM_URL`/`LLM_MDL`
+honoured) instead of the script-local `RISKI_LLM_*` envs; `--model`
+overrides the model for one run. Retry/backoff/429 handling is inherited
+from the shared client, teaser content behavior (map-reduce over chunks,
+word budget, 120% ceiling, filters) is unchanged.
 
 **Still open:**
 
