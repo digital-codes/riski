@@ -176,17 +176,17 @@ def run(
                 for c in chunks:
                     if c["chunk_index"] in existing_idx:
                         continue
-                try:
-                    vec = embed(c["text"])
-                    with conn.begin_nested():
-                        conn.execute(
-                            pg_insert(Embedding)
-                            .values(oparlKey=oparlKey, value=vec,
-                                    chunk_index=c["chunk_index"])
-                            .on_conflict_do_update(
-                                index_elements=["oparlKey", "chunk_index"],
-                                set_={"value": vec})
-                        )
+                    try:
+                        vec = embed(c["text"])
+                        with conn.begin_nested():
+                            conn.execute(
+                                pg_insert(Embedding)
+                                .values(oparlKey=oparlKey, value=vec,
+                                        chunk_index=c["chunk_index"])
+                                .on_conflict_do_update(
+                                    index_elements=["oparlKey", "chunk_index"],
+                                    set_={"value": vec})
+                            )
                     except Exception as e:
                         print(f"Error embedding chunk {c['chunk_index']} "
                               f"of {oparlKey}: {e}")
@@ -229,7 +229,6 @@ def run(
                                 index_elements=["oparlKey", "chunk_index"],
                                 set_={"value": vec})
                         )
-                    )
                 except Exception as e:
                     print(f"Error embedding content for {oparlKey}: {e}")
                     continue
