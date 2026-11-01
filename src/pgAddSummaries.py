@@ -46,7 +46,8 @@ class Embedding(Base):
     # change: content-chunking — 0 = single/head vector (small documents),
     # 1..n = chunk vectors of oversized documents
     chunk_index = Column(Integer, nullable=False, default=0)
-    __table_args__ = (UniqueConstraint('oparlKey', name='uq_embedding_oparlKey'),)
+    __table_args__ = (UniqueConstraint(
+        'oparlKey', 'chunk_index', name='uq_embedding_key_chunk'),)
 
 
 def iter_md_files(sums_dir: Path, full_dir: Path) -> dict[str, Path]:
@@ -175,8 +176,9 @@ def run(
                 for c in chunks:
                     if c["chunk_index"] in existing_idx:
                         continue
-                    try:
-                        vec = embed(c["text"])
+                try:
+                    vec = embed(c["text"])
+                    with conn.begin_nested():
                         conn.execute(
                             pg_insert(Embedding)
                             .values(oparlKey=oparlKey, value=vec,
@@ -219,11 +221,13 @@ def run(
                 try:
                     vec = embed(md_text)
                     print(f"Generated embedding for {oparlKey}, vector length: {len(vec)}")
-                    conn.execute(
-                        pg_insert(Embedding)
-                        .values(oparlKey=oparlKey, value=vec)
-                        .on_conflict_do_update(
-                            index_elements=['oparlKey'], set_={'value': vec}
+                    with conn.begin_nested():
+                        conn.execute(
+                            pg_insert(Embedding)
+                            .values(oparlKey=oparlKey, value=vec, chunk_index=0)
+                            .on_conflict_do_update(
+                                index_elements=["oparlKey", "chunk_index"],
+                                set_={"value": vec})
                         )
                     )
                 except Exception as e:

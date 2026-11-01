@@ -357,6 +357,9 @@ def main():
                 processed += 1
             except Exception as e:
                 print(f"  Failed to update file #{file_id}: {e}")
+                # aborted transaction must be rolled back — otherwise every
+                # following statement fails with InFailedSqlTransaction
+                conn.rollback()
 
             pct = int(100 * processed / total) if total > 0 else 0
             bar = '#' * int(50 * processed / total) if total > 0 else '#' * 50

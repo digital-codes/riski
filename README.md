@@ -671,6 +671,15 @@ and query sanitation (letters/umlauts, digits, punctuation, 250 chars —
 HTTP 400 otherwise) plus a snapshot-served landing view for the default
 query (`sanitize-queries-and-initial-response`).
 
+**Recently implemented** (2026-11-01): post-chunking embedding upsert fix —
+`pgAddSummaries` still upserted embeddings with `ON CONFLICT (oparlKey)`
+after the uniqueness migrated to `(oparlKey, chunk_index)` (constraint
+mismatch, aborted the run); the small-document path now targets
+`(oparlKey, chunk_index)` with `chunk_index=0`, the `Embedding` model
+carries the matching constraint, and both embedding paths run in
+savepoints so a failed embedding no longer aborts the whole transaction;
+`pgTeasers` rolls back after a failed teaser `UPDATE` for the same reason.
+
 **Still open:**
 
 - **Location clarification dialog** — broad location answers currently
