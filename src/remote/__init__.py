@@ -19,6 +19,7 @@ def _load_private():
 
         return pr
     except Exception:
+        print("Failed to load private.py")  
         return None
 
 
@@ -251,11 +252,19 @@ def embed(text: str, model: str | None = None, dimensions: int | None = None) ->
     Returns a ``np.ndarray`` of shape ``(dim,)``. Raises on endpoint failure;
     no fabricated vector is ever returned.
     """
-    payload = {
-        "model": model or EMBED_MODEL,
-        "input": [text[:8100]],  # limit length to typical service limits
-        "dimensions": dimensions or EMBED_DIM,
-    }
+    # do not use dimensions in the api call for bge type models like BAAI/bge-m3 
+    EMDL_MODEL = model or EMBED_MODEL
+    if EMDL_MODEL and "bge-m3" in EMDL_MODEL.lower():
+        payload = {
+            "model": EMDL_MODEL,
+            "input": [text[:8100]],  # limit length to typical service limits
+        }
+    else:
+        payload = {
+            "model": EMDL_MODEL,
+            "input": [text[:8100]],  # limit length to typical service limits
+            "dimensions": dimensions or EMBED_DIM,
+        }
     data = _post("embeddings", payload)
     vec = data["data"][0]["embedding"]
     arr = np.array(vec, dtype=np.float64)
@@ -270,11 +279,19 @@ def embed_batch(texts: list, model: str | None = None,
     Preserves input order (sorted by the API's ``index`` field). Raises on
     endpoint failure; no fabricated vector is ever returned.
     """
-    payload = {
-        "model": model or EMBED_MODEL,
-        "input": [t[:8100] for t in texts],
-        "dimensions": dimensions or EMBED_DIM,
-    }
+    # do not use dimensions in the api call for bge type models like BAAI/bge-m3 
+    EMDL_MODEL = model or EMBED_MODEL
+    if EMDL_MODEL and "bge-m3" in EMDL_MODEL.lower():
+        payload = {
+            "model": EMDL_MODEL,
+            "input": [t[:8100] for t in texts],
+        }
+    else:
+        payload = {
+            "model": EMDL_MODEL,
+            "input": [t[:8100] for t in texts],
+            "dimensions": dimensions or EMBED_DIM,
+        }
     data = _post("embeddings", payload)
     out: list = [None] * len(texts)
     for item in data["data"]:
