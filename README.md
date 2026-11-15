@@ -1,6 +1,15 @@
 # riski — Ratsinformationssystem erklären
 
-[![License: PSL-AI 1.3](Lizenz-Badge-PSL-1.3.png)](LICENSE)
+<!-- 
+[![License: PSL-AI 1.3](Lizenz-Badge-PSL-1.3.png)](LICENSE) 
+-->
+
+<a href="LICENSE">
+  <img src="Lizenz-Badge-PSL-1.3.png"
+       alt="License: PSL-AI 1.3"
+       height="20">
+</a>
+
 
 > **Note on AI use:** this project is developed with heavy assistance from AI coding agents (Claude Code / opencode); LLMs are also a runtime component (summaries, teasers, OCR, embeddings) via the shared `src/remote` layer.
 
