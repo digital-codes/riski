@@ -1,5 +1,7 @@
 # riski — Ratsinformationssystem erklären
 
+[![License: PSL-AI 1.3](license-badge.png)](LICENSE)
+
 > **Note on AI use:** this project is developed with heavy assistance from AI coding agents (Claude Code / opencode); LLMs are also a runtime component (summaries, teasers, OCR, embeddings) via the shared `src/remote` layer.
 
 **riski** is a Python toolkit that makes the Karlsruhe [Ratsinformationssystem (RIS)](https://web1.karlsruhe.de/ris/oparl) — the city council's open-data portal — searchable and explainable. It downloads the council's OParl data (meetings, agenda items, papers, files, consultations), imports it into a PostgreSQL database with a typed, relationally-linked schema, and then enriches it with semantic layers: LLM-generated German summaries and teasers, document tags, geographic references (streets and districts), and vector embeddings. On top of that data it offers semantic search, graph queries, and an interactive timeline view that shows *when* and *in which context* a topic appeared in council business.
