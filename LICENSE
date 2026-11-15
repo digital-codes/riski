@@ -1,8 +1,14 @@
-# Permissive Software License with AI Notice — Version 1.1
+# Permissive Software License with AI Notice — Version 1.3
 
 Copyright (c) 2026 Andreas Kugel, to the extent copyright exists.
 
-For purposes of this license, "Software" means this software and its associated documentation files. "Licensors" means the persons or entities applying this license to their contributions and granting the rights they are authorized to grant.
+## DEFINITIONS
+
+"Software" means the software and associated documentation made available under this license, including any portions of them.
+
+"Licensor" means each person or entity making material available under this license, to the extent that person or entity is authorized to grant the rights described below. "Licensors" means all such persons and entities collectively.
+
+Material that is independently subject to a separate license remains subject to that license. Merely identifying material as separately licensed does not terminate or restrict rights already granted under this license.
 
 ## PERMISSION
 
@@ -10,23 +16,71 @@ To the extent of the copyright and related rights that each Licensor is authoriz
 
 The above copyright notice, if any, and this entire license text, including the warranty disclaimer and limitation of liability, shall be included in all copies or substantial portions of the Software distributed in reliance on this license.
 
+This condition does not require disclosure of source code.
+
+Modifications and larger works incorporating the Software may be distributed under different or additional terms, provided that the notice-preservation condition above is satisfied and such terms do not purport to revoke or diminish rights granted under this license to the original Software.
+
 ## AI-GENERATED AND UNPROTECTED MATERIAL
 
-The Software includes material generated or modified with the assistance of artificial intelligence systems.
+The Software may include material generated or modified with the assistance of artificial intelligence systems.
+
+The permission granted above applies regardless of whether material was created with or without AI assistance, to the extent the relevant rights exist and the Licensor is authorized to license them.
 
 This license does not assert that copyright or related rights exist in every part of the Software.
 
-To the extent such rights exist in AI-generated or AI-assisted material and the Licensors are authorized to license them, that material is included in the permission granted above.
+To the extent any part of the Software is not protected by copyright or related rights, no permission under those rights is required from the Licensors. This license imposes no conditions on uses that do not require permission under the rights licensed here.
 
-To the extent any part of the Software is not protected by copyright or related rights, no permission under those rights is required from the Licensors, and this license imposes no conditions on the exercise of freedoms that exist independently of this license.
+## THIRD-PARTY RIGHTS AND SEPARATE LICENSES
 
-## THIRD-PARTY RIGHTS
+This license grants only rights that each Licensor is authorized to grant. It does not override license terms applicable to separately licensed material or grant rights that a Licensor is not authorized to grant.
 
-This license grants only rights that the Licensors are authorized to grant.
+Subject to the disclaimer below, no representation or warranty is made that the Software, including AI-generated or AI-assisted material, is free from third-party intellectual property claims.
 
-It does not grant rights belonging to third parties or override any applicable third-party rights, licenses, or legal restrictions.
+## DISCLAIMER OF WARRANTY
 
-No representation or warranty is made that the Software, including AI-generated or AI-assisted material, is free from third-party intellectual property claims.
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, CORRECTNESS, SECURITY, AND NONINFRINGEMENT.
+
+## LIMITATION OF LIABILITY
+
+TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE LICENSORS, AUTHORS, COPYRIGHT HOLDERS, CONTRIBUTORS, OR DISTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+NOTHING IN THIS LICENSE EXCLUDES OR LIMITS LIABILITY TO THE EXTENT THAT SUCH LIABILITY CANNOT LAWFULLY BE EXCLUDED OR LIMITED.# Permissive Software License with AI Notice — Version 1.3
+
+Copyright (c) [year] [rights holder(s)], to the extent copyright exists.
+
+## DEFINITIONS
+
+"Software" means the software and associated documentation made available under this license, including any portions of them.
+
+"Licensor" means each person or entity making material available under this license, to the extent that person or entity is authorized to grant the rights described below. "Licensors" means all such persons and entities collectively.
+
+Material that is independently subject to a separate license remains subject to that license. Merely identifying material as separately licensed does not terminate or restrict rights already granted under this license.
+
+## PERMISSION
+
+To the extent of the copyright and related rights that each Licensor is authorized to license, permission is hereby granted, free of charge, to any person obtaining a copy of the Software to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following condition:
+
+The above copyright notice, if any, and this entire license text, including the warranty disclaimer and limitation of liability, shall be included in all copies or substantial portions of the Software distributed in reliance on this license.
+
+This condition does not require disclosure of source code.
+
+Modifications and larger works incorporating the Software may be distributed under different or additional terms, provided that the notice-preservation condition above is satisfied and such terms do not purport to revoke or diminish rights granted under this license to the original Software.
+
+## AI-GENERATED AND UNPROTECTED MATERIAL
+
+The Software may include material generated or modified with the assistance of artificial intelligence systems.
+
+The permission granted above applies regardless of whether material was created with or without AI assistance, to the extent the relevant rights exist and the Licensor is authorized to license them.
+
+This license does not assert that copyright or related rights exist in every part of the Software.
+
+To the extent any part of the Software is not protected by copyright or related rights, no permission under those rights is required from the Licensors. This license imposes no conditions on uses that do not require permission under the rights licensed here.
+
+## THIRD-PARTY RIGHTS AND SEPARATE LICENSES
+
+This license grants only rights that each Licensor is authorized to grant. It does not override license terms applicable to separately licensed material or grant rights that a Licensor is not authorized to grant.
+
+Subject to the disclaimer below, no representation or warranty is made that the Software, including AI-generated or AI-assisted material, is free from third-party intellectual property claims.
 
 ## DISCLAIMER OF WARRANTY
 
