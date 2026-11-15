@@ -56,19 +56,18 @@ const isDatenschutz = computed(() => props.page === '/datenschutz');
 
     <template v-else>
       <h1>Impressum</h1>
-      <p class="proto-note">Hinweis: Dummy-Angaben eines Forschungsprototyps.</p>
 
       <h2>Angaben gemäß § 5 DDG</h2>
       <p>
         riski — Forschungsprototyp<br />
-        Musterstraße 12<br />
-        76131 Karlsruhe<br />
-        Deutschland
+        Dr. Andreas Kugel<br>
+        Karolinenstr. 4<br>
+        76135 Karlsruhe<br>
       </p>
 
       <h2>Kontakt</h2>
       <p>
-        E-Mail: info@example.org<br />
+        E-Mail: info@digital-codes.de<br>
       </p>
 
       <h2>Haftungshinweis</h2>
