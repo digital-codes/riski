@@ -7,7 +7,7 @@
 <a href="LICENSE">
   <img src="Lizenz-Badge-PSL-1.3.png"
        alt="License: PSL-AI 1.3"
-       height="20">
+       height="48">
 </a>
 
 
