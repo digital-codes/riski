@@ -84,7 +84,7 @@ RESPONSE_FIELDS = [
     "source_refs",
 ]
 
-_REQUEST_PROMPT = """Du bist ein extrahierender Assistent. Extrahiere TERNS aus dem
+_REQUEST_PROMPT = """Du bist ein extrahierender Assistent. Extrahiere die Kernfakten aus dem
 folgenden deutschen Dokument (Antrag/Anfrage der Karlsruher
 Kommunalpolitik) und antworte AUSSCHLIESSLICH mit einem JSON-Objekt mit
 genau diesen Feldern:
@@ -92,6 +92,8 @@ genau diesen Feldern:
 {fields}
 
 Regeln:
+- ALLE Feldinhalte streng auf DEUTSCH — übernimm die Worte des
+  Dokuments, übersetze nicht, paraphrasiere nicht ins Englische.
 - Nur Fakten aus dem Dokument. Wenn etwas nicht drinsteht: leere
   Zeichenkette (""), niemals erfinden.
 - involved_cost / start_date / end_date nur mit Werten aus dem Text.
@@ -101,12 +103,14 @@ Regeln:
 
 _RESPONSE_PROMPT = """Du bist ein extrahierender Assistent. Das Folgende sind
 Reaktions-/Entscheidungstexte (Protokoll, Beschluss, Antwort) zu einem
-Antrag des Gemeinderats Karlsruhe. Extrahiere TERNS und antworte
+Antrag des Gemeinderats Karlsruhe. Extrahiere die Kernfakten und antworte
 AUSSCHLIESSLICH mit einem JSON-Objekt mit genau diesen Feldern:
 
 {fields}
 
 Regeln:
+- ALLE Feldinhalte streng auf DEUTSCH — übernimme die Worte des
+  Dokuments, übersetze nicht, paraphrasiere nicht ins Englische.
 - Nur Fakten aus den Texten. Fehlt etwas: "" (niemals erfinden).
 - response_type: einer von zugestimmt/abgelehnt/vertagt/verwiesen/
   zur_kenntnis_gekommen/erledigt/ja_stellungnahme/anders.
@@ -183,44 +187,77 @@ class StatementExtractor:
 
 
 def modification_links(store: KgStore) -> int:
-    """Link modification pairs to their original request pair (D11)."""
+    """Link modification pairs to their original request pair (D11).
+
+    Title similarity uses the Paper names from PostgreSQL (attachment
+    names are boilerplate like "Änderungs-/Ergänzungsantrag" and would
+    match everything at ratio 1.0).
+    """
+    from sqlalchemy import text as _t
+
+    from src.db import get_engine
+
+    conn = get_engine(readonly=True).connect()
+    names: dict[str, str] = {}
+    for row in conn.execute(_t('SELECT "oparlId", name FROM "Paper"')):
+        names[row[0]] = row[1] or ""
+    conn.close()
+
     mods = store.conn.execute(
-        "SELECT pair_key, paper_key, meeting_date FROM pairs WHERE request_type = 'aenderungsantrag' AND status = 'identified'"
+        """
+        SELECT pair_key, paper_key, meeting_date FROM pairs
+        WHERE request_type = 'aenderungsantrag'
+        """
     ).fetchall()
+    cands = store.conn.execute(
+        """
+        SELECT pair_key, paper_key, meeting_date FROM pairs
+        WHERE request_type IN ('antrag', 'anfrage', 'beschlussvorlage')
+        """
+    ).fetchall()
+
+    import difflib
+
+    def _year(md: str | None) -> int | None:
+        try:
+            return int(md.split("-")[0])
+        except (ValueError, AttributeError, IndexError):
+            return None
+
     links = 0
     for mod in mods:
-        cands = store.conn.execute(
-            """
-            SELECT pair_key, meeting_date FROM pairs
-            WHERE request_type IN ('antrag', 'anfrage', 'beschlussvorlage')
-            ORDER BY meeting_date
-            """
-        ).fetchall()
-        # title of the modification paper
-        title = store.conn.execute(
-            "SELECT name FROM pair_documents WHERE pair_key = ? LIMIT 1", (mod["pair_key"],)
-        ).fetchone()
+        mod_title = names.get(mod["paper_key"], "")
+        if not mod_title:
+            continue
+        mod_year = _year(mod["meeting_date"])
         best_key, best_ratio = None, 0.0
-        import difflib
-
         for cand in cands:
-                t = store.conn.execute(
-                    "SELECT name FROM pair_documents WHERE pair_key = ? LIMIT 1",
-                    (cand["pair_key"],),
-                ).fetchone()
-                if not t or not t["name"]:
-                    continue
-                ratio = difflib.SequenceMatcher(
-                    None, (title["name"] or "").lower(), (t["name"] or "").lower()
-                ).ratio()
-                if ratio > best_ratio:
-                    best_key, best_ratio = cand["pair_key"], ratio
+            cand_title = names.get(cand["paper_key"], "")
+            if not cand_title or cand["pair_key"] == mod["pair_key"]:
+                continue
+            # prefer temporally close originals (± 1 year): only run the
+            # expensive difflib when the years are plausibly adjacent —
+            # a modification request always follows its original closely
+            cy = _year(cand["meeting_date"])
+            if mod_year is not None and cy is not None and abs(cy - mod_year) > 1:
+                continue
+            ratio = difflib.SequenceMatcher(
+                None, mod_title.lower(), cand_title.lower()
+            ).ratio()
+            if mod_year is not None and cy is not None and abs(cy - mod_year) <= 1:
+                ratio = min(1.0, ratio + 0.1)
+            if ratio > best_ratio:
+                best_key, best_ratio = cand["pair_key"], ratio
         if best_key and best_ratio >= MODIFY_RATIO:
             store.upsert_statement(
                 mod["pair_key"],
                 "link",
                 None,
-                json.dumps({"modifies": best_key, "title_ratio": round(best_ratio, 3)}, ensure_ascii=False),
+                json.dumps(
+                    {"modifies": best_key, "title_ratio": round(best_ratio, 3),
+                     "title": mod_title},
+                    ensure_ascii=False,
+                ),
             )
             links += 1
     return links
@@ -234,6 +271,11 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=0, help="at most N pairs")
     parser.add_argument("--skip-request", action="store_true")
     parser.add_argument("--skip-response", action="store_true")
+    parser.add_argument(
+        "--commit-every", type=int, default=5,
+        help="commit the SQLite store every N pairs (checkpointing; the "
+        "long bulk run must survive interruption without repeating work)",
+    )
     args = parser.parse_args()
 
     engine = get_engine(readonly=True)
@@ -273,20 +315,24 @@ def main() -> int:
 
         # ---- request stage ------------------------------------------
         if not args.skip_request:
-            body, ids = texts_for_role(
-                conn, role_keys["request"] + role_keys["modification"]
-            )
+            req_docs = role_keys["request"] + role_keys["modification"]
+            body, ids = texts_for_role(conn, req_docs)
+            # metadata comes from the DB, never from the model
+            filenames = [
+                d["filename"] for d in docs if d["role"] in ("request", "modification") and d["filename"]
+            ]
+            meta = {
+                "meeting_date": pair["meeting_date"] or "",
+                "author": author,
+                "request_type": pair["request_type"] or "",
+                "document_id": "|".join(ids),
+                "file_names": ", ".join(filenames),
+            }
             try:
                 out = extractor.extract("request", body)
-                clean = extractor.sanitize(
-                    "request",
-                    out,
-                    {
-                        "meeting_date": pair["meeting_date"] or "",
-                        "author": author,
-                        "pair_request_type": pair["request_type"] or "",
-                    },
-                )
+                clean = extractor.sanitize("request", out, meta)
+                for owned in ("meeting_date", "author", "request_type", "document_id", "file_names"):
+                    clean[owned] = meta[owned]  # DB values always win
                 store.upsert_statement(
                     pair["pair_key"], "request", None, json.dumps(clean, ensure_ascii=False)
                 )
@@ -301,7 +347,7 @@ def main() -> int:
             if cand_ids:
                 body, ids = texts_for_role(conn, cand_ids)
                 epilogue = (
-                    f"Vorbekannt aus der Datenbank: outcome='{pair['outcome']}', "
+                    f"Vorbekannt aus der Datenbank: Ergebnis='{pair['outcome']}', "
                     f"Beschluss der Sitzung vom {pair['meeting_date']}."
                 )
                 try:
@@ -309,8 +355,13 @@ def main() -> int:
                     clean = extractor.sanitize(
                         "response",
                         out,
-                        {"meeting_date": pair["meeting_date"] or "", "outcome_db": pair["outcome"] or ""},
+                        {
+                            "meeting_date": pair["meeting_date"] or "",
+                            "outcome_db": pair["outcome"] or "",
+                            "document_id": "|".join(cand_ids[:4]),
+                        },
                     )
+                    clean["meeting_date"] = pair["meeting_date"] or ""
                     store.upsert_statement(
                         pair["pair_key"], "response", None, json.dumps(clean, ensure_ascii=False)
                     )
@@ -320,6 +371,8 @@ def main() -> int:
                     log.warning("response extraction failed for %s: %s", pair["pair_key"], exc)
 
         store.set_pair_status(pair["pair_key"], "statements")
+        if args.commit_every and stats["pairs"] % args.commit_every == 0:
+            store.commit()  # checkpoint: resume later without repeating
 
     store.commit()
     ticker.tick(f"done: {stats}", force=True)

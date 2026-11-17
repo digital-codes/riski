@@ -181,6 +181,8 @@ def main() -> int:
             stats["untagged"] += 1
         stats["docs"] += 1
         ticker.tick(f"docs={stats['docs']} tagged={stats['tagged']} untagged={stats['untagged']}")
+        if args.commit_every and stats["docs"] % args.commit_every == 0:
+            store.commit()
 
     store.commit()
     ticker.tick(f"done: {stats}", force=True)

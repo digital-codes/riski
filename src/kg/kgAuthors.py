@@ -128,6 +128,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--store", default=DEFAULT_STORE)
     parser.add_argument("--limit", type=int, default=0, help="at most N pairs")
+    parser.add_argument("--commit-every", type=int, default=10, help="checkpoint commit interval")
     parser.add_argument("--list-parties", action="store_true")
     args = parser.parse_args()
 
@@ -193,6 +194,8 @@ def main() -> int:
             )
         else:
             stats["unknown"] += 1
+        if args.commit_every and stats["pairs"] % args.commit_every == 0:
+            store.commit()
 
     store.commit()
     ticker.tick(f"done: {stats}", force=True)
