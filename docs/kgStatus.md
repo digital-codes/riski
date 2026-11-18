@@ -29,6 +29,11 @@ Key events since the last checkpoint:
   papers): kgProtocols structural path B + session-date guard + outcome
   derivation from protocol wording → 267 verified-response pairs
   (details in `docs/kgProtocols.md`).
+* **Ballot screenshots integrated** (`kgAbstimmung.py`, design D13):
+  631 per-TOP vote screenshots attached (with OCR-clipped-digit
+  cross-checks vs the textual outcome; `pair_documents.verify_note`
+  carries the detail) → **792 pairs with response docs**;
+  `docs/kgAbstimmung.md`.
 * **Extraction order**: response-bearing pairs first (user decision);
   restart commands below.
 
@@ -44,9 +49,17 @@ Stats JSONs: `results/kg_identification_stats.json`,
   `curl -s localhost:11434/api/generate -d '{"model":"<m>","keep_alive":0}' -X POST`
 * **Stop the previous model before switching** — concurrent hot models
   share GPU/CPU and stall everything.
-* Extraction model: `mistral:latest` (~9 s, concise German),
-  `granite4.2:8b` is quality-favorite but 8× slower; German-only output
-  is enforced in the prompts (mistral mixed English otherwise).
+* Extraction model (2026-11-18, user decision): **local ollama is
+  retired for kg** — everything runs on the OLC cloud models:
+  extraction `gpt-oss:20b-cloud` (OLC_SUMMARY, ~3–6 s/pair, concise
+  German), cross-check verdicts `metis` via greenpt SYSONE_URL (SystemOne —
+  **switched 2026-11-18: same protocol, half the OLC_SYSONE cost,
+  verified on 8 live pairs — 7/8 identical verdict directions, the one
+  deviation a borderline 0.548/0.158 case**),
+  tagging `clef:27b-cloud` one-call-all-tags. `--endpoint olc` is the
+  scripts' default; german-only output is enforced in the prompts
+  (the earlier mistral runs mixed English otherwise). Local candidates
+  remain documented for history + `kgModelSelect --include-local`.
 
 ## Resume — the bulk statements run (task 5 continuation)
 

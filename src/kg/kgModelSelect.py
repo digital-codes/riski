@@ -170,6 +170,12 @@ def main() -> int:
         help="comma-separated model overrides (local ollama names only)",
     )
     parser.add_argument("--skip-olc", action="store_true")
+    parser.add_argument(
+        "--include-local",
+        action="store_true",
+        help="also benchmark local ollama candidates (NOT default: the "
+        "local ollama runner is retired for kg per user decision "
+        "2026-11-18 — cloud OLC only)")
     parser.add_argument("--report", default=DEFAULT_REPORT)
     args = parser.parse_args()
 
@@ -182,14 +188,16 @@ def main() -> int:
     ticker.tick(f"sample pairs: {len(pairs)}", force=True)
 
     results = []
-    # cloud first (fast); then local candidates — each preceded by unload
+    # default: OLC cloud only (user decision 2026-11-18). Local ollama
+    # candidates require --include-local (runner retired otherwise)
     if not args.skip_olc:
         results.append(run_model(None, "olc", pairs, store, conn))
-    for model in (args.models.split(",") if args.models else LANGUAGE_MODELS):
-        stop_local_model(model)
-        time.sleep(2)
-        results.append(run_model(model, "ollama", pairs, store, conn))
-        stop_local_model(model)
+    if args.include_local:
+        for model in (args.models.split(",") if args.models else LANGUAGE_MODELS):
+            stop_local_model(model)
+            time.sleep(2)
+            results.append(run_model(model, "ollama", pairs, store, conn))
+            stop_local_model(model)
 
     lines = [
         f"# kg model selection ({date.today().isoformat()})\n",

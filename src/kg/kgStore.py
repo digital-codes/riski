@@ -185,6 +185,27 @@ class KgStore:
             )
             self.conn.commit()
 
+    def ensure_verify_note(self) -> None:
+        """Add ``pair_documents.verify_note`` (idempotent, additive).
+
+        Per-attachment verification detail for response documents
+        (kgProtocols outcome/top checks, kgAbstimmung OCR votes) —
+        NULL for unverified or note-less attachments.
+        """
+        cols = [r[1] for r in self.conn.execute("PRAGMA table_info(pair_documents)")]
+        if "verify_note" not in cols:
+            self.conn.execute(
+                "ALTER TABLE pair_documents ADD COLUMN verify_note TEXT"
+            )
+            self.conn.commit()
+
+    def set_verify_note(self, pair_key: str, doc_key: str, note: str) -> None:
+        self.conn.execute(
+            "UPDATE pair_documents SET verify_note = ? "
+            "WHERE pair_key = ? AND doc_key = ?",
+            (note, pair_key, doc_key),
+        )
+
     def set_pre_stage(self, pair_key: str) -> None:
         self.conn.execute(
             "UPDATE pairs SET pre_stage = 1 WHERE pair_key = ?", (pair_key,)

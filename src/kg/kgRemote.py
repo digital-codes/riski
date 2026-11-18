@@ -35,9 +35,12 @@ CLOUD_CONFIG_ATTRS = {
         "summary_url": "OLC_SUMMARY_URL",
         "summary_model": "OLC_SUMMARY_MDL",
         "summary_key": "OLC_SUMMARY_KEY",
-        "sysone_url": "OLC_SYSONE_URL",
-        "sysone_model": "OLC_SYSONE_MDL",
-        "sysone_key": "OLC_SYSONE_KEY",
+        # decision verdicts: greenpt metis (SYSONE_* in private.py) —
+        # same protocol, half the OLC_SYSONE cost, verified equal
+        # direction behaviour on live pairs (2026-11-18)
+        "sysone_url": "SYSONE_URL",
+        "sysone_model": "SYSONE_MDL",
+        "sysone_key": "SYSONE_KEY",
     },
     "hf": {
         "base_url": "HF_SUMMARY_URL",

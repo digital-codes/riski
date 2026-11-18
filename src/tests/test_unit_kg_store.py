@@ -132,3 +132,18 @@ class TestQualifierGrounding:
             "SELECT tag, qualifier FROM qualifiers LIMIT 1"
         ).fetchone()
         assert tag == "Road construction" and qual == "Ausbau"
+
+
+class TestVerifyNote:
+    def test_ensure_and_set(self, store):
+        store.ensure_verify_note()
+        cols = [r[1] for r in store.conn.execute("PRAGMA table_info(pair_documents)")]
+        assert "verify_note" in cols
+        store.upsert_document("p|m", {"doc_key": "d1", "filename": "1.pdf"})
+        store.set_verify_note("p|m", "d1", "ok: OCR consistent (JA=45, NEIN=0)")
+        row = store.documents_for_pair("p|m")[0]
+        assert row["verify_note"].startswith("ok:")
+        # idempotent
+        store.ensure_verify_note()
+        cols2 = [r[1] for r in store.conn.execute("PRAGMA table_info(pair_documents)")]
+        assert cols == cols2

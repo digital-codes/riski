@@ -13,6 +13,8 @@
 - [x] 2.4 Implement `kgProtocols.py` (design D9 amendment): attach agenda-item protocol files / meeting results protocols to pairs as role `response` only when TOP-number reference AND Beschluss-section outcome wording are verified against the pair; unverified stays unattached and counted; verify TOP/outcome checker on the verified sample numbers (219/244 top-match baseline) with unit tests + live run summary; document usage in `docs/kgProtocols.md`
 - [x] 2.5 Implement `kgChains.py` (design D10 amendment): pre-stage flag (`pairs.pre_stage`) for all but the last pair per paper, consecutive `pair_links` table (first → … → last by meeting date), and role-derived outcome (`Kenntnisnahme` role only when result is NULL); verify on the 220 multi-meeting papers (199 with resolvable outcome) + unit tests; document in `docs/kgChains.md`
 
+- [x] 2.6 Implement `kgAbstimmung.py` (design D13 amendment): ballot screenshots as response candidates (paper-linked + registry via name-TOP and File.date session signal), OCR vote-count cross-check vs. textual outcome with clipped-digit warnings, per-attachment verify_note (ensure_verify_note additive column); full run: 631 attached, 205 ok / 25 warn / 401 n.a., 792 pairs with response documents total; document in `docs/kgAbstimmung.md`
+
 ## 3. Tag schema + tags
 
 - [x] 3.1 Implement `kgTagSchema.py` authoring the ris-ki tag table with one description per tag (https://ris-ki.de/ris/file-tags, qualifiers like Neubau/Sanierung/Erweiterung/Rückbau) into `config/kg_vocabulary.yaml` and the SQLite tag table; verify the seeded table renders with `kgTagSchema.py --list`

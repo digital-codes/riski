@@ -61,6 +61,21 @@ The system SHALL reconstruct the history of an item across meetings: papers disc
 - **WHEN** a pair has no AgendaItem.result but its consultation role is "Kenntnisnahme"
 - **THEN** the outcome is set to ``kenntnisnahme`` with signal ``db-partial`` and reduced confidence, only because the result column is empty (a present result always wins)
 
+### Requirement: Ballot-screenshot vote evidence
+Per-TOP ballot screenshots (``File.name LIKE 'Abstimmung%'``) SHALL be attachable to pairs as response documents when the TOP and session are verified; the OCR'd JA/NEIN/ENTHALTUNG counts SHALL be cross-checked against the pair's textual outcome and any contradiction SHALL be stored as a warning (clipped-digit risk) instead of being trusted or discarded. Attachment detail SHALL be persisted per document (verify_note).
+
+#### Scenario: Consistent ballot counts
+- **WHEN** an Abstimto screenshot shows JA=45, NEIN=0 for a pair whose outcome is "zugestimmt" and TOP + session date match
+- **THEN** the file is attached with role "response" and verify_note records the consistent vote counts
+
+#### Scenario: Contradicting OCR counts kept with warning
+- **WHEN** the OCR'd majority (NEIN) contradicts the pair's textual outcome (zugestimmt) — plausible clipped-digit misreading
+- **THEN** the attachment is kept, verify_note flags the contradiction explicitly, and downstream consumers know the counts are a hint only
+
+#### Scenario: Session signal without text date
+- **WHEN** the screenshot text carries no parseable date but the File.date equals the pair's meeting date
+- **THEN** session verification passes via the deterministic File metadata
+
 ### Requirement: Status reporting
 The script SHALL print progress status (counts found, classified, excluded) to the console at intervals of at most 10 seconds, and SHALL be resumable without duplicating output rows.
 

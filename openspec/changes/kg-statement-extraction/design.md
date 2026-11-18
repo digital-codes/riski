@@ -63,6 +63,9 @@ Constraints from docs/kg_building.md: prototype only, all documents German, no c
 ### D8: Resumability
 All stages upsert on stable keys (pair key = `(paper_oparl_id, first_meeting_oparl_id)`; statement rows keyed by pair + stage; tag rows by file+tag) with a `status` column per pair (`identified → tagged → statements → crosschecked`). Re-runs skip done rows; interrupted stages reprocess only their own stage.
 
+### D13: Ballot-screenshot evidence class (2026-11-18 amendment)
+Operator observation: 2,299 `File.name LIKE 'Abstimmung%'` files are per-TOP ballot screenshots (KPanel/QUINTA format — TOP number, session timestamp, JA/NEIN/ENTHALTUNG counts, party seat maps; see report addendum 2). New stage `kgAbstimmung.py` adds them as response candidates to EXISTING pairs (no kgIdentify rerun — upserts): paper-linked files direct, others via name-TOP + session (text date **or** deterministic `File.date` — preferred). The screenshot IS the result, so no outcome-wording check; instead the OCR'd numeric majority is CROSS-CHECKED against the textual outcome (zugestimmt/beschlossen → JA dominant, abgelehnt → NEIN dominant). Clipped-digit risk (8 vs 0): contradictions are kept but flagged — a `verify_note` (additive column on `pair_documents`, `ensure_verify_note`) records verdict + parsed counts per attachment; 205 ok / 25 warn / 403 n.a. on the full run; 792 pairs now carry response docs.
+
 ### D12b: d3:2b via local SystemOne endpoint (2026-11-18 correction)
 The decision model IS serveable: ollama exposes `POST /v1/systemone` (noul/choice/score questions, cf. https://ollama.com/library/d3) — chat/generate/completions are unsupported, which caused the earlier "not serveable" note. `KgRemote.systemone()` wraps it; kgCrossCheck uses d3:2b noul (threshold 0.5 = contradiction) as the primary verdict with the language model as fallback.
 

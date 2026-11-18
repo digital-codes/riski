@@ -376,3 +376,8 @@ search_results_*.json
 # local analysis notes (not for git)
 docs/20261023-hermes/
 docs/geo-gate-*.md
+
+# kg pipeline artifacts stay local (change kg-statement-extraction)
+results/
+results/*.sqlite-shm
+results/*.sqlite-wal
