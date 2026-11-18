@@ -5,7 +5,8 @@ store under ``results/``. Scripts (one per stage):
 
 * ``kgIdentify.py``   — discover request/response document pairs
 * ``kgTagSchema.py``  — ris-ki tag table seed
-* ``kgTags.py``       — tag assignment with confidence + qualifiers
+* ``kgTagSystemOne.py`` — tag assignment via SystemOne (one call,
+                         all tags + qualifiers, noul = confidence)
 * ``kgAuthors.py``    — party author identification
 * ``kgStatements.py`` — request/response statement extraction
 * ``kgCrossCheck.py`` — round-trip fact verification

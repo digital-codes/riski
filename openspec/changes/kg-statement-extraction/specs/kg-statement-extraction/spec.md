@@ -73,7 +73,7 @@ The system SHALL support pairs with more than two members — one or more modifi
 - **THEN** both response statements remain linked to the same request statement with their respective meeting dates
 
 ### Requirement: Round-trip fact cross-check
-The system SHALL render sample text from the extracted response statements and check against the source chunks whether the statement set and original text are compatible on facts (style irrelevant), storing a pass/fail verdict per checked pair.
+The system SHALL render sample text from the extracted response statements and check against the source chunks whether the statement set and original text are compatible on facts (style irrelevant), storing a pass/fail verdict per checked pair. The cross-check SHALL run directly after extraction batches so verdicts can drive extraction-prompt adjustments — up to 3 adjustment iterations per mismatch class; residual mismatch classes after 3 iterations SHALL be documented instead of silently dropped.
 
 #### Scenario: Statement contradicts document
 - **WHEN** the generated sample text for a response contradicts a fact in the source chunks (e.g. wrong executing body)
@@ -82,6 +82,10 @@ The system SHALL render sample text from the extracted response statements and c
 #### Scenario: Compatible statement
 - **WHEN** the rendered response text is fact-compatible with every source chunk referenced
 - **THEN** the pair's cross-check verdict is recorded as passed
+
+#### Scenario: Prompt adjustment loop
+- **WHEN** a cross-check batch shows a recurring mismatch class (e.g. invented costs, English leakage)
+- **THEN** the extraction prompt is adjusted and the sample re-extracted and re-checked, at most 3 iterations, with tried changes and residual rates recorded in the tuning report
 
 ### Requirement: SQLite prototype store
 The output SHALL be written to a local SQLite database (tables for pairs, documents, tags, authors, request statements, response statements and cross-check verdicts); the system SHALL be resumable (already-extracted pairs are skipped) and all extraction scripts SHALL be typed, documented Python with a usage doc per script.

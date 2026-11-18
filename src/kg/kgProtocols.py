@@ -161,6 +161,7 @@ def main() -> int:
         "top_match": 0,
         "outcome_match": 0,
         "attached": 0,
+        "outcome_derived": 0,
         "not_attached": 0,
     }
 
@@ -231,16 +232,20 @@ def main() -> int:
             {"paperSid": meta.paper_sid, "meetingSid": meta.meeting_sid},
         ).fetchone()
         outcome = pair["outcome"]
-        if agenda is None or agenda.result is None or outcome is None:
+        if agenda is None:
             continue
 
         # regularize the outcome key (config vocabulary)
-        out_key = resolve_mapping(outcome, vocab["results"])[0]
-        if out_key is None:
-            continue
+        out_key = resolve_mapping(outcome, vocab["results"])[0] if outcome else None
+        # reverse direction (2026-11-18): pairs WITHOUT an outcome can get
+        # one derived from the protocol's Beschluss wording — the
+        # "Entscheidung" consultation mass was unused because of the
+        # outcome gate. The derived outcome is stored with signal
+        # 'protocol' after successful verification.
+        outcome_pending_resolution = out_key is None
 
         start = meta.start_date.date() if hasattr(meta.start_date, "date") else meta.start_date
-        # 1) structural path: protocols attached to the agenda item itself
+        # 1) structural path A: protocols attached to the agenda item itself
         candidates = conn.execute(
             text(
                 """
@@ -251,6 +256,20 @@ def main() -> int:
                 """
             ),
             {"agendaSid": agenda.sid},
+        ).fetchall()
+        # 1b) structural path B (2026-11-18): per-TOP protocol files linked
+        # directly to the PAPER (File__paper__Paper — 3346 papers carry
+        # "Protokoll GR/… TOP n" extracts; this was the missing mass)
+        candidates += conn.execute(
+            text(
+                """
+                SELECT f.sid, f."oparlKey" AS doc_key, f.name, f.filename, f."oparlId"
+                FROM "File__paper__Paper" xp
+                JOIN "File" f ON f.sid = xp."tgtSid"
+                WHERE xp."srcSid" = :paperSid AND f.name ~* 'protokoll|niederschrift'
+                """
+            ),
+            {"paperSid": meta.paper_sid},
         ).fetchall()
         # 2) name-registry path: "Protokoll ... TOP n" of the same meeting
         candidates += prot_registry.get((start, agenda.number), [])
@@ -263,18 +282,44 @@ def main() -> int:
             stats["protocols_seen"] += 1
             head = protocol_text(conn, f.sid)
             top_match, result_match = verify_protocol(head, agenda.number, out_key)
+            # session guard (committee protocols share TOP numbering):
+            # the protocol must belong to the pair's session — either the
+            # meeting date appears in the text or the name carries it
+            date_strs = [
+                start.strftime("%d.%m.%Y"), start.strftime("%d. %B %Y"),
+                start.strftime("%d. %m. %Y"),
+            ]
+            date_ok = not (top_match and result_match) or any(
+                (d in (head or "")) or (d in (f.name or "")) for d in date_strs
+            ) or "GR" in (f.name or "")
             if top_match:
                 stats["top_match"] += 1
             if result_match:
                 stats["outcome_match"] += 1
-            if top_match and result_match:
+            head_text = head or ""
+            if outcome_pending_resolution and top_match and date_ok:
+                # derive the outcome from the protocol's Beschluss wording
+                scope = outcome_word_scope(head_text)
+                derived = detect_outcome(scope)
+                if derived:
+                    store.upsert_pair(
+                        pair_key=pair["pair_key"],
+                        paper_key=pair["paper_key"],
+                        meeting_key=pair["meeting_key"],
+                        outcome=derived,
+                        confidence=0.7,
+                        signal="protocol",
+                    )
+                    out_key, outcome_pending_resolution = derived, False
+                    stats["outcome_derived"] += 1
+            if top_match and result_match and date_ok:
                 store.upsert_document(
                     pair["pair_key"],
                     {"doc_key": f.doc_key, "doc_id": f.oparlId, "name": f.name,
                      "filename": f.filename, "role": "response"},
                 )
-                stats["attached"] += 1
                 store.upsert_file_meta(pair["pair_key"], f.doc_key, 0)
+                stats["attached"] += 1
             else:
                 stats["not_attached"] += 1
 

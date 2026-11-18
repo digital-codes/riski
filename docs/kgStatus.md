@@ -5,16 +5,32 @@
 
 ## Current store state (`results/kg_statements.sqlite`)
 
+*Updated 2026-11-18 ~11:00 — bulk extraction running (see below).*
+
 | table | rows | notes |
 |---|---|---|
-| `pairs` | 8,301 | 8,292 `identified` (pending), 9 `statements` (done) |
-| `pair_documents` | full input-doc lists per pair (doc id + file name + role) |
+| `pairs` | 8,301 | two groups: ~216 response-bearing pairs processed FIRST, then the response-less mass; checkpoint-commits every 5 pairs |
+| `pair_documents` | full input-doc lists per pair; response role = verified protocols (267 pairs) |
 | `file_meta` | chunk counts per paired doc |
 | `pair_links` | 259 consecutive history links (design D10) |
 | `pairs.pre_stage` | 259 pre-stage flags |
-| `statements` | 17,718 `author` rows · 474 `link` rows · 9 `request` rows |
+| `statements` | `author` 17,718 · `link` 474 · `request`/`response` growing with the bulk run |
+| `crosschecks` | d3:2b SystemOne verdicts (noul) — task 6.1 done, extension runs on demand |
 | `file_tags` | vector-tier tags (50-doc sample, threshold 0.55) |
 | `tags` | 23 ris-ki tags with German descriptions |
+
+Key events since the last checkpoint:
+
+* **d3:2b integrated via `POST /v1/systemone`** (the model's ONLY
+  serving route — chat/generate/completions unsupported by design, see
+  https://ollama.com/library/d3): cross-checks 9/9 + 10/10 passed with
+  noul scores ≤ 0.18. Language-model fallback kept (`--verdict-model`).
+* **Response-document mass found** (`File__paper__Paper`, 3,346
+  papers): kgProtocols structural path B + session-date guard + outcome
+  derivation from protocol wording → 267 verified-response pairs
+  (details in `docs/kgProtocols.md`).
+* **Extraction order**: response-bearing pairs first (user decision);
+  restart commands below.
 
 Stats JSONs: `results/kg_identification_stats.json`,
 `results/kg_protocols_stats.json` · run logs:
@@ -34,23 +50,52 @@ Stats JSONs: `results/kg_identification_stats.json`,
 
 ## Resume — the bulk statements run (task 5 continuation)
 
+**Running since 2026-11-18 10:46** (`results/kg_statements_run4.log`,
+PID file `results/kg_statements_run.pid`): response-bearing pairs
+first, then the rest; `--commit-every 5` keeps every interruption loss
+below 5 pairs. Monitor with:
+
 ```bash
-cd /home/agent/projects/riski
-nohup /home/agent/bin/python3.14 -m src.kg.kgStatements \
-      --model mistral:latest > results/kg_statements_run3.log 2>&1 &
-tail -f results/kg_statements_run3.log
+tail -f results/kg_statements_run4.log
+python -m src.kg.kgStats   # or quick check:
+python3 -c "from src.kg.kgStore import KgStore; s=KgStore('results/kg_statements.sqlite'); print(s.pair_counts_by_status())"
 ```
 
-* **Resume-safe:** pairs with `status='statements'` are skipped;
-  the store **commits every 5 pairs** (`--commit-every`, default 5) —
-  an interruption loses at most 4 pairs of LLM work.
-* Throughput observed: ~10–25 s/pair (request stage only when the
-  pair has no response docs; response stage runs on the 230
-  protocol-attached pairs). Full corpus ≈ 25–55 h — consider
-  `--limit 2000` for a representative prototype subset, or let it run
-  over days in the background.
-* A stuck run: `fuser results/kg_statements.sqlite` → kill PID, restart;
-  the checkpoint keeps everything committed.
+**Restart after new protocol attachments** (the queue is built at
+start; new response pairs need a restart to join the front):
+
+```bash
+kill $(cat results/kg_statements_run.pid)   # stops at next checkpoint
+# restart:
+nohup /home/agent/bin/python3.14 -m src.kg.kgStatements \
+      --model mistral:latest > results/kg_statements_run4.log 2>&1 &
+```
+
+**Cross-check a batch anytime** (concurrent with extraction; store has
+busy_timeout 120 s):
+
+```bash
+python -m src.kg.kgCrossCheck --limit 20 --tuning-report --iteration <n>
+```
+
+## Tagging: SystemOne one-call tier (2026-11-18)
+
+`kgTagSystemOne.py` assigns ALL 23 ris-ki tags in a single
+`/v1/systemone` call per document (noul score 0..1 = tag confidence,
+default threshold 0.5) plus qualifier sub-questions (Neubau / Sanierung
+= reconstruction / Erweiterung / Rückbau / Ausbau for the construction
+tags). Verified on a 20-doc sample: 17 tagged, 37 assignments, high
+confidences (0.91–0.96), plausible topics (Rahmenplan → city
+development 0.96, Sanierung qualifier 0.94). Endpoint `olc` ≈ 1.1–4 s
+per doc (≈ 4.4k input tokens); `ollama` local d3:2b works but is much
+slower (24 s, poor token packing). Cross-check extraction verdicts use
+the same SystemOne route.
+
+```bash
+python -m src.kg.kgTagSystemOne --endpoint olc          # bulk (resumable)
+python -m src.kg.kgTagSystemOne --endpoint olc --limit 50
+python -m src.kg.kgTagSystemOne --min-confidence 0.6     # stricter re-run
+```
 
 ## Pipeline order (all stages idempotent/resumable)
 
@@ -61,7 +106,7 @@ python -m src.kg.kgChains --db       # 1c. pre_stage + links    (DONE, D10)
 python -m src.kg.kgProtocols         # 1d. verified protocols   (DONE, 230 attached)
 python -m src.kg.kgAuthors           # 2. party authors         (DONE, 5843 resolved)
 python -m src.kg.kgTagSchema         # 3a. tag table seed       (DONE, 23 tags)
-python -m src.kg.kgTags --limit N    # 3b. tagging              (sample done)
+python -m src.kg.kgTagSystemOne --endpoint olc  # 3b. tagging (bulk-ready)
 python -m src.kg.kgStatements        # 4. statements            (IN PROGRESS — bulk run)
 python -m src.kg.kgCrossCheck        # 5. round-trip check      (task 6.1, TODO)
 python -m src.kg.kgModelSelect       # 6. model comparison      (task 7.1, TODO)

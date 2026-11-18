@@ -9,7 +9,7 @@ outcome (signal ``db-partial``) are escalated here:
 * tier 3 ``vector`` — bge-m3 cosine similarity of the document head
   chunk against small hand-labeled anchor texts per outcome.
 
-LLM escalation (tier 4) is NOT part of this stage — see kgTags /
+LLM escalation (tier 4) is NOT part of this stage — see kgTagSystemOne /
 kgStatements which run controlled LLM calls later in the pipeline.
 
 Usage::

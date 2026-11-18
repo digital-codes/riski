@@ -107,3 +107,28 @@ class TestStatusTicker:
         assert "one" in content
         assert "two" not in content
         assert "four" in content and "identify" in content
+
+
+class TestQualifierGrounding:
+    def test_qualifier_upsert_rejects_undefined(self, store):
+        from src.kg.kgStore import KgStore as _K
+
+        allowed = {"Building Construction": {"Neubau", "Sanierung"}}
+        ok = store.upsert_doc_qualifier(
+            "d1", "Building Construction", "Sanierung", 0.9, "sysone", allowed=allowed
+        )
+        assert ok is True
+        # undefined (tag, qualifier) pair → rejected
+        ok2 = store.upsert_doc_qualifier(
+            "d1", "Building Construction", "Ausbau", 0.9, "sysone", allowed=allowed
+        )
+        assert ok2 is False
+        rows = store.conn.execute("SELECT COUNT(*) FROM doc_qualifiers").fetchone()[0]
+        assert rows == 1
+
+    def test_qualifier_definition_table(self, store):
+        store.upsert_qualifier("Road construction", "Ausbau", "Ausbau der Straße.")
+        tag, qual = store.conn.execute(
+            "SELECT tag, qualifier FROM qualifiers LIMIT 1"
+        ).fetchone()
+        assert tag == "Road construction" and qual == "Ausbau"

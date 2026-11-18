@@ -189,6 +189,19 @@ party_variants:
     - (?i)\bSPD\b
     - (?i)SPD-Fraktion
     - (?i)Sozialdemokratische Partei
+qualifiers:
+  Building Construction:
+    Erweiterung: Anbau/Aufstockung/Erweiterung eines bestehenden Gebäudes.
+    Neubau: Ersterrichtung eines Gebäudes auf neuem Grund (Neubau/Erstbau).
+    Rückbau: Abriss oder Rückbau eines Gebäudes.
+    Sanierung: 'Rekonstruktion/Erneuerung eines bestehenden Gebäudes (Achtung: ''Sanierung''
+      heißt reconstruction, NICHT laufende Instandhaltung).'
+  Road construction:
+    Ausbau: Ausbau einer bestehenden Straße (z.B. Radweg, Querschnitt).
+    Erweiterung: Trassen- oder Querschnittserweiterung.
+    Neubau: Straßen-Neubau auf neuer Trasse.
+    Rückbau: Rückbau/Abriss einer Straße oder Platzfläche.
+    Sanierung: Erneuerung/Rekonstruktion der bestehenden Straße.
 results:
   abgelehnt:
     variants:

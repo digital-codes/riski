@@ -22,6 +22,28 @@ import requests
 
 ENDPOINTS: dict[str, str] = {
     "ollama": "http://localhost:11434/v1",
+    # ollama cloud (OLC_* in src/private.py): OpenAI-compatible chat for
+    # extraction, SystemOne route for decision verdicts
+    "olc": "https://ollama.com/v1",
+}
+
+CLOUD_CONFIG_ATTRS = {
+    "olc": {
+        "base_url": "OLC_SUMMARY_URL",
+        "chat_key": "OLC_SUMMARY_KEY",
+        "chat_model": "OLC_SUMMARY_MDL",     # cheaper than OLC_LLM (user decision 2026-11-18)
+        "summary_url": "OLC_SUMMARY_URL",
+        "summary_model": "OLC_SUMMARY_MDL",
+        "summary_key": "OLC_SUMMARY_KEY",
+        "sysone_url": "OLC_SYSONE_URL",
+        "sysone_model": "OLC_SYSONE_MDL",
+        "sysone_key": "OLC_SYSONE_KEY",
+    },
+    "hf": {
+        "base_url": "HF_SUMMARY_URL",
+        "chat_key": "HF_SUMMARY_KEY",
+        "chat_model": "HF_SUMMARY_MDL",
+    },
 }
 
 # context budget per chat call — ollama keeps the whole KV cache in VRAM
@@ -43,25 +65,62 @@ class KgRemote:
         endpoint: str = "ollama",
         timeout: float = 120.0,
         num_ctx: int = DEFAULT_NUM_CTX,
+        chat_model: str | None = None,
     ):
         if endpoint not in ENDPOINTS:
             raise ValueError(
                 f"unknown endpoint '{endpoint}'; known: {sorted(ENDPOINTS)}"
             )
-        self.base_url = ENDPOINTS[endpoint]
-        # native (non-OpenAI) root for /api/chat with options
-        self.native_base = self.base_url[:-len("/v1")] if self.base_url.endswith("/v1") else self.base_url
         self.endpoint_name = endpoint
+        self._cloud = CLOUD_CONFIG_ATTRS.get(endpoint)
+        if self._cloud:
+            import src.private as pr
+
+            self.base_url = getattr(pr, self._cloud["base_url"], ENDPOINTS[endpoint])
+            # OpenAI-compatible base (strip trailing route)
+            self._chat_url = self.base_url
+            self._chat_key = getattr(pr, self._cloud["chat_key"], "") or ""
+            self._chat_model = chat_model or getattr(
+                pr, self._cloud["chat_model"], ""
+            )
+            self._sysone_url = getattr(pr, self._cloud.get("sysone_url", ""), None) if self._cloud.get("sysone_url") else None
+            self._sysone_model = getattr(pr, self._cloud.get("sysone_model", ""), None) if self._cloud.get("sysone_model") else None
+            self._sysone_key = getattr(pr, self._cloud.get("sysone_key", ""), "") or ""
+            self.native_base = None
+        else:
+            self.base_url = ENDPOINTS[endpoint]
+            self.native_base = (
+                self.base_url[:-len("/v1")] if self.base_url.endswith("/v1") else self.base_url
+            )
+            self._chat_url = None
+            self._chat_key = ""
+            self._chat_model = chat_model
+            self._sysone_url = None
+            self._sysone_model = None
+            self._sysone_key = ""
         self.timeout = timeout
         self.num_ctx = num_ctx
         self._available_models: list[str] | None = None
 
     # ------------------------------------------------------------------
     def available_models(self) -> list[str]:
-        """List models the endpoint reports (cached per instance)."""
+        """List models the endpoint reports (cached per instance).
+
+        Cloud endpoints: the chat endpoint URL already carries the route
+        (…/chat/completions) → ask /models at the origin with auth.
+        """
         if self._available_models is None:
-            r = requests.get(f"{self.base_url}/models", timeout=self.timeout)
-            r.raise_for_status()
+            if self._cloud:
+                origin = self.base_url.split("/v1")[0] or "https://ollama.com"
+                r = requests.get(
+                    f"{origin}/v1/models",
+                    headers={"Authorization": f"Bearer {self._chat_key}"} if self._chat_key else {},
+                    timeout=self.timeout,
+                )
+                r.raise_for_status()
+            else:
+                r = requests.get(f"{self.base_url}/models", timeout=self.timeout)
+                r.raise_for_status()
             self._available_models = [
                 m["id"] for m in r.json().get("data", [])
             ]
@@ -135,22 +194,34 @@ class KgRemote:
     def chat(
         self,
         messages: list[dict[str, str]],
-        model: str = DECISION_MODEL,
+        model: str | None = None,
         temperature: float = 0.0,
         retries: int = 3,
     ) -> str:
-        """Send a chat completion and return the assistant text."""
+        """Send a chat completion and return the assistant text.
+
+        Cloud endpoints (`olc`/`hf`): the endpoint URL already carries
+        the /chat/completions route and the Authorization header carries
+        the OLC_*/HF_* key.
+        """
         payload: dict[str, Any] = {
-            "model": model,
+            "model": model or self._chat_model or DECISION_MODEL,
             "messages": messages,
             "temperature": temperature,
         }
+        if self._cloud:
+            url = self._chat_url
+            headers = {"Authorization": f"Bearer {self._chat_key}"} if self._chat_key else {}
+        else:
+            url = f"{self.base_url}/chat/completions"
+            headers = {}
         last_err: Exception | None = None
         for attempt in range(1, retries + 1):
             try:
                 r = requests.post(
-                    f"{self.base_url}/chat/completions",
+                    url,
                     json=payload,
+                    headers=headers,
                     timeout=self.timeout,
                 )
                 if r.status_code == 429:
@@ -175,21 +246,49 @@ class KgRemote:
         r.raise_for_status()
         return r.json()["data"][0]["embedding"]
 
+    def systemone(
+        self,
+        state: str,
+        questions: dict[str, dict],
+        model: str = DECISION_MODEL,
+        timeout: float = 90.0,
+    ) -> dict[str, dict]:
+        """SystemOne decision protocol (ollama /v1/systemone).
+
+        d3:2b supports ONLY this route (noul/choice/score questions);
+        returns ``{"answers": {name: {"noul": 0..1} | {"choice": ...}}}``.
+        """
+        url = self._sysone_url or f"{self.base_url}/systemone"
+        mdl = self._sysone_model or model
+        headers = {"Authorization": f"Bearer {self._sysone_key}"} if self._sysone_key else {}
+        r = requests.post(
+            url,
+            json={"model": mdl, "state": state, "questions": questions},
+            headers=headers,
+            timeout=timeout,
+        )
+        r.raise_for_status()
+        return r.json().get("answers", {})
+
     # ------------------------------------------------------------------
     def chat_json(
         self,
         messages: list[dict[str, str]],
-        model: str = DECISION_MODEL,
+        model: str | None = None,
         temperature: float = 0.0,
         num_ctx: int | None = None,
     ) -> dict[str, Any]:
-        """Native chat with format=json; falls back to brace extraction."""
-        raw = self.native_chat(
-            messages,
-            model=model,
-            temperature=temperature,
-            num_ctx=num_ctx,
-            json_mode=True,
+        """JSON chat; native format=json locally, plain chat for cloud."""
+        raw = (
+            self.chat(messages, model=model, temperature=temperature)
+            if self._cloud
+            else self.native_chat(
+                messages,
+                model=model or DECISION_MODEL,
+                temperature=temperature,
+                num_ctx=num_ctx,
+                json_mode=True,
+            )
         )
         try:
             return json.loads(raw)

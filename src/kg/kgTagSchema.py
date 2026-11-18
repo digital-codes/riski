@@ -11,7 +11,7 @@ seed does two things on one run:
 2. seeds the SQLite ``tags`` table
 
 When the ris-ki schema becomes reachable, replace the ``TAGS`` dict —
-the pipeline (kgTags) picks the table up unchanged.
+the pipeline (kgTagSystemOne) picks the table up unchanged.
 
 Usage::
 

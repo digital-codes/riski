@@ -70,6 +70,23 @@ CREATE TABLE IF NOT EXISTS file_tags (
     PRIMARY KEY (doc_key, tag)
 );
 
+CREATE TABLE IF NOT EXISTS qualifiers (
+    tag        TEXT NOT NULL,
+    qualifier  TEXT NOT NULL,
+    description TEXT NOT NULL,
+    PRIMARY KEY (tag, qualifier)
+);
+
+CREATE TABLE IF NOT EXISTS doc_qualifiers (
+    doc_key    TEXT NOT NULL,
+    tag        TEXT NOT NULL,
+    qualifier  TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    provenance TEXT,
+    PRIMARY KEY (doc_key, tag, qualifier),
+    FOREIGN KEY (tag, qualifier) REFERENCES qualifiers (tag, qualifier)
+);
+
 CREATE TABLE IF NOT EXISTS statements (
     pair_key      TEXT NOT NULL,
     stage         TEXT NOT NULL,    -- request|response
@@ -103,9 +120,12 @@ class KgStore:
     def __init__(self, path: str):
         self.path = path
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        self.conn = sqlite3.connect(path)
+        self.conn = sqlite3.connect(path, timeout=120.0)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(_SCHEMA)
+        # concurrent kg stages (extract + crosscheck) share the store:
+        # wait up to 30s on writers instead of failing with 'locked'
+        self.conn.execute("PRAGMA busy_timeout = 120000")
         self.conn.execute("PRAGMA journal_mode = WAL")
 
     def close(self) -> None:
@@ -288,6 +308,50 @@ class KgStore:
             """,
             (doc_key, tag, confidence, qualifier, provenance),
         )
+
+    def upsert_qualifier(self, tag: str, qualifier: str, description: str) -> None:
+        self.conn.execute(
+            """
+            INSERT INTO qualifiers (tag, qualifier, description)
+            VALUES (?, ?, ?)
+            ON CONFLICT (tag, qualifier) DO UPDATE SET
+                description = excluded.description
+            """,
+            (tag, qualifier, description),
+        )
+
+    def qualifiers(self) -> list[sqlite3.Row]:
+        return self.conn.execute(
+            "SELECT * FROM qualifiers ORDER BY tag, qualifier"
+        ).fetchall()
+
+    def upsert_doc_qualifier(
+        self,
+        doc_key: str,
+        tag: str,
+        qualifier: str,
+        confidence: float,
+        provenance: str | None,
+        allowed: dict[str, set[str]] | None = None,
+    ) -> bool:
+        """Grounded qualifier write: rejects undefined (tag, qualifier).
+
+        With *allowed* (tag -> set of qualifiers) undefined pairs are
+        dropped silently (report-side) — keeps the grounding invariant.
+        """
+        if allowed is not None and qualifier not in allowed.get(tag, set()):
+            return False
+        self.conn.execute(
+            """
+            INSERT INTO doc_qualifiers (doc_key, tag, qualifier, confidence, provenance)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT (doc_key, tag, qualifier) DO UPDATE SET
+                confidence = excluded.confidence,
+                provenance = excluded.provenance
+            """,
+            (doc_key, tag, qualifier, confidence, provenance),
+        )
+        return True
 
     # ------------------------------------------------------------------
     # statements

@@ -29,7 +29,10 @@ Constraints from docs/kg_building.md: prototype only, all documents German, no c
 **Decision:** extraction is a multi-stage pipeline with shared helpers (log/status loop, SQLite store, prompt libs, vector search), mirroring the `src/` package conventions (`pg*` scripts each runnable as module or file). One script per stage:
 - `kgIdentify.py` — DB traversal → pair candidates (per kg-pair-identification spec), including the full per-pair input-document list (document id + file name, with role: request / modification / response / attachment)
 - `kgTagSchema.py` — ris-ki tag table + descriptions seed
-- `kgTags.py` — tag assignment with confidence/qualifiers
+- `kgTagSystemOne.py` — tag assignment confidence/qualifiers via one
+  SystemOne call per document (replaces the earlier vector-tier
+  `kgTags.py`, removed 2026-11-18: the decision model proved strictly
+  better — one call, all tags, noul=confidence)
 - `kgAuthors.py` — party normalization and author extraction
 - `kgStatements.py` — request/response statement extraction
 - `kgCrossCheck.py` — statement→text round-trip verification
@@ -59,6 +62,12 @@ Constraints from docs/kg_building.md: prototype only, all documents German, no c
 
 ### D8: Resumability
 All stages upsert on stable keys (pair key = `(paper_oparl_id, first_meeting_oparl_id)`; statement rows keyed by pair + stage; tag rows by file+tag) with a `status` column per pair (`identified → tagged → statements → crosschecked`). Re-runs skip done rows; interrupted stages reprocess only their own stage.
+
+### D12b: d3:2b via local SystemOne endpoint (2026-11-18 correction)
+The decision model IS serveable: ollama exposes `POST /v1/systemone` (noul/choice/score questions, cf. https://ollama.com/library/d3) — chat/generate/completions are unsupported, which caused the earlier "not serveable" note. `KgRemote.systemone()` wraps it; kgCrossCheck uses d3:2b noul (threshold 0.5 = contradiction) as the primary verdict with the language model as fallback.
+
+### D12: Extraction↔cross-check loop (2026-11-17 amendment)
+Cross-checking is not a one-shot post-step: run `kgCrossCheck.py` right after each extraction batch on the SAME sample pairs and use its verdicts to tune the extraction prompts — up to **3 adjustment iterations** (prompt tweaks, e.g. stricter German-only wording, field splitting, "never invent" reinforcement). A mismatch class that keeps failing after 3 iterations is recorded in `results/kg_crosscheck_tuning.md` (mismatch type → tried prompts → residual rate) instead of being silently dropped. Only pairs extracted with the final prompt version are trusted for the full run.
 
 ### D11: Statement stages in the chain context (2026-11-17 amendment)
 With `kgChains` in place the statement stages split by history role: **request statements** are extracted from the pair's own documents (author joined from the `author` statement row); **response statements** attach to the pair's meeting where the outcome/protocol evidence exists (outcomes derived from columns + role fallback + vector tier + verified protocols). A modification pair (papertype class `modification`) links to its original request pair via deterministic title similarity (difflib sequence ratio ≥ 0.75) against request pairs with the nearest meeting date — stored as `modifies` in the request statement JSON. Statement fields stay strictly empty where the source has nothing (no invented costs/dates), and each pair gets `status='statements'` after extraction so re-runs skip it.

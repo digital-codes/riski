@@ -20,7 +20,10 @@ Fachgremium' (214) in the corpus, so the role is only a fallback when
 the result column is empty.
 
 Corpus numbers (2026-11-17 full run): 239 multi-meeting chains, 259
-pre-stage pairs, 259 links, 262 role-derived outcomes.
+pre-stage pairs, 259 links, 262 role-derived outcomes. Note: protocol
+outcome derivation added 2026-11-18 (see `docs/kgProtocols.md`) may
+resolve further pre-stage/null outcomes on later runs — re-running
+`kgChains --db` after new `kgProtocols` passes is safe (idempotent).
 
 ## Usage
 

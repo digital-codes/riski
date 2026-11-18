@@ -16,8 +16,8 @@
 ## 3. Tag schema + tags
 
 - [x] 3.1 Implement `kgTagSchema.py` authoring the ris-ki tag table with one description per tag (https://ris-ki.de/ris/file-tags, qualifiers like Neubau/Sanierung/Erweiterung/Rückbau) into `config/kg_vocabulary.yaml` and the SQLite tag table; verify the seeded table renders with `kgTagSchema.py --list`
-- [x] 3.2 Implement `kgTags.py` multi-tag assignment with confidence + strictness threshold (no forced low-confidence tags; untagged counted in summary); verify on a 50-document sample that tag confidences and qualifiers appear in the store and the untagged summary prints (spec: tag scenarios)
-- [x] 3.3 Write `docs/kgTags.md`; verify documented commands run
+- [x] 3.2 Implement tag assignment with confidence + strictness threshold (no forced low-confidence tags; untagged counted in summary). First vector-tier `kgTags.py` (bge-m3, 50-doc sample); superseded 2026-11-18 by `kgTagSystemOne.py` (one SystemOne call per doc: all 23 tags + qualifiers, noul=confidence) — vector file removed, 20-doc SystemOne sample verified (17 tagged, conf 0.91–0.96)
+- [x] 3.3 Write usage docs; verify documented commands run (`docs/kgTags.md` retired with the vector tier — SystemOne usage lives in `docs/kgStatus.md`)
 
 ## 4. Author identification
 
@@ -32,7 +32,7 @@
 
 ## 6. Cross-check
 
-- [ ] 6.1 Implement `kgCrossCheck.py` round-trip: render response statements to short German sample text, fact-compatibility verdict against source chunks (d3:2b decision pass, LLM tie-break); verify verdicts (pass/fail + reason) are stored and a known contradiction fixture fails
+- [x] 6.1 Implement `kgCrossCheck.py` round-trip: render response statements to short German sample text, fact-compatibility verdict against source chunks (d3:2b decision pass, LLM tie-break); verify verdicts (pass/fail + reason) are stored and a known contradiction fixture fails. Include the extraction↔cross-check tuning loop (design D12): run cross-check on the same sample pairs after each extraction batch, adjust extraction prompts on recurring mismatch classes (max 3 iterations), record tried changes + residual rates in `results/kg_crosscheck_tuning.md`
 
 ## 7. Model selection
 
@@ -42,7 +42,7 @@
 ## 8. Export + integration
 
 - [ ] 8.1 Implement `kgExport.py` JSON export of the store (pairs with tags, authors, statements, cross-check verdicts); verify exported JSON validates against the field sets in the specs
-- [ ] 8.2 End-to-end integration run over the full DB (`kgIdentify → kgTags → kgAuthors → kgStatements → kgCrossCheck → kgExport`): status output stays ≤10s interval, resume-safe re-run of a mid-stage interruption produces no duplicate rows, and a summary report (pair counts, tag coverage, author unknown rate, cross-check pass rate, chunk statistic) lands in `results/`; verify by running the full chain twice and diffing row counts
+- [ ] 8.2 End-to-end integration run over the full DB (`kgIdentify → kgTagSystemOne → kgAuthors → kgStatements (inline crosscheck) → kgExport`): status output stays ≤10s interval, resume-safe re-run of a mid-stage interruption produces no duplicate rows, and a summary report (pair counts, tag coverage, author unknown rate, cross-check pass rate, chunk statistic) lands in `results/`; verify by running the full chain twice and diffing row counts
 
 ## Workflow follow-up
 

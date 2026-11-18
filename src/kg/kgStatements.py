@@ -266,11 +266,25 @@ def modification_links(store: KgStore) -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--store", default=DEFAULT_STORE)
-    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument(
+        "--model", default=None,
+        help="language model override; None = endpoint default "
+        "(olc: OLC_SUMMARY_MDL, ollama: granite4.2:8b)")
     parser.add_argument("--endpoint", default="ollama")
     parser.add_argument("--limit", type=int, default=0, help="at most N pairs")
     parser.add_argument("--skip-request", action="store_true")
     parser.add_argument("--skip-response", action="store_true")
+    parser.add_argument(
+        "--crosscheck", action="store_true", default=True,
+        help="verify each pair's statements right after extraction "
+        "(d3:2b SystemOne verdict; user decision 2026-11-18)")
+    parser.add_argument(
+        "--no-crosscheck", dest="crosscheck", action="store_false",
+        help="skip the inline verdict (rarely wanted)")
+    parser.add_argument(
+        "--crosscheck-verdict-model", default=None,
+        help="language-model fallback for the verdict (default d3:2b "
+        "local SystemOne)")
     parser.add_argument(
         "--commit-every", type=int, default=5,
         help="commit the SQLite store every N pairs (checkpointing; the "
@@ -284,16 +298,38 @@ def main() -> int:
     vocab = load_vocab()
     remote = KgRemote(args.endpoint)
     remote.available_models()  # accessibility check
-    if args.model not in remote.available_models():
-        log.warning("model %s not offered by endpoint — using decision model", args.model)
+    if args.model and args.model not in remote.available_models():
+        log.warning(
+            "model %s not offered by endpoint %s — using endpoint default",
+            args.model, args.endpoint,
+        )
+        args.model = None
 
     extractor = StatementExtractor(remote, args.model)
     modification_links(store)
 
-    pairs = store.pairs_by_status("identified")
-    stats = {"pairs": 0, "request_ok": 0, "response_ok": 0, "errors": 0}
     ticker = StatusTicker()
     ticker.section("statements")
+    pairs = store.pairs_by_status("identified")
+    # response-bearing pairs first (they carry the decision evidence);
+    # the rest follows — both groups preserve store order otherwise
+    with_response, without_response = [], []
+    for pair in pairs:
+        has_resp = store.conn.execute(
+            "SELECT 1 FROM pair_documents WHERE pair_key = ? AND role = 'response' LIMIT 1",
+            (pair["pair_key"],),
+        ).fetchone()
+        (with_response if has_resp else without_response).append(pair)
+    pairs = with_response + without_response
+    ticker.tick(
+        f"queue: {len(with_response)} pairs with response docs, "
+        f"{len(without_response)} without",
+        force=True,
+    )
+    stats = {
+        "pairs": 0, "request_ok": 0, "response_ok": 0, "errors": 0,
+        "crosscheck_passed": 0, "crosscheck_failed": 0, "crosscheck_errors": 0,
+    }
     for pair in pairs:
         if args.limit and stats["pairs"] >= args.limit:
             break
@@ -369,6 +405,24 @@ def main() -> int:
                 except Exception as exc:  # noqa: BLE001
                     stats["errors"] += 1
                     log.warning("response extraction failed for %s: %s", pair["pair_key"], exc)
+
+        # ---- inline cross-check (design D12; user 2026-11-18: verify
+        # every pair as we go, don't defer the verdicts) --------------
+        if args.crosscheck:
+            from src.kg.kgCrossCheck import check_pair
+
+            try:
+                record = check_pair(
+                    remote, conn, store, pair["pair_key"],
+                    verdict_model=args.crosscheck_verdict_model,
+                )
+                if record.get("verdict") == "failed":
+                    stats["crosscheck_failed"] += 1
+                elif record.get("verdict") == "passed":
+                    stats["crosscheck_passed"] += 1
+            except Exception as exc:  # noqa: BLE001
+                stats["crosscheck_errors"] += 1
+                log.warning("crosscheck failed for %s: %s", pair["pair_key"], exc)
 
         store.set_pair_status(pair["pair_key"], "statements")
         if args.commit_every and stats["pairs"] % args.commit_every == 0:

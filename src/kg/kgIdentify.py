@@ -119,7 +119,7 @@ def classify_pair(
 
     Signal hierarchy: database columns first (tier 1); name patterns are
     applied only to fill remaining gaps (tier 2), vectors and LLM live
-    in later stages (kgTags/kgStatements), not here.
+    in later stages (kgTagSystemOne/kgStatements), not here.
     """
     ptype_key, ptype_entry = resolve_mapping(papertype, vocab["papertypes"])
     if ptype_key is None or ptype_entry["class"] not in REQUEST_CLASSES | RESPONSE_CLASSES:
