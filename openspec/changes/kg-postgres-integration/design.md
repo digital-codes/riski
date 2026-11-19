@@ -109,6 +109,36 @@ producer remains intact until the first apply. Rollback = `DROP TABLE
 kg_*` + removing the cursor rows (the search/graph layers are not yet
 consuming kg data).
 
+
+### D7: Cross-change coordination (2026-11-19 interference check)
+
+All four open changes validated; pairwise interference inspected:
+
+* **kg-statement-extraction ↔ kg-postgres-integration**: intent
+  dependency, no file conflicts (migrator adds `src/kg/kgMigrate.py`
+  alongside the prototype scripts; `src/db` conventions reused
+  read-only). The SQLite store stays producer until first `--apply`
+  (workflow note in design §5).
+* **council-exploration-views ↔ kg**: its rule-based submitter
+  detection (data-enrichment spec) DERIVES the same facts as the
+  prototype's `kgAuthors` (LLM vocabulary + era validity) but stores
+  them as PG paper enrichment, while kgAuthors lives in the kg store —
+  no schema conflict; reuse opportunity: both should anchor party name
+  resolution in `config/kg_vocabulary.yaml::party_variants` so the two
+  implementations do not drift. Decision-status normalization
+  (AgendaItem.result → controlled vocabulary) likewise mirrors the kg
+  outcome mapping — same YAML is the shared anchor.
+* **unified-update-pipeline ↔ kg**: owns `src/riskiUpdate.py` +
+  `fileStageStatus`/stageLedger (dev branch). The kg stages become a
+  phase there — kg-postgres-integration task 4.1 wires that and is
+  deliberately deferred. No file overlap: riskiUpdate phase registry
+  and kgMigrate/k g-stages stay disjoint until 4.1.
+* No change writes another change's schema: kg_* DDL is additive;
+  council enrichment writes paper-scheme tags; tag assoc gets ONE
+  shared additive column (`updated`) from kg-postgres-integration that
+  also benefits council's document-type tagging (no behavior change —
+  column DEFAULT now()).
+
 ## Open Questions
 
 - What's the precise KB NOT NULL / FK-cascade set on `kg_pair_documents`

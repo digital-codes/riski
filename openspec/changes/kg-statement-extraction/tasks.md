@@ -40,13 +40,13 @@
 
 ## 7. Model selection
 
-- [ ] 7.1 Implement `kgModelSelect.py` comparison harness over a fixed sample set (granite4.2:8b vs qwen3.5:4b vs mistral:latest on statement extraction + tagging quality metrics); verify `results/kg_model_selection.md` records per-model results and the selected model
-- [ ] 7.2 Set the selected language model as the scripts' default and record the choice in `docs/kgModelSelect.md`; verify the default is applied when scripts run without `--model`
+- [x] 7.1 Implement `kgModelSelect.py` comparison harness (implemented + ran 2026-11-18: report at `results/kg_model_selection.md`); candidate scope evolved by operator decision — cloud OLC models replaced the local candidates (runner retired), local bench available behind `--include-local`; selection recorded in `docs/kgModelSelect.md`
+- [x] 7.2 Defaults applied and recorded in `docs/kgModelSelect.md`: kg scripts default `--endpoint olc` (chat `OLC_SUMMARY_MDL`), verdicts metis (greenpt), diagnose CCLLM; verified in production runs (run5–run9 execute without `--model`; the endpoint-offer check warns on unknown --model values)
 
 ## 8. Export + integration
 
-- [ ] 8.1 Implement `kgExport.py` JSON export of the store (pairs with tags, authors, statements, cross-check verdicts); verify exported JSON validates against the field sets in the specs
-- [ ] 8.2 End-to-end integration run over the full DB (`kgIdentify → kgTagSystemOne → kgAuthors → kgStatements (inline crosscheck) → kgExport`): status output stays ≤10s interval, resume-safe re-run of a mid-stage interruption produces no duplicate rows, and a summary report (pair counts, tag coverage, author unknown rate, cross-check pass rate, chunk statistic) lands in `results/`; verify by running the full chain twice and diffing row counts
+- [x] 8.1 Implement `kgExport.py` JSON export of the store (pairs with tags, authors, statements, cross-check verdicts); verified: all spec field sets present (pair/doc/vocab), 6,201 pairs with statements in the export, double-run byte-identical (idempotent)
+- [ ] 8.2 End-to-end integration run over the full DB (`kgIdentify → kgTagSystemOne → kgAuthors → kgStatements (inline crosscheck) → kgExport`): status output stays ≤10s interval, resume-safe re-run of a mid-stage interruption produces no duplicate rows, and a summary report (pair counts, tag coverage, author unknown rate, cross-check pass rate, chunk statistic) lands in `results/`; verify by running the full chain twice and diffing row counts. **Verified so far (2026-11-19):** kgIdentify ×N (resume-set skip), kgAuthors idempotent re-run (row counts stable for existing pairs, only new-pair rows added concurrent with the live bulk), kgExport byte-identical double-run; the interrupted-statement restarts (run5→run9) demonstrated no-duplicate resumability at scale. FULL double-diff over the live chain deferred to bulk completion (task closes then).
 
 ## Workflow follow-up
 

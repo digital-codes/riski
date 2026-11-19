@@ -58,6 +58,10 @@ Hybridsuche, nutzergesteuerte Dokumentenmenge) bleibt bestehen.
 ### Modified Capabilities
 
 - `data-enrichment`: Einbringer-Erkennung (regelbasiert) und normalisierter
+  Beschluss-Status — Koordination: dasselbe Normierungsthema liegt in
+  der kg-Pipeline (`config/kg_vocabulary.yaml` results-Mapping, kg-statement-extraction
+  D14); bei Implementierung die yaml-Tabellen gemeinsam nutzen, um
+  Drift zwischen Facetten- und kg-Vokabular zu vermeiden.
   Beschluss-Status als zusätzliche Anreicherungen.
 - `search-api`: Facetten-Endpoint um Beschluss-Status und Einbringer
   erweitert; Such-/Browse-Ergebnisse tragen beide Felder.
