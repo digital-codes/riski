@@ -91,6 +91,13 @@ busy_timeout 120 s):
 python -m src.kg.kgCrossCheck --limit 20 --tuning-report --iteration <n>
 ```
 
+## HF endpoint evaluation (2026-11-19) — tried, not adopted
+
+HF_SUMMARY (Nemotron-30B) is chat-parity with OLC; HF_SYSONE (vllm-d3)
+refuses states >512 tokens (batch size). Full analysis:
+`docs/kg-hf-evaluation.md`. Cost lever: the decision model (SystemOne
+volume), not the LLM chat — metis (greenpt) was selected for price.
+
 ## Failure diagnosis (2026-11-19, D14)
 
 Failed cross-checks are re-examined by `kgTune.py` via the dedicated
