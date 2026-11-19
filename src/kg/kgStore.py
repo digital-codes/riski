@@ -125,7 +125,7 @@ class KgStore:
         self.conn.executescript(_SCHEMA)
         # concurrent kg stages (extract + crosscheck) share the store:
         # wait up to 30s on writers instead of failing with 'locked'
-        self.conn.execute("PRAGMA busy_timeout = 120000")
+        self.conn.execute("PRAGMA busy_timeout = 300000")
         self.conn.execute("PRAGMA journal_mode = WAL")
 
     def close(self) -> None:

@@ -260,7 +260,9 @@ def main() -> int:
     engine = get_engine(readonly=True)
     conn = engine.connect()
     store = KgStore(args.store)
-    remote = KgRemote(args.endpoint)
+    # the standffalone-tune diagnose path prefers the dedicated CCLLM_*
+    # client; the inline cross-check keeps its Decision/LLM path
+    remote = KgRemote.for_diagnose() or KgRemote(args.endpoint)
 
     pairs = store.conn.execute(
         """

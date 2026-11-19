@@ -42,6 +42,16 @@ CLOUD_CONFIG_ATTRS = {
         "sysone_model": "SYSONE_MDL",
         "sysone_key": "SYSONE_KEY",
     },
+    # dedicated cross-check/failure-diagnose model (CCLLM_* in
+    # private.py; operator-added 2026-11-19) — deliberately separate
+    # from the extraction chat model: the diagnose call needs a
+    # reason-generating discriminator, not the extractor.
+    "ccllm": {
+        "base_url": "CCLLM_URL",
+        "chat_key": "CCLLM_KEY",
+        # accept both spellings (the attribute was renamed once)
+        "chat_model": "CCLLM_MDL",
+    },
     "hf": {
         "base_url": "HF_SUMMARY_URL",
         "chat_key": "HF_SUMMARY_KEY",
@@ -70,16 +80,17 @@ class KgRemote:
         num_ctx: int = DEFAULT_NUM_CTX,
         chat_model: str | None = None,
     ):
-        if endpoint not in ENDPOINTS:
+        if endpoint not in ENDPOINTS and endpoint not in CLOUD_CONFIG_ATTRS:
             raise ValueError(
-                f"unknown endpoint '{endpoint}'; known: {sorted(ENDPOINTS)}"
+                f"unknown endpoint '{endpoint}'; known: "
+                f"{sorted(set(ENDPOINTS) | set(CLOUD_CONFIG_ATTRS))}"
             )
         self.endpoint_name = endpoint
         self._cloud = CLOUD_CONFIG_ATTRS.get(endpoint)
         if self._cloud:
             import src.private as pr
 
-            self.base_url = getattr(pr, self._cloud["base_url"], ENDPOINTS[endpoint])
+            self.base_url = getattr(pr, self._cloud["base_url"], "")
             # OpenAI-compatible base (strip trailing route)
             self._chat_url = self.base_url
             self._chat_key = getattr(pr, self._cloud["chat_key"], "") or ""
@@ -104,6 +115,22 @@ class KgRemote:
         self.timeout = timeout
         self.num_ctx = num_ctx
         self._available_models: list[str] | None = None
+
+    @classmethod
+    def for_diagnose(cls, override_model: str | None = None) -> "KgRemote | None":
+        """Dedicated diagnose client — reads CCLLM_* (operator session).
+
+        Returns None while the private attributes are absent, so the
+        callers can fall back to the generic cloud chat.
+        """
+        import src.private as pr
+
+        if not getattr(pr, "CCLLM_URL", None):
+            return None
+        r = cls("ccllm")
+        if override_model:
+            r._chat_model = override_model
+        return r
 
     # ------------------------------------------------------------------
     def available_models(self) -> list[str]:
@@ -213,8 +240,12 @@ class KgRemote:
             "temperature": temperature,
         }
         if self._cloud:
-            url = self._chat_url
             headers = {"Authorization": f"Bearer {self._chat_key}"} if self._chat_key else {}
+            url = (
+                self._chat_url
+                if str(self._chat_url).rstrip("/").endswith("chat/completions")
+                else f"{str(self._chat_url).rstrip('/')}/chat/completions"
+            )
         else:
             url = f"{self.base_url}/chat/completions"
             headers = {}
@@ -264,14 +295,28 @@ class KgRemote:
         url = self._sysone_url or f"{self.base_url}/systemone"
         mdl = self._sysone_model or model
         headers = {"Authorization": f"Bearer {self._sysone_key}"} if self._sysone_key else {}
-        r = requests.post(
-            url,
-            json={"model": mdl, "state": state, "questions": questions},
-            headers=headers,
-            timeout=timeout,
-        )
-        r.raise_for_status()
-        return r.json().get("answers", {})
+        # retry/backoff: the tagger and the inline crosscheck share the
+        # decision endpoint — 429s are routine, not fatal
+        last_err = None
+        for attempt in range(1, 4):
+            try:
+                r = requests.post(
+                    url,
+                    json={"model": mdl, "state": state, "questions": questions},
+                    headers=headers,
+                    timeout=timeout,
+                )
+                if r.status_code == 429:
+                    wait = int(r.headers.get("Retry-After", 5 * attempt))
+                    time.sleep(wait)
+                    last_err = RuntimeError("429 rate limited")
+                    continue
+                r.raise_for_status()
+                return r.json().get("answers", {})
+            except (requests.RequestException, KeyError) as exc:
+                last_err = exc
+                time.sleep(3 * attempt)
+        raise RuntimeError(f"systemone failed after retries: {last_err}")
 
     # ------------------------------------------------------------------
     def chat_json(

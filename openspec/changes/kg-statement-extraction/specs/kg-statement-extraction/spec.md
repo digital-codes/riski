@@ -83,6 +83,10 @@ The system SHALL render sample text from the extracted response statements and c
 - **WHEN** the rendered response text is fact-compatible with every source chunk referenced
 - **THEN** the pair's cross-check verdict is recorded as passed
 
+#### Scenario: Failure diagnosis via dedicated route
+- **WHEN** an inline verdict fails and a dedicated diagnose model route (CCLLM_*) is configured
+- **THEN** the failed pair is re-examined with a reason-generating model, the mismatch class and reason stored in the cross-check record, checker-strictness verdicts upgraded, and genuine extraction issues reset for re-extraction with the sharpened prompts (max 3 tuning iterations)
+
 #### Scenario: Prompt adjustment loop
 - **WHEN** a cross-check batch shows a recurring mismatch class (e.g. invented costs, English leakage)
 - **THEN** the extraction prompt is adjusted and the sample re-extracted and re-checked, at most 3 iterations, with tried changes and residual rates recorded in the tuning report

@@ -96,7 +96,10 @@ Regeln:
   Dokuments, übersetze nicht, paraphrasiere nicht ins Englische.
 - Nur Fakten aus dem Dokument. Wenn etwas nicht drinsteht: leere
   Zeichenkette (""), niemals erfinden.
-- involved_cost / start_date / end_date nur mit Werten aus dem Text.
+- involved_cost / start_date / end_date nur mit wörtlichen Werten aus
+  dem Text (Zahl + Währung/Zeitraum so wie sie dasteht). NIEMALS
+  rechnen, ableiten oder aus Titel/Referenz schließen; fehlt ein
+  expliziter Wert im Dokument: "".
 - source_refs: Liste der Dokument-IDs/Dateinamen, aus denen die Werte stammen;
   sonst [].
 """

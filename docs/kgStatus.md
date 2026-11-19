@@ -91,6 +91,15 @@ busy_timeout 120 s):
 python -m src.kg.kgCrossCheck --limit 20 --tuning-report --iteration <n>
 ```
 
+## Failure diagnosis (2026-11-19, D14)
+
+Failed cross-checks are re-examined by `kgTune.py` via the dedicated
+**CCLLM** route (reason + system_issue class); verdict upgrades and
+prompt-reset flow per `docs/kgTune.md`. `KgRemote.systemone()` retries
+429s (shared endpoint with the tagger). Operational lesson: long-lived
+background loops must start with `setsid` (shell aborts killed two
+batches) and every bulk script needs its retry-loop wrapper.
+
 ## Tagging: SystemOne one-call tier (2026-11-18)
 
 `kgTagSystemOne.py` assigns ALL 23 ris-ki tags in a single

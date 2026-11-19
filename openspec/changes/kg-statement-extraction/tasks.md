@@ -36,6 +36,8 @@
 
 - [x] 6.1 Implement `kgCrossCheck.py` round-trip: render response statements to short German sample text, fact-compatibility verdict against source chunks (d3:2b decision pass, LLM tie-break); verify verdicts (pass/fail + reason) are stored and a known contradiction fixture fails. Include the extraction↔cross-check tuning loop (design D12): run cross-check on the same sample pairs after each extraction batch, adjust extraction prompts on recurring mismatch classes (max 3 iterations), record tried changes + residual rates in `results/kg_crosscheck_tuning.md`
 
+- [x] 6.2 Implement `kgTune.py` failure diagnosis (design D14): failed cross-checks re-examined via the dedicated CCLLM route with reasons + system_issue classes; verdict upgrades (checker strictness) and pair resets for prompt-driven re-extraction; 429 retry/backoff in `systemone()` after rate-limit storms zeroed tagging batches; tuning report updated with real mismatch classes (40-pair pass: 24 checker / 14 prompt / 7 model)
+
 ## 7. Model selection
 
 - [ ] 7.1 Implement `kgModelSelect.py` comparison harness over a fixed sample set (granite4.2:8b vs qwen3.5:4b vs mistral:latest on statement extraction + tagging quality metrics); verify `results/kg_model_selection.md` records per-model results and the selected model
