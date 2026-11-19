@@ -98,6 +98,16 @@ refuses states >512 tokens (batch size). Full analysis:
 `docs/kg-hf-evaluation.md`. Cost lever: the decision model (SystemOne
 volume), not the LLM chat — metis (greenpt) was selected for price.
 
+## Provider status (2026-11-19, operator "provider check")
+
+| provider | route | status | kg use |
+|---|---|---|---|
+| ollama local | :11434 | **DOWN** (shutdown after model retirement) | none needed |
+| ollama.com cloud | OLC_* | ✓ up (models 24, chat 1.6 s, sysone clef 0.8 s) | extraction + clef verdicts |
+| greenpt | SYSONE_* metis | ✓ up (0.2 s) | inline cross-check verdicts |
+| HF endpoints | HF_* | HF_SUMMARY 503 (paused again), HF_SYSONE endpoint itself unresolvable (404 unknown-host) — likely deleted/paused | none (evaluation doc: not adopted) |
+| CCLLM | glm-5.3 cloud | ✓ up (1.1 s) | kgTune failure diagnosis |
+
 ## Failure diagnosis (2026-11-19, D14)
 
 Failed cross-checks are re-examined by `kgTune.py` via the dedicated
