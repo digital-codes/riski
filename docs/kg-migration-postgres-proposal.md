@@ -158,6 +158,14 @@ CREATE TABLE kg_doc_qualifiers (
     PRIMARY KEY (file_sid, tag, qualifier)
 );
 
+-- tag freshness (interplay analysis 2026-11-19): association rows
+-- carry updated timestamps so derived tagging skips stale re-runs —
+-- additive column on the EXISTING tables, serves both kg-topic and
+-- the legacy document-type scheme; TagManager sets it on add
+ALTER TABLE "File_tags_assoc" ADD COLUMN IF NOT EXISTS updated TIMESTAMPTZ;
+ALTER TABLE "Paper_tags_assoc" ADD COLUMN IF NOT EXISTS updated TIMESTAMPTZ;
+ALTER TABLE "AgendaItem_tags_assoc" ADD COLUMN IF NOT EXISTS updated TIMESTAMPTZ;
+
 -- per-file chunk counts captured during identification
 CREATE TABLE kg_file_meta (
     file_sid    INTEGER PRIMARY KEY REFERENCES "File"(sid),
