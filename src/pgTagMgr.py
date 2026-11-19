@@ -48,7 +48,7 @@ _OPAL_KEY_COL = "oparlKey"
 
 # Provenance columns on association rows (additive on-demand migration,
 # see TagManager.__init__): facet scheme, derivation source, confidence.
-_VALID_SOURCES = {"papertype", "oparl-keyword", "name-regex", "llm", "manual"}
+_VALID_SOURCES = {"papertype", "oparl-keyword", "name-regex", "llm", "manual", "sysone", "llm-kg"}
 
 
 def _make_tag_table(name: str) -> Table:
