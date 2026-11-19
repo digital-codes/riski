@@ -32,7 +32,7 @@ idempotent upserts keyed on OParl ids/sids).
 | `Paper.sid` / `Paper."oparlId"` | surrogate / URL | `pairs.paper_key` (= URL) | **split `pair_key` on '\|' → `paper_key` = `Paper."oparlId"`, `meeting_key` = `Meeting."oparlId"`** |
 | `Meeting.sid` / start_date | surrogate / timestamp | `meeting_date` (text) | map date text → `Meeting.sid` via oparlId; keep the store's date as `kg_pairs.session_date::date` |
 | `Consultation` | role/authoritative already normalized | — | pairs ≠ consultations: a pair selects the *decisive* consultation(s); `Consultation` remains source-of-truth, `kg_pairs` references `paper_sid + meeting_sid` |
-| `*_tags` + `*_tags_assoc` | vocabulary + per-oparl_key attachments w/ `scheme`,`source`,`confidence` | `file_tags` (doc_key, tag, conf) | instruments **match** (`oparl_key` string, confidence float) → migrate to assoc w/ `scheme='kg-topic'`, `source='sysone'` |
+| `*_tags` + `*_tags_assoc` | vocabulary + per-oparl_key attachments w/ `scheme`,`source`,`confidence` | `file_tags` (doc_key, tag, conf) | instruments **match** (`oparl_key` string, confidence float) → migrate to assoc w/ `scheme='kg-topic'`, `source` from the TagManager-valid vocabulary |
 
 Gaps found during analysis:
 
@@ -99,12 +99,16 @@ CREATE TABLE kg_pairs (
 );
 
 -- role matrix (the sqlite 'pair_documents' incl. verify_note)
+-- PK fix (review finding 5): role joins the key — a file may appear in
+-- two roles within one pair (Anlage that is also the response extract);
+-- kgIdentify/kgProtocols currently emit one role per (pair, file) — the
+-- wider PK makes that an invariant rather than an accident
 CREATE TABLE kg_pair_documents (
     pair_id     BIGINT REFERENCES kg_pairs(pair_id),
     file_sid    INTEGER NOT NULL REFERENCES "File"(sid),
     role        VARCHAR(24) NOT NULL,   -- request|modification|response|attachment
     verify_note TEXT,
-    PRIMARY KEY (pair_id, file_sid)
+    PRIMARY KEY (pair_id, file_sid, role)
 );
 
 -- item history chain (design D10)
@@ -116,13 +120,26 @@ CREATE TABLE kg_pair_links (
 );
 
 -- statements (field bags stay JSON — the field list WILL evolve)
+-- PK fix (review finding 3): an expression PK is invalid DDL and PK
+-- columns cannot be nullable. Use surrogate id + expression unique index:
 CREATE TABLE kg_statements (
+    id          BIGSERIAL PRIMARY KEY,
     pair_id     BIGINT NOT NULL REFERENCES kg_pairs(pair_id),
     stage       VARCHAR(16) NOT NULL,   -- request|response|author|link
+    doc_sid     INTEGER REFERENCES "File"(sid),  -- NULL = pair-level
     fields_json JSONB NOT NULL,
-    PRIMARY KEY (pair_id, stage, COALESCE(doc_sid, 0)),
-    doc_sid     INTEGER REFERENCES "File"(sid) NULL
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE UNIQUE INDEX kg_statements_uq
+    ON kg_statements (pair_id, stage, COALESCE(doc_sid, 0));
+
+-- staleness (review finding 4): regeneration is detected at the
+-- kg_pairs level (outcome/signal changes on upsert) and statements are
+-- rewritten in place via the unique index upsert; updated_at + the
+-- pipeline_version marker on kg_pairs carry freshness (no separate
+-- stale flag — absence of an updated statement AFTER an outcome change
+-- is detectable by comparing kg_pairs.updated_at vs kg_statements.updated_at)
+-- kg_pairs gains: updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), pipeline_version VARCHAR(32)
 
 -- cross-check verdicts (round-trip)
 CREATE TABLE kg_crosschecks (
@@ -149,7 +166,7 @@ CREATE TABLE kg_file_meta (
 ```
 
 Tags: the sqlite `file_tags` rows go into **`File_tags_assoc`**
-(`oparl_key = doc_key`, `scheme='kg-topic'`, `source='sysone'`,
+(`oparl_key = doc_key`, `scheme='kg-topic'`, `source` from the TagManager-valid vocabulary,
 `confidence=same`) with `kg_tags` synced into `File_tags` — so riski's
 existing tag display/filter paths see them without new plumbing, and
 later changes (extra tags/qualifiers) are pure data.
@@ -179,6 +196,13 @@ default**; `--apply` to execute:
                     upsert on (oparl_key, tag_id, scheme='kg-topic')
                     + kg_doc_qualifiers (grounded; rejects undefined via
                     dictionaries — no drift)
+                    PREREQ (review finding 2): File_tags_assoc has NO
+                    unique constraint on (oparl_key, tag_id, scheme) —
+                    only the surrogate id PK. The migration (or
+                    TagManager, better) creates a partial unique index
+                    `ON (oparl_key, tag_id, scheme) WHERE scheme IS NOT
+                    NULL` before the upserts; TagManager's
+                    exists-then-insert stays as the runtime path
 10. file_meta
 11. verify counts — per-table sqlite rows vs pg rows; full-diff report;
                     mismatches abort (apply-mode) or list (dry-run)
@@ -253,13 +277,29 @@ So the kg ingestion follows the *oparlUpdateRuns* pattern (established
 riski architecture, rights: when it fails, re-run is the recovery path
 and no row is duplicated).
 
-Deletion semantics (documents removed at source): riski's PG import
-fag `deleted=true` on OParl resources rather than deleting rows
-(oparlUpdate/PgGen convention). kg layer mirrors it exactly: pair rows
-get `status='retired'` when their Paper/Meeting carries deleted=true
-— no destructive DELETE from kg sides (statements/evidence rows stay
-for audit). The `--apply` requires a preceding riski baseline run —
+Deletion semantics (documents removed at source): VERIFIED in the
+corpus (review finding 6) — `deleted` is an additive scalar column
+pgGen creates when OParl delivers it (e.g. `Consultation.deleted` from
+the 2026-10-26 crawl); live counts: Paper 4, Consultation 4, File 53
+deleted=true rows. Caveat: the flag appears only when the source sends
+it — removals that OParl communicates by *disappearance* (row vanishes
+from the feed) are NOT flagged. The kg retired-path therefore fires on
+`deleted=true` AND on sid-resolution misses during incremental runs
+(a pair whose Paper vanished from PG entirely is retired, not
+orphaned). The `--apply` requires a preceding riski baseline run —
 otherwise the kg stage is a no-op.
+
+## 5b. Review findings (mistral review, 2026-11-19) — disposition
+
+| # | finding | disposition |
+|---|---|---|
+| 1 | `source='sysone'` rejected by TagManager `_VALID_SOURCES` | **fixed**: extend `_VALID_SOURCES` with kg sources (`sysone`, `llm-kg`) — TagManager stays the single write path |
+| 2 | `File_tags_assoc` has no unique (oparl_key, tag_id, scheme) constraint — ON CONFLICT would fail | **fixed**: partial unique index `ON (oparl_key, tag_id, scheme) WHERE scheme IS NOT NULL` created by the migration (or TagManager); verified live: table only has the surrogate id PK, scheme nullable |
+| 3 | `PRIMARY KEY (pair_id, stage, COALESCE(doc_sid, 0))` invalid DDL | **fixed**: surrogate id + expression-based unique index |
+| 4 | staleness mechanism asserted but not designed | **fixed**: kg_pairs gains `updated_at` + `pipeline_version`; regeneration detected at pair level, statements rewritten via the unique-index upsert (staleness = pairs.updated_at > statements.updated_at) |
+| 5 | `kg_pair_documents` PK forbids two roles for one file | **fixed**: role joins the PK (invariant stated) |
+| 6 | `deleted=true` convention unverified | **verified live**: additive scalar column when OParl delivers it (Paper 4, Consultation 4, File 53 rows); caveat: disappearance-without-flag is not covered → sid-resolution misses in incremental runs also retire pairs |
+| 7 | kg_tags duplicates File_tags; column-width mismatch | **kept** (kg_tags carries description/active which File_tags lacks) with sync direction fixed YAML → kg_tags → File_tags projection; width harmonized to VARCHAR(255) |
 
 ## 6. Open questions for the review
 

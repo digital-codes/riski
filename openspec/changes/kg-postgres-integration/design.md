@@ -69,6 +69,23 @@ Mirrors the OParl `deleted=true` convention of riski's import chain
 (source could un-delete), evidence rows remain for audit, and the ingest
 cursor never regresses.
 
+### D6: Review dispositions (mistral review 2026-11-19)
+Seven findings from the external review of
+`docs/kg-migration-postgres-proposal.md` are dispositioned there (§5b)
+— the three DDL-correct ones are binding for the DDL task: (a)
+`kg_statements` uses a surrogate id + expression unique index (an
+expression PK is invalid DDL); (b) `kg_pair_documents` PK includes
+`role` (two roles per file in one pair become an invariant, not an
+accident); (c) the tag path requires a partial unique index on
+`File_tags_assoc (oparl_key, tag_id, scheme) WHERE scheme IS NOT NULL`
+(the table only has the surrogate id PK) plus extending
+`pgTagMgr._VALID_SOURCES` with the kg sources — TagManager stays the
+single write path. Freshness: `kg_pairs.updated_at`/`pipeline_version`
+vs `kg_statements.updated_at` detect staleness (no separate flag).
+Deletion convention verified live: `deleted=true` exists (Paper 4 /
+Consultation 4 / File 53 rows) but only when OParl delivers it —
+sid-resolution misses during incremental runs retire pairs as well.
+
 ## Risks / Trade-offs
 
 - [SQLite and PostgreSQL can drift between a kg run and a migration]

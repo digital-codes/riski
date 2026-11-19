@@ -1,3 +1,16 @@
+> **RETIRED (2026-11-19):** the Python code of this module
+> (`triplestore.py`, `vocabulary.py`, `kg_vocabulary.py`, `query.py`,
+> `kg_query.py`, `migration.py`, `example.py`, `riskg_config.py`) was
+> removed — its PostgreSQL tables (`concept_schemes`, `concepts`,
+> `entity_concepts`, `semantic_triples`, `registered_ontologies`,
+> `oparl_semantic_mapping`, `uri_mappings`, materialized views
+> `mv_paper_enriched`/`mv_person_roles`) were dropped from
+> `riski_agentic` after the orphan-table analysis.
+> Archive dump: `/mnt_ai/data/riski/snapshots/kg_orphan_tables_2026-11-19.dump`
+> (restorable with `pg_restore`; the SQL files here document the old
+> schema). The KG work continues in `src/kg/` (see
+> `docs/kgpre-pipeline-proposal.md`).
+
 # Knowledge Graph (KG) Module for risKg
 
 This module provides the Knowledge Graph infrastructure for risKg, including:
