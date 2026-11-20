@@ -98,6 +98,20 @@ refuses states >512 tokens (batch size). Full analysis:
 `docs/kg-hf-evaluation.md`. Cost lever: the decision model (SystemOne
 volume), not the LLM chat — metis (greenpt) was selected for price.
 
+## Field-level failure flags (2026-11-20, running)
+
+`kgFlagFailures.py` attaches per-field failure flags to statements
+(`_flags` marker + `_flagged` note block inside `fields_json`; suspect
+VALUES blanked — hallucinated facts cannot stand as field values).
+Modes: hallucination / date-mismatch / cost-misattribution /
+executor-mismatch / other. Full pass over the 277 failed pairs running
+(`results/kg_flagfailures_run1.log`); kgExport exposes the blocks, the
+next `kgMigrate --apply` syncs them to the PG `kg_statements.fields_json`.
+The three quality infrastructure layers now in force:
+1. pair level — crosschecks.verdict/reason (D12/D14 loop)
+2. statement field level — `_flags`/`_flagged` (this layer)
+3. attachment level — `pair_documents.verify_note` (kgProtocols/kgAbstimmung OCR gates)
+
 ## ARCHIVED: kg-statement-extraction (2026-11-20)
 
 The prototype change completed all 22 tasks and is archived as

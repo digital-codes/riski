@@ -89,6 +89,16 @@ def export(store: KgStore, out_path: str, only: str | None) -> dict:
                     "request": stmt.get("request"),
                     "response": stmt.get("response"),
                     "modification_link": stmt.get("link"),
+                    # field-level failure flags (kgFlagFailures 2026-11-20):
+                    # _flags = {field: mode}, _flagged = {field: {value,
+                    # reason, origin}} — suspect values are blanked in the
+                    # plain fields and live only here
+                    "flags": {
+                        "request": stmt.get("request", {}).get("_flags"),
+                        "response": stmt.get("response", {}).get("_flags"),
+                        "request_flagged": stmt.get("request", {}).get("_flagged"),
+                        "response_flagged": stmt.get("response", {}).get("_flagged"),
+                    },
                     "crosscheck": {"verdict": cc["verdict"], "reason": cc["reason"]}
                     if cc
                     else None,

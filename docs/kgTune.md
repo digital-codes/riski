@@ -52,3 +52,39 @@ python -m src.kg.kgTune --limit 0                  # all failed pairs
 
 Safe in parallel with the bulk runs (SQLite busy_timeout 300 s after
 the run9 lock lesson — keep concurrent writers' commit windows short).
+
+
+## Field-level failure flagging (2026-11-20, post-archive hardening)
+
+Operator requirement: failure modes SHALL be flagged at the *statement
+level*; hallucination-suspect facts must never stand as plain field
+values. `kgFlagFailures.py` implements this by injecting two blocks
+into `statements.fields_json` (JSONB absorbs the growth in SQLite and
+PostgreSQL alike — no DDL):
+
+```json
+"_flags":   { "start_date": "hallucination",
+              "involved_cost": "cost-misattribution" },
+"_flagged": { "start_date": {"value": "Mitte 2017",
+                             "reason": "Dokument datiert 03.02.2015 …",
+                             "origin": "crosscheck"} }
+```
+
+**The affected VALUE is blanked from the plain field** — consumers can
+never mistake it for an extracted fact; the original value + the
+diagnose reason live in the `_flagged` note block. Modes: hallucination,
+date-mismatch, cost-misattribution, executor-mismatch, other. Fields
+already flagged are skipped on re-runs; statements without flags pass
+untouched.
+
+```bash
+/home/agent/bin/python3.14 -m src.kg.kgFlagFailures             # dry run
+/home/agent/bin/python3.14 -m src.kg.kgFlagFailures --apply      # write
+```
+
+Migrate afterwards (`kgMigrate --apply`) so the PostgreSQL layer picks
+up the flagged/blanked fields — the upserts refresh `fields_json`.
+
+`kgExport` exposes the blocks on every pair as `flags` (request/_flags,
+response/_flags plus the `_flagged` note blocks), so downstream
+consumers can filter or render them without touching the JSONB.
