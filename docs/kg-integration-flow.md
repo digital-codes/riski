@@ -38,7 +38,7 @@ sequenceDiagram
     W->>API: POST /timeline, /graph (staged, parallel)
 
     U->>W: click chip (onKgChipPick)
-    W->>W: query.value = chip.topic; re-run runSearch()
+    W->>W: query.value = chip.topic, re-run runSearch
 
     U->>W: click followup chip (onFollowupPick)
     W->>API: POST /followup {question, state, session_id}
