@@ -77,3 +77,10 @@ export async function getInstance() {
 		return null;
 	}
 }
+
+export async function followup(question, { state, sessionId, topK = 10 } = {}) {
+  const r = await fetch(`${base}/followup`, { method: "POST", headers: jsonHeaders(),
+    body: JSON.stringify({ question, state, session_id: sessionId, top_k: topK }) });
+  if (!r.ok) throw new Error(`followup failed: ${r.status}`);
+  return r.json();
+}

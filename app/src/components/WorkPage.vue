@@ -113,7 +113,7 @@ import FollowupChips from './FollowupChips.vue';
 import DetailPanel from './DetailPanel.vue';
 import RouteInfo from './RouteInfo.vue';
 import TopicList from './TopicList.vue';
-import { ask as apiAsk, search as apiSearch, summarize as apiSummarize, expand as apiExpand, geoUrl, timeline as apiTimeline, graph as apiGraph } from '../api.js';
+import { ask as apiAsk, search as apiSearch, summarize as apiSummarize, expand as apiExpand, followup as apiFollowup, geoUrl, timeline as apiTimeline, graph as apiGraph } from '../api.js';
 import { instance } from '../instanceStore.js';
 // lazy: keeps echarts (large) out of the main bundle until the graph exists
 const NetworkView = defineAsyncComponent(() => import('./NetworkView.vue'));
@@ -251,11 +251,18 @@ async function runSearch() {
     // follow via the staged endpoints (change: progressive-frontend-
     // rendering)
     const result = await apiAsk(q, { sessionId: sessionId.value, topK: 10, summarize: false });
-    if (result.followups) { followups.value = result.followups; stateToken.value = result.state; stateSession.value = result.state_session || result.sessionId; }
+    if (result.clarification) {
+      // clarification chips (kg-app-integration D4b): cluster-picker instead of blanked followups
+      followups.value = result.followups;
+      stateToken.value = result.state;
+      stateSession.value = result.state_session || result.sessionId;
+    } else if (result.followups) {
+      followups.value = result.followups;
+      stateToken.value = result.state;
+      stateSession.value = result.state_session || result.sessionId;
+    }
     if (result.related_documents) relatedDocs.value = result.related_documents;
-
-const onFollowupPick = async (question, stateTokenV, sessId) => { await runAsk(question); };
-    if (result.clarification) { followups.value = []; }
+    
     if (token !== searchToken) return;  // superseded by a newer search
     applyStage1(result);
     loadingFiles.value = false;  // stage-1 delivered the file list

@@ -256,13 +256,14 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         )
         if req.summarize:
             _run_summarizer(session, result)
-        _kg_enrich(result, query, session_id)
     except FilterError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     finally:
         session.close()
 
     session_id = uuid.uuid4().hex
+    if app.state.kg_app_integration:
+        _kg_enrich(result, query, session_id)   # kg-app-integration: after session_id exists
     _sessions[session_id] = {
         "query": query,
         "filters": req.filters or [],
@@ -343,6 +344,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         "result": result,           # client-facing fields; /summarize mutates in place
         "stage_lock": threading.Lock(),
     }
+    session_id = session_id or uuid.uuid4().hex
     _kg_enrich(result, query, session_id)
     result["sessionId"] = session_id
     return result
