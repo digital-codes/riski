@@ -146,6 +146,72 @@ download-linking list (link text: file name; tooltip: shared-topic
 list) at the bottom of the work page. Reuses app-wide styles; no new
 network calls on the client except the clicks themselves.
 
+### D7: Query threads with followup-intent detection (added 2026-11-20)
+The chip flow becomes the *entry* of a sequenced conversation with
+**threads** (Aufeinanderfolgende Fragen, die zusammen gehören):
+
+* **Thread start (chips mode)** — occurs when (a) the app loads, (b)
+  the intent router indicates a non-thematic intent
+  (`ask_gremium_recent` "wann war die letzte Sitzung", decision-date
+  lookups etc.), or (c) the intent is `search_topic` but hybrid recall
+  yields no document above the confidence floor. In these cases the
+  server responds with a **new history sequence** (`thread_id` fresh,
+  `turn=0`), proposes 5 kg-topic chips (clarification options from
+  `_kg_enrich`'s cluster detection, falling back to the global topic
+  list), and asks the user to make a more defined request — **no other
+  cards are presented** (timeline, graph, related docs and summary are
+  suppressed; the frontend renders the chips sheet plain).
+* **Chip pick** — amends the initial query with the chip description
+  (`chip.topic` + `chip.example`) and starts a *new search* which is
+  evaluated through the normal card surface; **chips disappear** (the
+  thread is established — thread_id stays, turn=1).
+* **Followup detection on subsequent turns** — when the intent router
+  sees a query with **no clear target** (anaphoric prompts like "welche
+  umweltauswirkungen hat das", "warum haben die grünen dem
+  zugestimmt" — signals: deictic pronouns ("das", "die"), no head noun
+  that maps to a kg-topic vector, intent router confidence below the
+  topic threshold), it is classified as `thread_followup`. The
+  **effective query is the concatenation of the prior turn's query and
+  the new one** (oldest→newest, dot separated, max retained = per D8
+  window), run through the normal pipeline. The summarizer's prompt
+  notes that prior turns provide context ("Vorherige Fragen des
+  Nutzers in diesem Thema: …") so answer continuity survives
+  concatenation.
+* **Thread break** — a query whose intent resolves with clear target
+  (topic fire ≥ threshold, gremium/decision slots filled) starts a
+  **new thread**: fresh `thread_id`, turn reset, empty history.
+* **Hard budget — 5 rounds** — after the 5th turn in one thread the
+  next query is treated as a break (new thread) regardless of intent
+  confidence; the user gets an informational note ("Neues Thema —
+  Thread begrenzt auf 5 Nachfragen").
+* State stays in the existing sealed token (D4/D5) — the augmentations
+  are `thread_id`, `turns` (list of queries, oldest first) and
+  `origin` ("chips"|"search"); tokens rotate per turn as before.
+
+### D8: Followup mechanics, frontend surface
+* `/search` and `/ask` accept an optional `thread` field; when present
+  and valid (token + session id) the endpoint opens it before the
+  intent classification and hands `turns` + `turn_count` to the
+  router, which decides followup-vs-break **before** recall runs.
+* Concatenation is capped: `turns[-3:]` (rolling window, ≥ effective
+  ≤ 3 query strings padded to ≤ 750 chars total after sanitization);
+  the *topic focus* (D3) is computed over the concatenated string, the
+  retrieval boost retains the turn-1 topic so the thread doesn't
+  drift.
+* Frontend (`WorkPage.vue`):
+  - on chips-mode responses render ONLY the chips sheet + the
+    "make it more defined" hint (hide summary/timeline/graph/related),
+  - on chip pick run a normal `/search` (cards show), dropping the
+    sheet,
+  - on regular turns send `{query, thread: {state, sessionId}}`,
+  - after 5 turns the server's "new thread" note renders as an inline
+    notice above the cards,
+  - a small "Neues Thema" reset button exists after ≥2 turns even
+    without a hard break (user-initiated thread break).
+* No LLM classifier for followup detection — it is a deterministic
+  router rule (deictic lexicon + no-topic-fire + low router
+  confidence). Cheap, auditable, no extra model calls.
+
 ## Risks / Trade-offs
 
 - [Token payloads can carry statement references that later get

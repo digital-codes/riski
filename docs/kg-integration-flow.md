@@ -56,6 +56,69 @@ sequenceDiagram
     API-->>W: 200 application/pdf (Set-Cookie stripped)<br/>Content-Disposition inline, Cache-Control 1h
 ```
 
+## 1b. v2 — Query threads with followup intent (D7/D8, proposed)
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as User
+    participant W as WorkPage.vue
+    participant R as IntentRouter
+    participant API as /search /ask /followup
+    participant KG as kg layer
+    participant DB as PostgreSQL
+
+    Note over U,DB: Thread start — app load OR non-thematic intent OR weak recall
+    U->>W: (app load / "wann war die letzte Sitzung?")
+    W->>API: POST /search {query}
+    API->>R: decode(query)
+    R-->>API: intent=ask_gremium_recent OR recall < floor
+    API->>API: new thread_id, turns=[], turn=0, origin="chips"
+    API->>KG: 5 tag chips (clusters or global topics)
+    API-->>W: {mode: "chips", chips[5], thread{state}, hint "Bitte präzisieren"}
+    W->>U: ONLY chip sheet + hint — no summary/timeline/graph/related
+
+    U->>W: click chip "Forum Am Recht (Bauen)"
+    W->>API: POST /search {query = q0 + chip.topic + chip.example}
+    API->>R: decode → search_topic (target now clear)
+    API->>DB: recall + summary cards
+    API->>API: thread_id kept, turn=1, origin="search"
+    API-->>W: {summary, top_files, timeline, graph, related, thread{state, turn=1}}
+
+    Note over U,DB: Followup turns — deictic queries concat
+    U->>W: "welche umweltauswirkungen hat das"
+    W->>API: POST /search {query, thread{state}}
+    API->>R: no topic fire + deictic "das" + low conf → thread_followup
+    API->>API: effective = turns[-3:] + [query] concat
+    API->>DB: recall on effective query, topic focus from turn 1
+    API-->>W: {summary (+kontext note), thread{turn=2}}
+
+    U->>W: "warum haben die grünen dem zugestimmt"
+    W->>API: POST /search {query, thread{state}}
+    API->>API: concat again → turn=3, decision grounding from statements
+    API-->>W: {summary grounded on Bauen+vote statements}
+
+    Note over U,DB: Thread break
+    U->>W: "was macht die stadt beim klimaschutz"
+    W->>API: POST /search {query, thread{state}}
+    API->>R: topic fire (Klima/Energie) ≥ threshold → break
+    API->>API: NEW thread_id, turns=[q], turn=0
+    API-->>W: cards only, fresh state
+    Note over U,DB: same rule applies FORCED at turn_count = 5 (hard budget)
+```
+
+**State / routing rules (summary)**
+
+| Signal | Decision | Effective query | Thread |
+|---|---|---|---|
+| app load | chips (forced) | — | new, origin=chips |
+| non-thematic intent (`ask_gremium_recent`, decision-date, …) | chips | — | new |
+| `search_topic` + recall < confidence floor | chips | — | new |
+| chip pick | normal cards | `q0 + chip.topic + chip.example` | kept, turn=1 |
+| deictic / no-topic-fire / router-conf < floor | `thread_followup` | `turns[-3:] + [q]` concat | kept, turn++ |
+| clear target (topic ≥ threshold or slots filled) | break | q only | new, turn=0 |
+| turn_count = 5 | forced break | q only | new + notice |
+
 ## 2. Data flow per stage
 
 | Stage | Frontend | Backend | kg artefacts | Possible failure (open) |
