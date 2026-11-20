@@ -98,6 +98,16 @@ refuses states >512 tokens (batch size). Full analysis:
 `docs/kg-hf-evaluation.md`. Cost lever: the decision model (SystemOne
 volume), not the LLM chat — metis (greenpt) was selected for price.
 
+## Cookies (2026-11-20): our app sets none
+
+The cookie warnings in the browser console are all
+`TS01ea880d`-class — an F5/BIG-IP load-balancer session cookie emitted
+by **web1.karlsruhe.de itself** when the related-document download
+links are opened. Verified live: `curl -I` on a RIS file URL shows
+`Set-Cookie: cookiesession1=...`; our API (/health, /search,
+/followup) sets zero cookies, same for the frontend. Nothing to fix
+in riski — they are user-triggered third-party cookies.
+
 ## Field-level failure flags (2026-11-20, running)
 
 `kgFlagFailures.py` attaches per-field failure flags to statements
