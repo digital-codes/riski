@@ -50,6 +50,16 @@ the single source of truth for what has been ingested; mirrors
 `('migrate', 'ok', 8301)`.
 
 
+## Field-level failure flags (2026-11-20)
+
+`kgFlagFailures.py` writes per-field failure flags into
+`kg_statements.fields_json` (`_flags` marker + `_flagged` note block,
+suspect values blanked). The migrator's statement upserts refresh
+`fields_json`, so flagged statements sync to the `kg_*` layer on the
+next apply. Convention: `_flags` keys reference the FIELD keys
+(request/response statements); consumers filter
+`fields_json ? '_flags'` (JSONB path) instead of parsing reasons.
+
 ## Update-workflow verification (task 4.1, 2026-11-20)
 
 `scripts/kgUpdateVerify.py` proves the kg phase chain inside the
