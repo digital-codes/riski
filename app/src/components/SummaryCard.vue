@@ -33,7 +33,7 @@
 		<!-- kg-app-integration: "Auswahl" — clustered follow-up chips in the
 		     header block (clarification mode), and the related docs card
 		     below with name/year/teaser detail -->
-		<div v-if="kgChips.length" class="kg-selection">
+		<div v-if="kgChips && kgChips.length" class="kg-selection">
 			<h3 class="kg-selection-title">Auswahl</h3>
 			<div class="kg-chips">
 				<button v-for="(chip, i) in kgChips" :key="i" type="button"
@@ -43,7 +43,7 @@
 				</button>
 			</div>
 		</div>
-		<div v-if="kgRelated.length" class="kg-related">
+		<div v-if="kgRelated && kgRelated.length" class="kg-related">
 			<h3 class="kg-related-title">Thematisch verwandte Dokumente (nach den gewählten Themen)</h3>
 			<ul class="kg-related-list">
 				<li v-for="doc in kgRelated" :key="doc.oparl_key">
@@ -93,6 +93,15 @@ const props = defineProps({
 	mapAvailable: {
 		type: Boolean,
 		default: false
+	},
+	// kg-app-integration: cluster chips (Auswahl) + related docs card
+	kgChips: {
+		type: Array,
+		default: () => []
+	},
+	kgRelated: {
+		type: Array,
+		default: () => []
 	},
 	// structured per-file metadata from /summarize (change: summary-refine-file-control)
 	files: {
