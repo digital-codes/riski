@@ -160,6 +160,82 @@ def instance_config() -> Dict[str, Any]:
     }
 
 
+
+def _kg_enrich(result: dict, query: str, session_id: str) -> None:
+    """kg-app-integration: related documents + followups/clarification
+    injected into a stage-1 result (used by /search and /ask)."""
+    try:
+        from src.kg.kgQueries import related_by_tags
+        top = [(tf["oparlKey"], tf.get("distance") or 0.0)
+               for tf in result.get("top_files", []) if tf.get("oparlKey")]
+        result["related_documents"] = related_by_tags(top)
+    except Exception as exc:  # pragma: no cover - kg layer issues
+        _kg_log.warning("related_documents failed: %s", exc)
+        result["related_documents"] = []
+    try:
+        from src.kg.kgFollowups import (
+            generate_followups, seal_state_or_none,
+        )
+        all_topics: dict = {}
+        for rd in result.get("related_documents", []):
+            for t in rd.get("shared_tags") or []:
+                all_topics[t] = all_topics.get(t, 0) + 1
+        topic_clusters = len([t for t in all_topics if all_topics[t] >= 2])
+        state_payload = {
+            "q0": query,
+            "top_docs": [tf.get("oparlKey") for tf in result.get("top_files", [])][:8],
+            "stmt_refs": [],
+        }
+        is_short_fuzzy = len(query.split()) <= 3
+        is_multi_cluster = topic_clusters >= 3
+        rand_id = uuid.uuid4().hex
+        if is_short_fuzzy and is_multi_cluster:
+            _kg_log.info("clarification mode: %d clusters", topic_clusters)
+            options: list = []
+            seen: set = set()
+            for rd in result.get("related_documents", [])[:5]:
+                label = None
+                for t in rd.get("shared_tags") or []:
+                    if t not in seen:
+                        label = t
+                        seen.add(t)
+                        break
+                if label:
+                    options.append({"topic": label,
+                                    "example": rd.get("name") or "",
+                                    "shared_tags": rd.get("shared_tags", [])[:3]})
+            if len(options) >= 2:
+                result["clarification"] = {
+                    "message": "Meinst du eines dieser Themen?",
+                    "options": options[:5],
+                }
+                result["followups"] = [
+                    o["topic"] + " — " + (o["example"][:60]) for o in options[:5]
+                ]
+                state_payload["clarifying"] = True
+                state_payload["topics"] = [o["topic"] for o in options[:5]]
+                token = seal_state_or_none(state_payload, session_id)
+                if token:
+                    result["state"] = token
+                    result["state_session"] = session_id
+        else:
+            topics: list = []
+            for rd in result.get("related_documents", [])[:2]:
+                topics.extend(rd.get("shared_tags") or [])
+            summary_text = ((result.get("summary") or {}).get("text", "")
+                            if isinstance(result.get("summary"), dict)
+                            else (result.get("summary") or ""))
+            fu = generate_followups(summary_text, statements=None,
+                                    topics=list(dict.fromkeys(topics))[:5])
+            token = seal_state_or_none(state_payload, session_id)
+            if token:
+                result["followups"] = fu.get("questions")
+                result["state"] = token
+                result["state_session"] = session_id
+    except Exception as exc:  # pragma: no cover
+        _kg_log.warning("kg followup/related failed: %s", exc)
+
+
 @app.post("/search")
 def search(req: SearchRequest) -> Dict[str, Any]:
     """Recall stage only (change: progressive-frontend-rendering): returns
@@ -180,82 +256,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         )
         if req.summarize:
             _run_summarizer(session, result)
-        # kg-app-integration: related documents + followups + clarification
-        if app.state.kg_app_integration:
-            try:
-                from src.kg.kgQueries import related_by_tags
-                top = [(tf["oparlKey"], tf.get("distance") or 0.0)
-                       for tf in result.get("top_files", []) if tf.get("oparlKey")]
-                result["related_documents"] = related_by_tags(top)
-            except Exception as exc:  # pragma: no cover - kg layer issues
-                _kg_log.warning("related_documents failed: %s", exc)
-                result["related_documents"] = []
-            try:
-                from src.kg.kgFollowups import (
-                    generate_followups, seal_state_or_none,
-                )
-                all_topics: dict = {}
-                for rd in result.get("related_documents", []):
-                    for t in rd.get("shared_tags") or []:
-                        all_topics[t] = all_topics.get(t, 0) + 1
-                topic_clusters = len([t for t in all_topics if all_topics[t] >= 2])
-                session_id_rand = uuid.uuid4().hex
-                state_payload = {
-                    "q0": query,
-                    "top_docs": [tf.get("oparlKey") for tf in result.get("top_files", [])][:8],
-                    "stmt_refs": [],
-                }
-                is_short_fuzzy = len(query.split()) <= 3
-                is_multi_cluster = topic_clusters >= 3
-                do_followups = bool(req.summarize)  # chips reference the summary text
-                if do_followups and is_short_fuzzy and is_multi_cluster:
-                    _kg_log.info("clarification mode: %d clusters", topic_clusters)
-                    options: list = []
-                    seen_topics: set = set()
-                    for rd in result.get("related_documents", [])[:5]:
-                        label = None
-                        for t in rd.get("shared_tags") or []:
-                            if t not in seen_topics:
-                                label = t
-                                seen_topics.add(t)
-                                break
-                        if label:
-                            options.append({"topic": label,
-                                            "example": rd.get("name") or "",
-                                            "shared_tags": rd.get("shared_tags", [])[:3]})
-                    if len(options) >= 2:
-                        result["clarification"] = {
-                            "message": "Meinst du eines dieser Themen?",
-                            "options": options[:5],
-                        }
-                        result["followups"] = [
-                            o["topic"] + " — " + (o["example"][:60]) for o in options[:5]
-                        ]
-                        state_payload["clarifying"] = True
-                        state_payload["topics"] = [o["topic"] for o in options[:5]]
-                        token = seal_state_or_none(state_payload, session_id_rand)
-                        if token:
-                            result["state"] = token
-                            result["state_session"] = session_id_rand
-                elif do_followups:
-                    topics: list = []
-                    for rd in result.get("related_documents", [])[:2]:
-                        topics.extend(rd.get("shared_tags") or [])
-                    summary_text = ((result.get("summary") or {}).get("text", "")
-                                    if isinstance(result.get("summary"), dict)
-                                    else (result.get("summary") or ""))
-                    fu = generate_followups(
-                        summary_text,
-                        statements=None,
-                        topics=list(dict.fromkeys(topics))[:5],
-                    )
-                    token = seal_state_or_none(state_payload, session_id_rand)
-                    if token:
-                        result["followups"] = fu.get("questions")
-                        result["state"] = token
-                        result["state_session"] = session_id_rand
-            except Exception as exc:  # pragma: no cover
-                _kg_log.warning("kg followup/related failed: %s", exc)
+        _kg_enrich(result, query, session_id)
     except FilterError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     finally:
@@ -342,6 +343,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         "result": result,           # client-facing fields; /summarize mutates in place
         "stage_lock": threading.Lock(),
     }
+    _kg_enrich(result, query, session_id)
     result["sessionId"] = session_id
     return result
 

@@ -92,6 +92,8 @@ def open_state(token: str, session_id: str, *,
 def seal_state_or_none(state: dict[str, Any], session_id: str) -> str | None:
     """Best-effort sealing — None when a malformed session id appears."""
     if not session_id or any(c not in _SESSION_RE_CHARS for c in session_id):
+        import sys as _sys
+        print(f"DBG seal_state_or_none None: sid={session_id!r}", file=_sys.stderr)
         return None
     try:
         return seal_state(state, session_id)
