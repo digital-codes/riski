@@ -39,6 +39,8 @@ try:
 except ImportError:
     pass
 
+import logging
+import os
 import threading
 import unicodedata
 import uuid
@@ -52,6 +54,10 @@ from src.pgHybridSearch import FilterError, facets
 from src.pgTimeline import get_db_session, search_stage
 
 app = FastAPI(title="RISKI Search API", version="0.1.0")
+
+_kg_log = logging.getLogger("riski.kg.app")
+# kg-app-integration rollout flag (design D6 rollback path)
+app.state.kg_app_integration = os.getenv("KG_APP_INTEGRATION", "1") == "1"
 
 # permissive CORS for local frontend dev (vite runs on its own port)
 try:
@@ -174,6 +180,81 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         )
         if req.summarize:
             _run_summarizer(session, result)
+        # kg-app-integration: related documents + followups + clarification
+        if app.state.kg_app_integration:
+            try:
+                from src.kg.kgQueries import related_by_tags
+                top = [(tf["oparlKey"], tf.get("distance") or 0.0)
+                       for tf in result.get("top_files", []) if tf.get("oparlKey")]
+                result["related_documents"] = related_by_tags(top)
+            except Exception as exc:  # pragma: no cover - kg layer issues
+                _kg_log.warning("related_documents failed: %s", exc)
+                result["related_documents"] = []
+            try:
+                from src.kg.kgFollowups import (
+                    generate_followups, seal_state_or_none,
+                )
+                all_topics: dict = {}
+                for rd in result.get("related_documents", []):
+                    for t in rd.get("shared_tags") or []:
+                        all_topics[t] = all_topics.get(t, 0) + 1
+                topic_clusters = len([t for t in all_topics if all_topics[t] >= 2])
+                session_id_rand = uuid.uuid4().hex
+                state_payload = {
+                    "q0": query,
+                    "top_docs": [tf.get("oparlKey") for tf in result.get("top_files", [])][:8],
+                    "stmt_refs": [],
+                }
+                is_short_fuzzy = len(query.split()) <= 3
+                is_multi_cluster = topic_clusters >= 3
+                if is_short_fuzzy and is_multi_cluster:
+                    _kg_log.info("clarification mode: %d clusters", topic_clusters)
+                    options: list = []
+                    seen_topics: set = set()
+                    for rd in result.get("related_documents", [])[:5]:
+                        label = None
+                        for t in rd.get("shared_tags") or []:
+                            if t not in seen_topics:
+                                label = t
+                                seen_topics.add(t)
+                                break
+                        if label:
+                            options.append({"topic": label,
+                                            "example": rd.get("name") or "",
+                                            "shared_tags": rd.get("shared_tags", [])[:3]})
+                    if len(options) >= 2:
+                        result["clarification"] = {
+                            "message": "Meinst du eines dieser Themen?",
+                            "options": options[:5],
+                        }
+                        result["followups"] = [
+                            o["topic"] + " — " + (o["example"][:60]) for o in options[:5]
+                        ]
+                        state_payload["clarifying"] = True
+                        state_payload["topics"] = [o["topic"] for o in options[:5]]
+                        token = seal_state_or_none(state_payload, session_id_rand)
+                        if token:
+                            result["state"] = token
+                            result["state_session"] = session_id_rand
+                else:
+                    topics: list = []
+                    for rd in result.get("related_documents", [])[:2]:
+                        topics.extend(rd.get("shared_tags") or [])
+                    summary_text = ((result.get("summary") or {}).get("text", "")
+                                    if isinstance(result.get("summary"), dict)
+                                    else (result.get("summary") or ""))
+                    fu = generate_followups(
+                        summary_text,
+                        statements=None,
+                        topics=list(dict.fromkeys(topics))[:5],
+                    )
+                    token = seal_state_or_none(state_payload, session_id_rand)
+                    if token:
+                        result["followups"] = fu.get("questions")
+                        result["state"] = token
+                        result["state_session"] = session_id_rand
+            except Exception as exc:  # pragma: no cover
+                _kg_log.warning("kg followup/related failed: %s", exc)
     except FilterError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     finally:
@@ -279,6 +360,98 @@ def _get_session(session_id: str) -> Dict[str, Any]:
     if sess is None or "result" not in sess:
         raise HTTPException(status_code=404, detail="unknown session")
     return sess
+
+
+class FollowupRequest(BaseModel):
+    question: str = Field(min_length=1)
+    state: str = Field(min_length=1)
+    session_id: str
+
+
+@app.post("/followup")
+def followup(req: FollowupRequest) -> Dict[str, Any]:
+    """kg-app-integration: follow-up turn with sealed state.
+
+    Opens the state token, runs the scoped pipeline (search + summary
+    grounded in the prior round's statement context), and returns the
+    new answer, 3–5 fresh follow-ups and a fresh sealed token."""
+    query = validate_user_query(req.question)
+    if req.session_id and any(
+        c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+        for c in req.session_id
+    ):
+        raise HTTPException(status_code=400, detail="Ungültige Session-ID.")
+    try:
+        from src.kg.kgFollowups import open_state
+        state = open_state(req.state, req.session_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Ungültiger oder abgelaufener Sitzungs-Token: {exc}",
+        )
+    except Exception as exc:
+        _kg_log.warning("followup open_state failed: %s", exc)
+        raise HTTPException(
+            status_code=400,
+            detail="Ungültiger Sitzungs-Token.",
+        )
+
+    try:
+        session = get_db_session()
+    except Exception as exc:  # pragma: no cover - db down
+        raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
+
+    try:
+        result = search_stage(session, query, top_k=req.top_k if hasattr(req, "top_k") else 10)
+        if app.state.kg_app_integration:
+            try:
+                from src.kg.kgFollowups import (
+                    generate_followups, seal_state_or_none,
+                )
+                # grounding from prior round: seed via kg statements for the
+                # state's top docs
+                from src.kg.kgQueries import (
+                    file_sid_for_key, statements_for_papers,
+                )
+                sids = file_sid_for_key((state.get("top_docs") or [])[:6])
+                pairs = statements_for_papers(
+                    [v for v in sids.values() if v])
+                faketopics = list(state.get("topics") or [])[:5]
+                fu = generate_followups(
+                    query, statements=list(pairs.values())[:2],
+                    topics=faketopics,
+                )
+                # questions rendered as a scoped response, alto the token chain
+                state_payload = {
+                    "q0": state.get("q0") or query,
+                    "top_docs": [tf.get("oparlKey") for tf in (result.get("top_files") or [])][:8],
+                    "stmt_refs": [v.get("pair_id") for v in pairs.values()][:6],
+                    "topics": faketopics,
+                }
+                token = seal_state_or_none(state_payload, req.session_id)
+                if token:
+                    result["followups"] = fu.get("questions")
+                    result["state"] = token
+                    result["state_session"] = req.session_id
+                    if req.state != token:
+                        result["state_refreshed"] = True
+            except Exception as exc:  # pragma: no cover
+                _kg_log.warning("followup grounding failed: %s", exc)
+        if req.__class__.__dict__.get("summarize") or True:
+            _run_summarizer(session, result)
+    except FilterError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+    finally:
+        session.close()
+
+    if req.session_id not in _sessions:
+        _sessions[req.session_id] = {
+            "query": query, "filters": [], "stage1": result, "timeline": None,
+            "graph": None, "result": result,
+            "stage_lock": threading.Lock(),
+        }
+    result["sessionId"] = req.session_id
+    return result
 
 
 @app.post("/timeline")

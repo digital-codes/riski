@@ -81,6 +81,8 @@
       @select="onSelect"
     />
     <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="hasGeo" :files="summaryFiles" :refining="refining" :refined="summaryRefined" @refine="onRefine" @toggle-file="onToggleFile" />
+    <FollowupChips v-if="followups && followups.length" :questions="followups" :state="stateToken" :sessionId="stateSession" @pick="onFollowupPick" />
+    <RelatedDocsList v-if="relatedDocs && relatedDocs.length" :docs="relatedDocs" />
   </div>
   <div class="wrapper">
     <!-- change: geo-gating (map scope = selected documents) — the pane and
@@ -106,6 +108,8 @@
 import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue';
 import TimeLine from './TimeLine.vue';
 import SummaryCard from './SummaryCard.vue';
+import RelatedDocsList from './RelatedDocsList.vue';
+import FollowupChips from './FollowupChips.vue';
 import DetailPanel from './DetailPanel.vue';
 import RouteInfo from './RouteInfo.vue';
 import TopicList from './TopicList.vue';
@@ -142,6 +146,11 @@ const geoFC = ref(null);
 const hasGeo = computed(() => !!(geoFC.value?.features?.length));
 const error = ref(null);
 const sessionId = ref(null);
+// kg-app-integration state: follow-up chips + related docs
+const followups = ref(null);
+const stateToken = ref(null);
+const stateSession = ref(null);
+const relatedDocs = ref(null);
 // change: intent-router — routing outcome of the last /ask call
 const intent = ref(null);
 const appliedFilters = ref([]);
@@ -242,6 +251,11 @@ async function runSearch() {
     // follow via the staged endpoints (change: progressive-frontend-
     // rendering)
     const result = await apiAsk(q, { sessionId: sessionId.value, topK: 10, summarize: false });
+    if (result.followups) { followups.value = result.followups; stateToken.value = result.state; stateSession.value = result.state_session || result.sessionId; }
+    if (result.related_documents) relatedDocs.value = result.related_documents;
+
+const onFollowupPick = async (question, stateTokenV, sessId) => { await runAsk(question); };
+    if (result.clarification) { followups.value = []; }
     if (token !== searchToken) return;  // superseded by a newer search
     applyStage1(result);
     loadingFiles.value = false;  // stage-1 delivered the file list

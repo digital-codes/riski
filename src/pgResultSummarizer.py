@@ -174,6 +174,58 @@ class ResultSummarizer:
         return bool(remote.CHAT_BASE_URL and self.model)
 
     @timed
+    def _grounding_blocks(self, top_files: list) -> dict[str, str]:
+        """kg-app-integration: grounding blocks per file (oparlKey).
+
+        Fetches request/response statements for the pair of the file's
+        paper sid; flagged fields excluded (kgFlagFailures contract).
+        Returns {oparlKey: "\nExtrahierte Fakten: …"} or empty string.
+        """
+        blocks: dict[str, str] = {}
+        keys = [f.get("oparlKey") for f in top_files if f.get("oparlKey")]
+        if not keys:
+            return blocks
+        try:
+            from src.kg.kgQueries import statements_for_papers, file_sid_for_key
+            sids = file_sid_for_key(keys)
+            sids = {k: v for k, v in sids.items() if v}
+            stmts = statements_for_papers(list(sids.values()))
+        except Exception as exc:  # pragma: no cover
+            log.warning("grounding fetch failed: %s", exc)
+            return blocks
+        key_to_sid = {k: v for k, v in sids.items()}
+        for k in keys:
+            sid = key_to_sid.get(k)
+            entry = stmts.get(sid) if sid else None
+            if not entry or not (entry.get("request") or entry.get("response")):
+                blocks[k] = ""
+                continue
+            parts = []
+            for stage, label in (("request", "Antrag"), ("response", "Beschluss")):
+                f = entry.get(stage)
+                if not f:
+                    continue
+                bits = []
+                if f.get("topic"):
+                    bits.append(f"Thema: {f['topic']}")
+                if f.get("requested_action") or f.get("planned_action"):
+                    bits.append("Maßnahme: " + (f.get("requested_action") or f.get("planned_action") or ""))
+                if f.get("involved_cost") or f.get("expected_cost"):
+                    bits.append("Kosten: " + (f.get("involved_cost") or f.get("expected_cost") or ""))
+                if f.get("start_date"):
+                    bits.append(f"Beginn: {f['start_date']}")
+                if f.get("outcome"):
+                    bits.append(f"Ergebnis: {f['outcome']}")
+                if f.get("result"):
+                    bits.append(f"Ergebnis: {f['result']}")
+                if bits:
+                    parts.append(f"{label}: " + " · ".join(bits))
+            if parts:
+                blocks[k] = "\nExtrahierte Fakten (kg): " + " | ".join(parts)
+            else:
+                blocks[k] = ""
+        return blocks
+
     def summarize(self, result: dict, force: bool = False,
                   use_full_content: bool = False, exclude: set | None = None) -> dict:
         """Populate ``result["summary"]`` in place; returns the result.
@@ -215,6 +267,10 @@ class ResultSummarizer:
             prompt = f"Frage: {query}\n\nDokumente ({layer}):\n"
         else:  # defensive: no query in the result — generic shape
             prompt = f"\nDokumente ({layer}):\n"
+        # kg-app-integration: grounding blocks from the kg statement layer
+        grounding = self._grounding_blocks(top_files)
+        n_grounded = sum(1 for g in grounding.values() if g)
+
         for file in top_files:
             # matched chunk from the search phase (change: content-chunking
             # + fix-result-summarizer): the refinement reads the piece of
@@ -228,11 +284,23 @@ class ResultSummarizer:
                 prompt += f"Inhalt: {text_[:cap]}\n"
             else:
                 prompt += "Inhalt: Not available\n"
+            block = grounding.get(file.get("oparlKey"))
+            if block:
+                prompt += block
+
+        if grounding and any(grounding.values()):
+            grounding_note = (
+                "\nFür einige Dokumente liegen Extrahierte Fakten aus "
+                "Antrag und Beschluss vor (siehe 'Extrahierte Fakten'). "
+                "Nutze diese geprüften Angaben bevorzugt als Beleg."
+            )
+        else:
+            grounding_note = ""
 
         max_words = _REFINE_MAX_WORDS if use_full_content else _TEASER_MAX_WORDS
         system_prompt = (_REFINE_SYSTEM_PROMPT if use_full_content else _SYSTEM_PROMPT)
         messages = [
-            {"role": "system", "content": system_prompt.format(max_words=max_words)},
+            {"role": "system", "content": system_prompt.format(max_words=max_words) + grounding_note},
             {"role": "user", "content": prompt},
         ]
         response = remote.chat(messages, model=self.model, temperature=self.temperature)

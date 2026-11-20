@@ -13,6 +13,7 @@ from datetime import datetime
 import numpy as np
 from sqlalchemy.orm import declarative_base
 from sqlalchemy import create_engine, MetaData, Table, select, and_, or_, func, Column, Integer, String
+from sqlalchemy import text as sa_text_imp
 from sqlalchemy.orm import sessionmaker
 
 import numpy as np
@@ -1295,6 +1296,29 @@ def search_stage(
         )
         matched_entities = hyb["matched_entities"]
         candidates = hyb["file_candidates"]  # [{oparlKey, score, signals}]
+        # kg-app-integration: topic-focus boost — documents carrying the
+        # focus tag get a ×1.2 multiplier (never overtakes lexical top
+        # hits aggressively: boost only, no reordering of unaffected)
+        topic_focus = None
+        try:
+            from src.kg.kgQueries import topic_focus_for_query
+            topic_focus = topic_focus_for_query(query)
+        except Exception:
+            topic_focus = None
+        if topic_focus:
+            ftags = {
+                r[0]
+                for r in conn.execute(sa_text_imp(
+                    'SELECT oparl_key FROM "File_tags_assoc" a '
+                    'JOIN "File_tags" t ON t.id = a.tag_id '
+                    'WHERE a.scheme = \'kg-topic\' AND t.tag = :tag'),
+                    {"tag": topic_focus}).fetchall()
+            }
+            for c in candidates:
+                if c.get("oparlKey") in ftags:
+                    c["score"] = round(c.get("score", 0.0) * 1.2, 6)
+                    c.setdefault("signals", {})["kg_topic_boosted"] = topic_focus
+        candidates.sort(key=lambda c: -c.get("score", 0.0))
         facets_data = facet_listing(conn)
         hybrid_distances = {
             c["oparlKey"]: c["signals"].get("content") for c in candidates
