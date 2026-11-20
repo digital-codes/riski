@@ -35,6 +35,35 @@ not the user's private data.
 - **WHEN** insufficient aspects are derivable from the answer
 - **THEN** the backend emits fewer but never more than 5 follow-ups
 
+### Requirement: Clarification mode for short/fuzzy queries
+For queries that return documents spanning multiple kg-topic clusters
+(top-5 documents spread over ≥ 3 distinct topics) or that resolve only
+via the trigram/lexical signal (embedding match below threshold), the
+first response SHALL operate in clarification mode instead of the plain
+follow-up loop: the response presents clustered options derived from
+the document clusters' dominant topics ("Meintest du X …, oder Y …?")
+as follow-up chips sealed into the state token; the next turn replays
+retrieval with the chosen cluster as the topic focus.
+
+#### Scenario: Multi-cluster short query
+- **WHEN** the query "staatstheater" resolves to 5 lexical documents
+  whose kg-topic tags span Culture, Economy and Sport clusters
+- **THEN** the response presents ≥ 3 follow-up chips naming the
+  cluster topics with one representative document each, and the
+  plain summary is shortened or omitted
+
+#### Scenario: Single-topic query unchanged
+- **WHEN** a short query's top documents share enough dominant topics
+  (fewer than 3 clusters)
+- **THEN** the regular follow-up loop runs (no clarification mode)
+
+#### Scenario: Chosen cluster re-scopes retrieval
+- **WHEN** the user picks a clarification chip (e.g. "die
+  GfK-Kosten-Debatte")
+- **THEN** the next turn applies the cluster's dominant topic as the
+  topic focus (kg-topic-routing boost/filter) and the answer grounds in
+  the cluster's statements
+
 ### Requirement: Stateless state via sealed session tokens
 The conversation state (previous query, top doc ids, statement refs)
 SHALL be conveyed by an opaque sealed token returned with the answer

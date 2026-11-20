@@ -111,6 +111,23 @@ targeted follow-up questions in German. Size hard-capped at 5; fewer
 allowed when aspects are exhausted. No personalization, no user
 history beyond the sealed token.
 
+### D4b: Clarification pass for short/fuzzy queries
+Verified live: short queries like "staatstheater" DO resolve through the
+trigram lexical signal (`Bad.Staatstheater`, `CDU Staatstheater` … all
+lexical=True at scores 0.25–0.38), but the resulting documents can fan
+out over multiple kg topics — cultural venue vs cost debates vs visitor
+statistics. The follow-up loop (D4) therefore gains a **clarification
+mode**: when the top documents span ≥ 3 distinct kg-topic clusters, the
+first response presents clustered options instead of/alongside the
+summary — "Meintest du das Badische Staatstheater (Culture), oder die
+GfK-Kosten-Debatte (Economy), oder die Besucherzahlen-Frage (Culture/Sport)?".
+Each option is a follow-up chip generated from the cluster's dominant
+statement topic, sealed into the same state token; the next turn replays
+with the chosen cluster as the topic focus (D3). Trigger: top-5 docs
+span ≥3 distinct topics AND the query is ≤3 tokens (short/fuzzy class) —
+or the query has no embed match at all (lexical-only recall). This is
+the auenBot options-flow (options + followup pick) mapped onto kg topics.
+
 ### D5: Security posture (auerBot lessons adopted)
 * `STATE_TOKEN_SECRET` must be set; without it, seal/open uses a
   random per-process secret and logs a warning (auenBot prints the
