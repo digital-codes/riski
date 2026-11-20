@@ -98,6 +98,18 @@ refuses states >512 tokens (batch size). Full analysis:
 `docs/kg-hf-evaluation.md`. Cost lever: the decision model (SystemOne
 volume), not the LLM chat — metis (greenpt) was selected for price.
 
+## ARCHIVED: kg-statement-extraction (2026-11-20)
+
+The prototype change completed all 22 tasks and is archived as
+`openspec/changes/archive/2026-11-20-kg-statement-extraction/` — its
+behavior now lives in the main specs
+(`openspec/specs/kg-pair-identification/` +
+`openspec/specs/kg-statement-extraction/`). The SQLite producer is
+fully migrated to the `kg_*` PostgreSQL layer
+(`kg-postgres-integration`, 8/9 — riskiUpdate wiring deferred).
+Result snapshot: 8,301 pairs / 15,400 statements / 52,912 kg-topic
+tags / 8,094 cross-checks (7,708 passed).
+
 ## Provider status (2026-11-19, operator "provider check")
 
 | provider | route | status | kg use |
