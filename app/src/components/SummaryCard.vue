@@ -119,7 +119,8 @@ const props = defineProps({
 	}
 });
 
-defineEmits(['refine', 'toggle-file']);
+const emit = defineEmits(['pick', 'refine', 'toggle-file']);
+
 
 
 const md = new MarkdownIt({
