@@ -30,8 +30,8 @@
 
 ## 6. Integration + config
 
--[x]  6.1 Add config flags `KG_APP_INTEGRATION` (0/1, default 0 until rollout) and `STATE_TOKEN_SECRET` handling w/ warning when unset (auenBot parity); verify with `KG_APP_INTEGRATION=0` the API responses are byte-compatible with today's shape (rollback path)
--[x]  6.2 End-to-end verification: run the API locally (`uvicorn src.apiServer:app`) and walk one query through all four features (related docs visible, grounded summary, topic focus displayed, follow-up chips click → grounded follow-up answer); verify via `curl` output showing the new fields chained
+- [x] 6.1 Add config flags `KG_APP_INTEGRATION` (0/1, default 0 until rollout) and `STATE_TOKEN_SECRET` handling w/ warning when unset (auenBot parity); verify with `KG_APP_INTEGRATION=0` the API responses are byte-compatible with today's shape (rollback path)
+- [x] 6.2 End-to-end verification: run the API locally (`uvicorn src.apiServer:app`) and walk one query through all four features (related docs visible, grounded summary, topic focus displayed, follow-up chips click → grounded follow-up answer); verify via `curl` output showing the new fields chained
 
 ## Workflow follow-up
 
