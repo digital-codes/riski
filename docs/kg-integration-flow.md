@@ -52,7 +52,7 @@ sequenceDiagram
     U->>W: click related-doc download
     W->>API: GET /file-proxy/{oparl_key}
     API->>DB: File.downloadurl lookup
-    API->>LLM: -- (no; streams upstream RIS bytes)
+    API-->>W: (uses requests internally, no LLM involved)
     API-->>W: 200 application/pdf (Set-Cookie stripped)<br/>Content-Disposition inline, Cache-Control 1h
 ```
 
@@ -64,7 +64,7 @@ sequenceDiagram
 | 2 budget | — | `_run_summarizer` inline | `statements_for_papers(paper_sids)` when grounding | LLM latency / partial block misses |
 | 3 clarify | `kgChips` from `clarification.options` | `_kg_enrich` (short-fuzzy + ≥3 clusters) | `seal_state` → `state`/`state_session` | chip click → `onKgChipPick` re-runs `runSearch` (no `/followup`); state refresh only via `onFollowupPick` |
 | 4 followup | `FollowupChips @pick` | `/followup` opens sealed state, grounded re-run | statements + `generate_followups` | 400 on missing/expired token; user sees generic error |
-| 5 download | plain `<a href>` in `RelatedDocsList` | `/file-proxy/{oparlKey}` streams + stripscookies | `File.downloadurl` lookup | 502 when web1.karlsruhe.de unreachable; 405 on HEAD |
+| 5 download | plain `<a href>` in `RelatedDocsList` | `/file-proxy/{oparlKey}` streams + strips cookies | `File.downloadurl` lookup | 502 when web1.karlsruhe.de unreachable; 405 on HEAD |
 
 ## 3. Known open issues (to re-verify after fixes)
 
