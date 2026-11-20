@@ -30,12 +30,12 @@
 
 ## 7. Query threads with followup intent (D7/D8, added 2026-11-20)
 
-- [ ] 7.1 Extend the sealed state payload to a thread record: `thread_id`,
+- [x] 7.1 Extend the sealed state payload to a thread record: `thread_id`,
       `turns` (query strings, oldest first), `turn_count`, `origin`
       ("chips" | "search") — verify seal/open round-trips the extra
       fields and a pre-amendment token (no thread fields) opens with
       empty turns (backward compatible)
-- [ ] 7.2 Deterministic followup classifier in `pgIntentRouter`: deictic
+- [x] 7.2 Deterministic followup classifier in `pgIntentRouter`: deictic
       lexicon ("das", "die", "es", "sie", "dort", "damit" as head
       markers), no topic-vector fire ≥ threshold, router confidence
       < floor → `thread_followup`; verify on the 4 canonical turns of
@@ -44,27 +44,27 @@
       "welche umweltauswirkungen hat das" → followup,
       "warum haben die grünen dem zugestimmt" → followup,
       "was macht die stadt beim klimaschutz" → break)
-- [ ] 7.3 Query concatenation in the API layer: on `thread_followup`
+- [x] 7.3 Query concatenation in the API layer: on `thread_followup`
       effective_query = " · ".join(turns[-3:] + [new query]) with the
       sanitization cap; topic focus computed on the concatenated string
       with turn-1 topic retained as boost anchor — verify a 3-turn
       chain keeps the original retrieval focus while recall widens
-- [ ] 7.4 Thread budget: turn_count = 5 → force break (new thread_id,
+- [x] 7.4 Thread budget: turn_count = 5 → force break (new thread_id,
       empty turns) plus an informational note field `thread_reset: true`
       in the response — verify the 6th query in a chain does NOT carry
       prior turns
-- [ ] 7.5 Chips-mode gating: when the response carries
+- [x] 7.5 Chips-mode gating: when the response carries
       `mode: "chips"` (app-load fallback, non-thematic intent, or below
       the recall confidence floor) suppress `summary`/`top_files`
       rendering fields downstream by the frontend, serve exactly 5 tag
       chips + hint text `Hinweis: Bitte präzisieren Sie Ihre Anfrage.`
       — verify no extra card data in the payload (only thread + chips)
-- [ ] 7.6 Frontend thread flow in `WorkPage.vue`: on chips-mode render
+- [x] 7.6 Frontend thread flow in `WorkPage.vue`: on chips-mode render
       only the chip sheet; on chip pick send a plain `/search` and hide
       the sheet; regular turns send `{thread: {state, sessionId}}`;
       "Neues Thema" button after ≥2 turns clears the thread — verify
       via build + a scripted 6-turn conversation against the live API
-- [ ] 7.7 Thread tests in `scripts/test_kg_api.py`: add cases for
+- [x] 7.7 Thread tests in `scripts/test_kg_api.py`: add cases for
       clarification branch (short fuzzy query → `mode: chips`),
       followup chain (3 concats), forced break at turn 6, forged
       token → 400, expired token → new thread (no 400) — verify

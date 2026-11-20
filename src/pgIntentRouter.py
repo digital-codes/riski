@@ -695,6 +695,79 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
 
 
 # ----------------------------------------------------------------------
+# kg-app-integration D7: thread-turn classification
+# ----------------------------------------------------------------------
+DEICTIC_MARKERS = (
+    "das", "die", "es", "sie", "dem", "denen", "dort", "damit", "dabei",
+    "hier", "dazu", "danach", "davon", "dieser", "diese", "dieses",
+)
+# pronoun-initial sentence heads are the strongest anaphora sign
+DEICTIC_HEADS = ("das ", "die_li;", "dem ", "es ", "damit ", "dort ",
+                 "dazu ", "davon ")
+
+
+PROFORM_TOKENS = {"das", "dem", "es", "dort", "damit", "dabei", "dazu",
+                  "darauf", "davon", "daraus", "dafür", "dagegen",
+                  "darüber", "hierzu", "hierdurch"}
+
+
+def _is_deictic(raw_query: str) -> bool:
+    """Anaphora evidence on the RAW query (task 7.2): a proform counts
+    when it is either (a) the last word of the query — "…hat das" — or
+    (b) followed by a lowercase continuation word (usually the verb),
+    NOT by a Capitalized noun ("das Forum" = determiner, not proform)."""
+    words = raw_query.strip().split()
+    if not words:
+        return False
+    if words[-1].lower().rstrip(",.!?:;") in PROFORM_TOKENS:
+        return True
+    for i, w in enumerate(words[:-1]):
+        if w.lower().rstrip(",.!?:;") in PROFORM_TOKENS:
+            nxt = words[i + 1]
+            # determiner+noun continues ". …das Forum…"; proform continues
+            # with a verb/proform continuation ("dem zugestimmt")
+            if nxt[0].islower():
+                return True
+    return False
+
+
+def classify_thread_turn(query: str, intent_name: str,
+                         intent_scores: dict | None = None,
+                         topic_focus: str | None = None, *,
+                         recall_confident: bool = True) -> dict[str, Any]:
+    """Deterministic followup-vs-break decision (design D7, task 7.2).
+
+    ``thread_followup`` when the query has no clear target of its own.
+    Primary signal: anaphoric proform usage on the raw query ("welche
+    umweltauswirkungen hat das", "warum haben die grünen dem
+    zugestimmt" — proform as clause-final or with a lowercase verb
+    continuation; "das Forum" with a following capitalized noun is a
+    determiner, not anaphora). Secondary: no topic-vector fire AND
+    router confidence below threshold. Non-thematic intents
+    (gremium/decision lookups) always break.
+
+    ``recall_confident=False`` marks the weak-recall path that routes
+    to the chips mode instead (called from the API layer)."""
+    intent_scores = intent_scores or {}
+    conf = float(intent_scores.get(intent_name, 0.0) or 0.0)
+    deictic = _is_deictic(query)
+    no_topic = topic_focus is None
+    low_conf = conf < DEFAULT_THRESHOLD
+    thematic = intent_name == "search_topic"
+    is_followup = thematic and recall_confident and (
+        deictic or (no_topic and low_conf)
+    )
+    return {
+        "action": "followup" if is_followup else "break",
+        "intent": intent_name,
+        "deictic": deictic,
+        "no_topic": no_topic,
+        "low_conf": low_conf,
+        "recall_confident": recall_confident,
+    }
+
+
+# ----------------------------------------------------------------------
 # Route execution + empty-result ladder
 # ----------------------------------------------------------------------
 class IntentRouter:

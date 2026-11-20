@@ -22,14 +22,14 @@ async function post(path, body) {
 	return res.json();
 }
 
-export async function search(query, { topK = 10, filters, signals, summarize = false } = {}) {
-	return post('/search', { query, top_k: topK, filters, signals, summarize });
+export async function search(query, { topK = 10, filters, signals, summarize = false, thread } = {}) {
+	return post('/search', { query, top_k: topK, filters, signals, summarize, thread });
 }
 
 // change: intent-router — routed question answering; same result contract
 // as /search plus intent/slots/applied_filters/fallback_notes
-export async function ask(query, { sessionId, topK = 10, signals, summarize = false } = {}) {
-	return post('/ask', { query, session_id: sessionId, top_k: topK, signals, summarize });
+export async function ask(query, { sessionId, topK = 10, signals, summarize = false, thread } = {}) {
+	return post('/ask', { query, session_id: sessionId, top_k: topK, signals, summarize, thread });
 }
 
 export async function summarize(sessionId, { refine = false, exclude = [] } = {}) {

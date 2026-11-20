@@ -26,6 +26,7 @@ import hmac
 import json
 import os
 import time
+import uuid
 from typing import Any
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -99,6 +100,60 @@ def seal_state_or_none(state: dict[str, Any], session_id: str) -> str | None:
         return seal_state(state, session_id)
     except Exception:  # pragma: no cover
         return None
+
+
+# ---------------------------------------------------------------------
+# kg-app-integration D7: query threads
+# ---------------------------------------------------------------------
+
+THREAD_MAX_TURNS = 5
+THREAD_WINDOW = 3          # turns[-3:] concatenated as effective query
+THREAD_CONCAT_MAX = 750    # chars after sanitization
+
+
+def new_thread(origin: str = "search") -> dict[str, Any]:
+    """Fresh thread record for the sealed state (design D7)."""
+    return {
+        "thread_id": uuid.uuid4().hex,
+        "turns": [],
+        "turn_count": 0,
+        "origin": origin if origin in ("chips", "search") else "search",
+    }
+
+
+def maybe_new_thread(state: dict[str, Any] | None) -> dict[str, Any]:
+    """Open a prior thread record; pre-amendment tokens (no thread fields)
+    open with empty turns — backward compatible (task 7.1)."""
+    if not isinstance(state, dict):
+        return new_thread()
+    thread = state.get("thread")
+    if not isinstance(thread, dict):
+        thread = new_thread(origin="search")
+    thread.setdefault("turns", [])
+    thread.setdefault("turn_count", 0)
+    thread.setdefault("origin", "search")
+    if "thread_id" not in thread:
+        thread["thread_id"] = uuid.uuid4().hex
+    return thread
+
+
+def advance_thread(thread: dict[str, Any], query: str) -> dict[str, Any]:
+    """Append a turn; the record is mutated in place and returned."""
+    thread["turns"] = (thread.get("turns") or [])[-THREAD_WINDOW:] + [query]
+    thread["turn_count"] = int(thread.get("turn_count") or 0) + 1
+    return thread
+
+
+def effective_query(thread: dict[str, Any], new_query: str) -> str:
+    """Concatenated query for followup turns (D7): turns[-3:] + new,
+    dot-separated, capped after sanitization (task 7.3)."""
+    from src.apiServer import validate_user_query  # single sanitizer source
+    parts = [validate_user_query(t) for t in (thread.get("turns") or [new_query])]
+    parts.append(validate_user_query(new_query))
+    concat = " · ".join(p for p in parts if p)
+    if len(concat) > THREAD_CONCAT_MAX:
+        concat = concat[-THREAD_CONCAT_MAX:]
+    return concat
 
 
 # ---------------------------------------------------------------------

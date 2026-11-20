@@ -107,7 +107,9 @@ sequenceDiagram
     Note over U,DB: same rule applies FORCED at turn_count = 5 (hard budget)
 ```
 
-**State / routing rules (summary)**
+**State / routing rules (summary)** — *implemented 2026-11-20,
+verified live (chain 33→69→109 chars concat, break, reset at turn 6;
+test suite 9/9)*
 
 | Signal | Decision | Effective query | Thread |
 |---|---|---|---|

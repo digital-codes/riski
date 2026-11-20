@@ -200,3 +200,39 @@ python -m src.kg.kgStats             # stats report refresh
 
 Unit tests: `/home/agent/bin/python3.14 -m pytest src/tests/test_unit_kg_*.py -q`
 (44 tests, all green at checkpoint).
+
+## Query threads (2026-11-20, kg-app-integration D7/D8 — implemented)
+
+Thread semantics as the user specified ("Forum am Recht" 4-turn
+scenario, budget at 5):
+
+- **Chips mode entry**: (a) weak recall — matched-entities max score
+  < 0.025 (KG_RECALL_FLOOR; calibrated: topical 0.04+, gibberish
+  0.016), (b) /ask with a non-thematic intent or empty results. Server
+  returns exactly 5 vocab topic chips + präzisieren hint, cards
+  suppressed, thread fresh with origin="chips".
+- **Chip pick** amends the query (topic + example) and starts a normal
+  search — normal cards; a new thread record is created there with
+  origin "search", turn 1.
+- **Followup classification** `pgIntentRouter.classify_thread_turn`:
+  raw-case proform heuristic ("hat das" clause-final, "dem
+  zugestimmt" proform + lowercase verb continuation; "das Forum" with
+  capitalized noun = determiner); secondary no-topic-fire + low
+  router confidence. `topic_focus_for_query` fires on almost anything
+  (verified: even gibberish maps some topic at ~0.4) so the topic
+  vector alone is NOT a thread-break signal; case-sensitive anaphora
+  is the primary rule — fully-lowercase input prefers followup.
+- **Concat**: `turns[-3:] + [q]` joined with " · ", cap 750 chars;
+  effective query returned as `result["query"]`.
+- **Budget**: turn_count >= 5 → new thread + `thread_reset: true` in
+  the response (frontend shows inline notice).
+- Verified live: 33→69→109 chars concat then break (36), turn 5 →
+  reset turn 1; `scripts/test_kg_api.py` 9/9 PASS (incl. forged token
+  → 400, chips mode, concat lengths).
+- Files: `src/kg/kgFollowups.py` (new_thread/maybe_new_thread/
+  advance_thread/effective_query), `src/pgIntentRouter.py`
+  (classify_thread_turn/_is_deictic), `src/apiServer.py`
+  (_thread_turn/_apply_thread_to_result/_apply_chips_mode/
+  _thread_chips; SearchRequest+AskRequest gain `thread`),
+  `app/src/components/WorkPage.vue` (thread state, chips sheet,
+  "Neues Thema ⟲"), `app/src/api.js` (thread pass-through).

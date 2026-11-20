@@ -25,6 +25,20 @@
     <p v-if="snapshotMode && !error" class="snapshot-hint">
       Gespeicherter Beispielsatz für die Startseite — suchen Sie für aktuelle Ergebnisse.
     </p>
+    <!-- kg-app-integration D7: chips sheet when the server proposes tag
+         candidates (app load / weak recall) - no cards rendered then -->
+    <div v-if="threadChips && threadChips.length" class="thread-chips-sheet">
+      <p class="thread-hint">{{ threadHint || 'Hinweis: Bitte präzisieren Sie Ihre Anfrage.' }}</p>
+      <button v-for="(chip, i) in threadChips" :key="i" type="button"
+              class="thread-chip" :disabled="loading"
+              @click="applyThreadChip(chip, $event)">
+        {{ chip.topic }}<small v-if="chip.example"> — {{ chip.example }}</small>
+      </button>
+    </div>
+    <button v-if="threadTurn >= 2 || threadReset" type="button"
+            class="thread-new" :disabled="loading"
+            title="Unterhaltung zurücksetzen und neu starten"
+            @click="resetThread">Neues Thema ⟲</button>
   </div>
 
   <div class="wrapper" v-if="rawData || loading">
@@ -148,6 +162,13 @@ const error = ref(null);
 const sessionId = ref(null);
 // kg-app-integration state: follow-up chips + related docs
 const followups = ref(null);
+// kg-app-integration D7: query-thread state sent back with each turn
+const threadState = ref(null);
+const threadSession = ref(null);
+const threadTurn = ref(0);
+const threadReset = ref(false);
+const threadChips = ref([]);   // chips-mode payload (5 tag proposals)
+const threadHint = ref(null);
 const kgChips = ref(null);
 const kgRelated = ref(null);
 const stateToken = ref(null);
@@ -207,6 +228,11 @@ const onSelect = (sel) => {
 
 // change: sanitize-queries-and-initial-response — clear the input line
 function clearQuery() {
+  threadState.value = null;
+  threadSession.value = null;
+  threadTurn.value = 0;
+  threadChips.value = [];
+  threadHint.value = null;
   query.value = '';
 }
 
@@ -229,6 +255,8 @@ async function onFollowupPick(question) {
       stateToken.value = result.state;
       stateSession.value = result.state_session || result.sessionId;
     }
+    _consumeThreadState(result);
+    _consumeThreadState(result);
     if (result.related_documents) relatedDocs.value = result.related_documents;
     if (result.summary) {
       summary.value = result.summary;
@@ -246,6 +274,50 @@ async function onKgChipPick(chipOrTopic) {
   query.value = topic;
   await runSearch();
 }
+// kg-app-integration D7: thread plumbing -------------------------------------------------
+function _threadPayload() {
+  if (threadState.value && threadSession.value) {
+    return { state: threadState.value, session_id: threadSession.value };
+  }
+  return { fresh: true };  // app load / after "Neues Thema"
+}
+function _consumeThreadState(result) {
+  threadState.value = result.state || null;
+  threadSession.value = result.state_session || null;
+  threadTurn.value = (result.thread && result.thread.turn_count) || 0;
+  threadReset.value = !!result.thread_reset;
+  if (result.mode === 'chips') {
+    threadChips.value = (result.chips || []).map(c => ({
+      topic: c.topic, example: c.example || '', question: c.topic,
+    }));
+    threadHint.value = result.hint || null;
+    kgRelated.value = null;
+  } else {
+    threadChips.value = [];
+    threadHint.value = null;
+  }
+}
+async function applyThreadChip(chip) {
+  // chip pick: amend the original request with the chip description and
+  // start a normal search (chips disappear), thread stays fresh
+  const amend = [chip.topic, chip.example].filter(Boolean).join(', ');
+  query.value = `${query.value || ''} ${amend}`.trim().slice(0, 250);
+  threadState.value = null;
+  threadSession.value = null;
+  threadTurn.value = 0;
+  threadChips.value = [];
+  threadHint.value = null;
+  await runSearch();
+}
+async function resetThread() {
+  threadState.value = null;
+  threadSession.value = null;
+  threadTurn.value = 0;
+  threadReset.value = false;
+  threadChips.value = [];
+  threadHint.value = null;
+}
+
 async function runSearch() {
   const q = query.value.trim();
   if (!q || loading.value) return;
@@ -288,7 +360,8 @@ async function runSearch() {
     // the file list renders as soon as this returns, timeline and graph
     // follow via the staged endpoints (change: progressive-frontend-
     // rendering)
-    const result = await apiAsk(q, { sessionId: sessionId.value, topK: 10, summarize: false });
+    const result = await apiAsk(q, { sessionId: sessionId.value, topK: 10, summarize: false,
+                                     thread: _threadPayload() });
     if (result.clarification) {
       // clarification chips (kg-app-integration D4b): cluster-picker instead of blanked followups
       followups.value = result.followups;
@@ -656,6 +729,17 @@ onUnmounted(() => {
 </script>
 
 <style>
+/* kg-app-integration D7: thread chips sheet + reset */
+.thread-chips-sheet { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .4rem 0 0; }
+.thread-hint { flex-basis: 100%; margin: 0 0 .2rem; color: var(--muted, #667); font-size: .85rem; }
+.thread-chip { border: 1px solid rgba(125,125,150,.4); background: rgba(125,125,150,.08);
+  border-radius: 999px; padding: .3rem .85rem; cursor: pointer; font-size: .85rem; }
+.thread-chip:hover { background: rgba(125,125,150,.18); }
+.thread-chip small { opacity: .75; margin-left: .3rem; }
+.thread-new { margin: .4rem .5rem 0 0; border: none; background: none; color: var(--muted, #889);
+  cursor: pointer; font-size: .8rem; padding: .25rem .5rem; }
+.thread-new:hover { color: var(--fg, inherit); text-decoration: underline; }
+
 * {
   box-sizing: border-box;
 }

@@ -92,6 +92,130 @@ class SearchRequest(BaseModel):
     top_k: int = Field(default=10, ge=1, le=100)
     summarize: bool = True
     signals: Optional[Dict[str, bool]] = None
+    # kg-app-integration D7: {state, session_id} of the prior sealed turn,
+    # or {fresh: true} to request a new thread (app load). Optional.
+    thread: Optional[Dict[str, Any]] = None
+
+
+# Weak-recall floor for chips mode (D7): matched_entities max score below
+# this = nothing lexically significant → chips sheet (calibrated 2026-11-20).
+KG_RECALL_FLOOR = 0.025
+
+
+def _thread_chips(limit: int = 5) -> list[dict]:
+    """Chips-mode payload: 5 kg topic chips from the vocabulary
+    (deterministic, no LLM) — topic + description (task 7.5)."""
+    from src.kg.kgVocab import load_vocab
+    vocab = load_vocab()
+    chips = []
+    for tag, spec in (vocab.get("file_tags") or {}).items():
+        desc = str(spec.get("description", tag)) if isinstance(spec, dict) else str(spec)
+        chips.append({"topic": tag, "example": desc})
+        if len(chips) >= limit:
+            break
+    return chips
+
+
+def _thread_turn(session, query: str, req_thread: dict | None) -> dict:
+    """kg-app-integration D7: open the prior sealed thread, classify the
+    turn (followup vs break), apply the 5-turn budget, and return
+    {thread, effective_query, forced_break} (tasks 7.1–7.4)."""
+    from src.kg.kgFollowups import (
+        THREAD_MAX_TURNS, advance_thread, effective_query,
+        maybe_new_thread, new_thread,
+    )
+    from src.kg.kgFollowups import open_state
+    from src.pgIntentRouter import classify_thread_turn
+    from src.kg.kgQueries import topic_focus_for_query
+
+    req_thread = req_thread if isinstance(req_thread, dict) else None
+    sid = uuid.uuid4().hex
+    prior_state: dict = {}
+    thread = None
+    if req_thread and req_thread.get("state") and req_thread.get("session_id"):
+        sid = str(req_thread["session_id"])[:64]
+        try:
+            prior_state = open_state(req_thread["state"], sid) or {}
+            thread = maybe_new_thread(prior_state)
+        except Exception as exc:  # expired/tampered → treat as new query
+            _kg_log.warning("thread token rejected (%s) — new thread", exc)
+            thread = new_thread(origin="search")
+    if req_thread and req_thread.get("fresh"):
+        thread = new_thread(origin="chips")
+    if thread is None:
+        thread = new_thread(origin="search")
+
+    forced_break = thread["turn_count"] >= THREAD_MAX_TURNS
+    if forced_break:
+        thread = new_thread(origin="search")
+
+    tf = topic_focus_for_query(query)
+    cls = classify_thread_turn(query, "search_topic",
+                               {"search_topic": 1.0 if tf else 0.0}, tf,
+                               recall_confident=True)
+    used_query = query
+    concatenated = False
+    if cls["action"] == "followup" and thread["turns"]:
+        used_query = effective_query(thread, query)
+        concatenated = True
+        advance_thread(thread, query)
+    else:
+        advance_thread(thread, query)
+    return {
+        "thread": thread,
+        "session_id": sid,
+        "effective_query": used_query,
+        "forced_break": forced_break,
+        "concatenated": concatenated,
+        "classification": cls,
+    }
+
+
+def _apply_thread_to_result(turn: dict, result: dict, top_files: list | None) -> None:
+    """Seal the advanced thread onto the response (normal mode, task 7.4)."""
+    from src.kg.kgFollowups import seal_state_or_none
+    thread = turn["thread"]
+    result["mode"] = "normal"
+    result["thread"] = {
+        "thread_id": thread["thread_id"],
+        "turn_count": thread["turn_count"],
+        "origin": thread["origin"],
+    }
+    if turn["forced_break"]:
+        result["thread_reset"] = True
+    token = seal_state_or_none(
+        {"q0": turn["effective_query"], "thread": thread,
+         "top_docs": [tf.get("oparlKey") for tf in (top_files or [])][:8]},
+        turn["session_id"],
+    )
+    if token:
+        result["state"] = token
+        result["state_session"] = turn["session_id"]
+
+
+def _apply_chips_mode(turn: dict, result: dict) -> None:
+    """Chips-mode payload (tasks 7.5): thread + chips + hint only."""
+    from src.kg.kgFollowups import seal_state_or_none
+    thread = turn["thread"]
+    result["mode"] = "chips"
+    result["chips"] = _thread_chips()
+    result["hint"] = "Hinweis: Bitte präzisieren Sie Ihre Anfrage."
+    result["thread"] = {"thread_id": thread["thread_id"],
+                        "turn_count": thread["turn_count"],
+                        "origin": thread["origin"]}
+    if turn["forced_break"]:
+        result["thread_reset"] = True
+    token = seal_state_or_none({"q0": turn["effective_query"],
+                                "thread": thread, "top_docs": []},
+                               turn["session_id"])
+    if token:
+        result["state"] = token
+        result["state_session"] = turn["session_id"]
+    # suppress card data — only thread + chips in the payload
+    for field in ("top_files", "followups", "clarification",
+                  "summary", "related_documents", "matched_entities",
+                  "facets", "applied_filters"):
+        result.pop(field, None)
 
 
 # ----------------------------------------------------------------------
@@ -215,10 +339,11 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
                 ]
                 state_payload["clarifying"] = True
                 state_payload["topics"] = [o["topic"] for o in options[:5]]
-                token = seal_state_or_none(state_payload, session_id)
-                if token:
-                    result["state"] = token
-                    result["state_session"] = session_id
+                if not result.get("state"):  # D7: never clobber a thread token
+                    token = seal_state_or_none(state_payload, session_id)
+                    if token:
+                        result["state"] = token
+                        result["state_session"] = session_id
         else:
             topics: list = []
             for rd in result.get("related_documents", [])[:2]:
@@ -228,9 +353,11 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
                             else (result.get("summary") or ""))
             fu = generate_followups(summary_text, statements=None,
                                     topics=list(dict.fromkeys(topics))[:5])
+            result["followups"] = fu.get("questions")
             token = seal_state_or_none(state_payload, session_id)
-            if token:
-                result["followups"] = fu.get("questions")
+            if token and not result.get("state"):  # D7: thread token wins
+                result["state"] = token
+                result["state_session"] = session_id
                 result["state"] = token
                 result["state_session"] = session_id
     except Exception as exc:  # pragma: no cover
@@ -297,6 +424,18 @@ def search(req: SearchRequest) -> Dict[str, Any]:
     except Exception as exc:  # pragma: no cover - db down
         raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
 
+    # kg-app-integration D7: thread turn FIRST — effective query decided
+    # before recall (concat on followup, new thread after the 5-turn budget)
+    req_thread = getattr(req, "thread", None)
+    kg_on = app.state.kg_app_integration
+    turn = None
+    if kg_on:
+        try:
+            turn = _thread_turn(session, query, req_thread)
+            query = turn["effective_query"]
+        except Exception as exc:  # thread layer must never break search
+            _kg_log.warning("thread turn failed: %s", exc)
+
     try:
         result = search_stage(
             session, query, top_k=req.top_k,
@@ -310,7 +449,25 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         session.close()
 
     session_id = uuid.uuid4().hex
-    if app.state.kg_app_integration:
+    if kg_on and turn is not None:
+        # chips mode on weak recall (D7): top distance above the floor
+        top_files = result.get("top_files") or []
+        # Weak recall (D7): no hybrid matches at all, or every entity
+        # score under the lexical-significance floor. Cross-check with
+        # live data 2026-11-20: topical queries score 0.04+ per entity,
+        # gibberish ("qwertyui xzz blorb") maxes ~0.016.
+        entities = result.get("matched_entities") or []
+        max_entity = max(
+            (float(e.get("score") or 0.0) for e in entities),
+            default=0.0)
+        weak = (not top_files
+                or max_entity < KG_RECALL_FLOOR)
+        if weak and not turn["forced_break"]:
+            _apply_chips_mode(turn, result)
+        else:
+            _apply_thread_to_result(turn, result, top_files)
+            _kg_enrich(result, query, session_id)   # after session_id exists
+    elif app.state.kg_app_integration:
         _kg_enrich(result, query, session_id)   # kg-app-integration: after session_id exists
     _sessions[session_id] = {
         "query": query,
@@ -331,6 +488,7 @@ class AskRequest(BaseModel):
     top_k: int = Field(default=10, ge=1, le=100)
     signals: Optional[Dict[str, bool]] = None
     summarize: bool = True
+    thread: Optional[Dict[str, Any]] = None  # D7: {state, session_id|fresh}
 
 
 def _stage1_search_fn(session, query: str, top_k: int = 10,
@@ -365,6 +523,16 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     except Exception as exc:  # pragma: no cover - db down
         raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
 
+    # kg-app-integration D7: /ask also participates in query threads
+    kg_on = app.state.kg_app_integration
+    turn = None
+    if kg_on and getattr(req, "thread", None):
+        try:
+            turn = _thread_turn(session, query, req.thread)
+            query = turn["effective_query"]
+        except Exception as exc:
+            _kg_log.warning("thread turn (ask) failed: %s", exc)
+
     try:
         result = route_ask(
             session, query, top_k=req.top_k,
@@ -377,6 +545,24 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         session.close()
 
     session_id = req.session_id or uuid.uuid4().hex
+    if kg_on and turn is not None:
+        resolved_intent = result.get("intent") or "search_topic"
+        non_thematic = resolved_intent != "search_topic"
+        empty = not (result.get("top_files") or result.get("topics"))
+        if non_thematic or empty or turn["forced_break"]:
+            _apply_chips_mode(turn, result)
+            if not turn["forced_break"]:
+                result.pop("thread_reset", None)
+            result["sessionId"] = session_id
+            _kg_log.info("ask chips mode: intent=%s empty=%s", resolved_intent, empty)
+            _sessions[session_id] = {
+                "query": query, "filters": [], "intent": resolved_intent,
+                "slots": {}, "stage1": {"query": query, "top_files": []},
+                "timeline": None, "graph": None, "result": result,
+                "stage_lock": threading.Lock(),
+            }
+            return result
+        _apply_thread_to_result(turn, result, result.get("top_files"))
     # meeting-centric answers (D10) build their graph synchronously in the
     # router — stash it as the precomputed graph stage instead of sending
     # it in the stage-1 response (change: progressive-frontend-rendering)
