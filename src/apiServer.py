@@ -207,7 +207,8 @@ def search(req: SearchRequest) -> Dict[str, Any]:
                 }
                 is_short_fuzzy = len(query.split()) <= 3
                 is_multi_cluster = topic_clusters >= 3
-                if is_short_fuzzy and is_multi_cluster:
+                do_followups = bool(req.summarize)  # chips reference the summary text
+                if do_followups and is_short_fuzzy and is_multi_cluster:
                     _kg_log.info("clarification mode: %d clusters", topic_clusters)
                     options: list = []
                     seen_topics: set = set()
@@ -236,7 +237,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
                         if token:
                             result["state"] = token
                             result["state_session"] = session_id_rand
-                else:
+                elif do_followups:
                     topics: list = []
                     for rd in result.get("related_documents", [])[:2]:
                         topics.extend(rd.get("shared_tags") or [])

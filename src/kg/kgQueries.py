@@ -158,12 +158,13 @@ def topic_focus_for_query(query: str, threshold: float = 0.30) -> str | None:
     global _TOPIC_CACHE
     if _TOPIC_CACHE is None:
         from src.kg.kgVocab import load_vocab
-        from src.remote import embed
+        from src.remote import embed_batch
         vocab = load_vocab()
-        _TOPIC_CACHE = {
-            tag: embed(str(spec.get("description", tag)))
-            for tag, spec in (vocab.get("file_tags") or {}).items()
-        }
+        tags = list((vocab.get("file_tags") or {}).items())
+        descs = [str(spec.get("description", tag)) for tag, spec in tags]
+        vecs = embed_batch(descs)  # ONE batched request (18s → <1s cold)
+        _TOPIC_CACHE = {tag: (vec.tolist() if hasattr(vec, "tolist") else list(vec))
+                        for (tag, _spec), vec in zip(tags, vecs)}
     if not _TOPIC_CACHE:
         return None
     try:
