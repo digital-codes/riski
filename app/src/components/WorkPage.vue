@@ -210,6 +210,42 @@ function clearQuery() {
   query.value = '';
 }
 
+// kg-app-integration: follow-up turn (sealed state token) + cluster chips
+async function onFollowupPick(question) {
+  if (!stateToken.value || !stateSession.value) return;
+  loading.value = true;
+  error.value = null;
+  try {
+    const result = await apiFollowup(question, {
+      state: stateToken.value,
+      sessionId: stateSession.value,
+    });
+    if (result.clarification) {
+      kgChips.value = result.clarification.options
+        .map((o) => ({ topic: o.topic, example: o.example, question: o.topic,
+                      state: result.state, sessionId: result.state_session }));
+    } else if (result.followups) {
+      followups.value = result.followups;
+      stateToken.value = result.state;
+      stateSession.value = result.state_session || result.sessionId;
+    }
+    if (result.related_documents) relatedDocs.value = result.related_documents;
+    if (result.summary) {
+      summary.value = result.summary;
+      summaryLoading.value = false;
+      loading.value = false;
+    }
+  } catch (e) {
+    error.value = `Follow-up fehlgeschlagen (${e.message})`;
+    loading.value = false;
+  }
+}
+async function onKgChipPick(chipOrTopic) {
+  const topic = (chipOrTopic && typeof chipOrTopic === 'object') ? chipOrTopic.topic : chipOrTopic;
+  if (!topic) return;
+  query.value = topic;
+  await runSearch();
+}
 async function runSearch() {
   const q = query.value.trim();
   if (!q || loading.value) return;

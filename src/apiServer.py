@@ -47,6 +47,7 @@ import uuid
 from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, HTTPException
+from sqlalchemy import text
 from pydantic import BaseModel, Field
 
 from src.db import get_engine
@@ -234,6 +235,53 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
                 result["state_session"] = session_id
     except Exception as exc:  # pragma: no cover
         _kg_log.warning("kg followup/related failed: %s", exc)
+
+
+
+@app.get("/file-proxy/{oparl_key}")
+def file_proxy(oparl_key: str):
+    """kg-app-integration: stream a RIS file through our server so the
+    browser never talks to web1.karlsruhe.de directly — the F5/BIG-IP
+    session cookies (TS01ea880d etc.) the RIS sets belong to a foreign
+    origin; proxying avoids them entirely.
+
+    The File row carries the resolved downloadurl; we stream the bytes
+    and strip the RIS response headers (cookies, P3P, VS). Cached
+    client-side for one hour."""
+    import requests as _requests
+    from src.db import get_engine as _ge
+    row = None
+    try:
+        e = _ge(readonly=True)
+        with e.connect() as c:
+            row = c.execute(text(
+                'SELECT downloadurl, filename, name FROM "File" WHERE "oparlKey" = :k'),
+                {"k": oparl_key}).fetchone()
+    except Exception as exc:  # pragma: no cover
+        raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
+    if row is None:
+        raise HTTPException(status_code=404, detail="Datei (oparlKey) nicht gefunden")
+    url = row.downloadurl
+    if not url:
+        raise HTTPException(status_code=404, detail="Datei hat keinen Download-Link")
+    try:
+        upstream = _requests.get(url, timeout=120, stream=True)
+        upstream.raise_for_status()
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"fremder Server nicht erreichbar: {exc}")
+    # stream without upstream headers (cookies stripped)
+    filename = row.filename or f"{oparl_key}.pdf"
+    from urllib.parse import quote as _quote
+    headers = {
+        "Content-Type": upstream.headers.get("Content-Type", "application/pdf"),
+        "Content-Disposition": f"inline; filename*=UTF-8''{_quote(filename)}",
+        "Cache-Control": "public, max-age=3600",
+    }
+    if upstream.headers.get("Content-Length"):
+        headers["Content-Length"] = upstream.headers["Content-Length"]
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(upstream.iter_content(chunk_size=64 * 1024),
+                             status_code=upstream.status_code, headers=headers)
 
 
 @app.post("/search")
