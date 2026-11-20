@@ -48,3 +48,25 @@ python -m src.kg.kgMigrate --apply --skip-statements
 the single source of truth for what has been ingested; mirrors
 `oparlUpdateRuns`. Current state after first apply:
 `('migrate', 'ok', 8301)`.
+
+
+## Update-workflow verification (task 4.1, 2026-11-20)
+
+`scripts/kgUpdateVerify.py` proves the kg phase chain inside the
+riskiUpdate phase pattern (snapshot → phases → baseline delta → JSON
+report) without merging the pending `unified-update-pipeline`
+orchestrator. Run:
+
+```bash
+/home/agent/bin/python3.14 scripts/kgUpdateVerify.py --snapshot-only
+/home/agent/bin/python3.14 scripts/kgUpdateVerify.py            # full
+/home/agent/bin/python3.14 scripts/kgUpdateVerify.py --dry-run
+/home/agent/bin/python3.14 scripts/kgUpdateVerify.py --skip-statements
+```
+
+Verified live 2026-11-20: snapshot 963 MB (TOC-verified), 9/9 phases ok
+(ident/chains/protocols/abstimmung/statements/tags/authors/tune/
+migrate), delta 0 on the converged store (correct — nothing new to
+ingest), report at `results/kg_update_verify_<date>.json`. When
+`unified-update-pipeline` lands, each phase function ports 1:1 into its
+registry (best-effort class; `migrate` cursor-gated).

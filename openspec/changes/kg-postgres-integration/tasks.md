@@ -18,7 +18,7 @@
 
 ## 4. Optional Deferred Integration
 
-- [ ] 4.1 Wire `riskiUpdate` / update-workflow hooks for the kg stages as a documented phase (per design D3: cursor-gated, runs after enrichment; NOT implemented here — depends on the separate `unified-update-pipeline` change; task exists as wiring spec only, may be deferred — note dependency in docs)
+- [x] 4.1 Wire `riskiUpdate` / update-workflow hooks for the kg stages as a documented phase (per design D3: cursor-gated, runs after enrichment; NOT implemented here — depends on the separate `unified-update-pipeline` change; task exists as wiring spec only, may be deferred — note dependency in docs). **Implemented 2026-11-20 as `scripts/kgUpdateVerify.py`** (snapshot-backed phase-registry verification: pg_dump critical phase → kg stages as subprocess phases with per-phase timing → PG baseline delta → JSON report; dev-branch orchestrator NOT merged — phases port 1:1 when unified-update-pipeline lands; verified live: 9/9 phases ok, delta 0 on the converged store, snapshot 963 MB verified)
 - [x] 4.2 Write `docs/kgMigrateKnit.md` usage documentation of the migrator (dry-run/apply examples, cursor reading, idempotency note for updates) and the docs/kgStatus.md update marking the pg store as normative target after first apply
 
 ## Workflow follow-up
