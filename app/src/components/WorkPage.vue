@@ -80,7 +80,7 @@
       :topics="topics"
       @select="onSelect"
     />
-    <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="hasGeo" :files="summaryFiles" :refining="refining" :refined="summaryRefined" @refine="onRefine" @toggle-file="onToggleFile" />
+    <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="hasGeo" :files="summaryFiles" :refining="refining" :refined="summaryRefined" :kgChips="kgChips" :kgRelated="kgRelated" @pick="onKgChipPick" @refine="onRefine" @toggle-file="onToggleFile" />
     <FollowupChips v-if="followups && followups.length" :questions="followups" :state="stateToken" :sessionId="stateSession" @pick="onFollowupPick" />
     <RelatedDocsList v-if="relatedDocs && relatedDocs.length" :docs="relatedDocs" />
   </div>
@@ -148,6 +148,8 @@ const error = ref(null);
 const sessionId = ref(null);
 // kg-app-integration state: follow-up chips + related docs
 const followups = ref(null);
+const kgChips = ref(null);
+const kgRelated = ref(null);
 const stateToken = ref(null);
 const stateSession = ref(null);
 const relatedDocs = ref(null);
@@ -262,6 +264,12 @@ async function runSearch() {
       stateSession.value = result.state_session || result.sessionId;
     }
     if (result.related_documents) relatedDocs.value = result.related_documents;
+    if (result.clarification && result.clarification.options) {
+      kgChips.value = result.clarification.options.map(o => ({
+        topic: o.topic, example: o.example || "", question: o.topic, state: null, sessionId: null,
+      }));
+    }
+    if (result.related_documents) kgRelated.value = result.related_documents;
     
     if (token !== searchToken) return;  // superseded by a newer search
     applyStage1(result);

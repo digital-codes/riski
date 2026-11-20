@@ -114,12 +114,19 @@ def related_by_tags(
     if related:
         want = [r["oparl_key"] for r in related]
         with e.connect() as c:
-            names = c.execute(text(
-                'SELECT "oparlKey", name, filename FROM "File" WHERE "oparlKey" = ANY(:ks)'),
-                {"ks": want}).fetchall()
-        name_map = {n[0]: (n[1] or n[2]) for n in names}
+            fs = c.execute(text(
+                'SELECT "oparlKey", name, filename, date, teaser FROM "File" '
+                'WHERE "oparlKey" = ANY(:ks)'), {"ks": want}).fetchall()
+            fmap = {n[0]: n for n in fs}
         for r in related:
-            r["name"] = name_map.get(r["oparl_key"])
+            fr = fmap.get(r["oparl_key"])
+            if fr is None:
+                continue
+            r["name"] = fr[1] or fr[2] or fr[0]
+            r["year"] = str(fr[3])[:4] if fr[3] else None
+            r["teaser"] = fr[4]
+            r["downloadurl"] = (f"https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/"
+                                f"{fr[0].split('/')[-1]}") if fr[0] else None
     return [r for r in related if r["name"]]
 
 

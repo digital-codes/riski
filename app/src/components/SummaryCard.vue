@@ -30,6 +30,34 @@
 
 		<div v-if="!loading" class="summary-body" v-html="renderedSummary"></div>
 
+		<!-- kg-app-integration: "Auswahl" — clustered follow-up chips in the
+		     header block (clarification mode), and the related docs card
+		     below with name/year/teaser detail -->
+		<div v-if="kgChips.length" class="kg-selection">
+			<h3 class="kg-selection-title">Auswahl</h3>
+			<div class="kg-chips">
+				<button v-for="(chip, i) in kgChips" :key="i" type="button"
+						class="kg-chip" @click="$emit('pick', chip)">
+					<span class="kg-chip-topic">{{ chip.topic }}</span>
+					<span v-if="chip.example" class="kg-chip-example">{{ chip.example }}</span>
+				</button>
+			</div>
+		</div>
+		<div v-if="kgRelated.length" class="kg-related">
+			<h3 class="kg-related-title">Thematisch verwandte Dokumente (nach den gewählten Themen)</h3>
+			<ul class="kg-related-list">
+				<li v-for="doc in kgRelated" :key="doc.oparl_key">
+					<a v-if="doc.downloadurl" :href="doc.downloadurl" target="_blank" rel="noopener" class="kg-related-link">
+						<span class="kg-related-name">{{ doc.name }}</span>
+						<span v-if="doc.year" class="kg-related-year">{{ doc.year }}</span>
+					</a>
+					<span v-else class="kg-related-name">{{ doc.name }}</span>
+					<div v-if="doc.teaser" class="kg-related-teaser">{{ doc.teaser }}</div>
+					<span class="kg-related-tags">{{ doc.shared_tags.join(', ') }}</span>
+				</li>
+			</ul>
+		</div>
+
 		<div v-if="!loading && files.length" class="file-list">
 			<ul class="file-items">
 				<li v-for="f in files" :key="f.oparlKey" :class="{ excluded: f.excluded }">
@@ -143,7 +171,24 @@ const downloadPdf = () => {
 	doc.open();
 	doc.write(
 		`<!DOCTYPE html><html lang="de"><head><meta charset="utf-8">` +
-		`<title>RISKI Zusammenfassung</title><style>${css}</style></head><body>` +
+		`<title>RISKI Zusammenfassung</title><style>${css}	.kg-selection { margin: .4rem 0; }
+	.kg-selection-title { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #888; margin: .2rem 0 .4rem; }
+	.kg-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+	.kg-chip { cursor: pointer; border: 1px solid #cbd5e1; border-radius: .7rem; background: #f1f5f9;
+	           padding: .45rem .8rem; text-align: left; }
+	.kg-chip:hover { background: #e2e8f0; }
+	.kg-chip-topic { display: block; font-weight: 600; color: #1e293b; }
+	.kg-chip-example { display: block; font-size: .78em; color: #667; margin-top: .15rem; }
+	.kg-related { margin: 1rem 0 0; border-top: 1px solid #e2e8f0; padding-top: .6rem; }
+	.kg-related-title { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #888; margin: 0 0 .5rem; }
+	.kg-related-list { list-style: none; margin: 0; padding: 0; }
+	.kg-related-list li { margin: .35rem 0; padding: .4rem .6rem; border: 1px solid #eee; border-radius: .4rem; background: #f8fafc; }
+	.kg-related-link { text-decoration: none; color: #1d4ed8; }
+	.kg-related-name { font-weight: 600; }
+	.kg-related-year { color: #888; margin-left: .4rem; }
+	.kg-related-teaser { color: #444; font-size: .84em; margin-top: .25rem; }
+	.kg-related-tags { color: #90a; display: inline-block; font-size: .75em; margin-top: .25rem; }
+</style></head><body>` +
 		`<h1>RISKI Zusammenfassung</h1>${renderedSummary.value}${fileListHtml}</body></html>`
 	);
 	doc.close();
@@ -385,4 +430,21 @@ a.file-name:hover {
 		padding: 16px;
 	}
 }
+	.kg-selection { margin: .4rem 0; }
+	.kg-selection-title { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #888; margin: .2rem 0 .4rem; }
+	.kg-chips { display: flex; flex-wrap: wrap; gap: .5rem; }
+	.kg-chip { cursor: pointer; border: 1px solid #cbd5e1; border-radius: .7rem; background: #f1f5f9;
+	           padding: .45rem .8rem; text-align: left; }
+	.kg-chip:hover { background: #e2e8f0; }
+	.kg-chip-topic { display: block; font-weight: 600; color: #1e293b; }
+	.kg-chip-example { display: block; font-size: .78em; color: #667; margin-top: .15rem; }
+	.kg-related { margin: 1rem 0 0; border-top: 1px solid #e2e8f0; padding-top: .6rem; }
+	.kg-related-title { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: #888; margin: 0 0 .5rem; }
+	.kg-related-list { list-style: none; margin: 0; padding: 0; }
+	.kg-related-list li { margin: .35rem 0; padding: .4rem .6rem; border: 1px solid #eee; border-radius: .4rem; background: #f8fafc; }
+	.kg-related-link { text-decoration: none; color: #1d4ed8; }
+	.kg-related-name { font-weight: 600; }
+	.kg-related-year { color: #888; margin-left: .4rem; }
+	.kg-related-teaser { color: #444; font-size: .84em; margin-top: .25rem; }
+	.kg-related-tags { color: #90a; display: inline-block; font-size: .75em; margin-top: .25rem; }
 </style>
