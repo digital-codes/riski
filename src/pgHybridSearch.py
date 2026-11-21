@@ -32,6 +32,7 @@ import sqlalchemy as sa
 from sqlalchemy import Column, MetaData, Table, select, text
 from pgvector.sqlalchemy import Vector
 
+from src.apiTrace import trace
 from src.db import _load_private
 from src.timing import timed, timed_block
 import os
@@ -748,6 +749,9 @@ def hybrid_candidates(
     use_name_vecs = signals.get("name_vectors", True)
     use_content = signals.get("content_vectors", True)
     parsed = parse_filters(filters)
+    # api-debug-logging: hybrid recall entry — the query every signal sees
+    trace("recall", stage="hybrid_candidates", query=query, top_k=top_k,
+          signals=signals, filter_count=len(parsed or []))
     stop_terms = load_stop_terms()
     nv_embedding = query_embedding_stripped if query_embedding_stripped is not None else query_embedding
 

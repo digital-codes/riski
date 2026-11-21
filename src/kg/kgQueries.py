@@ -21,6 +21,7 @@ from typing import Any
 
 from sqlalchemy import text
 
+from src.apiTrace import trace
 from src.db import get_engine
 
 
@@ -126,7 +127,11 @@ def related_by_tags(
             r["year"] = str(fr[3])[:4] if fr[3] else None
             r["teaser"] = fr[4]
             r["downloadurl"] = (f"/file-proxy/{fr[0].split('/')[-1]}") if fr[0] else None
-    return [r for r in related if r["name"]]
+    out = [r for r in related if r["name"]]
+    # api-debug-logging: related-documents pane outcome
+    trace("kg_related", top_docs=len(keys), results=len(out),
+          min_shared=min_shared)
+    return out
 
 
 def file_sid_for_key(keys: list[str]) -> dict[str, int | None]:
@@ -186,4 +191,8 @@ def topic_focus_for_query(query: str, threshold: float = 0.30) -> str | None:
         sim = dot / (na * nb) if na and nb else 0.0
         if sim > best_sim:
             best, best_sim = tag, sim
-    return best if best and best_sim >= threshold else None
+    topic = best if best and best_sim >= threshold else None
+    # api-debug-logging: topic-focus decision (kg-app-integration D3)
+    trace("kg_topic_focus", topic=topic, similarity=round(best_sim, 4),
+          threshold=threshold, query=query)
+    return topic

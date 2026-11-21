@@ -42,14 +42,18 @@ except ImportError:
 import logging
 import os
 import threading
+import time
 import unicodedata
 import uuid
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from sqlalchemy import text
 from pydantic import BaseModel, Field
 
+from src.apiTrace import (
+    new_request_id, set_request_id, trace, trace_enabled,
+)
 from src.db import get_engine
 from src.pgHybridSearch import FilterError, facets
 from src.pgTimeline import get_db_session, search_stage
@@ -59,6 +63,54 @@ app = FastAPI(title="RISKI Search API", version="0.1.0")
 _kg_log = logging.getLogger("riski.kg.app")
 # kg-app-integration rollout flag (design D6 rollback path)
 app.state.kg_app_integration = os.getenv("KG_APP_INTEGRATION", "1") == "1"
+
+
+# ----------------------------------------------------------------------
+# api-debug-logging: request-flow debug trace (env RISKI_API_TRACE)
+# ----------------------------------------------------------------------
+def _trace_query(endpoint: str, query: str, **params: Any) -> None:
+    """Incoming-query event: sanitized query + request parameters."""
+    trace("api_query", endpoint=endpoint, query=query, **params)
+
+
+def _trace_response(endpoint: str, result: Dict[str, Any]) -> None:
+    """Frontend-bound response summary (compact counters, never the body)."""
+    if not trace_enabled():
+        return
+    trace(
+        "api_response", endpoint=endpoint,
+        mode=result.get("mode") or "normal",
+        intent=result.get("intent"),
+        result_count=len(result.get("top_files") or []),
+        topics_count=len(result.get("topics") or []),
+        has_summary=bool(result.get("summary")),
+        related_count=len(result.get("related_documents") or []),
+        chips_count=len(result.get("chips") or []),
+        followups_count=len(result.get("followups") or []),
+        clarification=bool(result.get("clarification")),
+        empty=bool(result.get("empty_response")),
+        thread_reset=bool(result.get("thread_reset")),
+        session_id=result.get("sessionId"),
+    )
+
+
+@app.middleware("http")
+async def _trace_middleware(request: Request, call_next):
+    """Emit http_request/http_response entries and set the request id all
+    downstream trace entries inherit (contextvar propagates into the
+    endpoint's threadpool context)."""
+    if not trace_enabled():
+        return await call_next(request)
+    req_id = new_request_id()
+    set_request_id(req_id)
+    trace("http_request", req=req_id, method=request.method,
+          path=request.url.path, query_params=dict(request.query_params))
+    t0 = time.perf_counter()
+    response = await call_next(request)
+    trace("http_response", req=req_id, path=request.url.path,
+          status=response.status_code,
+          ms=round((time.perf_counter() - t0) * 1000, 1))
+    return response
 
 # permissive CORS for local frontend dev (vite runs on its own port)
 try:
@@ -330,6 +382,11 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
                                     "example": rd.get("name") or "",
                                     "shared_tags": rd.get("shared_tags", [])[:3]})
             if len(options) >= 2:
+                trace("clarification_mode",
+                      reason="short-fuzzy multi-cluster",
+                      query_words=len(query.split()),
+                      clusters=topic_clusters,
+                      topics=[t for t, n in all_topics.items() if n >= 2])
                 result["clarification"] = {
                     "message": "Meinst du eines dieser Themen?",
                     "options": options[:5],
@@ -417,6 +474,8 @@ def search(req: SearchRequest) -> Dict[str, Any]:
     top_files, matched_entities, facets, applied_filters + sessionId.
     Timeline and graph follow via POST /timeline and POST /graph."""
     query = validate_user_query(req.query)  # change: sanitize-queries…
+    _trace_query("search", query, top_k=req.top_k, summarize=req.summarize,
+                 filters=len(req.filters or []), thread=bool(req.thread))
     from src.db import get_engine as _ge  # noqa: F401 (import guard)
 
     try:
@@ -479,6 +538,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         "stage_lock": threading.Lock(),
     }
     result["sessionId"] = session_id
+    _trace_response("search", result)
     return result
 
 
@@ -518,6 +578,8 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     from src.pgIntentRouter import ask as route_ask
 
     query = validate_user_query(req.query)  # change: sanitize-queries…
+    _trace_query("ask", query, top_k=req.top_k, summarize=req.summarize,
+                 session=bool(req.session_id), thread=bool(req.thread))
     try:
         session = get_db_session()
     except Exception as exc:  # pragma: no cover - db down
@@ -561,6 +623,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
                 "timeline": None, "graph": None, "result": result,
                 "stage_lock": threading.Lock(),
             }
+            _trace_response("ask", result)
             return result
         _apply_thread_to_result(turn, result, result.get("top_files"))
     # meeting-centric answers (D10) build their graph synchronously in the
@@ -581,6 +644,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     session_id = session_id or uuid.uuid4().hex
     _kg_enrich(result, query, session_id)
     result["sessionId"] = session_id
+    _trace_response("ask", result)
     return result
 
 
@@ -615,6 +679,7 @@ def followup(req: FollowupRequest) -> Dict[str, Any]:
     grounded in the prior round's statement context), and returns the
     new answer, 3–5 fresh follow-ups and a fresh sealed token."""
     query = validate_user_query(req.question)
+    _trace_query("followup", query, session=req.session_id)
     if req.session_id and any(
         c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
         for c in req.session_id
@@ -690,6 +755,7 @@ def followup(req: FollowupRequest) -> Dict[str, Any]:
             "stage_lock": threading.Lock(),
         }
     result["sessionId"] = req.session_id
+    _trace_response("followup", result)
     return result
 
 

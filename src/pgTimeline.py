@@ -30,6 +30,7 @@ from functools import lru_cache
 # ----------------------------------------------------------------------
 # Shared layers: DB (read-only engine + config) and remote model client
 # ----------------------------------------------------------------------
+from src.apiTrace import trace
 from src.db import get_engine, _load_private
 from src.timing import timed
 
@@ -1260,6 +1261,9 @@ def search_stage(
     Returns a dict with ``query``, ``top_files``, ``matched_entities``,
     ``facets``, ``applied_filters`` and — on empty recall — a ``message``.
     """
+    # api-debug-logging: every query the API sends through recall
+    trace("recall", stage="search_stage", query=query, top_k=top_k,
+          filters=len(filters or []), signals=bool(signals), hybrid=hybrid)
     # Generate embedding for the query
     query_embedding = call_embedding_model(query, EMBEDDING_API_URL, EMBEDDING_API_KEY, EMBEDDING_MODEL)
     _ensure_log().debug(f"Generated embedding for query: {query_embedding[:5]}...")  # Debugging line
@@ -1331,6 +1335,8 @@ def search_stage(
         hybrid_match_info = {c["oparlKey"]: c["signals"] for c in candidates}
         _ensure_log().debug(f"Hybrid recall: {len(matched_entities)} entities, {len(candidates)} file candidates")
         if not candidates:
+            trace("recall_done", stage="search_stage", hits=0,
+                  entities=len(matched_entities), empty=True)
             return {
                 "query": query,
                 "top_files": [],
@@ -1349,12 +1355,16 @@ def search_stage(
 
         _ensure_log().debug(f"Top files (before thresholding): {file_scores}")  # Debugging line
         if not file_scores:
+            trace("recall_done", stage="search_stage", hits=0, entities=0,
+                  empty=True)
             return {"query": query, "top_files": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files with embeddings found"}
 
         # filter by threshold
         top_scores = filter_by_threshold(file_scores, threshold=threshold)
         _ensure_log().debug(f"Top files (after thresholding {threshold}): {top_scores}")  # Debugging line
         if not top_scores:
+            trace("recall_done", stage="search_stage", hits=0, entities=0,
+                  empty=True)
             return {"query": query, "top_files": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
 
     # run reranking on all files and append rerank score to file_score 
@@ -1451,6 +1461,9 @@ def search_stage(
     } for row in result]
     top_files.sort(key=lambda f: key_rank.get(f["oparlKey"], len(key_rank)))
     _ensure_log().debug(f"Top files details: {top_files}")  # Debugging line
+
+    trace("recall_done", stage="search_stage", hits=len(top_files),
+          entities=len(matched_entities), empty=False)
 
     return {
         "query": query,

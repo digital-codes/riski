@@ -39,6 +39,7 @@ import re
 from sqlalchemy import text
 
 from src import remote
+from src.apiTrace import trace
 from src.timing import timed
 
 log = logging.getLogger("riski.summarizer")
@@ -270,6 +271,9 @@ class ResultSummarizer:
         # kg-app-integration: grounding blocks from the kg statement layer
         grounding = self._grounding_blocks(top_files)
         n_grounded = sum(1 for g in grounding.values() if g)
+        # api-debug-logging: summarizer input/output sizes
+        trace("summarizer", docs=len(top_files), grounded=n_grounded,
+              layer=layer, full_content=use_full_content, query=query)
 
         for file in top_files:
             # matched chunk from the search phase (change: content-chunking

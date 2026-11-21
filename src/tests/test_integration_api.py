@@ -265,3 +265,41 @@ class TestQuerySanitation:
     def test_german_letters_numbers_punctuation_accepted(self, client):
         q = "Digitalisierung beim Gemeinderat 2024 (Beschlüsse): Haushalt, §42 & Fußnoten!"
         assert client.post("/search", json={"query": q}).status_code == 200
+
+
+class TestDebugTrace:
+    """api-debug-logging (change: api-debug-logging): with
+    ``RISKI_API_TRACE=1`` one /search request produces correlated entries —
+    http_request → api_query → recall → http_response — sharing one req id."""
+
+    def test_search_request_flow_traced(self, client, monkeypatch):
+        import json
+
+        from src import apiTrace
+
+        monkeypatch.setenv("RISKI_API_TRACE", "1")
+        apiTrace._reset()
+        try:
+            r = client.post("/search",
+                            json={"query": "Digitalstrategie der Stadt Karlsruhe",
+                                  "top_k": 3, "summarize": False})
+            assert r.status_code == 200
+            body = r.json()
+            with open(apiTrace.log_file_path(), encoding="utf-8") as f:
+                entries = [json.loads(ln) for ln in f if ln.strip()]
+            resp = [e for e in entries
+                    if e["event"] == "api_response"
+                    and e.get("session_id") == body.get("sessionId")]
+            assert resp, "api_response entry for the /search call"
+            req = resp[0]["req"]
+            assert req
+            assert resp[0]["endpoint"] == "search"
+            assert resp[0]["result_count"] == len(body.get("top_files") or [])
+            events = {e["event"] for e in entries if e.get("req") == req}
+            assert {"http_request", "api_query", "recall",
+                    "http_response"} <= events
+            api_q = [e for e in entries
+                     if e["event"] == "api_query" and e.get("req") == req][0]
+            assert api_q["query"].startswith("Digitalstrategie")
+        finally:
+            apiTrace._reset()

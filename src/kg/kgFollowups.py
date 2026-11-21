@@ -68,7 +68,16 @@ def seal_state(state: dict[str, Any], session_id: str, *,
                            ensure_ascii=False).encode("utf-8")
     blob = nonce + aesgcm.encrypt(nonce, plaintext, session_id.encode("utf-8"))
     token = base64.urlsafe_b64encode(blob).decode("ascii").rstrip("=")
-    return f"v1.{token}"
+    full = f"v1.{token}"
+    try:  # api-debug-logging: token prefix only (tokens are opaque)
+        from src.apiTrace import trace
+        thread = payload.get("thread") or {}
+        trace("kg_thread", mode="seal", token=full[:8],
+              turn_count=thread.get("turn_count"),
+              origin=thread.get("origin"), q0=payload.get("q0"))
+    except Exception:  # pragma: no cover
+        pass
+    return full
 
 
 def open_state(token: str, session_id: str, *,
@@ -87,6 +96,11 @@ def open_state(token: str, session_id: str, *,
     if ts is not None and STATE_TOKEN_MAX_AGE > 0:
         if int(time.time()) - ts > STATE_TOKEN_MAX_AGE:
             raise ValueError("State token expired")
+    try:  # api-debug-logging
+        from src.apiTrace import trace
+        trace("kg_thread", mode="open", token=token[:8], turns=len(data))
+    except Exception:  # pragma: no cover
+        pass
     return data
 
 
@@ -201,6 +215,11 @@ def generate_followups(answer_summary: str, statements: list[dict] | None,
             raise
         data = json.loads(m.group(0))
     questions = [q for q in (data.get("questions") or []) if q][:FOLLOWUP_MAX]
+    try:  # api-debug-logging
+        from src.apiTrace import trace
+        trace("kg_followups", questions=len(questions), topics=topics or [])
+    except Exception:  # pragma: no cover
+        pass
     return {"questions": questions, "topics": topics or [],
             "generation": "kg-followups"}
 

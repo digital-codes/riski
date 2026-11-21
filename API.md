@@ -50,6 +50,41 @@ setsid /usr/bin/python3 -m uvicorn src.apiServer:app --host 127.0.0.1 --port 113
 - **Health check**: `curl http://127.0.0.1:11384/health`
 - **Process**: `ps aux | grep "[u]vicorn.*11384"`
 
+### Debug trace (request flow) — change: api-debug-logging
+
+Opt-in end-to-end tracing of the API request flow: every incoming query,
+intent route decision (with reasons), recall, kg enrichment and the
+response sent to the frontend, correlated by request id. Off by default
+(no file, no overhead, no behavior change).
+
+- **Activate**: set `RISKI_API_TRACE=1` when starting the service:
+
+  ```bash
+  RISKI_API_TRACE=1 /usr/bin/python3 -m uvicorn src.apiServer:app --host 127.0.0.1 --port 11384
+  ```
+
+- **Log file**: `log/api_debug.log` at the repo root (gitignored; grows
+  only while the flag is set — archive/truncate manually as needed).
+- **Entry format**: one JSON object per line —
+
+  ```json
+  {"ts": "2026-11-21T10:04:05.123+01:00", "src": "src.pgIntentRouter",
+   "req": "ab12cd34ef56", "event": "intent_route", "intent": "ask_decision_date", ...}
+  ```
+
+  `ts` = ISO-8601 timestamp, `src` = source module, `req` = request id
+  shared by all entries of one HTTP request.
+- **Key events**: `http_request` / `http_response` (every request),
+  `api_query` (incoming query + params), `intent_route` (intent,
+  confidence, top scores, slots), `intent_fallback` (ladder step +
+  reason), `thread_turn` (followup-vs-break + reasons),
+  `clarification_mode`, `recall` / `recall_done` (query through recall),
+  `summarizer`, `kg_related` / `kg_topic_focus` / `kg_followups` /
+  `kg_thread` (token prefix only), `api_response` (mode + payload
+  counters — never the raw body).
+- **Follow one request**: `grep '"req": "<id>"' log/api_debug.log` (the id
+  is printed in each line; find one via `grep '"event": "api_query"'`).
+
 ## Supervisor (optional, for system management)
 
 A supervisor config is available at `riski-api.supervisor.conf`. If copied to `/etc/supervisor/conf.d/riski-api.conf` (requires sudo):

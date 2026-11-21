@@ -31,6 +31,7 @@ import sqlalchemy as sa
 import yaml
 from sqlalchemy import MetaData, Table, select, text
 
+from src.apiTrace import trace
 from src.db import get_engine
 
 CONFIG_PATH = Path(__file__).parent.parent / "config" / "intents.yaml"
@@ -757,6 +758,12 @@ def classify_thread_turn(query: str, intent_name: str,
     is_followup = thematic and recall_confident and (
         deictic or (no_topic and low_conf)
     )
+    # api-debug-logging: the followup-vs-break decision with its reasons
+    trace("thread_turn",
+          action="followup" if is_followup else "break",
+          intent=intent_name, deictic=deictic, no_topic=no_topic,
+          low_conf=low_conf, recall_confident=recall_confident,
+          topic_focus=topic_focus, query=query)
     return {
         "action": "followup" if is_followup else "break",
         "intent": intent_name,
@@ -808,6 +815,17 @@ class IntentRouter:
                 "slots": {},
                 "error": f"decision model unreachable: {exc}",
             }
+        # api-debug-logging: the intent decision with its reasons
+        scores = decoded.get("scores") or {}
+        trace("intent_route", intent=decoded["intent"],
+              confidence=max(scores.values(), default=0.0),
+              scores=dict(sorted(scores.items(), key=lambda kv: -kv[1])[:5]),
+              slots=decoded.get("slots") or {},
+              decoder_error=decoded.get("error"))
+        if decoded.get("error"):
+            trace("intent_fallback", step="decoder_unreachable",
+                  reason="decision model unreachable — fallback intent",
+                  intent=decoded["intent"])
         return decoded
 
     def resolve(self, intent_name: str, slots: Dict[str, Any],
@@ -902,6 +920,9 @@ class IntentRouter:
             result["applied_filters"] = filters
             result["gremium"] = resolved.get("gremium")
             result["fallback_notes"] = notes
+            trace("intent_route", handler="meeting_scope",
+                  intent=resolved["intent"],
+                  meeting=(resolved.get("gremium") or {}).get("meeting"))
             return result
 
         # add-location-intent: location answers retrieve through the geo
@@ -921,6 +942,8 @@ class IntentRouter:
                     "keine Treffer im Ortsscope; Suche ohne Ortsscope "
                     "wiederholt"
                 )
+                trace("intent_fallback", step="location_scope_dropped",
+                      reason="keine Treffer im Ortsscope")
                 result = search_fn(
                     session, query, top_k=top_k, filters=None,
                     signals=signals, summarize=summarize,
@@ -935,6 +958,9 @@ class IntentRouter:
                 "keine Treffer mit dem gefilterten Scope; Suche ohne Filter "
                 "wiederholt"
             )
+            trace("intent_fallback", step="filters_dropped",
+                  reason="keine Treffer mit dem gefilterten Scope",
+                  filters=filters)
             result = search_fn(
                 session, query, top_k=top_k, filters=None,
                 signals=signals, summarize=summarize,
@@ -960,6 +986,9 @@ class IntentRouter:
                 "nichts gefunden; bitte andere Formulierung oder anderen "
                 "Suchbegriff versuchen"
             )
+            trace("intent_fallback", step="empty_response",
+                  reason="nichts gefunden", intent=resolved["intent"],
+                  filters=filters)
             result["empty_response"] = {
                 "message": "Zu dieser Anfrage wurde nichts gefunden.",
                 "intent": resolved["intent"],

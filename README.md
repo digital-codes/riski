@@ -583,6 +583,24 @@ RISKI_TIMING=1 uvicorn src.apiServer:app --port 8000 --log-level debug
 
 For production, keep defaults and consider `--no-access-log --workers N`.
 
+### Request-flow debug trace (API)
+
+Separate from timing, the whole API request flow can be traced
+end-to-end (change: api-debug-logging): every incoming query, the intent
+route decision with its reasons, recall stages, kg enrichment and the
+response sent to the frontend — one JSON line per event in
+`log/api_debug.log`, correlated by a per-request id:
+
+```bash
+RISKI_API_TRACE=1 uvicorn src.apiServer:app --port 11384
+grep '"event": "api_query"' log/api_debug.log   # find a request id
+grep '"req": "<id>"' log/api_debug.log          # reconstruct that request
+```
+
+Off by default (no file, no overhead, no behavior change). Entry format,
+event catalogue and operations notes: see `API.md`
+(§ "Debug trace").
+
 ## Tests
 
 ```bash
