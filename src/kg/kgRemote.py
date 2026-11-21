@@ -20,6 +20,8 @@ from typing import Any
 
 import requests
 
+from src.remote import log_llm_call, validate_call_ids
+
 ENDPOINTS: dict[str, str] = {
     "ollama": "http://localhost:11434/v1",
     # ollama cloud (OLC_* in src/private.py): OpenAI-compatible chat for
@@ -170,6 +172,8 @@ class KgRemote:
         num_ctx: int | None = None,
         json_mode: bool = False,
         retries: int = 3,
+        prompt_id: str | None = None,
+        call_id: str | None = None,
     ) -> str:
         """Chat via ollama's native /api/chat (options.num_ctx bounded).
 
@@ -177,7 +181,11 @@ class KgRemote:
         which is why the timestamped KV-runner would keep a giant
         context in VRAM; the native call carries
         ``options: {num_ctx}`` explicitly.
-        """
+
+        Identifying calls are recorded in ``log/llm_debug.log`` for log
+        continuity with the OpenAI-compatible route — no enforcement of
+        the registry ids here (the /api/chat route is outside the
+        prompt-registry scope)."""
         payload: dict[str, Any] = {
             "model": model,
             "messages": messages,
@@ -189,6 +197,7 @@ class KgRemote:
         }
         if json_mode:
             payload["format"] = "json"
+        t0 = time.perf_counter()
         last_err: Exception | None = None
         for attempt in range(1, retries + 1):
             try:
@@ -202,10 +211,26 @@ class KgRemote:
                     last_err = RuntimeError("429 rate limited")
                     continue
                 r.raise_for_status()
-                return r.json()["message"]["content"]
+                data = r.json()
+                if prompt_id or call_id:
+                    log_llm_call(
+                        endpoint=f"{self.native_base}/api/chat", model=model,
+                        payload=payload, result=data,
+                        prompt_id=prompt_id, call_id=call_id,
+                        duration_ms=round((time.perf_counter() - t0) * 1000, 1),
+                    )
+                return data["message"]["content"]
             except (requests.RequestException, KeyError) as exc:  # noqa: PERF203
                 last_err = exc
                 time.sleep(2 * attempt)
+        if prompt_id or call_id:
+            log_llm_call(
+                endpoint=f"{self.native_base}/api/chat", model=model,
+                payload=payload, result=None, status="error",
+                prompt_id=prompt_id, call_id=call_id,
+                duration_ms=round((time.perf_counter() - t0) * 1000, 1),
+                error=f"native_chat failed after {retries} attempts: {last_err}",
+            )
         raise RuntimeError(
             f"native_chat failed after {retries} attempts: {last_err}"
         )
@@ -227,13 +252,23 @@ class KgRemote:
         model: str | None = None,
         temperature: float = 0.0,
         retries: int = 3,
+        prompt_id: str | None = None,
+        call_id: str | None = None,
     ) -> str:
         """Send a chat completion and return the assistant text.
 
         Cloud endpoints (`olc`/`hf`): the endpoint URL already carries
         the /chat/completions route and the Authorization header carries
         the OLC_*/HF_* key.
-        """
+
+        The call is identified by ``prompt_id``/
+        ``call_id`` per the prompt registry (change:
+        centralize-llm-instruction-prompts): missing ids are flagged as
+        errors (or refused in ``REMOTE_PROMPT_ENFORCE=strict`` mode) and
+        the full request/result is recorded in ``log/llm_debug.log``."""
+        prompt_id, call_id = validate_call_ids(
+            prompt_id, call_id, context="kg.KgRemote.chat",
+        )
         payload: dict[str, Any] = {
             "model": model or self._chat_model or DECISION_MODEL,
             "messages": messages,
@@ -249,6 +284,7 @@ class KgRemote:
         else:
             url = f"{self.base_url}/chat/completions"
             headers = {}
+        t0 = time.perf_counter()
         last_err: Exception | None = None
         for attempt in range(1, retries + 1):
             try:
@@ -264,10 +300,22 @@ class KgRemote:
                     last_err = RuntimeError("429 rate limited")
                     continue
                 r.raise_for_status()
-                return r.json()["choices"][0]["message"]["content"]
+                data = r.json()
+                log_llm_call(
+                    endpoint=url, model=payload["model"], payload=payload,
+                    result=data, prompt_id=prompt_id, call_id=call_id,
+                    duration_ms=round((time.perf_counter() - t0) * 1000, 1),
+                )
+                return data["choices"][0]["message"]["content"]
             except (requests.RequestException, KeyError) as exc:  # noqa: PERF203
                 last_err = exc
                 time.sleep(2 * attempt)
+        log_llm_call(
+            endpoint=url, model=payload["model"], payload=payload, result=None,
+            status="error", prompt_id=prompt_id, call_id=call_id,
+            duration_ms=round((time.perf_counter() - t0) * 1000, 1),
+            error=f"chat failed after {retries} attempts: {last_err}",
+        )
         raise RuntimeError(f"chat failed after {retries} attempts: {last_err}")
 
     def embed(self, text: str, model: str = EMBEDDING_MODEL) -> list[float]:
@@ -286,23 +334,33 @@ class KgRemote:
         questions: dict[str, dict],
         model: str = DECISION_MODEL,
         timeout: float = 90.0,
+        prompt_id: str | None = None,
+        call_id: str | None = None,
     ) -> dict[str, dict]:
         """SystemOne decision protocol (ollama /v1/systemone).
 
         d3:2b supports ONLY this route (noul/choice/score questions);
         returns ``{"answers": {name: {"noul": 0..1} | {"choice": ...}}}``.
-        """
+
+        Identified like every other prompt-bearing call (change:
+        centralize-llm-instruction-prompts) — the full state/questions
+        payload and the returned answers go to ``log/llm_debug.log``."""
+        prompt_id, call_id = validate_call_ids(
+            prompt_id, call_id, context="kg.KgRemote.systemone",
+        )
         url = self._sysone_url or f"{self.base_url}/systemone"
         mdl = self._sysone_model or model
         headers = {"Authorization": f"Bearer {self._sysone_key}"} if self._sysone_key else {}
+        body = {"model": mdl, "state": state, "questions": questions}
         # retry/backoff: the tagger and the inline crosscheck share the
         # decision endpoint — 429s are routine, not fatal
+        t0 = time.perf_counter()
         last_err = None
         for attempt in range(1, 4):
             try:
                 r = requests.post(
                     url,
-                    json={"model": mdl, "state": state, "questions": questions},
+                    json=body,
                     headers=headers,
                     timeout=timeout,
                 )
@@ -312,10 +370,22 @@ class KgRemote:
                     last_err = RuntimeError("429 rate limited")
                     continue
                 r.raise_for_status()
-                return r.json().get("answers", {})
+                answers = r.json().get("answers", {})
+                log_llm_call(
+                    endpoint=url, model=mdl, payload=body, result=answers,
+                    prompt_id=prompt_id, call_id=call_id,
+                    duration_ms=round((time.perf_counter() - t0) * 1000, 1),
+                )
+                return answers
             except (requests.RequestException, KeyError) as exc:
                 last_err = exc
                 time.sleep(3 * attempt)
+        log_llm_call(
+            endpoint=url, model=mdl, payload=body, result=None, status="error",
+            prompt_id=prompt_id, call_id=call_id,
+            duration_ms=round((time.perf_counter() - t0) * 1000, 1),
+            error=f"systemone failed after retries: {last_err}",
+        )
         raise RuntimeError(f"systemone failed after retries: {last_err}")
 
     # ------------------------------------------------------------------
@@ -325,10 +395,19 @@ class KgRemote:
         model: str | None = None,
         temperature: float = 0.0,
         num_ctx: int | None = None,
+        prompt_id: str | None = None,
+        call_id: str | None = None,
     ) -> dict[str, Any]:
-        """JSON chat; native format=json locally, plain chat for cloud."""
+        """JSON chat; native format=json locally, plain chat for cloud.
+
+        Identifying ids are validated here once (the registry policy) and
+        forwarded to the underlying route, which records the call."""
+        prompt_id, call_id = validate_call_ids(
+            prompt_id, call_id, context="kg.KgRemote.chat_json",
+        )
         raw = (
-            self.chat(messages, model=model, temperature=temperature)
+            self.chat(messages, model=model, temperature=temperature,
+                      prompt_id=prompt_id, call_id=call_id)
             if self._cloud
             else self.native_chat(
                 messages,
@@ -336,6 +415,8 @@ class KgRemote:
                 temperature=temperature,
                 num_ctx=num_ctx,
                 json_mode=True,
+                prompt_id=prompt_id,
+                call_id=call_id,
             )
         )
         try:

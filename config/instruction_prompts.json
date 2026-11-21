@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "prompts": {
+    "doc-classify-teaser": {
+      "description": "Categorise a document teaser into the document-type vocabulary (pgCategorise LLM classification)",
+      "text": "Du klassifizierst kurze Dokument-Zusammenfassungen (Teaser) aus einem Ratsinformationssystem. Antworte NUR mit einem JSON-Objekt der Form {\"tag\": \"<Kategorie>\"}. Wähle die Kategorie aus der vorgegebenen Liste, wenn eine passt; sonst wähle ein prägnantes deutsches Schlagwort (1-3 Wörter).",
+      "source": "src/pgCategorise.py:214"
+    },
+    "geo-gate-system": {
+      "description": "System message for the GeoGate verdict call (strict JSON-only answer style)",
+      "text": "Du bist ein präziser Assistent für Dokumentenanalyse. Antworte ausschließlich mit dem geforderten JSON.",
+      "source": "src/geoGate.py:269"
+    },
+    "geo-gate-verdict": {
+      "description": "GeoGate prompt template: classify found street/district names as content vs boilerplate",
+      "text": "Du prüfst Georeferenzen in Dokumenten des Ratsinformationssystems der Stadt {city}.\n\nGegeben: der Inhalt eines Dokuments und eine Liste von Straßennamen bzw. Stadtteilen, die automatisiert im Text gefunden wurden.\n\nAufgabe: Entscheide für jeden Namen, ob er zum HAUPTINHALT des Dokuments gehört oder nur aus Beilage-/Metadaten-Text stammt.\n\nAls HAUPTINHALT gilt: der eigentliche Text des Antrags / der Anfrage / der Beschlussvorlage / des Protokolls — z. B. eine Straße als Ort einer geplanten Maßnahme, als betroffener Bereich oder als Thema.\n\nAls BEILAGE/METADATEN gelten und werden als \"boilerplate\" eingestuft:\n- Absender- und Empfängeradressen im Briefkopf (Antragsteller, Fraktion, Amt, Behörde, Unternehmen)\n- Fußzeilen, Impressum, Kontakt- und Signaturblöcke\n- Veranstaltungsort-Boilerplate (z. B. \"Bürgersaal, Rathaus am Marktplatz\")\n- Wiederkehrende Formulare/Deckblatt-Angaben ohne inhaltlichen Bezug\n\nWICHTIG: Auch wenn eine Straße politisch relevant erscheint (z. B. die\n\"Hebelstraße\", in der das Haus der Fraktionen liegt und viele Fraktionen\nihre Geschäftsstelle haben): Eine Adresszeile eines Antragstellers\n(\"Fraktion X, Hebelstraße 21, {plz} {city}\") ist BOILERPLATE, egal\nwelche Partei oder Behörde dort sitzt. Entscheidend ist allein, ob der\nHAUPTTEXT des Dokuments diese Straße inhaltlich behandelt. Nur wenn der\nHaupttext selbst von der Straße handelt (z. B. Verkauf des \"ehemaligen\nHauses der Fraktionen in der Hebelstraße 13\"), ist es \"content\".\n\nDokument-Typ: {doc_type}\nDokument-Name: {doc_name}\n\nDokumentinhalt:\n\"\"\"\n{content}\n\"\"\"\n\nGefundene Namen (mit Fundkontext):\n{mentions}\n\nAntworte AUSSCHLIESSLICH mit JSON, keine weiteren Texte:\n{{\"verdicts\": [\n  {{\"name\": \"<Name>\", \"verdict\": \"content\"|\"boilerplate\"|\"unsure\",\n    \"reason\": \"<kurzer deutscher Grund, max. 1 Satz>\"}}\n]}}\n\nRegeln:\n- Genau ein Eintrag pro gegebenem Namen, Namen unverändert übernehmen.\n- \"content\": der Name wird im Haupttext inhaltlich verwendet — auch wenn er zusätzlich in einer Adresse vorkommt.\n- \"boilerplate\": der Name kommt NUR in Kopf-/Fuß-/Adressbestandteilen vor.\n- Wenn du nicht sicher entscheiden kannst: \"unsure\".",
+      "source": "src/geoGate.py:127"
+    },
+    "teaser-summarize": {
+      "description": "Teaser/map-reduce chunk summarization system prompt (pgTeasers); {maxlen}/{lang_setting} interpolated at the call site",
+      "text": "Summarize this document in 3-5 sentences.\n    Maximum {maxlen} words. Focus on main topic.\n    Language must be: {lang_setting} (do not mix languages)\n    ",
+      "source": "src/pgTeasers.py:88"
+    },
+    "result-summary": {
+      "description": "Query-guided German summary with relevance filtering (pgResultSummarizer initial pass); {max_words} interpolated at the call site",
+      "text": "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine Frage und eine nummerierte Liste von Dokumenten (als Kurzfassungen/Teaser) gegeben.\n1) Beurteile zunächst für jedes Dokument, ob es inhaltlich zur gestellten Frage beiträgt.\n2) Fasse NUR die relevanten Dokumente auf Deutsch zusammen — in Hinblick auf die Frage. Nenne die für die Frage wichtigsten Dokumente und Ergebnisse. Bleibe unter {max_words} Wörtern. Keine Emojis.\n3) Hänge an das Ende einen Abschnitt '**Nicht berücksichtigte Dokumente:**' an. Liste dort jede als nicht relevant eingestufte Datei als eigene Zeile '- Datei <Nummer>: <Titel>' auf (Nummer = Nummer aus der Dokumentenliste). Wenn alle Dokumente relevant waren, schreibe dort 'Alle Dokumente wurden berücksichtigt.'\nAntworte nur mit der Zusammenfassung (inklusive dieses Abschnitts).",
+      "source": "src/pgResultSummarizer.py:58"
+    },
+    "result-summary-refine": {
+      "description": "Full-content refinement summary without document re-selection (pgResultSummarizer refine pass); {max_words} interpolated at the call site",
+      "text": "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine Frage und eine nummerierte Liste von Dokumenten (Volltexte) gegeben. Die Dokumentenauswahl wurde bereits getroffen — treffe KEINE eigene Auswahl und lasse KEIN Dokument aus.\n Lies alle bereitgestellten Inhalte vollständig und erstelle eine prägnante, aber VOLLSTÄNDIGE Übersicht auf Deutsch, die die Frage beantwortet: Themen, Entscheidungen, Beschlüsse, Verantwortlichkeiten und Widersprüche zwischen den Dokumenten. Belege jede Aussage mit einer Dokumentreferenz '(Datei N)'. Bleibe unter {max_words} Wörtern. Keine Emojis.\nAntworte nur mit der Übersicht.",
+      "source": "src/pgResultSummarizer.py:81"
+    },
+    "report-summarize": {
+      "description": "Admin-report commentator summary (pgSummarize); {report} placeholder inserted at the call site",
+      "text": "\nDu bist ein Kommentator. Deine Aufgabe ist es, eine Zusammenfassung eines Bericht einer\nVerwaltungssitzung oder einer Verwaltungsvorlage zu schreiben.\nWenn dir der Bericht vorgelegt wird, beantworte folgende Fragen dazu, sofern möglich:\n\n 1) welche person legt den bericht vor\n 2) was ist das datum des berichts\n 3) bei welchem gremium war die sitzung oder bei welchem gremium wurde die vorlage behandelt\n 4) was ist das thema des berichts\n 5) was ist der titel des bericht. Leite einen passenden title vom thema ab, wenn keiner explizit angegeben wird\n 6) Welches sind die wichtigstens Argumente im bericht\n 7) Gibt es ein Ergebnis oder einen Beschluss? Wenn ja, welches.\n\nAnschließend kombiniere alle Informationen und verfasse einen Zusammenfassung  im Markdown‑Format. Verwende keine\n```markdown ... ``` code fence, sondern schreibe die Zusammenfassung direkt als Fließtext.\n\nAntworte nur auf Deutsch, auch wenn der Bericht englischen Text enthält.\nVerwende die Informationen im Bericht, um die Fragen zu beantworten,\nund füge keine Informationen hinzu, die nicht im Bericht enthalten sind.\nWenn eine Information nicht im Bericht enthalten ist, lasse sie einfach weg.\n\nStelle sicher, dass Dein Bericht insgesamt nicht länger ist als CUTOFF Zeichen.\n\n{report}\n\n",
+      "source": "src/pgSummarize.py:37"
+    },
+    "kg-statement-request": {
+      "description": "Fact extraction from request/Antrag documents (kgStatements request stage); {fields} interpolated at the call site",
+      "text": "Du bist ein extrahierender Assistent. Extrahiere die Kernfakten aus dem\nfolgenden deutschen Dokument (Antrag/Anfrage der Karlsruher\nKommunalpolitik) und antworte AUSSCHLIESSLICH mit einem JSON-Objekt mit\ngenau diesen Feldern:\n\n{fields}\n\nRegeln:\n- ALLE Feldinhalte streng auf DEUTSCH — übernimm die Worte des\n  Dokuments, übersetze nicht, paraphrasiere nicht ins Englische.\n- Nur Fakten aus dem Dokument. Wenn etwas nicht drinsteht: leere\n  Zeichenkette (\"\"), niemals erfinden.\n- involved_cost / start_date / end_date nur mit wörtlichen Werten aus\n  dem Text (Zahl + Währung/Zeitraum so wie sie dasteht). NIEMALS\n  rechnen, ableiten oder aus Titel/Referenz schließen; fehlt ein\n  expliziter Wert im Dokument: \"\".\n- source_refs: Liste der Dokument-IDs/Dateinamen, aus denen die Werte stammen;\n  sonst [].\n",
+      "source": "src/kg/kgStatements.py:87"
+    },
+    "kg-statement-response": {
+      "description": "Fact extraction from response/decision documents (kgStatements response stage); {fields} interpolated at the call site",
+      "text": "Du bist ein extrahierender Assistent. Das Folgende sind\nReaktions-/Entscheidungstexte (Protokoll, Beschluss, Antwort) zu einem\nAntrag des Gemeinderats Karlsruhe. Extrahiere die Kernfakten und antworte\nAUSSCHLIESSLICH mit einem JSON-Objekt mit genau diesen Feldern:\n\n{fields}\n\nRegeln:\n- ALLE Feldinhalte streng auf DEUTSCH — übernimme die Worte des\n  Dokuments, übersetze nicht, paraphrasiere nicht ins Englische.\n- Nur Fakten aus den Texten. Fehlt etwas: \"\" (niemals erfinden).\n- response_type: einer von zugestimmt/abgelehnt/vertagt/verwiesen/\n  zur_kenntnis_gekommen/erledigt/ja_stellungnahme/anders.\n- request_modifications: Ände von Antrag beschrieben (\"\" falls keine).\n- dependencies_constraints: Bedingungen/Fallstricke (z.B. Drittmittel,\n  Haushaltssperre) oder \"\".\n- source_refs: Liste der Dokument-IDs/Dateinamen, sonst [].\n",
+      "source": "src/kg/kgStatements.py:107"
+    },
+    "kg-contradiction-question": {
+      "description": "SystemOne noul question instructions: contradiction check between extracted decision facts and the original text (kgCrossCheck)",
+      "text": "Widersprechen sich die Entscheidungs-Angaben und der Originaltext in Fakten (falsche Stelle, erfundene Kosten, falsches Datum, explizit anders lautender Fakt)?",
+      "source": "src/kg/kgCrossCheck.py:59"
+    },
+    "kg-verdict-tiebreak": {
+      "description": "Chat fallback/tiebreak verdict prompt comparing decision facts against the original text (kgCrossCheck); {summary}/{source} interpolated at the call site",
+      "text": "Du bist ein Prüfassistant. Vergleiche die folgende\nzusammengefassten Entscheidungs-Angaben mit dem Originaltext.\n\nEntscheidungs-Angaben:\n{summary}\n\nOriginaltext (Auszug):\n{source}\n\nPrüfe NUR den Faktenvergleich (Stil ist egal):\n- \"failed\" NUR wenn die Zusammenfassung dem Originaltext WIDERSPRICHT\n  (falsche ausführende Stelle, erfundene Kosten, falsches Datum, ein\n  Fakt, der im Originaltext explizit anders steht).\n- Fehlende Angaben sind KEIN Grund für \"failed\" — Kürzung ist erlaubt.\n- Nenne im reason die konkrete Widerspruchsstelle, sonst \"\".\n\nAntworte NUR als JSON: {{\"verdict\": \"passed\"|\"failed\", \"reason\": \"<kurz, deutsch>\"}}\n",
+      "source": "src/kg/kgCrossCheck.py:130"
+    },
+    "kg-tag-question": {
+      "description": "SystemOne tag-question template (kgTagSystemOne); {tag}/{tag_description} interpolated at the call site (description pre-truncated to 160 chars)",
+      "text": "Behandelt das Dokument das Thema {tag}? ({tag_description})",
+      "source": "src/kg/kgTagSystemOne.py:93"
+    },
+    "kg-tag-qualifier-neubau": {
+      "description": "Construction qualifier question: Neubau (kgTagSystemOne)",
+      "text": "Wird im Dokument eine NEUBAU-Maßnahme (Neubau/Ersterrichtung) beschrieben?",
+      "source": "src/kg/kgTagSystemOne.py:47"
+    },
+    "kg-tag-qualifier-sanierung": {
+      "description": "Construction qualifier question: Sanierung with reconstruction-not-maintenance note (kgTagSystemOne)",
+      "text": "Wird eine SANIERUNG (Rekonstruktion/Erneuerung eines Bestands) beschrieben? Achtung: 'Sanierung' heißt Rekonstruktion, nicht laufende Instandhaltung.",
+      "source": "src/kg/kgTagSystemOne.py:49"
+    },
+    "kg-tag-qualifier-erweiterung": {
+      "description": "Construction qualifier question: Erweiterung (kgTagSystemOne)",
+      "text": "Wird eine ERWEITERUNG eines Bestands beschrieben?",
+      "source": "src/kg/kgTagSystemOne.py:52"
+    },
+    "kg-tag-qualifier-rueckbau": {
+      "description": "Construction qualifier question: Rückbau/demolition (kgTagSystemOne)",
+      "text": "Wird ein RÜCKBAU/Rückgang/Abriss beschrieben?",
+      "source": "src/kg/kgTagSystemOne.py:53"
+    },
+    "kg-tag-qualifier-ausbau": {
+      "description": "Construction qualifier question: Ausbau of an existing road (kgTagSystemOne)",
+      "text": "Wird ein AUSBAU einer bestehenden Straße beschrieben?",
+      "source": "src/kg/kgTagSystemOne.py:54"
+    },
+    "kg-diagnose-tune": {
+      "description": "Failure diagnose of failed cross-check pairs (kgTune); {summary}/{source} interpolated at the call site",
+      "text": "Du bist Fehldiagnose-Spezialist. Vergleiche die extrahierten\nAngaben mit dem Originaltext und entscheide:\n\nEntscheidungs-Angaben:\n{summary}\n\nOriginaltext (Auszug):\n{source}\n\nWIDERSPRUCH nur wenn ein extrahierter Wert dem Original EXPLIZIT anders lautet (falsche Stelle, erfundene Kosten, falsches Datum).\nFehlende Verdichtung ist KEIN Widerspruch.\n\nAntworte NUR als JSON: {{\"verdict\": \"passed\"|\"failed\", \"reason\": \"<kurz, deutsch — nenne das Feld und die Diskrepanz>\", \"system_issue\": \"prompt|checker|ocr|model\"}}\n",
+      "source": "src/kg/kgTune.py:44"
+    },
+    "kg-model-select-extraction": {
+      "description": "Minimal JSON extraction instructions for the cloud benchmark path (kgModelSelect)",
+      "text": "Extrahiere die Kernfakten aus dem deutschen Kommunal-Dokument. Antworte NUR mit einem JSON-Objekt (Felder: topic, requested_action, involved_cost, start_date). Fehlende Werte als \"\".",
+      "source": "src/kg/kgModelSelect.py:151"
+    },
+    "kg-field-flags": {
+      "description": "Field-level failure flagging of extracted facts (kgFlagFailures); {summary}/{source} interpolated at the call site",
+      "text": "Du bist ein Zertifikats-Prüfer. Vergleiche die extrahierten\nAngaben mit dem Originaltext und prüfe JEDES genannte Feld einzeln.\n\nEntscheidungs-Angaben:\n{summary}\n\nOriginaltext (Auszug):\n{source}\n\nAntworte NUR als JSON: {{\"fields_affected\": [{{\"field\": \"<excates Feld-Kürzel>\",\n\"mode\": \"<hallucination|date-mismatch|cost-misattribution|executor-mismatch|other>\",\n\"reason\": \"<1 Satz deutsch>\", \"flag\": true|false}}], \"verdict\": \"passed\"|\"failed\"}}\n\nflag=true: der Feld-Wert ist NICHT im Original belegt und muss\naus den Angaben ENTFERNT werden (statt falsch zu stehen).",
+      "source": "src/kg/kgFlagFailures.py:81"
+    },
+    "kg-followup-questions": {
+      "description": "Follow-up question generation over an answer summary, extracted facts and kg-topics (kgFollowups)",
+      "text": "Du bist ein Assistent für das Ratsinformationssystem\nKarlsruhe. Aus dem folgenden Antworttext und den extrahierten Fakten und\nkg-topics (Themen) nenne 3–5 gezielte follow-up-Fragen, die ein Nutzer\nals Follow-up auf diese Antwort stellen könnte. Berücksichtige\nverschiedene Aspekte: Ergebnis/Umsetzung, Kosten, betroffene Orte,\nverwandte Themen (kg-topics), Zeitplan. Antworte NUR mit einem\nJSON-Objekt: {{\"questions\": [\"Frage 1\", \"Frage 2\", ...]}} mit\nhöchstens 5 Fragen. Deutsch.",
+      "source": "src/kg/kgFollowups.py:177"
+    },
+    "intent-decision-question": {
+      "description": "SystemOne intent noul question template (pgIntentRouter build_questions); {intent_name}/{intent_description} interpolated at the call site",
+      "text": "Ist der Intent '{intent_name}' gemeint? ({intent_description})",
+      "source": "src/pgIntentRouter.py:170"
+    },
+    "intent-gremium-slot-question": {
+      "description": "SystemOne choice question template for the gremium slot (pgIntentRouter build_questions)",
+      "text": "Welches Gremium (Rat, Ortschaftsrat, Ausschuss) ist in der Benutzeranfrage gemeint?",
+      "source": "src/pgIntentRouter.py:181"
+    },
+    "rerank-relevance": {
+      "description": "Reranking chat-path system prompt (pgTimeline); {lang} interpolated at the call site",
+      "text": "You are a helpful assistant that scores the relevance of a {lang} text to a user's query in {lang}. Return a score between 0 and 1, where 1 means highly relevant and 0 means not relevant at all. Be strict and focus on meaning, not on word similarity.",
+      "source": "src/pgTimeline.py:106"
+    },
+    "rerank-relevance-user": {
+      "description": "Reranking chat-path user message template (pgTimeline); {query}/{content} interpolated at the call site",
+      "text": "Query: {query}\n\nContent: {content}\n\nReturn only a single number between 0 and 1. Do not return any text other than the number.",
+      "source": "src/pgTimeline.py:108"
+    }
+  }
+}

@@ -103,30 +103,42 @@ def call_reranking_chat_model(query: str, content: str) -> float:
         return 1.0  # If no reranking API is configured, return a default relevance score of 1.0 (keep all results)
     lang = "German"  # Assuming the content and query are in German
     headers = {"Authorization": f"Bearer {RERANKING_API_KEY}"} if RERANKING_API_KEY else {}
-    rerank_prompt = f"You are a helpful assistant that scores the relevance of a {lang} text to a user's query in {lang}. Return a score between 0 and 1, where 1 means highly relevant and 0 means not relevant at all. Be strict and focus on meaning, not on word similarity."
-    #rerank_query = f"Query: {query}\n\nFile content: {content}\n\nBased on the {lang} query and content, how relevant is this {lang} content to the query? Return only a single number between 0 and 1. Do not return any text other than the number."
-    rerank_query = f"Query: {query}\n\nContent: {content}\n\nReturn only a single number between 0 and 1. Do not return any text other than the number."
-    _ensure_log().debug(f"Calling reranking model with query: {query} and content length: {len(content)}")  # Debugging line
-    response = requests.post(
-        RERANKING_API_URL,
-        json={"model": RERANKING_MODEL,  "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
-        headers=headers
+    # instruction templates from the shared prompt registry
+    # (change: centralize-llm-instruction-prompts)
+    rerank_prompt = remote.get_prompt("rerank-relevance").format(lang=lang)
+    rerank_query = remote.get_prompt("rerank-relevance-user").format(
+        query=query, content=content,
     )
-    # handle 429 too many requests error by retrying after a delay. get delay from response headers if available, otherwise default to 5 seconds
-    if response.status_code == 429:
-        for attempt in range(5):  # Retry up to 5 times
-            retry_after = int(response.headers.get("Retry-After", 5))
-            _ensure_log().warning(f"Reranking model rate limited; retrying after {retry_after}s")
-            time.sleep(retry_after)
-            response = requests.post(
-                RERANKING_API_URL,
-                json={"model": RERANKING_MODEL,  "temperature": 0.1, "random_seed": 42, "messages": [{"role": "system", "content": rerank_prompt}, {"role": "user", "content": rerank_query}]},
-                headers=headers
-            )
-            if response.status_code != 429:
-                break
-    response.raise_for_status()
-    result = response.json()
+    _ensure_log().debug(f"Calling reranking model with query: {query} and content length: {len(content)}")  # Debugging line
+    payload = {"model": RERANKING_MODEL, "temperature": 0.1, "random_seed": 42,
+               "messages": [{"role": "system", "content": rerank_prompt},
+                            {"role": "user", "content": rerank_query}]}
+    try:
+        response = requests.post(RERANKING_API_URL, json=payload, headers=headers)
+        # handle 429 too many requests error by retrying after a delay. get delay from response headers if available, otherwise default to 5 seconds
+        if response.status_code == 429:
+            for attempt in range(5):  # Retry up to 5 times
+                retry_after = int(response.headers.get("Retry-After", 5))
+                _ensure_log().warning(f"Reranking model rate limited; retrying after {retry_after}s")
+                time.sleep(retry_after)
+                response = requests.post(RERANKING_API_URL, json=payload, headers=headers)
+                if response.status_code != 429:
+                    break
+        response.raise_for_status()
+        result = response.json()
+    except requests.RequestException as exc:
+        remote.log_llm_call(
+            endpoint=RERANKING_API_URL, model=RERANKING_MODEL, payload=payload,
+            result=None, status="error",
+            prompt_id="rerank-relevance", call_id="pgTimeline.call_reranking_chat_model.1",
+            error=str(exc),
+        )
+        raise
+    remote.log_llm_call(
+        endpoint=RERANKING_API_URL, model=RERANKING_MODEL, payload=payload,
+        result=result, status="ok",
+        prompt_id="rerank-relevance", call_id="pgTimeline.call_reranking_chat_model.1",
+    )
     # Adjust based on actual API response structure
     if isinstance(result, dict) and result.get("choices") and isinstance(result["choices"], list) and len(result["choices"]) > 0:
         score_str = result["choices"][0].get('message', {}).get('content', '0')

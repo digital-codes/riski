@@ -5,6 +5,12 @@ German sample text and asks a model whether the statement set is
 fact-compatible with the pair's source chunks (style irrelevant, facts
 count). Verdicts land in the `crosschecks` table.
 
+> change: centralize-llm-instruction-prompts — the SystemOne contradiction
+> question (id `kg-contradiction-question`) and the chat fallback/tiebreak
+> instruction (id `kg-verdict-tiebreak`) are resolved from
+> `config/instruction_prompts.json`; both calls carry ids and are
+> inspectable in `log/llm_debug.log` (see `docs/prompt-registry.md`).
+
 ## Tuning loop (design D12)
 
 The stage runs **right after each extraction batch** on the same sample

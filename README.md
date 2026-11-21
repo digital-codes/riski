@@ -30,6 +30,7 @@ The pipeline has four stages, all built on two shared layers in `src/`:
 
 - **`src/db`** — centralised database access: credential resolution (`private.py` → environment → defaults, `POSTGRES_URL` override), a cached engine per role (read/write + read-only), `table_exists`, a generic PostgreSQL upsert helper, and a connection context manager.
 - **`src/remote`** — centralised model access against OpenAI-compatible endpoints: `chat()`, `embed()` and `ocr()` with retry/back-off. Endpoints are configurable for fully local operation (llama.cpp / ollama) as well as hosted APIs; keys live in the git-ignored `src/private.py` or environment variables.
+- **Instruction prompt registry** (change: centralize-llm-instruction-prompts) — every instruction part of the prompts sent to `/chat/completions` / `/systemone` endpoints lives in `config/instruction_prompts.json` (verbatim texts, ids, source pointers); `get_prompt(id)`/`has_prompt(id)` resolve them, the path can be redirected with `RISKI_PROMPTS_CONFIG`. Prompt-bearing calls (via `src.remote.chat`, `remote._post`, `KgRemote.chat/chat_json/systemone` and `SystemOneDecoder.decode`) carry a `prompt_id` plus a `call_id` (`<script>.<function>.<call-index>`): a call without these ids is flagged and logged as an error (soft mode) — set `REMOTE_PROMPT_ENFORCE=strict` to refuse such calls before they are sent. Every prompt-bearing call is additionally recorded with full prompt and full result (single-line JSON: ids, endpoint, model, status, duration) in `log/llm_debug.log` for end-to-end inspection; logging is on by default and can be turned off with `REMOTE_LLM_LOG=0` (path override: `REMOTE_LLM_LOG_PATH`).
 
 ## Setup
 
@@ -70,7 +71,8 @@ The pipeline has four stages, all built on two shared layers in `src/`:
      hybrid search catches the error per-signal and continues with the
      remaining signals, so check logs for `failed:` lines after any fix.
 2. **Credentials**: create `src/private.py` (git-ignored) with `DB_USER`, `DB_PWD`, `DB_HOST`, `DB_NAME`, optionally read-only credentials `RO_USER`/`RO_PWD`, and model endpoint configuration (`EMB_*`, `SUMMARY_*`, `OCR_*`, `VIDEO_API_KEY`). Alternatively set `DB_*` / `POSTGRES_URL` / `CHAT_*` / `EMBED_*` environment variables. For test runs with database writes, `.env` may provide `RW_USER`/`RW_PWD`.
-3. **Dependencies**: SQLAlchemy, psycopg2, pgvector, requests, numpy, pandas, geopandas (street/district loading), pytest (tests).
+3. **Instruction prompts**: the texts of the LLM instruction parts live in the committed catalog `config/instruction_prompts.json` (no prompt wording in module code; path override `RISKI_PROMPTS_CONFIG`). Every prompt-bearing model call carries a `prompt_id` + `call_id` and is recorded with full prompt and result in `log/llm_debug.log` — details and inspection recipes in `docs/prompt-registry.md`.
+4. **Dependencies**: SQLAlchemy, psycopg2, pgvector, requests, numpy, pandas, geopandas (street/district loading), pytest (tests).
 
 ## Usage
 

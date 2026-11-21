@@ -45,8 +45,13 @@ class TestSystemOneVerdict:
         from src.kg import kgCrossCheck as cc
 
         assert cc.NOUL_CONTRADICTION_THRESHOLD == 0.5
-        assert "contradicts" in cc._CONTRADICTION_QUESTIONS
-        assert cc._CONTRADICTION_QUESTIONS["contradicts"]["type"] == "noul"
+        questions = cc.contradiction_questions()
+        assert "contradicts" in questions
+        assert questions["contradicts"]["type"] == "noul"
+        # change: centralize-llm-instruction-prompts — the instruction part
+        # resolves from the prompt registry
+        assert questions["contradicts"]["instructions"] == cc.get_prompt(
+            "kg-contradiction-question")
 
     def test_remote_has_systemone(self):
         from src.kg.kgRemote import KgRemote

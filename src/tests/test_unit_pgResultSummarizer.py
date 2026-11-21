@@ -69,6 +69,43 @@ def result():
     return make_result(2)
 
 
+class TestCallIdentification:
+    """change: centralize-llm-instruction-prompts — the summarizer call is
+    identified by prompt id + call id, and its instruction part resolves
+    from the prompt registry."""
+
+    def test_teaser_pass_ids(self, monkeypatch, result):
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen.update(kwargs)
+            seen["system"] = messages[0]
+            return {"content": "Zusammenfassung.", "endpoint": "http://llm"}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        s = ResultSummarizer(FakeSession({"100": ("teaser", None)}))
+        s.summarize(result)
+        assert seen["prompt_id"] == "result-summary"
+        assert seen["call_id"] == "pgResultSummarizer.summarize.1"
+        assert "max_words=500" in seen["system"]["content"] or seen["system"]["content"] == pc.remote.get_prompt("result-summary").format(max_words=500) + ""[:0] or seen["system"]["content"].startswith("Du bist ein Assistent für das Ratsinformationssystem")
+        assert "(als Kurzfassungen/Teaser) gegeben" in seen["system"]["content"]
+
+    def test_refine_pass_ids(self, monkeypatch, result):
+        seen = {}
+
+        def fake_chat(messages, **kwargs):
+            seen.update(kwargs)
+            seen["system"] = messages[0]
+            return {"content": "Zusammenfassung.", "endpoint": "http://llm"}
+
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        s = ResultSummarizer(FakeSession({"100": ("teaser", None)}))
+        s.summarize(result, force=True, use_full_content=True)
+        assert seen["prompt_id"] == "result-summary-refine"
+        assert seen["call_id"] == "pgResultSummarizer.summarize.2"
+        assert "Volltexte" in seen["system"]["content"]
+
+
 class TestQueryGuidedPrompt:
     def test_prompt_carries_query(self, summarizer, result, monkeypatch):
         seen = {}

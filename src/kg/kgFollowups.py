@@ -174,14 +174,8 @@ def effective_query(thread: dict[str, Any], new_query: str) -> str:
 # follow-up question generation
 # ---------------------------------------------------------------------
 
-FOLLOWUP_PROMPT = """Du bist ein Assistent für das Ratsinformationssystem
-Karlsruhe. Aus dem folgenden Antworttext und den extrahierten Fakten und
-kg-topics (Themen) nenne 3–5 gezielte follow-up-Fragen, die ein Nutzer
-als Follow-up auf diese Antwort stellen könnte. Berücksichtige
-verschiedene Aspekte: Ergebnis/Umsetzung, Kosten, betroffene Orte,
-verwandte Themen (kg-topics), Zeitplan. Antworte NUR mit einem
-JSON-Objekt: {{"questions": ["Frage 1", "Frage 2", ...]}} mit
-höchstens 5 Fragen. Deutsch."""
+# instruction prompt registry (change: centralize-llm-instruction-prompts)
+FOLLOWUP_PROMPT_ID = "kg-followup-questions"
 
 FOLLOWUP_MAX = 5
 FOLLOWUP_MIN = 3
@@ -191,7 +185,7 @@ def generate_followups(answer_summary: str, statements: list[dict] | None,
                        topics: list[str] | None, *, model: str | None = None,
                        remote: Any = None) -> dict[str, Any]:
     """LLM-generate follow-ups; returns {questions, topics, generation}. """
-    from src.remote import chat as remote_chat
+    from src.remote import get_prompt
     stmt_bits = json.dumps(statements or [], ensure_ascii=False)[:2000]
     topics_bits = ", ".join(topics or [])
     user = (f"Antwort:\n{answer_summary[:6000]}\n\n"
@@ -203,9 +197,11 @@ def generate_followups(answer_summary: str, statements: list[dict] | None,
     else:
         from src.kg.kgRemote import KgRemote
         client = KgRemote.for_diagnose() or KgRemote("olc")
-    raw = client.chat([{"role": "system", "content": FOLLOWUP_PROMPT},
+    raw = client.chat([{"role": "system", "content": get_prompt(FOLLOWUP_PROMPT_ID)},
                        {"role": "user", "content": user}],
-                      model=model or "glm-5.3-flash:cloud")
+                      model=model or "glm-5.3-flash:cloud",
+                      prompt_id=FOLLOWUP_PROMPT_ID,
+                      call_id="kgFollowups.generate_followups.1")
     try:
         data = json.loads(raw)
     except json.JSONDecodeError:

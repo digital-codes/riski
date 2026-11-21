@@ -33,6 +33,9 @@ from sqlalchemy import MetaData, Table, select, text
 
 from src.apiTrace import trace
 from src.db import get_engine
+# prompt registry helpers (change: centralize-llm-instruction-prompts)
+from src.remote import get_prompt as _registry_get_prompt
+from src.remote import log_llm_call, validate_call_ids
 
 CONFIG_PATH = Path(__file__).parent.parent / "config" / "intents.yaml"
 DEFAULT_FALLBACK_INTENT = "search_topic"
@@ -170,8 +173,13 @@ def build_questions(cfg: Dict[str, Any], gremium_vocab: List[str]) -> Dict[str, 
     for intent in cfg["intents"]:
         questions[intent["name"]] = {
             "type": "noul",
+            # instruction part from the shared prompt registry
+            # (change: centralize-llm-instruction-prompts)
             "instructions": (
-                f"Ist der Intent '{intent['name']}' gemeint? ({intent['description']})"
+                _registry_get_prompt("intent-decision-question").format(
+                    intent_name=intent["name"],
+                    intent_description=intent["description"],
+                )
             ),
             "criteria": {"true": "Ja, passt", "false": "Nein, passt nicht"},
         }
@@ -179,8 +187,7 @@ def build_questions(cfg: Dict[str, Any], gremium_vocab: List[str]) -> Dict[str, 
         questions["slot_gremium"] = {
             "type": "choice",
             "instructions": (
-                "Welches Gremium (Rat, Ortschaftsrat, Ausschuss) ist in der "
-                "Benutzeranfrage gemeint?"
+                _registry_get_prompt("intent-gremium-slot-question")
             ),
             "criteria": {v: f"Gremium {v}" for v in gremium_vocab},
         }
@@ -261,12 +268,20 @@ class SystemOneDecoder:
             raise DecoderError("SYSONE_URL / SYSONE_MDL not configured")
 
     def decode(self, query: str, cfg: Dict[str, Any],
-               gremium_vocab: List[str]) -> Dict[str, Any]:
+               gremium_vocab: List[str],
+               prompt_id: Optional[str] = None,
+               call_id: Optional[str] = None) -> Dict[str, Any]:
         """One round-trip: intent (noul per intent) + slot questions.
 
         Uses an explicit client so the connection (and its pool) is closed
         deterministically — including on timeout — instead of leaving the
-        request dangling."""
+        request dangling. Identified like every prompt-bearing call
+        (change: centralize-llm-instruction-prompts): the ids are validated
+        per the registry policy and the request/answers go to
+        ``log/llm_debug.log``."""
+        prompt_id, call_id = validate_call_ids(
+            prompt_id, call_id, context="pgIntentRouter.SystemOneDecoder.decode",
+        )
         payload = {
             "model": self.model,
             "state": normalize_value(query),
@@ -274,11 +289,20 @@ class SystemOneDecoder:
         }
         headers = {"Authorization": f"Bearer {self.key}"} if self.key else {}
         timeout = httpx.Timeout(self.timeout, connect=min(15.0, self.timeout))
+        import time as _time
+
+        t0 = _time.perf_counter()
         with httpx.Client(timeout=timeout) as client:
             resp = client.post(self.url, json=payload, headers=headers)
             resp.raise_for_status()
             data = resp.json()
-        return parse_answers(cfg, data.get("answers", {}), gremium_vocab)
+        answers = data.get("answers", {})
+        log_llm_call(
+            endpoint=self.url, model=self.model, payload=payload, result=answers,
+            prompt_id=prompt_id, call_id=call_id,
+            duration_ms=round((_time.perf_counter() - t0) * 1000, 1),
+        )
+        return parse_answers(cfg, answers, gremium_vocab)
 
 
 # ----------------------------------------------------------------------
@@ -806,7 +830,11 @@ class IntentRouter:
                 if gremium_intent else []
             )
         try:
-            decoded = self.decoder.decode(query, self.cfg, gremium_vocab)
+            decoded = self.decoder.decode(
+                query, self.cfg, gremium_vocab,
+                prompt_id="intent-decision-question",
+                call_id="pgIntentRouter.IntentRouter.decode.1",
+            )
             decoded["error"] = None
         except Exception as exc:  # noqa: BLE001 - degrade to plain search
             decoded = {

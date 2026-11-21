@@ -1,5 +1,11 @@
 # kgTune — failure diagnosis & prompt tuning (design D14)
 
+> change: centralize-llm-instruction-prompts — the diagnose instruction
+> lives in `config/instruction_prompts.json` (id `kg-diagnose-tune`); the
+> call carries `prompt_id`/`call_id` and is inspectable in
+> `log/llm_debug.log` (see `docs/prompt-registry.md`). Prompt wording
+> itself is tuned in the catalog now, not in module code.
+
 The inline cross-check verdict (d3:2b/metis via SystemOne) yields only a
 noul score — no reason. The first tuning report was therefore empty of
 substance. `kgTune.py` closes that gap: failed pairs are re-examined by

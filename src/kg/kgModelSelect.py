@@ -38,6 +38,7 @@ from src.kg.kgRemote import LANGUAGE_MODELS, KgRemote
 from src.kg.kgStore import KgStore
 from src.kg.kgStatements import StatementExtractor
 from src.kg.kgStatus import StatusTicker
+from src.remote import get_prompt as _get_prompt
 
 DEFAULT_STORE = "results/kg_statements.sqlite"
 DEFAULT_REPORT = "results/kg_model_selection.md"
@@ -105,7 +106,11 @@ def run_model(
             if endpoint == "ollama":
                 req = extractor.extract("request", body)
             else:
-                req = remote.chat_json(extractor_messages("request", body))
+                req = remote.chat_json(
+                    extractor_messages("request", body),
+                    prompt_id=EXTRACTION_PROMPT_ID,
+                    call_id="kgModelSelect.run_model.1",
+                )
             stats["request_ok"] += 1
             stats["field_fill"].append(
                 sum(1 for v in req.values() if str(v or "").strip())
@@ -120,7 +125,11 @@ def run_model(
                 if endpoint == "ollama":
                     resp = extractor.extract("response", body)
                 else:
-                    resp = remote.chat_json(extractor_messages("response", body))
+                    resp = remote.chat_json(
+                        extractor_messages("response", body),
+                        prompt_id=EXTRACTION_PROMPT_ID,
+                        call_id="kgModelSelect.run_model.2",
+                    )
                 stats["response_ok"] += 1
             except Exception:
                 stats["failed"] += 1
@@ -148,14 +157,15 @@ def run_model(
     return stats
 
 
+# instruction prompt registry (change: centralize-llm-instruction-prompts)
+EXTRACTION_PROMPT_ID = "kg-model-select-extraction"
+
+
 def extractor_messages(stage: str, body: str) -> list[dict]:
-    """Minimal JSON extraction messages for the cloud path."""
+    """Minimal JSON extraction messages for the cloud path; the instruction
+    part resolves from the prompt registry."""
     return [
-        {"role": "system", "content": (
-            "Extrahiere die Kernfakten aus dem deutschen Kommunal-Dokument. "
-            "Antworte NUR mit einem JSON-Objekt (Felder: topic, requested_action, "
-            "involved_cost, start_date). Fehlende Werte als \"\"."
-        )},
+        {"role": "system", "content": _get_prompt(EXTRACTION_PROMPT_ID)},
         {"role": "user", "content": body[:12000]},
     ]
 

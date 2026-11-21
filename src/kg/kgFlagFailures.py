@@ -53,6 +53,7 @@ from src.kg.kgRemote import KgRemote
 from src.kg.kgStore import KgStore
 from src.kg.kgStatus import StatusTicker
 from src.kg.kgCrossCheck import render_response_text, source_text
+from src.remote import get_prompt
 from src.db import get_engine as _pg_engine  # noqa: F401 (pg parity later)
 
 log = get_logger("riski.kg.flagfailures")
@@ -78,21 +79,9 @@ FIELD_ALIASES = {
     "beabsichtigte wirkung": "intended_impact",
 }
 
-DIAGNOSE_PROMPT = """Du bist ein Zertifikats-Prüfer. Vergleiche die extrahierten
-Angaben mit dem Originaltext und prüfe JEDES genannte Feld einzeln.
-
-Entscheidungs-Angaben:
-{summary}
-
-Originaltext (Auszug):
-{source}
-
-Antworte NUR als JSON: {{"fields_affected": [{{"field": "<excates Feld-Kürzel>",
-"mode": "<hallucination|date-mismatch|cost-misattribution|executor-mismatch|other>",
-"reason": "<1 Satz deutsch>", "flag": true|false}}], "verdict": "passed"|"failed"}}
-
-flag=true: der Feld-Wert ist NICHT im Original belegt und muss
-aus den Angaben ENTFERNT werden (statt falsch zu stehen)."""
+# change: centralize-llm-instruction-prompts — the instruction text moved to
+# config/instruction_prompts.json (id: kg-field-flags)
+FIELD_FLAGS_PROMPT_ID = "kg-field-flags"
 
 FIELD_KEYS = ["topic", "request_type", "meeting_date", "document_id",
               "file_names", "author", "intended_impact", "audience",
@@ -106,9 +95,12 @@ def field_flags(pair_key: str, stage: str, fields: dict, src: str,
                 remote: KgRemote) -> list[dict]:
     """Diagnose each named field; return the affected-fields verdicts."""
     summary = render_response_text(fields)
-    prompt = DIAGNOSE_PROMPT.format(summary=summary, source=src)
+    prompt = get_prompt(FIELD_FLAGS_PROMPT_ID).format(summary=summary, source=src)
     try:
-        out = remote.chat_json([{"role": "user", "content": prompt}])
+        out = remote.chat_json(
+            [{"role": "user", "content": prompt}],
+            prompt_id=FIELD_FLAGS_PROMPT_ID, call_id="kgFlagFailures.field_flags.1",
+        )
     except Exception as exc:  # noqa: BLE001
         log.warning("flag diagnose failed for %s: %s", pair_key, exc)
         return []

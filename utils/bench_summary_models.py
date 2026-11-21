@@ -59,13 +59,15 @@ TOP_K = 10  # API default
 
 
 def build_prompt(session, query):
-    """Production search once + capture the exact summary prompt."""
+    """Production search once + capture the exact summary prompt (incl. its
+    prompt id / call id, change: centralize-llm-instruction-prompts)."""
     result = search_and_build_timeline(session, query, top_k=TOP_K)
     captured = {}
     orig_chat = remote.chat
 
     def spy(messages, **kw):
         captured["messages"] = messages
+        captured["ids"] = (kw.get("prompt_id"), kw.get("call_id"))
         return {"content": "[dummy response]"}
 
     remote.chat = spy
@@ -73,7 +75,7 @@ def build_prompt(session, query):
         ResultSummarizer(session).summarize(result)
     finally:
         remote.chat = orig_chat
-    return captured["messages"], len(result.get("top_files") or [])
+    return captured["messages"], len(result.get("top_files") or []), captured["ids"]
 
 
 def build_refine_prompt(session, query):
@@ -85,6 +87,7 @@ def build_refine_prompt(session, query):
 
     def spy(messages, **kw):
         captured["messages"] = messages
+        captured["ids"] = (kw.get("prompt_id"), kw.get("call_id"))
         return {"content": "[dummy response]"}
 
     remote.chat = spy
@@ -92,14 +95,15 @@ def build_refine_prompt(session, query):
         ResultSummarizer(session).summarize(result, force=True, use_full_content=True)
     finally:
         remote.chat = orig_chat
-    return captured["messages"], len(result.get("top_files") or [])
+    return captured["messages"], len(result.get("top_files") or []), captured["ids"]
 
 
-def call(messages, url, model, key):
+def call(messages, url, model, key, prompt_id=None, call_id=None):
     payload = {"model": model, "temperature": 0.1, "messages": messages}
     t0 = time.perf_counter()
     data = remote._post("chat/completions", payload, timeout=240,
-                        base_url=url, api_key=key)
+                        base_url=url, api_key=key,
+                        prompt_id=prompt_id, call_id=call_id)
     dt = time.perf_counter() - t0
     usage = data.get("usage") or {}
     return dt, usage.get("prompt_tokens"), usage.get("completion_tokens")
@@ -128,16 +132,16 @@ def main():
         per_query = {}
         # availability guard: local endpoints may be down — skip silently
         try:
-            msgs, _ = build_prompt(session, QUERIES[0])
-            call(msgs, url, model, key)  # warmup (not counted)
+            msgs, _, ids = build_prompt(session, QUERIES[0])
+            call(msgs, url, model, key, *ids)  # warmup (not counted)
         except Exception as exc:  # noqa: BLE001
             print(f"  skipped: endpoint unavailable ({str(exc)[:120]})", flush=True)
             continue
         for q in QUERIES:
-            msgs, n_files = build_prompt(session, q)
+            msgs, n_files, ids = build_prompt(session, q)
             runs = []
             for i in range(RUNS):
-                dt, pt, ct = call(msgs, url, model, key)
+                dt, pt, ct = call(msgs, url, model, key, *ids)
                 tps = (ct / dt) if (ct and dt) else None
                 runs.append({"s": round(dt, 2), "ptok": pt, "ctok": ct,
                              "tok_s": round(tps, 1) if tps else None})
@@ -149,9 +153,9 @@ def main():
             # context window silently, so a prompt_tokens value at/above
             # ~95% of the limit means content was cut off
             if not args.skip_refine:
-                rmsgs, _ = build_refine_prompt(session, q)
+                rmsgs, _, rids = build_refine_prompt(session, q)
                 try:
-                    _, rpt, rct = call(rmsgs, url, model, key)
+                    _, rpt, rct = call(rmsgs, url, model, key, *rids)
                 except Exception as exc:  # noqa: BLE001
                     print(f"  refine check failed: {str(exc)[:120]}", flush=True)
                     rpt = None

@@ -43,6 +43,7 @@ from src.db import get_engine, get_logger
 from src.kg.kgRemote import KgRemote
 from src.kg.kgStore import KgStore
 from src.kg.kgStatus import StatusTicker
+from src.remote import get_prompt
 
 log = get_logger("riski.kg.crosscheck")
 
@@ -56,20 +57,25 @@ DEFAULT_REPORT = "results/kg_crosscheck_tuning.md"
 DEFAULT_VERDICT_MODEL = "d3:2b"
 NOUL_CONTRADICTION_THRESHOLD = 0.5
 
-_CONTRADICTION_QUESTIONS = {
-    "contradicts": {
-        "type": "noul",
-        "instructions": (
-            "Widersprechen sich die Entscheidungs-Angaben und der "
-            "Originaltext in Fakten (falsche Stelle, erfundene Kosten, "
-            "falsches Datum, explizit anders lautender Fakt)?"
-        ),
-        "criteria": {
-            "true": "Ja, sie widersprechen sich in Fakten.",
-            "false": "Nein, sie widersprechen sich nicht.",
-        },
+# change: centralize-llm-instruction-prompts — the SystemOne question
+# instructions and the chat fallback instruction text moved to
+# config/instruction_prompts.json (ids: kg-contradiction-question /
+# kg-verdict-tiebreak); question assembly and answer criteria stay here.
+
+
+def contradiction_questions() -> dict:
+    """Cross-check SystemOne questions with the `instructions` field
+    resolved from the prompt registry."""
+    return {
+        "contradicts": {
+            "type": "noul",
+            "instructions": get_prompt("kg-contradiction-question"),
+            "criteria": {
+                "true": "Ja, sie widersprechen sich in Fakten.",
+                "false": "Nein, sie widersprechen sich nicht.",
+            },
+        }
     }
-}
 
 _HEAD_CHUNKS_SQL = text(
     """
@@ -127,24 +133,14 @@ def source_text(conn: Any, doc_keys: list[str], cap: int = 9000) -> str:
     return "\n\n".join(parts)
 
 
-VERDICT_PROMPT = """Du bist ein Prüfassistant. Vergleiche die folgende
-zusammengefassten Entscheidungs-Angaben mit dem Originaltext.
+VERDICT_PROMPT = "kg-verdict-tiebreak"  # id in config/instruction_prompts.json
 
-Entscheidungs-Angaben:
-{summary}
 
-Originaltext (Auszug):
-{source}
-
-Prüfe NUR den Faktenvergleich (Stil ist egal):
-- "failed" NUR wenn die Zusammenfassung dem Originaltext WIDERSPRICHT
-  (falsche ausführende Stelle, erfundene Kosten, falsches Datum, ein
-  Fakt, der im Originaltext explizit anders steht).
-- Fehlende Angaben sind KEIN Grund für "failed" — Kürzung ist erlaubt.
-- Nenne im reason die konkrete Widerspruchsstelle, sonst "".
-
-Antworte NUR als JSON: {{"verdict": "passed"|"failed", "reason": "<kurz, deutsch>"}}
-"""
+def verdict_prompt(summary: str, source: str) -> str:
+    """Fallback instruction text from the prompt registry (id:
+    kg-verdict-tiebreak), formatted with the decision summary and the
+    original text."""
+    return get_prompt(VERDICT_PROMPT).format(summary=summary, source=source)
 
 
 def classify_mismatch(reason: str) -> str:
@@ -202,7 +198,11 @@ def check_pair(
         verdict, reason = None, ""
         # 1st choice: d3:2b SystemOne verdict (noul score, threshold)
         try:
-            answers = remote.systemone(state, _CONTRADICTION_QUESTIONS)
+            answers = remote.systemone(
+                state, contradiction_questions(),
+                prompt_id="kg-contradiction-question",
+                call_id="kgCrossCheck.check_pair.1",
+            )
             noul = float(answers.get("contradicts", {}).get("noul", 0.0))
             verdict = "failed" if noul >= NOUL_CONTRADICTION_THRESHOLD else "passed"
             reason = f"systemone noul={noul:.3f}"
@@ -211,15 +211,17 @@ def check_pair(
         # fallback: language-model JSON verdict
         if verdict is None:
             try:
-                prompt = VERDICT_PROMPT.format(summary=summary, source=src[:9000])
+                prompt = verdict_prompt(summary, src[:9000])
                 out = remote.chat_json(
-                    [{"role": "user", "content": prompt}], model=verdict_model, num_ctx=8192
+                    [{"role": "user", "content": prompt}], model=verdict_model, num_ctx=8192,
+                    prompt_id="kg-verdict-tiebreak", call_id="kgCrossCheck.check_pair.2",
                 )
                 verdict = str(out.get("verdict", "")).lower()
                 reason = str(out.get("reason", ""))
                 if verdict not in ("passed", "failed") and tiebreak_model:
                     out = remote.chat_json(
-                        [{"role": "user", "content": prompt}], model=tiebreak_model, num_ctx=8192
+                        [{"role": "user", "content": prompt}], model=tiebreak_model, num_ctx=8192,
+                        prompt_id="kg-verdict-tiebreak", call_id="kgCrossCheck.check_pair.3",
                     )
                     verdict = str(out.get("verdict", "")).lower()
                     reason = str(out.get("reason", ""))

@@ -10,8 +10,8 @@ from src.pgSummarize import request_summary, _strip_code_fence
 def mock_chat(monkeypatch):
     calls = []
 
-    def _chat(messages, model=None, temperature=0.0, thinking=False):
-        calls.append({"messages": messages, "thinking": thinking})
+    def _chat(messages, model=None, temperature=0.0, thinking=False, **kwargs):
+        calls.append({"messages": messages, "thinking": thinking, **kwargs})
         return {"content": "Zusammenfassung.", "total_tokens": 10}
 
     monkeypatch.setattr(pgSummarize, "chat", _chat)
@@ -30,11 +30,16 @@ class TestRequestSummary:
         assert messages[0]["role"] == "system"
         assert "Kommentator" in messages[0]["content"]
         assert messages[1] == {"role": "user", "content": "Berichttext"}
+        # change: centralize-llm-instruction-prompts
+        assert mock_chat[0]["prompt_id"] == "report-summarize"
+        assert mock_chat[0]["call_id"] == "pgSummarize.request_summary.1"
 
     def test_prompt_is_module_level(self):
         # Regression: prompt used to be trapped inside _run_summarizer
-        assert "Kommentator" in pgSummarize.PROMPT
-        assert "{report}" in pgSummarize.PROMPT
+        # change: centralize-llm-instruction-prompts — the instruction text
+        # lives in the shared catalog (id: report-summarize)
+        assert "Kommentator" in pgSummarize.get_prompt("report-summarize")
+        assert "{report}" in pgSummarize.get_prompt("report-summarize")
 
     def test_thinking_flag_forwarded(self, mock_chat):
         request_summary("x", thinking=True)

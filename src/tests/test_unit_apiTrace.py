@@ -187,7 +187,7 @@ class TestIntentRouteTrace:
         monkeypatch.setattr(ir, "build_slot_vocab", lambda conn, intent, slot: [])
 
         class StubDecoder:
-            def decode(self, query, cfg, gremium_vocab):
+            def decode(self, query, cfg, gremium_vocab, **kwargs):
                 return {"intent": "ask_decision_date",
                         "scores": {"search_topic": 0.1,
                                    "ask_decision_date": 0.9},
@@ -212,7 +212,7 @@ class TestIntentRouteTrace:
         monkeypatch.setattr(ir, "build_slot_vocab", lambda conn, intent, slot: [])
 
         class BoomDecoder:
-            def decode(self, query, cfg, gremium_vocab):
+            def decode(self, query, cfg, gremium_vocab, **kwargs):
                 raise ConnectionError("sysone down")
 
         router = ir.IntentRouter(cfg=ir.load_intents_config())
@@ -433,7 +433,7 @@ class TestKgTrace:
             # client (its .chat method is used, no real LLM call)
             chat_json = lambda *a, **k: None  # noqa: E731
 
-            def chat(self, messages, model=None):
+            def chat(self, messages, model=None, **kwargs):
                 return '{"questions": ["Q1?", "Q2?", "Q3?"]}'
 
         out = kf.generate_followups("Antworttext.", statements=None,

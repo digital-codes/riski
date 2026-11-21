@@ -23,7 +23,7 @@ import pandas as pd
 # ----------------------------------------------------------------------
 # Shared remote helper
 # ----------------------------------------------------------------------
-from src.remote import chat
+from src.remote import chat, get_prompt
 
 # ----------------------------------------------------------------------
 # Configuration – directories remain the same as original script
@@ -32,43 +32,23 @@ SRC_DIR = Path("./ko_extracted")
 DST_DIR = Path("./ko_sums")
 CUTOFF = 8000
 # ----------------------------------------------------------------------
-# Prompt – unchanged (German instructions)
+# Prompt – moved to config/instruction_prompts.json (id: report-summarize)
+# (change: centralize-llm-instruction-prompts; the {report} placeholder in
+# the catalog text is historic — the original code never interpolated it,
+# the report only travels as the user message; behavior kept identical)
 # ----------------------------------------------------------------------
-PROMPT = """
-Du bist ein Kommentator. Deine Aufgabe ist es, eine Zusammenfassung eines Bericht einer
-Verwaltungssitzung oder einer Verwaltungsvorlage zu schreiben.
-Wenn dir der Bericht vorgelegt wird, beantworte folgende Fragen dazu, sofern möglich:
-
- 1) welche person legt den bericht vor
- 2) was ist das datum des berichts
- 3) bei welchem gremium war die sitzung oder bei welchem gremium wurde die vorlage behandelt
- 4) was ist das thema des berichts
- 5) was ist der titel des bericht. Leite einen passenden title vom thema ab, wenn keiner explizit angegeben wird
- 6) Welches sind die wichtigstens Argumente im bericht
- 7) Gibt es ein Ergebnis oder einen Beschluss? Wenn ja, welches.
-
-Anschließend kombiniere alle Informationen und verfasse einen Zusammenfassung  im Markdown‑Format. Verwende keine
-```markdown ... ``` code fence, sondern schreibe die Zusammenfassung direkt als Fließtext.
-
-Antworte nur auf Deutsch, auch wenn der Bericht englischen Text enthält.
-Verwende die Informationen im Bericht, um die Fragen zu beantworten,
-und füge keine Informationen hinzu, die nicht im Bericht enthalten sind.
-Wenn eine Information nicht im Bericht enthalten ist, lasse sie einfach weg.
-
-Stelle sicher, dass Dein Bericht insgesamt nicht länger ist als CUTOFF Zeichen.
-
-{report}
-
-"""
 
 
 def request_summary(report: str, thinking: bool = False) -> str:
     """Summarise *report* via the shared chat client and return the content."""
     messages = [
-        {"role": "system", "content": PROMPT},
+        {"role": "system", "content": get_prompt("report-summarize")},
         {"role": "user", "content": report},
     ]
-    result = chat(messages, thinking=thinking)
+    result = chat(
+        messages, thinking=thinking,
+        prompt_id="report-summarize", call_id="pgSummarize.request_summary.1",
+    )
     return result.get("content", "")
 
 

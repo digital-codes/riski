@@ -1,5 +1,6 @@
 """Unit tests for src.remote – all HTTP mocked, no network access."""
 
+import json
 import types
 
 import pytest
@@ -26,6 +27,23 @@ class _FakeResponse:
 def _fast_retries(monkeypatch):
     monkeypatch.setenv("REMOTE_MAX_RETRIES", "3")
     monkeypatch.setenv("REMOTE_BASE_DELAY", "0")
+
+
+@pytest.fixture(autouse=True)
+def _llm_log_tmp(tmp_path, monkeypatch):
+    """Every test writes its call-log entries into a private temp file."""
+    monkeypatch.setenv("REMOTE_LLM_LOG", "1")
+    monkeypatch.setenv("REMOTE_LLM_LOG_PATH", str(tmp_path / "llm_debug.log"))
+    remote._reset_llm_log()
+    yield
+    remote._reset_llm_log()
+
+
+def _read_log_entries(tmp_path):
+    path = tmp_path / "llm_debug.log"
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
 
 
 def test_post_retries_transient_failure(monkeypatch):
@@ -111,6 +129,8 @@ def test_chat_success(monkeypatch):
         "usage": {"prompt_tokens": 1, "completion_tokens": 2, "total_tokens": 3},
         "impact": None,
         "endpoint": remote.CHAT_BASE_URL,
+        "prompt_id": None,
+        "call_id": None,
     }
 
 
@@ -351,3 +371,133 @@ class TestConfigAliases:
         fake = types.SimpleNamespace(SUMMARY_MDL="mistral-small-2603", LLM_MDL="granite4.1:3b")
         monkeypatch.setattr(remote, "_pr", fake)
         assert remote._get_first([("SUMMARY_MDL", "CHAT_MODEL"), ("LLM_MDL", "LLM_MDL")], "d") == "mistral-small-2603"
+
+
+class TestCallIdentification:
+    """Prompt-registry policy: prompt_id/call_id required on prompt-bearing
+    calls, flagged as errors when missing, recorded in the call debug log
+    (change: centralize-llm-instruction-prompts)."""
+
+    def test_chat_with_ids_result_logged_and_echoed(self, monkeypatch, tmp_path):
+        def ok(url, headers=None, json=None, timeout=None):
+            return _FakeResponse(200, {"choices": [{"message": {"content": "hello"}}],
+                                       "model": "m-1"})
+
+        monkeypatch.setattr(remote.requests, "post", ok)
+        result = remote.chat(
+            [{"role": "system", "content": "instr"},
+             {"role": "user", "content": "hi"}],
+            model="explicit-model",
+            prompt_id="teaser-summarize",
+            call_id="someScript.f.1",
+        )
+        assert result["prompt_id"] == "teaser-summarize"
+        assert result["call_id"] == "someScript.f.1"
+        entries = _read_log_entries(tmp_path)
+        assert len(entries) == 1
+        e = entries[0]
+        assert e["call_id"] == "someScript.f.1"
+        assert e["prompt_id"] == "teaser-summarize"
+        assert e["endpoint"] == remote.CHAT_BASE_URL
+        assert e["model"] == "explicit-model"
+        assert e["status"] == "ok"
+        assert e["prompt"]["messages"] == [
+            {"role": "system", "content": "instr"},
+            {"role": "user", "content": "hi"},
+        ]
+        # full caller-facing result recorded
+        assert e["result"]["content"] == "hello"
+        assert e["result"]["prompt_id"] == "teaser-summarize"
+        assert isinstance(e["duration_ms"], float)
+
+    def test_chat_missing_ids_flagged_but_call_proceeds(self, monkeypatch, tmp_path, caplog):
+        def ok(url, headers=None, json=None, timeout=None):
+            return _FakeResponse(200, {"choices": [{"message": {"content": "hello"}}]})
+
+        monkeypatch.setattr(remote.requests, "post", ok)
+        with caplog.at_level("ERROR"):
+            result = remote.chat([{"role": "user", "content": "hi"}])
+        assert result["content"] == "hello"  # call unaffected in soft mode
+        assert "missing prompt_id" in caplog.text
+        entries = _read_log_entries(tmp_path)
+        # flagged immediate entry + completion entry
+        assert any(e.get("error") == "remote.chat: missing prompt_id, call_id" for e in entries)
+        completion = [e for e in entries if e["status"] == "ok"]
+        assert len(completion) == 1
+        assert completion[0]["result"]["content"] == "hello"
+
+    def test_chat_strict_mode_raises_without_http(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("REMOTE_PROMPT_ENFORCE", "strict")
+        calls = {"n": 0}
+
+        def post(url, headers=None, json=None, timeout=None):
+            calls["n"] += 1
+            return _FakeResponse(200, {"choices": [{"message": {"content": "x"}}]})
+
+        monkeypatch.setattr(remote.requests, "post", post)
+        with pytest.raises(ValueError):
+            remote.chat([{"role": "user", "content": "hi"}])
+        assert calls["n"] == 0  # refused before the request is sent
+        assert _read_log_entries(tmp_path) == []
+
+    def test_post_with_ids_is_logged(self, monkeypatch, tmp_path):
+        def ok(url, headers=None, json=None, timeout=None):
+            return _FakeResponse(200, {"data": [{"embedding": [1.0]}]})
+
+        monkeypatch.setattr(remote.requests, "post", ok)
+        remote._post("chat/completions", {"model": "m", "messages": [{"role": "user", "content": "q"}]},
+                     prompt_id="x-prompt", call_id="s.f.1")
+        entries = _read_log_entries(tmp_path)
+        assert len(entries) == 1
+        e = entries[0]
+        assert e["prompt_id"] == "x-prompt"
+        assert e["call_id"] == "s.f.1"
+        assert e["prompt"]["messages"][0]["content"] == "q"
+        assert e["status"] == "ok"
+
+    def test_post_without_ids_not_logged(self, monkeypatch, tmp_path):
+        def ok(url, headers=None, json=None, timeout=None):
+            return _FakeResponse(200, {"data": [{"embedding": [1.0]}]})
+
+        monkeypatch.setattr(remote.requests, "post", ok)
+        remote._post("embeddings", {"model": "m", "input": ["t"]})
+        assert _read_log_entries(tmp_path) == []
+
+    def test_log_opt_out_env(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("REMOTE_LLM_LOG", "0")
+
+        def ok(url, headers=None, json=None, timeout=None):
+            return _FakeResponse(200, {"choices": [{"message": {"content": "x"}}]})
+
+        monkeypatch.setattr(remote.requests, "post", ok)
+        result = remote.chat([{"role": "user", "content": "hi"}],
+                             prompt_id="p", call_id="s.f.1")
+        assert result["content"] == "x"  # call unaffected
+        assert _read_log_entries(tmp_path) == []
+
+    def test_log_write_failure_does_not_break_call(self, monkeypatch, tmp_path):
+        # unwritable path (a directory instead of a file) → write fails once,
+        # latch disables further logging, the CALL still succeeds
+        monkeypatch.setenv("REMOTE_LLM_LOG_PATH", str(tmp_path / "log_dir"))
+
+        def ok(url, headers=None, json=None, timeout=None):
+            return _FakeResponse(200, {"choices": [{"message": {"content": "fine"}}]})
+
+        monkeypatch.setattr(remote.requests, "post", ok)
+        first = remote.chat([{"role": "user", "content": "hi"}], prompt_id="p", call_id="s.f.1")
+        second = remote.chat([{"role": "user", "content": "hi"}], prompt_id="p", call_id="s.f.1")
+        assert first["content"] == "fine" and second["content"] == "fine"
+        assert (tmp_path / "log_dir" / "llm_debug.log").exists() is False
+
+    def test_chat_error_status_logged(self, monkeypatch, tmp_path):
+        def fail(url, headers=None, json=None, timeout=None):
+            raise requests.ConnectionError("down")
+
+        monkeypatch.setattr(remote.requests, "post", fail)
+        result = remote.chat([{"role": "user", "content": "hi"}], prompt_id="p", call_id="s.f.1")
+        assert result["content"] == "[dummy response]"
+        entries = [e for e in _read_log_entries(tmp_path) if e["status"] == "error"
+                   and e.get("result")]
+        assert len(entries) == 1
+        assert entries[0]["result"]["content"] == "[dummy response]"
+        assert "down" in entries[0]["error"]

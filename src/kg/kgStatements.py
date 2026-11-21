@@ -46,6 +46,7 @@ from src.kg.kgRemote import KgRemote
 from src.kg.kgStore import KgStore
 from src.kg.kgStatus import StatusTicker
 from src.kg.kgVocab import load_vocab
+from src.remote import get_prompt
 
 log = get_logger("riski.kg.statements")
 
@@ -84,44 +85,10 @@ RESPONSE_FIELDS = [
     "source_refs",
 ]
 
-_REQUEST_PROMPT = """Du bist ein extrahierender Assistent. Extrahiere die Kernfakten aus dem
-folgenden deutschen Dokument (Antrag/Anfrage der Karlsruher
-Kommunalpolitik) und antworte AUSSCHLIESSLICH mit einem JSON-Objekt mit
-genau diesen Feldern:
-
-{fields}
-
-Regeln:
-- ALLE Feldinhalte streng auf DEUTSCH — übernimm die Worte des
-  Dokuments, übersetze nicht, paraphrasiere nicht ins Englische.
-- Nur Fakten aus dem Dokument. Wenn etwas nicht drinsteht: leere
-  Zeichenkette (""), niemals erfinden.
-- involved_cost / start_date / end_date nur mit wörtlichen Werten aus
-  dem Text (Zahl + Währung/Zeitraum so wie sie dasteht). NIEMALS
-  rechnen, ableiten oder aus Titel/Referenz schließen; fehlt ein
-  expliziter Wert im Dokument: "".
-- source_refs: Liste der Dokument-IDs/Dateinamen, aus denen die Werte stammen;
-  sonst [].
-"""
-
-_RESPONSE_PROMPT = """Du bist ein extrahierender Assistent. Das Folgende sind
-Reaktions-/Entscheidungstexte (Protokoll, Beschluss, Antwort) zu einem
-Antrag des Gemeinderats Karlsruhe. Extrahiere die Kernfakten und antworte
-AUSSCHLIESSLICH mit einem JSON-Objekt mit genau diesen Feldern:
-
-{fields}
-
-Regeln:
-- ALLE Feldinhalte streng auf DEUTSCH — übernimme die Worte des
-  Dokuments, übersetze nicht, paraphrasiere nicht ins Englische.
-- Nur Fakten aus den Texten. Fehlt etwas: "" (niemals erfinden).
-- response_type: einer von zugestimmt/abgelehnt/vertagt/verwiesen/
-  zur_kenntnis_gekommen/erledigt/ja_stellungnahme/anders.
-- request_modifications: Ände von Antrag beschrieben ("" falls keine).
-- dependencies_constraints: Bedingungen/Fallstricke (z.B. Drittmittel,
-  Haushaltssperre) oder "".
-- source_refs: Liste der Dokument-IDs/Dateinamen, sonst [].
-"""
+# change: centralize-llm-instruction-prompts — the request/response
+# extraction instruction texts moved to config/instruction_prompts.json
+# (ids: kg-statement-request / kg-statement-response); the {fields}
+# placeholder is formatted at the call site so vocab changes stay in code.
 
 
 def texts_for_role(conn: Any, doc_keys: list[str], n_docs: int = 4) -> tuple[str, list[str]]:
@@ -166,7 +133,13 @@ class StatementExtractor:
     # ------------------------------------------------------------------
     def extract(self, stage: str, body: str, extra: str = "") -> dict:
         fields = ", ".join('"' + f + '"' for f in (REQUEST_FIELDS if stage == "request" else RESPONSE_FIELDS))
-        prompt = (_REQUEST_PROMPT if stage == "request" else _RESPONSE_PROMPT).format(fields=fields)
+        # instruction part from the shared prompt registry
+        # (change: centralize-llm-instruction-prompts)
+        if stage == "request":
+            prompt_id, call_id = "kg-statement-request", "kgStatements.extract.1"
+        else:
+            prompt_id, call_id = "kg-statement-response", "kgStatements.extract.2"
+        prompt = get_prompt(prompt_id).format(fields=fields)
         if extra:
             prompt += f"\n{extra}"
         return self.remote.chat_json(
@@ -175,6 +148,8 @@ class StatementExtractor:
                 {"role": "user", "content": body or "<kein Text>"},
             ],
             model=self.model,
+            prompt_id=prompt_id,
+            call_id=call_id,
         )
 
     # ------------------------------------------------------------------

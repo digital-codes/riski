@@ -138,7 +138,7 @@ class TestDecoderFallback:
 
     def test_decode_success_passthrough(self, cfg):
         class StubDecoder:
-            def decode(self, query, cfg, vocab):
+            def decode(self, query, cfg, vocab, **kwargs):
                 return {"intent": "ask_gremium_recent", "scores": {}, "slots": {"gremium": "ortschaftsrat neureut"}}
 
         router = IntentRouter(cfg=cfg, decoder=StubDecoder())

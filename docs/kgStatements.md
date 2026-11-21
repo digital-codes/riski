@@ -5,6 +5,12 @@ LLM calls (design D5/D11) extract concise German grounding statements.
 Output goes into the SQLite `statements` table; processed pairs move
 `identified → statements` (resume-safe — re-runs skip them).
 
+> change: centralize-llm-instruction-prompts — both stage instructions live
+> in `config/instruction_prompts.json` (ids `kg-statement-request` /
+> `kg-statement-response`); the `{fields}` list is formatted at the call
+> site. Each call carries `prompt_id`/`call_id` and is inspectable in
+> `log/llm_debug.log` (see `docs/prompt-registry.md`).
+
 ## Extraction fields
 
 **Request stage** (source: request + modification documents):

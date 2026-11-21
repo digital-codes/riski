@@ -55,43 +55,9 @@ _FULL_CONTENT_FACTOR = 4
 # and disclose the excluded ones in a trailing note — referencing them by
 # their Datei number so the verdict is machine-parseable (the map view
 # uses it to skip georeferences from refused documents).
-_SYSTEM_PROMPT = (
-    "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine "
-    "Frage und eine nummerierte Liste von Dokumenten (als "
-    "Kurzfassungen/Teaser) gegeben.\n"
-    "1) Beurteile zunächst für jedes Dokument, ob es inhaltlich zur "
-    "gestellten Frage beiträgt.\n"
-    "2) Fasse NUR die relevanten Dokumente auf Deutsch zusammen — in "
-    "Hinblick auf die Frage. Nenne die für die Frage wichtigsten "
-    "Dokumente und Ergebnisse. Bleibe unter {max_words} Wörtern. Keine "
-    "Emojis.\n"
-    "3) Hänge an das Ende einen Abschnitt '**Nicht berücksichtigte "
-    "Dokumente:**' an. Liste dort jede als nicht relevant eingestufte "
-    "Datei als eigene Zeile '- Datei <Nummer>: <Titel>' auf (Nummer = "
-    "Nummer aus der Dokumentenliste). Wenn alle Dokumente relevant waren, "
-    "schreibe dort 'Alle Dokumente wurden berücksichtigt.'\n"
-    "Antworte nur mit der Zusammenfassung (inklusive dieses Abschnitts)."
-)
-
-# Refinement prompt (user action, full content): NO document selection —
-# the document set comes from the initial selection or the user's
-# include/exclude toggles, so the model must read everything provided and
-# deliver a concise but COMPLETE overview with per-document references
-# (change: summary-refine-file-control).
-_REFINE_SYSTEM_PROMPT = (
-    "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine "
-    "Frage und eine nummerierte Liste von Dokumenten (Volltexte) gegeben. "
-    "Die Dokumentenauswahl wurde bereits getroffen — treffe KEINE eigene "
-    "Auswahl und lasse KEIN Dokument aus.\n"
-    " Lies alle bereitgestellten Inhalte vollständig und erstelle eine "
-    "prägnante, aber VOLLSTÄNDIGE Übersicht auf Deutsch, die die Frage "
-    "beantwortet: Themen, Entscheidungen, Beschlüsse, Verantwortlichkeiten "
-    "und Widersprüche zwischen den Dokumenten. Belege jede Aussage mit "
-    "einer Dokumentreferenz '(Datei N)'. Bleibe unter {max_words} Wörtern. "
-    "Keine Emojis.\n"
-    "Antworte nur mit der Übersicht."
-)
-
+# change: centralize-llm-instruction-prompts — the instruction texts of both
+# summarizer passes moved to config/instruction_prompts.json (ids:
+# result-summary / result-summary-refine)
 _TEASER_MAX_WORDS = 500
 _REFINE_MAX_WORDS = 900
 
@@ -302,12 +268,25 @@ class ResultSummarizer:
             grounding_note = ""
 
         max_words = _REFINE_MAX_WORDS if use_full_content else _TEASER_MAX_WORDS
-        system_prompt = (_REFINE_SYSTEM_PROMPT if use_full_content else _SYSTEM_PROMPT)
+        # instruction parts from the shared prompt registry
+        # (change: centralize-llm-instruction-prompts); ids distinguish the
+        # two call paths: .1 = teaser summary, .2 = full-content refinement
+        if use_full_content:
+            system_prompt = remote.get_prompt("result-summary-refine")
+            prompt_id = "result-summary-refine"
+            call_id = "pgResultSummarizer.summarize.2"
+        else:
+            system_prompt = remote.get_prompt("result-summary")
+            prompt_id = "result-summary"
+            call_id = "pgResultSummarizer.summarize.1"
         messages = [
             {"role": "system", "content": system_prompt.format(max_words=max_words) + grounding_note},
             {"role": "user", "content": prompt},
         ]
-        response = remote.chat(messages, model=self.model, temperature=self.temperature)
+        response = remote.chat(
+            messages, model=self.model, temperature=self.temperature,
+            prompt_id=prompt_id, call_id=call_id,
+        )
         summary = response.get("content", "")
         if not summary or summary == "[dummy response]":
             # LLM failure on a (re)finement run: the exclusion set was

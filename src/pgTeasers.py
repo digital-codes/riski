@@ -85,15 +85,19 @@ def make_request(text, lang="de", maxlen=DEFAULT_MAX_LEN, model=None):
     lang_map = {"de": "German", "en": "English"}
     lang_setting = lang_map.get(lang.lower(), "German")
 
-    prompt = f"""Summarize this document in 3-5 sentences.
-    Maximum {maxlen} words. Focus on main topic.
-    Language must be: {lang_setting} (do not mix languages)
-    """
+    # instruction part from the shared prompt registry
+    # (change: centralize-llm-instruction-prompts)
+    prompt = remote.get_prompt("teaser-summarize").format(
+        maxlen=maxlen, lang_setting=lang_setting,
+    )
     messages = [
         {"role": "system", "content": prompt},
         {"role": "user", "content": f"Document text: {text[:TEXT_EXCERPT_MAXLEN] if len(text) > TEXT_EXCERPT_MAXLEN else text}"},
     ]
-    result = remote.chat(messages, model=model, temperature=SUMMARY_TEMP)
+    result = remote.chat(
+        messages, model=model, temperature=SUMMARY_TEMP,
+        prompt_id="teaser-summarize", call_id="pgTeasers.make_request.1",
+    )
     response = (result.get("content") or "").strip()
     if not response or response == _DUMMY_CONTENT:
         return None

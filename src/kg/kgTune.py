@@ -38,23 +38,12 @@ from src.kg.kgRemote import KgRemote
 from src.kg.kgStore import KgStore
 from src.kg.kgStatus import StatusTicker
 from src.kg.kgCrossCheck import render_response_text, source_text
+from src.remote import get_prompt as _get_prompt
 
 log = get_logger("riski.kg.tune")
 
-DIAGNOSE_PROMPT = """Du bist Fehldiagnose-Spezialist. Vergleiche die extrahierten
-Angaben mit dem Originaltext und entscheide:
-
-Entscheidungs-Angaben:
-{summary}
-
-Originaltext (Auszug):
-{source}
-
-WIDERSPRUCH nur wenn ein extrahierter Wert dem Original EXPLIZIT anders lautet (falsche Stelle, erfundene Kosten, falsches Datum).
-Fehlende Verdichtung ist KEIN Widerspruch.
-
-Antworte NUR als JSON: {{"verdict": "passed"|"failed", "reason": "<kurz, deutsch — nenne das Feld und die Diskrepanz>", "system_issue": "prompt|checker|ocr|model"}}
-"""
+# instruction prompt registry (change: centralize-llm-instruction-prompts)
+DIAGNOSE_PROMPT_ID = "kg-diagnose-tune"
 
 CLASSES = {
     "prompt": "prompt-unclear",       # extractor prompt should be sharpened
@@ -120,7 +109,9 @@ def main() -> int:
         try:
             out = remote.chat_json(
                 [{"role": "user",
-                  "content": DIAGNOSE_PROMPT.format(summary=summary, source=src)}],
+                  "content": _get_prompt(DIAGNOSE_PROMPT_ID).format(
+                      summary=summary, source=src)}],
+                prompt_id=DIAGNOSE_PROMPT_ID, call_id="kgTune.main.1",
             )
         except Exception as exc:  # noqa: BLE001
             log.warning("diagnose failed for %s: %s", pair_key, exc)

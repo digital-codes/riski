@@ -211,12 +211,8 @@ def derive_name_regex_tags(
 
 # LLM classification prompt (task 3.3): classify a teaser into the canonical
 # document-type vocabulary, falling back to a topical tag when none fits.
-LLM_SYSTEM_PROMPT = (
-    "Du klassifizierst kurze Dokument-Zusammenfassungen (Teaser) aus einem "
-    "Ratsinformationssystem. Antworte NUR mit einem JSON-Objekt der Form "
-    '{"tag": "<Kategorie>"}. Wähle die Kategorie aus der vorgegebenen Liste, '
-    "wenn eine passt; sonst wähle ein prägnantes deutsches Schlagwort (1-3 Wörter)."
-)
+# change: centralize-llm-instruction-prompts — the instruction text moved to
+# config/instruction_prompts.json (id: doc-classify-teaser)
 
 
 def _candidate_vocabulary() -> list[str]:
@@ -235,10 +231,13 @@ def _llm_classify(teaser: str, vocabulary: list[str]) -> Optional[str]:
     try:
         resp = remote.chat(
             [
-                {"role": "system", "content": LLM_SYSTEM_PROMPT},
+                {"role": "system",
+                 "content": remote.get_prompt("doc-classify-teaser")},
                 {"role": "user", "content": user},
             ],
             temperature=0.1,
+            prompt_id="doc-classify-teaser",
+            call_id="pgCategorise._llm_classify.1",
         )
         content = resp.get("content", "")
         start, end = content.find("{"), content.rfind("}")

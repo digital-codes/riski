@@ -16,9 +16,9 @@ def no_llm(monkeypatch):
     """Patch remote.chat as seen from pgTeasers; records calls."""
     calls = []
 
-    def fake_chat(messages, model=None, temperature=0.0, thinking=False):
+    def fake_chat(messages, model=None, temperature=0.0, thinking=False, **kwargs):
         calls.append({"messages": messages, "model": model,
-                      "temperature": temperature})
+                      "temperature": temperature, **kwargs})
         return _chat_result("Ein Teaser.")
 
     monkeypatch.setattr(pt.remote, "chat", fake_chat)
@@ -55,6 +55,15 @@ class TestMakeRequest:
         system = no_llm[0]["messages"][0]["content"]
         assert "English" in system
         assert "50" in system
+
+    def test_call_identification(self, no_llm):
+        # change: centralize-llm-instruction-prompts
+        pt.make_request("Text")
+        assert no_llm[0]["prompt_id"] == "teaser-summarize"
+        assert no_llm[0]["call_id"] == "pgTeasers.make_request.1"
+        # instruction resolves from the registry catalog
+        assert no_llm[0]["messages"][0]["content"].startswith(
+            "Summarize this document in 3-5 sentences.")
 
     def test_long_input_truncated_to_excerpt(self, no_llm):
         pt.make_request("x" * (pt.TEXT_EXCERPT_MAXLEN + 1000))

@@ -35,6 +35,7 @@ from src.kg.kgRemote import KgRemote
 from src.kg.kgStore import KgStore
 from src.kg.kgStatus import StatusTicker
 from src.kg.kgVocab import load_vocab
+from src.remote import get_prompt
 
 log = get_logger("riski.kg.tags.sysone")
 
@@ -43,15 +44,17 @@ MIN_CONFIDENCE = 0.5
 HEAD_MAX_CHARS = 6000
 
 _CONSTRUCTION_TAGS = {"Building Construction", "Road construction"}
+# change: centralize-llm-instruction-prompts — the instruction texts of the
+# tag questions and construction qualifiers moved to
+# config/instruction_prompts.json (ids: kg-tag-question, kg-tag-qualifier-*).
+# The qualifier dict keeps {id: label} — the instruction text for each id
+# resolves from the prompt registry.
 _QUALIFIER_QUESTIONS = {
-    "qual_neubau": ("Wird im Dokument eine NEUBAU-Maßnahme (Neubau/Ersterrichtung) beschrieben?",
-                    "Neubau"),
-    "qual_sanierung": ("Wird eine SANIERUNG (Rekonstruktion/Erneuerung eines Bestands) beschrieben? "
-                       "Achtung: 'Sanierung' heißt Rekonstruktion, nicht laufende Instandhaltung.",
-                       "Sanierung"),
-    "qual_erweiterung": ("Wird eine ERWEITERUNG eines Bestands beschrieben?", "Erweiterung"),
-    "qual_rueckbau": ("Wird ein RÜCKBAU/Rückgang/Abriss beschrieben?", "Rückbau"),
-    "qual_ausbau": ("Wird ein AUSBAU einer bestehenden Straße beschrieben?", "Ausbau"),
+    "qual_neubau": ("kg-tag-qualifier-neubau", "Neubau"),
+    "qual_sanierung": ("kg-tag-qualifier-sanierung", "Sanierung"),
+    "qual_erweiterung": ("kg-tag-qualifier-erweiterung", "Erweiterung"),
+    "qual_rueckbau": ("kg-tag-qualifier-rueckbau", "Rückbau"),
+    "qual_ausbau": ("kg-tag-qualifier-ausbau", "Ausbau"),
 }
 
 
@@ -92,17 +95,20 @@ class SysOneTagger:
             for tag, spec in self.vocab["file_tags"].items():
                 questions[f"tag_{tag}"] = {
                     "type": "noul",
-                    "instructions": (
-                        f"Behandelt das Dokument das Thema {tag}? "
-                        f"({str(spec.get('description', ''))[:160]})"
+                    # instruction part from the shared prompt registry
+                    # (change: centralize-llm-instruction-prompts); the tag
+                    # description is truncated here like the original f-string
+                    "instructions": get_prompt("kg-tag-question").format(
+                        tag=tag,
+                        tag_description=str(spec.get("description", ""))[:160],
                     ),
                     "criteria": {"true": "Ja, zutreffend", "false": "Nein, nicht zutreffend"},
                 }
             questions.update(
                 {
-                    q: {"type": "noul", "instructions": instr,
+                    q: {"type": "noul", "instructions": get_prompt(prompt_id),
                         "criteria": {"true": "Ja", "false": "Nein"}}
-                    for q, (instr, _) in _QUALIFIER_QUESTIONS.items()
+                    for q, (prompt_id, _) in _QUALIFIER_QUESTIONS.items()
                 }
             )
             self._questions_cache = questions
@@ -110,7 +116,10 @@ class SysOneTagger:
 
     def assign(self, head: str) -> dict[str, dict]:
         """Return {tag: {confidence, qualifier}} for fireing tags."""
-        answers = self.remote.systemone(head, self._tag_questions())
+        answers = self.remote.systemone(
+            head, self._tag_questions(),
+            prompt_id="kg-tag-question", call_id="kgTagSystemOne.assign.1",
+        )
         out: dict[str, dict] = {}
         for key, answer in answers.items():
             if not isinstance(answer, dict):

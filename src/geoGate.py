@@ -124,51 +124,9 @@ def regex_all_addresses(content: str, name: str) -> bool:
     addr = _address_regex(name)
     return all(addr.match(content, pos) is not None for pos in occurrences)
 
-PROMPT_TEMPLATE = """Du prüfst Georeferenzen in Dokumenten des Ratsinformationssystems der Stadt {city}.
-
-Gegeben: der Inhalt eines Dokuments und eine Liste von Straßennamen bzw. Stadtteilen, die automatisiert im Text gefunden wurden.
-
-Aufgabe: Entscheide für jeden Namen, ob er zum HAUPTINHALT des Dokuments gehört oder nur aus Beilage-/Metadaten-Text stammt.
-
-Als HAUPTINHALT gilt: der eigentliche Text des Antrags / der Anfrage / der Beschlussvorlage / des Protokolls — z. B. eine Straße als Ort einer geplanten Maßnahme, als betroffener Bereich oder als Thema.
-
-Als BEILAGE/METADATEN gelten und werden als "boilerplate" eingestuft:
-- Absender- und Empfängeradressen im Briefkopf (Antragsteller, Fraktion, Amt, Behörde, Unternehmen)
-- Fußzeilen, Impressum, Kontakt- und Signaturblöcke
-- Veranstaltungsort-Boilerplate (z. B. "Bürgersaal, Rathaus am Marktplatz")
-- Wiederkehrende Formulare/Deckblatt-Angaben ohne inhaltlichen Bezug
-
-WICHTIG: Auch wenn eine Straße politisch relevant erscheint (z. B. die
-"Hebelstraße", in der das Haus der Fraktionen liegt und viele Fraktionen
-ihre Geschäftsstelle haben): Eine Adresszeile eines Antragstellers
-("Fraktion X, Hebelstraße 21, {plz} {city}") ist BOILERPLATE, egal
-welche Partei oder Behörde dort sitzt. Entscheidend ist allein, ob der
-HAUPTTEXT des Dokuments diese Straße inhaltlich behandelt. Nur wenn der
-Haupttext selbst von der Straße handelt (z. B. Verkauf des "ehemaligen
-Hauses der Fraktionen in der Hebelstraße 13"), ist es "content".
-
-Dokument-Typ: {doc_type}
-Dokument-Name: {doc_name}
-
-Dokumentinhalt:
-\"\"\"
-{content}
-\"\"\"
-
-Gefundene Namen (mit Fundkontext):
-{mentions}
-
-Antworte AUSSCHLIESSLICH mit JSON, keine weiteren Texte:
-{{"verdicts": [
-  {{"name": "<Name>", "verdict": "content"|"boilerplate"|"unsure",
-    "reason": "<kurzer deutscher Grund, max. 1 Satz>"}}
-]}}
-
-Regeln:
-- Genau ein Eintrag pro gegebenem Namen, Namen unverändert übernehmen.
-- "content": der Name wird im Haupttext inhaltlich verwendet — auch wenn er zusätzlich in einer Adresse vorkommt.
-- "boilerplate": der Name kommt NUR in Kopf-/Fuß-/Adressbestandteilen vor.
-- Wenn du nicht sicher entscheiden kannst: "unsure"."""
+PROMPT_TEMPLATE = "geo-gate-verdict"  # id in config/instruction_prompts.json
+# change: centralize-llm-instruction-prompts — the verbatim prompt template moved
+# to the shared instruction-prompt catalog; PROMPT_TEMPLATE now names its id.
 
 
 class GeoGate:
@@ -216,8 +174,12 @@ class GeoGate:
         # matching example postal code (change: instance-agnostic-config)
         from src.instanceConfig import section
 
+        # instruction template from the shared prompt catalog
+        # (change: centralize-llm-instruction-prompts)
+        from src import remote
+
         city = section("rules").get("address_regex_city") or "Karlsruhe"
-        return PROMPT_TEMPLATE.format(
+        return remote.get_prompt(PROMPT_TEMPLATE).format(
             city=city,
             plz=_example_plz(city),
             doc_type=doc_type or "unbekannt",
@@ -267,11 +229,11 @@ class GeoGate:
 
             result = remote.chat(
                 [{"role": "system",
-                  "content": "Du bist ein präziser Assistent für "
-                             "Dokumentenanalyse. Antworte ausschließlich mit "
-                             "dem geforderten JSON."},
+                  "content": remote.get_prompt("geo-gate-system")},
                  {"role": "user", "content": prompt}],
                 model=self.model, temperature=0.0,
+                prompt_id="geo-gate-verdict",
+                call_id="geoGate._chat.1",
             )
             return (result or {}).get("content")
         except Exception as exc:  # noqa: BLE001 - gate must never break matching
