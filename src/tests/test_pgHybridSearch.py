@@ -58,6 +58,82 @@ class TestRrfFuse:
         scores = rrf_fuse([["a"]], k=1)
         assert scores["a"] == pytest.approx(0.5)
 
+    def test_weights_scale_contribution(self):
+        # change: fix-hybrid-search-ranking — weighted RRF
+        scores = rrf_fuse([["a"], ["b"]], weights=[1.5, 1.0])
+        assert scores["a"] == pytest.approx(1.5 / 61)
+        assert scores["b"] == pytest.approx(1.0 / 61)
+
+    def test_lexical_weight_bears_vector_only_hits(self):
+        # a top-1 lexical hit outranks a top-5 content-vector hit when
+        # config defaults (1.5 / 1.0) apply
+        v5 = 1.0 / (60 + 5)
+        l1 = 1.5 / (60 + 1)
+        assert l1 > v5
+
+    def test_weighted_ordering_lexical_above_vector_only(self):
+        # "b" is a vector-only content hit; "a" only lexically at rank 2.
+        # Unweighted: b wins (better rank). Weighted (1.5 lexical): a wins.
+        unweighted = rrf_fuse([["y", "a"], ["b", "y"]])
+        assert unweighted["b"] > unweighted["a"]
+        weighted = rrf_fuse([["y", "a"], ["b", "y"]], weights=[1.5, 1.0])
+        assert weighted["a"] > weighted["b"]
+
+    def test_weight_count_must_match_lists(self):
+        # parallel-list contract: exact length required (no silent 1.0 fill)
+        with pytest.raises(ValueError):
+            rrf_fuse([["a"], ["a"]], weights=[2.0])
+
+    def test_weight_count_mismatch_raises(self):
+        with pytest.raises(ValueError, match="weights"):
+            rrf_fuse([["a"], ["b"]], weights=[1.0])
+
+    def test_worked_example_from_docstring(self):
+        scores = rrf_fuse([["a", "b"], ["b"]], weights=[1.5, 1.0])
+        assert scores["a"] == pytest.approx(1.5 / 61)
+        assert scores["b"] == pytest.approx(1.5 / 62 + 1.0 / 61)
+        assert scores["b"] > scores["a"]
+
+
+class TestSearchWeightsConfig:
+    """Config resolution for the `search` section (env > file > defaults)."""
+
+    @pytest.fixture(autouse=True)
+    def _reset_cache(self, monkeypatch):
+        from src.instanceConfig import clear_cache
+        yield
+        clear_cache()
+
+    def _clear(self):
+        from src.instanceConfig import clear_cache
+        clear_cache()
+
+    def test_defaults_present(self, monkeypatch):
+        monkeypatch.delenv("RISKI_SEARCH__WEIGHTED_FUSION", raising=False)
+        monkeypatch.delenv("RISKI_SEARCH__FUSION_WEIGHTS__LEX", raising=False)
+        monkeypatch.delenv("RISKI_INSTANCE_CONFIG", raising=False)
+        self._clear()
+        from src.pgHybridSearch import _search_weights
+        w = _search_weights()
+        assert w == [1.5, 1.2, 1.0]
+
+    def test_env_override_wins(self, monkeypatch):
+        monkeypatch.setenv("RISKI_SEARCH__FUSION_WEIGHTS__LEX", "2.25")
+        monkeypatch.delenv("RISKI_INSTANCE_CONFIG", raising=False)
+        self._clear()
+        from src.pgHybridSearch import _search_weights
+        assert _search_weights()[0] == 2.25
+
+    def test_kill_switch_plain_rrf(self, monkeypatch):
+        monkeypatch.setenv("RISKI_SEARCH__WEIGHTED_FUSION", "false")
+        monkeypatch.delenv("RISKI_INSTANCE_CONFIG", raising=False)
+        self._clear()
+        from src.pgHybridSearch import _search_weights
+        assert _search_weights() is None
+        # with the switch off, fusion degenerates to plain RRF
+        scores = rrf_fuse([["a"]], weights=None)
+        assert scores["a"] == pytest.approx(1 / 61)
+
 
 class TestParseFilters:
     def test_none_passthrough(self):

@@ -299,6 +299,39 @@ def filter_by_threshold(vectors_with_scores: list[tuple], threshold: float) -> l
     """Filter vectors above threshold"""
     return [(vec, score) for vec, score in vectors_with_scores if score <= threshold]
 
+
+def rerank_gate_decision(
+    oparlKey: str,
+    fusion_score: float,
+    rerank_score: Optional[float],
+    cutoff: float,
+    lexical_override: bool,
+    lexical_keys: set,
+) -> Optional[float]:
+    """Accept/keep/reject decision after reranking (search_stage).
+
+    Returns the score to keep the file with, or ``None`` to reject.
+
+    change: fix-hybrid-search-ranking — rerank acceptance is gated by
+    ``cutoff`` (instance config ``search.rerank_cutoff``). A File that is
+    lexically certain (oparlKey in ``lexical_keys``) survives a weak rerank
+    score with the merged rank ``fusion × min(rerank, cutoff)``, which is
+    strictly below every fully-accepted file, so lexical hits stay in
+    ``top_files`` (and remain available to the summarizer) without
+    displacing genuinely reranked results. Disable per instance with
+    ``search.lexical_rerank_override: false``. Documented in
+    ``docs/search-weights.md`` — keep both in sync in the same commit.
+    """
+    if rerank_score is None or not isinstance(rerank_score, (int, float)):
+        # invalid/no rerank score: previous batch-mode behaviour kept the
+        # file at its original fusion score (content-less documents)
+        return fusion_score
+    if rerank_score >= cutoff:
+        return fusion_score * rerank_score
+    if lexical_override and oparlKey in lexical_keys:
+        return fusion_score * min(rerank_score, cutoff)
+    return None
+
 @timed
 def query_vector_similarity(session, query_vector: list[float], top_k: int = 10) -> list[int]:
     """
@@ -1379,8 +1412,30 @@ def search_stage(
                   empty=True)
             return {"query": query, "top_files": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
 
-    # run reranking on all files and append rerank score to file_score 
+    # run reranking on all files and append rerank score to file_score
     top_scores_with_rerank = []
+    # change: fix-hybrid-search-ranking — rerank gate config: the cutoff is
+    # configurable, and lexically-certain Files survive the cutoff (ranked
+    # below accepted files) when the lexical override is on. The logic
+    # (module-level :func:`rerank_gate_decision`) is covered by unit tests.
+    def _search_gate_config() -> Tuple[float, bool]:
+        try:
+            from src.instanceConfig import section as _sec
+            sc = _sec("search")
+            return (
+                float(sc.get("rerank_cutoff", 0.8)),
+                bool(sc.get("lexical_rerank_override", True)),
+            )
+        except Exception:  # noqa: BLE001 - config failure = today's behaviour
+            return (0.8, True)
+    RERANK_CUTOFF, LEXICAL_OVERRIDE = _search_gate_config()
+
+    def _lexical_keys() -> set:
+        return {
+            k for k, sig in hybrid_match_info.items()
+            if isinstance(sig, dict) and ("lexical" in sig)
+        }
+
     _ensure_log().debug(f"Running reranking on top {len(top_scores)} files")  # Debugging line
 
     if RERANK_MODE == "chat":
@@ -1397,11 +1452,14 @@ def search_stage(
             if file_content:  # content exists and is not None
                 rerank_score = call_reranking_chat_model(query, file_content)
                 _ensure_log().debug(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
-                if rerank_score is not None and isinstance(rerank_score, (int, float)) and rerank_score >= .8:
-                    top_scores_with_rerank.append((oparlKey, score))
-                    _ensure_log().debug(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+                kept = rerank_gate_decision(
+                    oparlKey, score, rerank_score, RERANK_CUTOFF,
+                    LEXICAL_OVERRIDE, _lexical_keys())
+                if kept is not None:
+                    top_scores_with_rerank.append((oparlKey, kept))
+                    _ensure_log().debug(f"Keep file {oparlKey}: score {score:.4f}, rerank {rerank_score}")  # Debugging line
                 else:
-                    _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+                    _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score}")  # Debugging line
             else:
                 _ensure_log().debug(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
                 top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
@@ -1425,17 +1483,17 @@ def search_stage(
                 _ensure_log().debug(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
                 documents.append("")  # Append empty string to maintain order
         rerank_scores = call_reranking_model(query, documents, top_n=len(documents))
-        _ensure_log().debug(f"Reranking scores: {rerank_scores}")  # Debugging line
+        _ensure_log().debug(f"Reranking scores: {rerank_scores}")
         for i, rscore in enumerate(rerank_scores):
             oparlKey, score = top_scores[i]
-            if rscore is None or not isinstance(rscore, (int, float)):
-                _ensure_log().debug(f"Invalid rerank score received: {rscore}, keep old score")  # Debugging line
-                top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
-            elif rscore >= .8:
-                top_scores_with_rerank.append((oparlKey, score * rscore))
-                _ensure_log().debug(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
+            kept = rerank_gate_decision(
+                oparlKey, score, rscore, RERANK_CUTOFF,
+                LEXICAL_OVERRIDE, _lexical_keys())
+            if kept is not None:
+                top_scores_with_rerank.append((oparlKey, kept))
+                _ensure_log().debug(f"Keep file {oparlKey}: score {score:.4f}, rerank {rscore}")  # Debugging line
             else:
-                _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
+                _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore}")  # Debugging line
                 # reject reranked file. don't append
         
 

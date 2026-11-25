@@ -6,11 +6,30 @@ Combines three candidate signals over the OParl tables:
   Vn = name vectors from `{item}_name_vecs` (pgvector cosine)
   Vc = content vectors from `contentEmbeddings` (pgvector cosine, File only)
 
-Signals are fused per item table by reciprocal-rank fusion (RRF) and then
-handed to the reranker (pgTimeline), which remains the final ranking step.
+Signals are fused per item table by **weighted reciprocal-rank fusion**
+(change: fix-hybrid-search-ranking) and then handed to the reranker
+(pgTimeline), which remains the final ranking step.
+
+Weighted RRF: ``score(id) = Σ_s w_s / (k + rank_s)`` over the signals that
+contributed the id (rank starts at 1, k = RRF_K = 60). A weight rescales
+one signal's contribution; a missing signal contributes nothing, so a
+direct lexical hit (default w_lex = 1.5) outranks vector-only hits of the
+same rank (w_nv = 1.2, w_vc = 1.0) while true multi-signal matches still
+rank highest. All weights are instance-configurable via the ``search``
+section (env ``RISKI_SEARCH__*`` > config/instance.yaml > code defaults in
+src/instanceConfig.DEFAULTS); ``search.weighted_fusion: false`` reverts to
+plain unweighted RRF.
+
+> Sync rule: this docstring and ``docs/search-weights.md`` document the
+> same behaviour — any change here MUST be mirrored there in the same
+> commit. The code is the source of truth.
 
 Structured filters are applied pre-fusion as WHERE clauses / key sets, so
-they reduce candidate volume before reranking.
+they reduce candidate volume before reranking. Lexical candidates carry
+their trigram similarity in the candidate provenance (``lexical_sim``),
+exposed in ``top_files[].match``; ``search_stage`` (pgTimeline) uses it to
+keep lexically-matching Files that the rerank cutoff would otherwise drop
+(``search.lexical_rerank_override``).
 
 Note on identity: all query builders within one ``hybrid_candidates`` call
 share a single ``MetaData``/``Table`` per item table — SQLAlchemy emits a
@@ -351,16 +370,38 @@ def content_vector_candidates(
 def rrf_fuse(
     ranked_lists: Sequence[Sequence[str]],
     k: int = RRF_K,
+    weights: Optional[Sequence[float]] = None,
 ) -> Dict[str, float]:
     """Reciprocal-rank fusion over candidate id lists.
 
-    score(id) = sum over lists of 1 / (k + rank), rank starting at 1.
-    Returns ``{id: fused_score}`` ordered by descending score.
+    score(id) = sum over lists of 1 / (k + rank), rank starting at 1. With
+    ``weights`` (change: fix-hybrid-search-ranking) each list's contribution
+    is scaled by its signal weight: ``score(id) = Σ_s w_s / (k + rank_s)``.
+    ``weights``, when given, is a sequence of floats parallel to
+    ``ranked_lists`` (must have the same length; the caller maps signal
+    names to positions, e.g. ``[w_lex, w_nv, w_vc]`` for ``(lex, nv, vc)``).
+    ``None`` (the default) yields plain RRF — all weights 1.0. Weights do not replace the
+    rank term: a weight of 2.0 on rank 1 (1/61 × 2 = 0.0328) beats a weight
+    of 1.0 on rank 1 but a weight of 1.5 cannot pull rank 10 above rank 1
+    of an equally weighted list — weights re-scale within the same k window.
+
+    Worked example (k=60): list A ["a", "b"] weight 1.5, list B ["b"] weight
+    1.0 → score("a") = 1.5/61 = 0.0246, score("b") = 1.5/62 + 1/61 = 0.0405,
+    so "b" (hit by both signals) outranks "a" despite a's better rank.
+
+    See ``docs/search-weights.md`` for the full explanation — it must be
+    updated in the same commit whenever this behaviour changes. Returns
+    ``{id: fused_score}`` ordered by descending score.
     """
     scores: Dict[str, float] = {}
-    for lst in ranked_lists:
+    if weights is not None and len(list(weights)) != len(ranked_lists):
+        raise ValueError(
+            f"rrf_fuse: got {len(ranked_lists)} ranked lists but "
+            f"{len(list(weights))} weights")
+    for i, lst in enumerate(ranked_lists):
+        w = 1.0 if weights is None else weights[i]
         for rank, ident in enumerate(lst, start=1):
-            scores[ident] = scores.get(ident, 0.0) + 1.0 / (k + rank)
+            scores[ident] = scores.get(ident, 0.0) + w / (k + rank)
     return dict(sorted(scores.items(), key=lambda kv: kv[1], reverse=True))
 
 
@@ -682,6 +723,30 @@ def _run_all(tasks: List):
     return out
 
 
+def _search_weights() -> Optional[List[float]]:
+    """Configured fusion weights as ``[w_lex, w_nv, w_vc]`` (parallel to the
+    non-empty-list order in ``_table_recall``), or ``None`` (plain RRF) when
+    ``search.weighted_fusion`` is false. Values come from the instance
+    config ``search`` section (env ``RISKI_SEARCH__*`` > config file >
+    defaults) — see docs/search-weights.md."""
+    try:
+        from src.instanceConfig import section
+        cfg = section("search")
+    except Exception:  # noqa: BLE001 - config failure degrades to plain RRF
+        return None
+    if not cfg.get("weighted_fusion", True):
+        return None
+    try:
+        fw = cfg.get("fusion_weights") or {}
+        return [
+            float(fw.get("lex", 1.5)),
+            float(fw.get("nv", 1.2)),
+            float(fw.get("vc", 1.0)),
+        ]
+    except (ValueError, TypeError):
+        return None
+
+
 def _table_recall(conn, table, query, nv_embedding, query_embedding,
                   per_signal, parsed, stop_terms,
                   use_lexical, use_name_vecs, use_content):
@@ -692,10 +757,14 @@ def _table_recall(conn, table, query, nv_embedding, query_embedding,
     extra, required = build_candidate_filters(tbl, parsed, conn)
 
     lex: List[str] = []
+    lex_sim: Dict[str, float] = {}
     if use_lexical:
         with timed_block(f"hybrid.lexical[{table}]"):
-            lex = [k for k, _n, _s in lexical_candidates(
-                conn, query, tbl, per_signal, extra_where=extra, stop_terms=stop_terms)]
+            triples = lexical_candidates(
+                conn, query, tbl, per_signal, extra_where=extra,
+                stop_terms=stop_terms)
+            lex = [k for k, _n, _s in triples]
+            lex_sim = {k: float(s) for k, _n, s in triples}
     nv: List[str] = []
     nv_dist: Dict[str, float] = {}
     if use_name_vecs:
@@ -715,9 +784,23 @@ def _table_recall(conn, table, query, nv_embedding, query_embedding,
             vc_dist = {k: d for k, d, _c in triples}
             vc_chunk = {k: c for k, _d, c in triples if c}
 
-    fused = rrf_fuse([l for l in (lex, nv, vc) if l])
+    # Weighted RRF (change: fix-hybrid-search-ranking): weights follow the
+    # *original* signal order (lex, nv, vc); only non-empty lists are fused
+    # so each weight stays bound to its signal. weighted=False or a bad
+    # config → plain RRF with identical weights (None).
+    base_weights = _search_weights()
+    weighted = base_weights is not None
+    if not weighted:
+        base_weights = (1.0, 1.0, 1.0)
+    sig: List[Tuple[float, List[str]]] = []
+    for w, lst in zip(base_weights, (lex, nv, vc)):
+        if lst:
+            sig.append((w, lst))
+    fused = rrf_fuse(
+        [lst for _w, lst in sig],
+        weights=[w for w, _ in sig] if weighted else None)
     names = _names_for(conn, tbl, list(fused)[: per_signal * 2])
-    return table, fused, required, lex, nv, vc, nv_dist, vc_dist, vc_chunk, names
+    return table, fused, required, lex_sim, nv, vc, nv_dist, vc_dist, vc_chunk, names
 
 
 @timed
@@ -776,19 +859,23 @@ def hybrid_candidates(
     for result in results:  # submission order == CANDIDATE_TABLES order
         if result is None:
             continue  # task failed: that table contributes nothing
-        (table, fused, required, lex, nv, vc, nv_dist, vc_dist, vc_chunk, names) = result
+        (table, fused, required, lex_sim, nv, vc, nv_dist, vc_dist, vc_chunk, names) = result
         if required is not None:
             fused = {k: v for k, v in fused.items() if k in required}
         if not fused:
             continue
 
         # per-candidate signal provenance: which signals found it, with the
-        # distance where the signal provides one (lower = better)
-        lex_set, nv_set, vc_set = set(lex), set(nv), set(vc)
+        # distance where the signal provides one (lower = better). Lexical
+        # provenance also carries `lexical_sim` (higher = better) — used by
+        # the rerank override in search_stage (change: fix-hybrid-search-
+        # ranking).
+        lex_set, nv_set, vc_set = set(lex_sim), set(nv), set(vc)
         for oparl_key, score in fused.items():
             signals_hit: Dict[str, Any] = {}
             if oparl_key in lex_set:
                 signals_hit["lexical"] = True
+                signals_hit["lexical_sim"] = round(lex_sim[oparl_key], 4)
             if oparl_key in nv_set:
                 signals_hit["name"] = round(nv_dist[oparl_key], 4)
             if oparl_key in vc_set:

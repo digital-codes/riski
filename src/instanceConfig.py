@@ -102,6 +102,21 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         ],
         "org_classification_fallback": "Sonstiges",
     },
+    "search": {
+        # Hybrid recall fusion weights (change: fix-hybrid-search-ranking).
+        # Weighted-RRF: score(id) = Σ_s w_s / (k + rank_s). Signal order is
+        # always (lexical, name-vectors, content-vectors) — see
+        # docs/search-weights.md (must be updated in the same commit as any
+        # behavioural change here).
+        "fusion_weights": {"lex": 1.5, "nv": 1.2, "vc": 1.0},
+        # false falls back to plain RRF (all weights 1.0) — kill switch
+        "weighted_fusion": True,
+        # rerank acceptance cutoff (files need rerank score >= cutoff)
+        "rerank_cutoff": 0.8,
+        # a lexically-matching File is kept when its rerank score is below
+        # `rerank_cutoff`, ranked by fusion * min(rerank, cutoff)
+        "lexical_rerank_override": True,
+    },
     "web": {
         "cors_origins": [
             "http://localhost:5173", "http://localhost:4173",

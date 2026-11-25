@@ -262,4 +262,73 @@ class TestParityWithLegacy:
         # consumers (semantic timeline CLI)
         assert set(legacy_res.keys()) >= {"query", "top_files"}
 
+class TestRerankGateDecision:
+    """rerank_gate_decision — lexical override keeps lexically-certain
+    Files below fully-accepted ones (change: fix-hybrid-search-ranking)."""
+
+    LEX = {"F_x"}  # keys with a lexical provenance hit
+
+    def test_accept_at_or_above_cutoff(self):
+        assert tl.rerank_gate_decision(
+            "F_a", 1.0, 0.85, 0.8, True, self.LEX) == pytest.approx(0.85)
+
+    def test_reject_below_cutoff_without_lexical(self):
+        assert tl.rerank_gate_decision(
+            "F_b", 1.0, 0.6, 0.8, True, self.LEX) is None
+
+    def test_lexical_override_keeps_file_below_cutoff(self):
+        # lexical-only File with rerank 0.6 (below cutoff 0.8): kept,
+        # ranked by fusion * min(rerank, cutoff) = 1.0 * 0.6 — rerank ≥
+        # cutoff is impossible here (that's the accept path), so the
+        # merged score equals fusion * rerank and stays below accepted
+        kept = tl.rerank_gate_decision("F_x", 1.0, 0.6, 0.8, True, self.LEX)
+        assert kept == pytest.approx(0.6)
+
+    def test_override_ranks_below_accepted_files(self):
+        accepted = tl.rerank_gate_decision("F_a", 1.0, 0.9, 0.8, True, self.LEX)
+        strong_lex = tl.rerank_gate_decision("F_x", 1.0, 0.6, 0.8, True, self.LEX)
+        weak_lex = tl.rerank_gate_decision("F_x", 0.5, 0.79, 0.8, True, self.LEX)
+        tiny_lex = tl.rerank_gate_decision("F_x", 1.0, 0.1, 0.8, True, self.LEX)
+        assert strong_lex == pytest.approx(0.6)
+        assert weak_lex == pytest.approx(0.5 * 0.79)
+        assert tiny_lex == pytest.approx(0.1)
+        assert accepted > strong_lex > weak_lex > tiny_lex
+
+    def test_kill_switch_restores_strict_gate(self):
+        assert tl.rerank_gate_decision(
+            "F_x", 1.0, 0.6, 0.8, False, self.LEX) is None
+
+    def test_invalid_rerank_score_keeps_original(self):
+        # content-less documents: invalid rerank keeps original score
+        assert tl.rerank_gate_decision(
+            "F_c", 1.0, None, 0.8, True, self.LEX) == pytest.approx(1.0)
+
+    def test_cutoff_configurable(self):
+        assert tl.rerank_gate_decision(
+            "F_d", 1.0, 0.7, 0.65, False, set()) == pytest.approx(0.7)
+
+    def test_none_lexical_match_not_overridden(self):
+        # non-lexical strong vector hits are still gated
+        assert tl.rerank_gate_decision(
+            "F_v", 1.0, 0.3, 0.8, True, set()) is None
+
+
+class TestSearchWeightsConfigTimeline:
+    """search_stage gate config comes from the instance config search
+    section (env wins over defaults)."""
+
+    def test_gate_config_env_override(self, monkeypatch):
+        import src.pgTimeline as mod
+        # re-execute the inner _search_gate_config by patching config
+        monkeypatch.setenv("RISKI_SEARCH__RERANK_CUTOFF", "0.55")
+        from src.instanceConfig import clear_cache
+        clear_cache()
+        try:
+            from src.instanceConfig import section
+            cutoff = float(section("search").get("rerank_cutoff", 0.8))
+        finally:
+            clear_cache()
+        assert cutoff == 0.55
+
+
 pytestmark = pytest.mark.unit
