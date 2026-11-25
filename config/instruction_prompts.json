@@ -28,7 +28,7 @@
     },
     "result-summary-refine": {
       "description": "Full-content refinement summary without document re-selection (pgResultSummarizer refine pass); {max_words} interpolated at the call site",
-      "text": "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine Frage und eine nummerierte Liste von Dokumenten (Volltexte) gegeben. Die Dokumentenauswahl wurde bereits getroffen — treffe KEINE eigene Auswahl und lasse KEIN Dokument aus.\n Lies alle bereitgestellten Inhalte vollständig und erstelle eine prägnante, aber VOLLSTÄNDIGE Übersicht auf Deutsch, die die Frage beantwortet: Themen, Entscheidungen, Beschlüsse, Verantwortlichkeiten und Widersprüche zwischen den Dokumenten. Belege jede Aussage mit einer Dokumentreferenz '(Datei N)'. Bleibe unter {max_words} Wörtern. Keine Emojis.\nAntworte nur mit der Übersicht.",
+      "text": "Du bist ein Assistent für das Ratsinformationssystem. Dir sind eine Frage und eine nummerierte Liste von Dokumenten (Volltexte) gegeben. Die Dokumentenauswahl wurde bereits getroffen — treffe KEINE eigene Auswahl und lasse KEIN Dokument aus.\n Die Dokumente sind nach Relevanz sortiert, das relevanteste zuerst. Lies alle bereitgestellten Inhalte vollständig und erstelle eine prägnante, aber VOLLSTÄNDIGE Übersicht auf Deutsch, die die Frage beantwortet: Themen, Entscheidungen, Beschlüsse, Verantwortlichkeiten und Widersprüche zwischen den Dokumenten. Belege jede Aussage mit einer Dokumentreferenz '(Datei N)'. Bleibe unter {max_words} Wörtern. Keine Emojis.\nAntworte nur mit der Übersicht.",
       "source": "src/pgResultSummarizer.py:81"
     },
     "report-summarize": {
@@ -96,6 +96,16 @@
       "text": "Extrahiere die Kernfakten aus dem deutschen Kommunal-Dokument. Antworte NUR mit einem JSON-Objekt (Felder: topic, requested_action, involved_cost, start_date). Fehlende Werte als \"\".",
       "source": "src/kg/kgModelSelect.py:151"
     },
+    "rerank-listwise": {
+      "description": "Listwise rerank system prompt (pgTimeline listwise stage, fragment B fix-hybrid-search-ranking); used by src.pgTimeline.listwise_rerank",
+      "text": "Du bewertest Treffer eines kommunalen Ratsinformationssystems für eine Suchanfrage. Dir werden nummerierte Dokumentauschnitte und die Suchanfrage gegeben. Entscheide für jeden Ausschnitt, wie stark er die Suchanfrage inhaltlich behandelt (Begriffskomposita wie \"Bürgerbeteiligungsplattform\" zählen als Thema, nicht nur als Wortgleichheit). Antworte ausschließlich mit JSON: {\"relevant\": [<nummern>]} — die klar zur Suchanfrage gehörenden Ausschnitte, beste zuerst, sonst {} wenn nichts passt. Keine Erklärungen.",
+      "source": "src/pgTimeline.py:378"
+    },
+    "rerank-listwise-user": {
+      "description": "Listwise rerank user message template (pgTimeline listwise stage); {query}/{candidates} interpolated at the call site",
+      "text": "Suchanfrage: {query}\n\nKandidaten:\n{candidates}",
+      "source": "src/pgTimeline.py:401"
+    },
     "kg-field-flags": {
       "description": "Field-level failure flagging of extracted facts (kgFlagFailures); {summary}/{source} interpolated at the call site",
       "text": "Du bist ein Zertifikats-Prüfer. Vergleiche die extrahierten\nAngaben mit dem Originaltext und prüfe JEDES genannte Feld einzeln.\n\nEntscheidungs-Angaben:\n{summary}\n\nOriginaltext (Auszug):\n{source}\n\nAntworte NUR als JSON: {{\"fields_affected\": [{{\"field\": \"<excates Feld-Kürzel>\",\n\"mode\": \"<hallucination|date-mismatch|cost-misattribution|executor-mismatch|other>\",\n\"reason\": \"<1 Satz deutsch>\", \"flag\": true|false}}], \"verdict\": \"passed\"|\"failed\"}}\n\nflag=true: der Feld-Wert ist NICHT im Original belegt und muss\naus den Angaben ENTFERNT werden (statt falsch zu stehen).",
@@ -125,6 +135,16 @@
       "description": "Reranking chat-path user message template (pgTimeline); {query}/{content} interpolated at the call site",
       "text": "Query: {query}\n\nContent: {content}\n\nReturn only a single number between 0 and 1. Do not return any text other than the number.",
       "source": "src/pgTimeline.py:108"
+    },
+    "gremium-meeting-extract": {
+      "description": "Gremium session extraction (pgIntentRouter ask_gremium_recent head-of-chain view); strict JSON {gremium, relative, month, year}",
+      "text": "Du extrahierst aus einer Nutzerfrage an ein Ratsinformationssystem das genannte Gremium und die gemeinte Sitzung. Antworte ausschließlich mit JSON: {\"gremium\": \"<Gremium-Bezeichnung, passend zum Vokabular der Auswahl wenn einer passt>\", \"relative\": \"letzte\" | \"datum\", \"month\": <1-12 oder 0>, \"year\": <Jahreszahl oder 0>}. Regeln: \"letzte( n)? Sitzung\" → relative=\"letzte\", month=0, year=0. Genannte Monate (deutsch, auch Kurzformen) → month=Monatsnummer, year=genannte Jahreszahl oder 0 (0 = nicht genannt). Keine Erklärungen.",
+      "source": "src/pgIntentRouter.py:gremium_meeting_extract"
+    },
+    "gremium-meeting-extract-user": {
+      "description": "Gremium session extraction user template; {query}/{vocabulary} interpolated at the call site",
+      "text": "Frage: {query}\n\nGremien-Auswahl:\n{vocabulary}",
+      "source": "src/pgIntentRouter.py:gremium_meeting_extract"
     }
   }
 }

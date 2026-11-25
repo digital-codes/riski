@@ -47,6 +47,29 @@ geo:
   map_center: [49.0069, 8.4037]
   map_zoom: 12
 
+search:
+  # Hybrid recall fusion weights (change: fix-hybrid-search-ranking).
+  # Weighted-RRF: score(id) = Σ_s w_s / (k + rank_s) — a signal's fused
+  # contribution is scaled by its weight; missing signals contribute
+  # nothing. Signals: lex = trigram lexical name match, nv = name-vector
+  # proximity, vc = content-vector proximity. Full explanation incl.
+  # worked example and tuning guidance: docs/search-weights.md — it must
+  # be updated in the same commit as any behavioural change to the
+  # weights/recall fusion.
+  fusion_weights: {lex: 1.5, nv: 0.8, vc: 1.2}
+  fusion_mode: "scores"           # scores = normalized score blending; rrf = rank-only (kill switch)
+  fusion_score_calibration:       # anchors: lexical sim floor, cosine near/far bounds
+    lex_floor: 0.35               # lexical sims below score 0
+    vec_near: 0.20                # cosine d <= this -> norm 1.0
+    vec_far: 0.85                 # cosine d >= this -> norm 0.0
+  weighted_fusion: true           # false = plain RRF kill switch
+  rerank_cutoff: 0.8              # rerank acceptance cutoff
+  lexical_rerank_override: true   # keep lexically-matching Files even below rerank_cutoff
+  per_signal: 100                 # recall depth per signal (was fixed 50)
+  rerank_max_candidates: 60       # rerank window before the top_k cut (chat mode: lower this)
+  listwise_rerank: true           # listwise chat rerank (only when no cross-encoder reranker)
+  listwise_window: 50             # fused-first candidates shown to the model (one call)
+
 rules:
   address_regex_city: "Karlsruhe"   # address-block heuristic: "<PLZ> <city>"
   venue_noise:                      # venue-boilerplate regexes (geo matching)

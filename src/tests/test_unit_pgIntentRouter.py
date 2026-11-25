@@ -161,7 +161,7 @@ class TestResolve:
 
         monkeypatch.setattr(
             ir, "resolve_gremium",
-            lambda session, term, groups: {
+            lambda session, term, groups, month=None, year=None: {
                 "orgs": [], "meeting": None,
                 "note": f"kein Gremium zu '{term}' gefunden",
             },
@@ -352,6 +352,53 @@ class TestLiveDb:
         out = resolve_gremium(session, "gremium das nicht existiert", [])
         assert out["orgs"] == []
         assert "kein gremium" in out["note"].lower()
+
+    # change: fix-gremium-session-docs-thread — document-less meetings are
+    # skipped (data artifact: meeting rows import before their documents)
+    def test_meeting_selection_carries_documents(self, cfg, session):
+        from src.pgIntentRouter import resolve_gremium, _has_documents
+
+        groups = (find_intent(cfg, "ask_gremium_recent").get("groups") or {}).get("gremium", [])
+        out = resolve_gremium(session, "gemeinderat", groups)
+        m = out["meeting"]
+        assert _has_documents(session, m["sid"]), (
+            "selected meeting must carry agenda items or files")
+
+    def test_month_without_year_resolves_current_year(self, cfg, session):
+        from src.pgIntentRouter import resolve_gremium, extract_meeting_date
+        import datetime
+
+        groups = (find_intent(cfg, "ask_gremium_recent").get("groups") or {}).get("gremium", [])
+        month, year = extract_meeting_date(
+            "themen der gemeinderatssitzung im september")
+        assert month == 9 and year == datetime.datetime.now().year
+        out = resolve_gremium(session, "gemeinderat", groups, month=month, year=year)
+        assert out["meeting"] is not None
+        assert out["meeting"]["start_date"].month == 9
+        assert out["meeting"]["start_date"].year == year
+
+    def test_month_with_explicit_year(self, cfg, session):
+        from src.pgIntentRouter import extract_meeting_date
+        month, year = extract_meeting_date("Themen der Sitzung im Mrz 2025")
+        assert month == 3 and year == 2025
+
+    def test_no_meeting_in_month_is_explicit_empty(self, cfg, session):
+        from src.pgIntentRouter import resolve_gremium
+
+        groups = (find_intent(cfg, "ask_gremium_recent").get("groups") or {}).get("gremium", [])
+        out = resolve_gremium(session, "gemeinderat", groups, month=12, year=1989)
+        assert out["meeting"] is None and out["empty"] is True
+        assert "1989" in out["note"] and "keine" in out["note"].lower()
+
+    def test_empty_meetings_skipped_note_present(self, cfg, session):
+        from src.pgIntentRouter import resolve_gremium
+
+        groups = (find_intent(cfg, "ask_gremium_recent").get("groups") or {}).get("gremium", [])
+        out = resolve_gremium(session, "gemeinderat", groups)
+        # live data 2026-11-25: GR 24.11.2026 exists without documents;
+        # resolution must name it (either as skip note or by faking none)
+        if out["note"]:
+            assert "veröffentlicht" in out["note"] or "dokumente" in out["note"].lower()
 
     def test_organization_facet_constrains_files(self, session):
         from src.pgHybridSearch import hybrid_candidates

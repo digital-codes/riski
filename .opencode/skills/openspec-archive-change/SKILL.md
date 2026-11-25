@@ -59,6 +59,26 @@ Archive a completed change in the experimental workflow.
    - Determine what changes would be applied (adds, modifications, removals, renames)
    - Show a combined summary before prompting
 
+4b. **MANDATORY: documentation consistency crosscheck (ALWAYS, no exceptions).**
+   Before archiving, verify the project documentation is consistent with the
+   archived behaviour. Check each surface the change touched (README sections,
+   `docs/*.md`, module docstrings, config comment blocks, prompt-registry
+   `source` pointers):
+
+   - Run the documentation checks the change declared (documentation sync rules
+     in code docstrings ↔ `docs/` files must be satisfied on both sides).
+   - Grep for statements describing the changed behaviour (old defaults, removed
+     env vars/config keys, stale kill switches, outdated worked examples) and fix
+     inconsistencies; if the change shifted defaults, confirm README/config
+     comments/docstrings quote the new values.
+   - Verify referenced doc files exist and referenced config keys/doc sections
+     match reality (e.g. a documented `search.<key>` must exist in DEFAULTS and
+     `config/instance.yaml`).
+   - Report the crosscheck result in the archive summary; if anything cannot be
+     fixed safely here, STOP and report instead of archiving with stale docs.
+
+   Documentation inconsistencies are blocking, not advisory: fix them first
+   (or report why you can't and wait) — never archive on stale documentation.
    **Prompt options:**
    - If changes needed: "Sync now (recommended)", "Archive without syncing"
    - If already synced: "Archive now", "Sync anyway", "Cancel"

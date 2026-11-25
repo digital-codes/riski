@@ -81,6 +81,22 @@ Implement tasks from an OpenSpec change.
 
 7. **On completion or pause, show status**
 
+**MANDATORY: Task 7 after tasks are complete — project documentation update (ALWAYS, no exceptions).**
+When all tasks of the change are implemented, update the project's documentation as
+the final implementation step — in the same session, before reporting completion:
+
+1. Identify the documentation surfaces the change touches (README sections,
+   `docs/*.md`, module docstrings, config-file comment blocks, prompt-registry
+   entries). Default surfaces for behavioural changes: README "How search works"-style
+   sections, the matching `docs/` topic file, and the code docstrings implementing
+   the behaviour.
+2. Update them to describe the new behaviour (config knobs, defaults, kill
+   switches, worked examples where useful).
+3. If the change declares a documentation sync rule (code ↔ docs must match),
+   satisfy it explicitly and reference both locations.
+4. Do NOT mark the change "ready to archive" before this step is done; state
+   which doc files were touched in the completion summary.
+
    Display:
    - Tasks completed this session
    - Overall progress: "N/M tasks complete"

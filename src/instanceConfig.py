@@ -102,6 +102,50 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         ],
         "org_classification_fallback": "Sonstiges",
     },
+    "search": {
+        # Hybrid recall fusion weights (change: fix-hybrid-search-ranking).
+        # Weighted-RRF: score(id) = Σ_s w_s / (k + rank_s). Signal order is
+        # always (lexical, name-vectors, content-vectors) — see
+        # docs/search-weights.md (must be updated in the same commit as any
+        # behavioural change here).
+        # fusion mode: "scores" = per-signal normalized score blending
+        # (change: fix-hybrid-search-ranking) — absolute calibration keeps
+        # within-signal strength (a cosine 0.35 chunk outranks a 0.47 one);
+        # "rrf" = original rank-only reciprocal-rank fusion (kill switch)
+        "fusion_mode": "scores",
+        "fusion_weights": {"lex": 1.5, "nv": 0.8, "vc": 1.2},
+        # calibration anchors for score blending (see docs/search-weights.md):
+        # lexical similarity below lex_floor scores 0, above 1.0 scores 1;
+        # cosine distance vec_near -> 1.0, vec_far -> 0.0 (linear between)
+        "fusion_score_calibration": {
+            # empirically calibrated on live queries (name-vector distances
+            # cluster at 0.26–0.45; lexical matches meaningful above ~0.35)
+            "lex_floor": 0.35, "vec_near": 0.20, "vec_far": 0.85,
+        },
+        # false falls back to plain RRF (all weights 1.0) — kill switch
+        "weighted_fusion": True,
+        # rerank acceptance cutoff (files need rerank score >= cutoff)
+        "rerank_cutoff": 0.8,
+        # a lexically-matching File is kept when its rerank score is below
+        # `rerank_cutoff`, ranked by fusion * min(rerank, cutoff)
+        "lexical_rerank_override": True,
+        # per-signal recall depth (change: fix-hybrid-search-ranking
+        # extension) — candidates collected per signal before fusion; the
+        # dominant cost is the content HNSW oversample (limit*6, cap 1000)
+        "per_signal": 100,
+        # rerank runs over the first N candidates by fused score BEFORE the
+        # top_k cut; candidates beyond the window keep the clamped fallback
+        # score fusion * rerank_cutoff. Batch reranker = one HTTP call for
+        # the whole window; chat reranker = N LLM calls (lower for chat)
+        "rerank_max_candidates": 60,
+        # listwise chat rerank (fragment B): fired only when the reranker
+        # is dropped (RERANK_MODE None); ONE SUMMARY_MDL call over the
+        # fused-first candidates. Window 50 because minutes protocols fuse
+        # at rank 30-45 behind name-vector ghost matches; each entry shows
+        # a 600-char snippet of the best chunk (~8k prompt tokens/call).
+        "listwise_rerank": True,
+        "listwise_window": 50,
+    },
     "web": {
         "cors_origins": [
             "http://localhost:5173", "http://localhost:4173",

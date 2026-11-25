@@ -223,6 +223,46 @@ def _thread_turn(session, query: str, req_thread: dict | None) -> dict:
     }
 
 
+def _option_turn(req: Any, query: str) -> Optional[Dict[str, Any]]:
+    """Deterministic thread turn for an OPTION selection (change:
+    fix-gremium-session-docs-thread): the backend offered the chip, so the
+    selection is follow-up by construction — no classify call. Opens the
+    sealed state (q0 + turns = the history), builds the effective query
+    (history + option topic), advances the thread."""
+    try:
+        from src.kg.kgFollowups import (
+            advance_thread, effective_query, maybe_new_thread, new_thread,
+            open_state,
+        )
+        req_thread = req.thread if isinstance(req.thread, dict) else None
+        prior: dict = {}
+        sid = uuid.uuid4().hex
+        if req_thread and req_thread.get("state") and req_thread.get("session_id"):
+            sid = str(req_thread["session_id"])[:64]
+            try:
+                prior = open_state(req_thread["state"], sid) or {}
+            except Exception as exc:  # expired/tampered → new thread
+                _kg_log.warning("option state rejected (%s) — new thread", exc)
+        thread = maybe_new_thread(prior) or new_thread(origin="chips")
+        topic_text = validate_user_query(str(req.option.get("topic")))
+        if thread.get("turns"):
+            effective = effective_query(thread, topic_text)
+        else:
+            effective = topic_text
+        thread = advance_thread(thread, topic_text)
+        return {
+            "thread": thread,
+            "session_id": sid,
+            "effective_query": effective,
+            "forced_break": False,
+            "concatenated": bool(prior.get("turns")),
+            "classification": {"action": "followup", "source": "option"},
+        }
+    except Exception as exc:  # noqa: BLE001
+        _kg_log.warning("option turn failed: %s", exc)
+        return None
+
+
 def _apply_thread_to_result(turn: dict, result: dict, top_files: list | None) -> None:
     """Seal the advanced thread onto the response (normal mode, task 7.4)."""
     from src.kg.kgFollowups import seal_state_or_none
@@ -408,13 +448,17 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
             summary_text = ((result.get("summary") or {}).get("text", "")
                             if isinstance(result.get("summary"), dict)
                             else (result.get("summary") or ""))
-            fu = generate_followups(summary_text, statements=None,
-                                    topics=list(dict.fromkeys(topics))[:5])
-            result["followups"] = fu.get("questions")
+            # change: fix-gremium-session-docs-thread — generate_followups
+            # is an LLM call (~3 s); it needs a summary to ground the
+            # questions. Meeting-scope answers (answer_mode list_topics)
+            # have none — skip the empty-context call so the /ask round
+            # trip stays fast (intent decode + graph build only)
+            if summary_text:
+                fu = generate_followups(summary_text, statements=None,
+                                        topics=list(dict.fromkeys(topics))[:5])
+                result["followups"] = fu.get("questions")
             token = seal_state_or_none(state_payload, session_id)
             if token and not result.get("state"):  # D7: thread token wins
-                result["state"] = token
-                result["state_session"] = session_id
                 result["state"] = token
                 result["state_session"] = session_id
     except Exception as exc:  # pragma: no cover
@@ -495,6 +539,16 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         except Exception as exc:  # thread layer must never break search
             _kg_log.warning("thread turn failed: %s", exc)
 
+    # change: rework-search-result-cards — additive boolean for the UI's
+    # related-hints card: the topic focus (kg topic above the threshold)
+    # enables a topical summary, in which case the refinement-hints card
+    # is NOT rendered. Cheap query-side check on the /search path.
+    try:
+        from src.kg.kgQueries import topic_focus_for_query as _tfq
+        result_focus = _tfq(query)
+    except Exception:  # pragma: no cover
+        result_focus = None
+
     try:
         result = search_stage(
             session, query, top_k=req.top_k,
@@ -538,6 +592,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         "stage_lock": threading.Lock(),
     }
     result["sessionId"] = session_id
+    result["topical_summary"] = result_focus is not None
     _trace_response("search", result)
     return result
 
@@ -549,6 +604,11 @@ class AskRequest(BaseModel):
     signals: Optional[Dict[str, bool]] = None
     summarize: bool = True
     thread: Optional[Dict[str, Any]] = None  # D7: {state, session_id|fresh}
+    # change: fix-gremium-session-docs-thread — chip picks are transmitted
+    # as OPTION SELECTION, not as text input: {topic, example?} resolved by
+    # the backend against the sealed thread (follow-up classification is
+    # deterministic here — the option WAS offered by the backend).
+    option: Optional[Dict[str, Any]] = None
 
 
 def _stage1_search_fn(session, query: str, top_k: int = 10,
@@ -585,15 +645,39 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     except Exception as exc:  # pragma: no cover - db down
         raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
 
-    # kg-app-integration D7: /ask also participates in query threads
+    # kg-app-integration D7: /ask also participates in query threads.
+    # change: fix-gremium-session-docs-thread — a gremium-session query is
+    # HEAD OF CHAIN: no thread turn (context history resets), no
+    # effective-query concatenation. Pre-check via the gremium slot
+    # vocabulary + session date frame ("letzte sitzung", month) — cheap DB
+    # scan, no model call.
     kg_on = app.state.kg_app_integration
     turn = None
-    if kg_on and getattr(req, "thread", None):
+    gremium_head = False
+    if kg_on:
         try:
-            turn = _thread_turn(session, query, req.thread)
-            query = turn["effective_query"]
+            from src.pgIntentRouter import is_gremium_session_query
+            gremium_head = is_gremium_session_query(query)
         except Exception as exc:
-            _kg_log.warning("thread turn (ask) failed: %s", exc)
+            _kg_log.warning("gremium precheck failed: %s", exc)
+    if kg_on and not gremium_head:
+        opt = getattr(req, "option", None)
+        if isinstance(req.thread, dict) and isinstance(opt, dict) and opt.get("topic"):
+            # change: fix-gremium-session-docs-thread — option selection =
+            # deterministic follow-up turn (backend offered the option → no
+            # classification call); helper seals the advanced thread
+            try:
+                turn = _option_turn(req, query)
+                if turn:
+                    query = turn["effective_query"]
+            except Exception as exc:
+                _kg_log.warning("option selection failed: %s", exc)
+        elif getattr(req, "thread", None):
+            try:
+                turn = _thread_turn(session, query, req.thread)
+                query = turn["effective_query"]
+            except Exception as exc:
+                _kg_log.warning("thread turn (ask) failed: %s", exc)
 
     try:
         result = route_ask(
@@ -642,7 +726,13 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         "stage_lock": threading.Lock(),
     }
     session_id = session_id or uuid.uuid4().hex
-    _kg_enrich(result, query, session_id)
+    # change: fix-gremium-session-docs-thread (task 7.3) — a gremium
+    # session view (list_topics) gets NO enrichment: no related_documents,
+    # no chips, no followups — topics + session files only
+    if result.get("answer_mode") != "list_topics":
+        _kg_enrich(result, query, session_id)
+    else:
+        result["thread_reset"] = True   # head of chain: context cleared
     result["sessionId"] = session_id
     _trace_response("ask", result)
     return result

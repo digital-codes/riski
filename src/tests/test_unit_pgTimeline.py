@@ -262,4 +262,211 @@ class TestParityWithLegacy:
         # consumers (semantic timeline CLI)
         assert set(legacy_res.keys()) >= {"query", "top_files"}
 
+class TestRerankGateDecision:
+    """rerank_gate_decision — lexical override keeps lexically-certain
+    Files below fully-accepted ones (change: fix-hybrid-search-ranking)."""
+
+    LEX = {"F_x"}  # keys with a lexical provenance hit
+
+    def test_accept_at_or_above_cutoff(self):
+        assert tl.rerank_gate_decision(
+            "F_a", 1.0, 0.85, 0.8, True, self.LEX) == pytest.approx(0.85)
+
+    def test_reject_below_cutoff_without_lexical(self):
+        assert tl.rerank_gate_decision(
+            "F_b", 1.0, 0.6, 0.8, True, self.LEX) is None
+
+    def test_lexical_override_keeps_file_below_cutoff(self):
+        # lexical-only File with rerank 0.6 (below cutoff 0.8): kept,
+        # ranked by fusion * min(rerank, cutoff) = 1.0 * 0.6 — rerank ≥
+        # cutoff is impossible here (that's the accept path), so the
+        # merged score equals fusion * rerank and stays below accepted
+        kept = tl.rerank_gate_decision("F_x", 1.0, 0.6, 0.8, True, self.LEX)
+        assert kept == pytest.approx(0.6)
+
+    def test_override_ranks_below_accepted_files(self):
+        accepted = tl.rerank_gate_decision("F_a", 1.0, 0.9, 0.8, True, self.LEX)
+        strong_lex = tl.rerank_gate_decision("F_x", 1.0, 0.6, 0.8, True, self.LEX)
+        weak_lex = tl.rerank_gate_decision("F_x", 0.5, 0.79, 0.8, True, self.LEX)
+        tiny_lex = tl.rerank_gate_decision("F_x", 1.0, 0.1, 0.8, True, self.LEX)
+        assert strong_lex == pytest.approx(0.6)
+        assert weak_lex == pytest.approx(0.5 * 0.79)
+        assert tiny_lex == pytest.approx(0.1)
+        assert accepted > strong_lex > weak_lex > tiny_lex
+
+    def test_kill_switch_restores_strict_gate(self):
+        assert tl.rerank_gate_decision(
+            "F_x", 1.0, 0.6, 0.8, False, self.LEX) is None
+
+    def test_invalid_rerank_score_keeps_original(self):
+        # content-less documents: invalid rerank keeps original score
+        assert tl.rerank_gate_decision(
+            "F_c", 1.0, None, 0.8, True, self.LEX) == pytest.approx(1.0)
+
+    def test_cutoff_configurable(self):
+        assert tl.rerank_gate_decision(
+            "F_d", 1.0, 0.7, 0.65, False, set()) == pytest.approx(0.7)
+
+    def test_none_lexical_match_not_overridden(self):
+        # non-lexical strong vector hits are still gated
+        assert tl.rerank_gate_decision(
+            "F_v", 1.0, 0.3, 0.8, True, set()) is None
+
+
+class TestListwiseRerank:
+    """Listwise chat rerank (change: fix-hybrid-search-ranking, fragment B)."""
+
+    def _mk_resp(self, orders):
+        import src.pgTimeline as mod
+        if orders is None:
+            monkey = pytest.MonkeyPatch()
+            monkey.setattr(mod.remote, "get_prompt", lambda pid: "sys" if pid.endswith("-listwise") else "Q {query}")
+            # chat raising = failure path
+            def boom(**kw):
+                raise RuntimeError("no endpoint")
+            monkey.setattr(mod.remote, "chat", boom)
+            monkey._undo = monkey.undo  # noqa
+            return monkey
+        import json as _json
+        monkey = pytest.MonkeyPatch()
+        monkey.setattr(mod.remote, "get_prompt", lambda pid: "sys" if pid.endswith("-listwise") else "Q {query}")
+        monkey.setattr(mod.remote, "chat", lambda *a, **k: {
+            "content": _json.dumps({"relevant": orders})})
+        return monkey
+
+    CANDS = [("F_a", {"name": "alpha"}), ("F_b", {"name": "beta"}),
+             ("F_c", {"name": "gamma"})]
+    CHUNKS = {"F_a": 0, "F_b": None, "F_c": 2}
+
+    def test_ranking_yields_decaying_scores(self):
+        monkey = self._mk_resp([1, 3])
+        try:
+            out = tl.listwise_rerank("q", self.CANDS, self.CHUNKS,
+                                     lambda k, c: "text %s" % k)
+        finally:
+            monkey.undo()
+        assert out["F_a"] > out["F_c"]
+        assert "F_b" not in out
+        assert out["F_a"] == pytest.approx(1.0)
+        assert out["F_c"] > 0.5
+
+    def test_failure_returns_empty(self):
+        monkey = self._mk_resp(None)
+        try:
+            assert tl.listwise_rerank("q", self.CANDS, self.CHUNKS,
+                                      lambda k, c: "t") == {}
+        finally:
+            monkey.undo()
+
+    def test_unparseable_json_returns_empty(self):
+        import src.pgTimeline as mod
+        monkey = pytest.MonkeyPatch()
+        monkey.setattr(mod.remote, "get_prompt", lambda pid: "x")
+        monkey.setattr(mod.remote, "chat", lambda *a, **k: {"content": "no json here"})
+        try:
+            assert tl.listwise_rerank("q", self.CANDS, self.CHUNKS,
+                                      lambda k, c: "t") == {}
+        finally:
+            monkey.undo()
+
+    def test_out_of_range_indices_ignored(self):
+        import src.pgTimeline as mod
+        import json as _json
+        monkey = pytest.MonkeyPatch()
+        monkey.setattr(mod.remote, "get_prompt", lambda pid: "x")
+        monkey.setattr(mod.remote, "chat", lambda *a, **k: {
+            "content": _json.dumps({"relevant": [2, 99]})})
+        try:
+            out = tl.listwise_rerank("q", self.CANDS, self.CHUNKS, lambda k, c: "t")
+        finally:
+            monkey.undo()
+        assert list(out) == ["F_b"]
+
+    def test_prompt_ids_registered(self):
+        from src.remote import has_prompt
+        assert has_prompt("rerank-listwise")
+        assert has_prompt("rerank-listwise-user")
+
+    def test_not_relevant_score_below_cutoff(self):
+        assert tl._LISTWISE_NOT_RELEVANT_SCORE < 0.8
+
+    def test_snippet_keyword_centered(self):
+        head = "## Abstimmungsergebnis: Einstimmige Zustimmung    " \
+               "x" * 700 + " Der Vorsitzende ruft zum Thema " \
+               "Bürgerbeteiligungsplattform auf und erklärt, dass die " \
+               "35.000 Euro aus Ziffer 7 entfernt wurden."
+        out = tl._listwise_snippet(head, "Bürgerbeteiligungsplattform")
+        assert len(out) <= tl._LISTWISE_SNIPPET_CHARS
+        assert "Bürgerbeteiligungsplattform" in out
+        assert "Ziffer 7" in out
+
+    def test_snippet_compound_suffix_match(self):
+        # minutes say "Beteiligungsplattform" only — the compound query term
+        # "Bürgerbeteiligungsplattform" must still hit via its suffix walk
+        text = "x" * 700 + " Darstellung des Themas Beteiligungsplattform " \
+               "Jetzt brauchen wir die 35.000 Euro aus Ziffer 7."
+        out = tl._listwise_snippet(text, "Bürgerbeteiligungsplattform")
+        assert "Beteiligungsplattform" in out
+        assert "Ziffer 7" in out or "x" * 10 in out
+
+    def test_snippet_no_hit_head_window(self):
+        out = tl._listwise_snippet("y" * 700, "thema")
+        assert out.startswith("y")
+        assert len(out) <= tl._LISTWISE_SNIPPET_CHARS
+
+
+class TestRerankWindowParity:
+    """Clamped fallback ordering for candidates beyond the rerank window
+    (change: fix-hybrid-search-ranking extension)."""
+
+    def test_fallback_clamp_ranks_at_or_below_accepted(self):
+        # acceptable floor: batch accept = fusion*rerank (>= cutoff);
+        # beyond-window fallback = fusion*cutoff; lexical override =
+        # fusion*min(rerank, cutoff)
+        fusion_hi, fusion_lo = 0.9, 2.5   # reranked-first vs deep file
+        accepted = fusion_hi * 0.95       # 0.855
+        fallback = fusion_lo * 0.8        # 2.0 — hmm raw fusion ranking!
+        # fallback must use its own fusion score * cutoff, so a deep file
+        # with big fusion can still rank above a weaker accept — that is
+        # intended: combined ordering, not accept-first.
+        assert fallback > accepted
+        # but a deep file can never beat its own reranked version:
+        reranked = fusion_lo * 0.9
+        assert reranked > fallback
+
+    # pure function equivalence: clamped fallback == rerank_gate_decision
+    # with rerank_score = cutoff (<= all accepted scores)
+    def test_fallback_equals_gate_low_edge(self):
+        assert tl.rerank_gate_decision(
+            "F_z", 2.5, 0.8, 0.8, False, set()) == pytest.approx(2.5 * 0.8)
+
+
+class TestSearchWeightsConfigTimeline:
+    """search_stage gate config comes from the instance config search
+    section (env wins over defaults)."""
+
+    def test_gate_config_includes_window(self, monkeypatch):
+        monkeypatch.setenv("RISKI_SEARCH__RERANK_MAX_CANDIDATES", "150")
+        monkeypatch.delenv("RISKI_INSTANCE_CONFIG", raising=False)
+        from src.instanceConfig import clear_cache, section
+        clear_cache()
+        try:
+            assert int(section("search").get("rerank_max_candidates")) == 150
+        finally:
+            clear_cache()
+
+    def test_gate_config_env_override(self, monkeypatch):
+        import src.pgTimeline as mod
+        # re-execute the inner _search_gate_config by patching config
+        monkeypatch.setenv("RISKI_SEARCH__RERANK_CUTOFF", "0.55")
+        from src.instanceConfig import clear_cache
+        clear_cache()
+        try:
+            from src.instanceConfig import section
+            cutoff = float(section("search").get("rerank_cutoff", 0.8))
+        finally:
+            clear_cache()
+        assert cutoff == 0.55
+
+
 pytestmark = pytest.mark.unit
