@@ -31,7 +31,7 @@
 ## 5. Documentation
 
 - [x] 5.1 README "Data update workflow" rewritten around `python src/riskiUpdate.py` (flags, criticality/failure semantics, stage ledger, report location) plus a cron example with `flock`, exit-code handling and report path; the manual per-script flow stays as an appendix describing the underlying phases. Add a note that stored pipeline text (File.content, File_chunks, teasers, summaries) is never PII-masked — geo inference depends on raw street/district names.
-- [ ] 5.2 `openspec validate --changes` passes; archive-ready summary in the change folder; on archive, the `result-summarizer` PII delta (incl. the street/district exemption) is synced to the main spec, closing the missed `summary-pii-guard` sync.
+- [x] 5.2 `openspec validate --changes` passes; archive-ready summary in the change folder; on archive, the `result-summarizer` PII delta (incl. the street/district exemption) is synced to the main spec, closing the missed `summary-pii-guard` sync.
 
 ## 6. Geo/PII interplay (amended 2026-11-26)
 
