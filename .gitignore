@@ -386,3 +386,4 @@ results/*.sqlite-wal
 tmp/
 last-oc.txt
 updateRiski_db.txt
+samples/
