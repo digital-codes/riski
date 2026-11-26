@@ -29,7 +29,7 @@ from datetime import datetime, timedelta, timezone
 # ----------------------------------------------------------------------
 from src.instanceConfig import section as _instance_section
 
-DEFAULT_SYSTEM_URL = "https://web1.karlsruhe.de/ris/oparl"
+DEFAULT_SYSTEM_URL = "https://web2.karlsruhe.de/ris/oparl"
 DEFAULT_OUTPUT_FOLDER = "/mnt_ai/data/odd26/ris/ko"
 DEFAULT_OUTPUT_PDF_FOLDER = "/mnt_ai/data/odd26/ris/ko_pdf"
 DEFAULT_LOG_FILENAME = "ko_update_crawl.log"
@@ -76,11 +76,11 @@ def _configure_logging():
 def rewrite_url(url: str, rules=None) -> str:
     """Apply the instance config's ordered regex rewrites to *url*.
 
-    Each rule is ``{pattern, replacement}``. The Karlsruhe default restores
-    the ``/ris`` prefix on web1.karlsruhe.de URLs that lack it (same effect
-    as the former ``fix_karlsruhe_url``); an empty rule list means no
-    rewriting (other backends). Pass *rules* to override the config
-    (used by tests)."""
+    Each rule is ``{pattern, replacement}``. change: oparl-endpoint-web2 —
+    the DEFAULT rule list is EMPTY: the current Karlsruhe endpoint (web2)
+    serves proper ``/ris/oparl`` paths, so no rewriting runs; the legacy
+    web1 "/ris-prefix restore" rule can be re-added per instance config
+    when needed. Pass *rules* to override the config (used by tests)."""
     if rules is None:
         rules = _oparl().get("url_rewrites") or []
     for rule in rules:
@@ -102,21 +102,22 @@ def rewrite_url(url: str, rules=None) -> str:
 fix_karlsruhe_url = rewrite_url
 
 
-def fix_urls_in_data(data):
-    """Recursively apply the configured URL rewrites to the supplied data
-    structure."""
+def fix_urls_in_data(data, rules=None):
+    """Recursively apply URL rewrites (change: oparl-endpoint-web2 —
+    ``rules=None`` uses the instance config; tests may pass explicit
+    rules; the DEFAULT config list is empty = no rewriting)."""
     if isinstance(data, dict):
         for k, v in data.items():
             if isinstance(v, str) and v.startswith("http"):
-                data[k] = rewrite_url(v)
+                data[k] = rewrite_url(v, rules=rules)
             elif isinstance(v, (dict, list)):
-                fix_urls_in_data(v)
+                fix_urls_in_data(v, rules=rules)
     elif isinstance(data, list):
         for i, item in enumerate(data):
             if isinstance(item, str) and item.startswith("http"):
-                data[i] = rewrite_url(item)
+                data[i] = rewrite_url(item, rules=rules)
             elif isinstance(item, (dict, list)):
-                fix_urls_in_data(item)
+                fix_urls_in_data(item, rules=rules)
 
 # ----------------------------------------------------------------------
 # FILENAME / SAVING HELPERS (unchanged)

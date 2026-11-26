@@ -56,61 +56,38 @@ search hits.
   file still counts as included
 
 ### Requirement: Teaser-layer context
+The teaser-layer context SHALL carry each document's date: the snippet
+header is `Datei N (TT.MM.JJJJ): <name> (…)` when the file has a date
+(missing dates just omit the bracket). The context SHALL be presented in
+CHRONOLOGICAL order (oldest first), with the file numbers (Datei N)
+preserved from the user's relevance-ordered list so references keep
+matching the rendered document list. The teaser prompt SHALL state the
+order and the temporal-weighing rule.
 
-The summarizer SHALL use the teaser layer for the automatic summary pass. On
-a user-action refinement run (refine button or file-selection change) the
-context per file SHALL be the file's content layer, selected as follows:
+#### Scenario: Date in the snippet header
+- **WHEN** the teaser context is built for a file with a date
+- **THEN** the header carries the date in TT.MM.JJJJ form
 
-- When the search phase determined a best-matching chunk for the file
-  (chunk index carried in the file's match metadata), the refinement context
-  SHALL be the text of THAT chunk — the piece of the document that matched
-  the query — not the head chunk stored in the legacy content column.
-- Files without a matching chunk index SHALL keep the legacy content column,
-  falling back to the teaser when content is absent.
+#### Scenario: Chronological order with stable numbering
+- **WHEN** the summarizer context is assembled for 5 files with mixed
+  dates
+- **THEN** the context is ordered oldest first while each document keeps
+  its user-visible Datei number
 
-The refinement context per file SHALL be capped by a configurable character
-budget. The prompt SHALL state which context layer was used ("Teaser" vs
-"Volltext").
+### Requirement: Refinement context chronology
+The full-content refinement context SHALL carry the same per-document
+date headers and chronological order. The refine prompt SHALL replace the
+"nach Relevanz sortiert" statement with the chronological order and the
+temporal-weighing instruction (the summary reflects the CURRENT valid
+state: a newer document supersedes an older one; a refinement contradicting
+a 3-year-old file in favour of the old one is a summarization error).
 
-#### Scenario: Teaser preferred
+#### Scenario: Refine prompt carries chronology
 
-- **WHEN** a file has both teaser and content and no user action requested
-  refinement
-- **THEN** only the teaser text enters the prompt
-
-#### Scenario: Full content on refinement
-
-- **WHEN** a summary run is flagged as a refinement
-- **THEN** the LLM context uses each included file's content layer, selected
-  per the rules above: the matched chunk's text when the search phase
-  carries a chunk index (capped by the configured budget), otherwise the
-  legacy content column, falling back to teaser when content is absent
-
-#### Scenario: Matched chunk on refinement
-
-- **WHEN** a refinement run includes a file whose search-phase match carries
-  a chunk index pointing at a stored chunk
-- **THEN** the prompt contains THAT chunk's text (capped by the configured
-  budget) instead of the head chunk from the legacy content column
-
-#### Scenario: No matching chunk falls back
-
-- **WHEN** a refinement run includes a file with no chunk index in its match
-  metadata (lexical/name/location match, agenda sibling, legacy single-vector
-  file)
-- **THEN** the prompt contains the file's content column text, falling back
-  to the teaser when content is absent
-
-#### Scenario: Teaser pass unchanged
-
-- **WHEN** the automatic summary pass runs
-- **THEN** no chunk selection happens and the context is identical to the
-  behaviour before this change
-
-#### Scenario: Prompt names the context layer
-
-- **WHEN** any summary run starts
-- **THEN** the prompt's document header names the context layer in use
+- **WHEN** the refinement pass builds its context
+- **THEN** the prompt states the chronological order and instructs the
+  model to weigh temporal recency (no "3-years-later refinement" of an
+  outdated decision as the current state)
 
 ### Requirement: Graceful degradation
 The summarizer SHALL skip summarization (leaving `result["summary"]`

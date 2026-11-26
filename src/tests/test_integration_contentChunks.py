@@ -47,8 +47,12 @@ def oversized():
             orig_emb = [tuple(r) for r in conn.execute(text(
                 'SELECT chunk_index, id FROM "contentEmbeddings" '
                 'WHERE "oparlKey" = :k'), {"k": row.oparlKey}).fetchall()]
+            # change: fix-stale-test-fixtures — key alignment: the test
+            # reads oversized["orig"], not oversized["file"]
             return {"stem": stem, "path": path, "engine": engine,
                     "file": {"sid": row.sid, "oparlKey": row.oparlKey,
+                             "filename": row.filename},
+                    "orig": {"sid": row.sid, "oparlKey": row.oparlKey,
                              "filename": row.filename},
                     "orig_chunks": orig_chunks, "orig_emb": orig_emb}
     pytest.skip("no oversized markdown with File row found")

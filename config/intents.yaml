@@ -25,6 +25,14 @@ intents:
     route:
       handler: search
       answer_mode: summary
+    slots:
+      # change: fix-followup-deixis — dedicated follow-up decision: the
+      # model receives both queries in the slot question and answers
+      # nachfrage / neues Thema (previous query interpolated at call time)
+      topic_follow:
+        description: "Ist die aktuelle Frage eine Nachfrage im Anfrageverlauf (bezieht sich auf die vorherige Frage, ohne einen eigenen Gegenstand) oder ein frisches Thema?"
+        choices: ["nachfrage", "neues Thema"]
+        question_prompt: topic-follow-slot-question
     choices:
       - "erzähl was zur theatersanierung"
       - "was gibt es neues zum radweg am terrainkurweg"

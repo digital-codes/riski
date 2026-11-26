@@ -13,7 +13,7 @@ interface RelatedDoc {
 const props = defineProps<{ docs: RelatedDoc[] }>();
 const has = computed(() => (props.docs || []).length > 0);
 function link(r: RelatedDoc) {
-  return r.downloadurl || `https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/${r.oparl_key?.split("/").pop()}`;
+  return r.downloadurl || `https://web2.karlsruhe.de/ris/oparl/bodies/0001/files/${r.oparl_key?.split("/").pop()}`;
 }
 </script>
 

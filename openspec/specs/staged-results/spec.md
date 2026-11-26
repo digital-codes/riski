@@ -39,6 +39,69 @@ SHOULD trigger that stage's computation for the session. Calling them out of
 order SHALL be safe: requesting the graph SHALL also make earlier stage
 results available for subsequent requests.
 
+### Requirement: Search result card layout (search_topic)
+
+The interactive client SHALL render the `search_topic` result view with the
+following card order: (1) summary card (once the summary stage delivered;
+loading state before), (2) map card — only when geo data is available,
+(3) timeline card, (4) network graph card (moved from the former first
+position to last). The former top-10-files card SHALL be dropped from the
+view. The former unstyled tags/related-documents paragraph block SHALL be
+dropped from the view. The summary card SHALL no longer embed the related
+section; instead a separate styled related-hints card SHALL follow the
+summary card.
+
+#### Scenario: Card order matches the contract
+
+- **WHEN** a `search_topic` query returns files, meta, and geo data
+- **THEN** the view shows summary card, then related-hints card (when
+  allowed), then map, then timeline, then network graph — no top-10-files
+  card and no unstyled tags/related-documents paragraph
+
+### Requirement: Related-hints card visibility
+
+The related-hints card SHALL show the refinement chips (kg topic hints the
+user can pick to refine the query) and the related documents. It SHALL be
+rendered ONLY when the result did NOT find a kg topic with a sufficiently
+high score to enable a topical summary (topic focus below the topical
+threshold) AND the search delivered NO files ("Verfeinerung & verwandte
+Dokumente" is the card for the nebulous case — a real hit list leaves no
+room for it). The chips SHALL be presented as interactive options — their
+purpose is to give the user hints for refining the search query — not as
+document list content.
+
+#### Scenario: Hidden when the search delivered files
+- **WHEN** a `search_topic` result carries at least one file in its top-file list (or selected summary files)
+- **THEN** no related-hints card is rendered, regardless of related documents
+
+#### Scenario: Hidden when topical summary enabled
+
+- **WHEN** the query matched a kg topic above the topical threshold and the
+  summary was generated with topic focus
+- **THEN** no related-hints card is rendered (the summary stands alone)
+
+#### Scenario: Shown for unfocused queries
+
+- **WHEN** the query produced no topic focus above the threshold (plain
+  search results) and related documents exist
+- **THEN** the related-hints card follows the summary card with the
+  refinement chips first, related documents second
+
+#### Scenario: Chips are always inside a card
+- **WHEN** any chip surface renders (refinement chips, clarification chips, weak-recall chips, follow-up question chips)
+- **THEN** the chips are inside a styled card — never naked on the page
+- **AND** a new search clears previously displayed chips with the other panes (no stale chips below a newer view)
+
+#### Scenario: Chips refine the query (follow-up, not new search)
+
+- **WHEN** the user picks a chip in the related-hints card
+- **THEN** a FOLLOW-UP search is issued: the queries from the history are
+  included in the query (amended query: prior query + chip topic/example)
+  and the thread state is carried, so the server resolves the refinement in
+  context
+- **AND** a NEW search (the search button / a user-typed fresh query)
+  clears the history — the server-side thread starts fresh
+
 #### Scenario: Fetch timeline for a session
 
 - **WHEN** the client requests the timeline for a sessionId whose first stage

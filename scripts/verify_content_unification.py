@@ -23,13 +23,18 @@ REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO))
 
 # queries chosen to surface BOTH file classes in top results:
-# single-chunk-heavy (small Volltexte) and chunk-heavy (large protocols)
+# single-chunk-heavy (small Volltexte) and chunk-heavy (large protocols).
+# The last two exercise the fix-hybrid-search-ranking lexical behaviour:
+# simple subject keywords that should produce direct lexical name hits
+# in top_files (weighted fusion + lexical rerank override).
 QUERIES = [
     "Digitalstrategie der Stadt Karlsruhe",
     "Ortschaftsrat Mühlburg",
     "themen rund um die 2. rheinbruecke",
     "radweg am terrainkurweg",
     "Haushalt 2024",
+    "beteiligungsplatform",
+    "bürgerbeteiligung",
 ]
 
 

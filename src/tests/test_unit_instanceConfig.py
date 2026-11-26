@@ -37,7 +37,7 @@ class TestDefaults:
     def test_no_config_means_karlsruhe_defaults(self):
         cfg = get_instance_config()
         assert cfg == DEFAULTS
-        assert cfg["oparl"]["system_url"] == "https://web1.karlsruhe.de/ris/oparl"
+        assert cfg["oparl"]["system_url"] == "https://web2.karlsruhe.de/ris/oparl"  # change: oparl-endpoint-web2
         assert cfg["oparl"]["bodies"] == []
         assert cfg["geo"]["city"] == "Karlsruhe"
         assert cfg["geo"]["map_center"] == [49.0069, 8.4037]

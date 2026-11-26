@@ -13,10 +13,18 @@ from src import oparlUpdate as ou
 # ---------------------------------------------------------------------------
 
 
+
+# change: oparl-endpoint-web2 — web1 "/ris prefix restore" is a LEGACY
+# rewrite rule; the mechanism (not the default) is what tests here cover.
+_WEB1_RULE = [{"pattern": r"(https?://web1\.karlsruhe\.de)(?!/ris(/|$))",
+               "replacement": r"\1/ris"}]
+
+
 class TestFixKarlsruheUrl:
     def test_inserts_ris_segment(self):
+        # legacy web1 mechanism test (when a config re-adds the rule)
         url = "https://web1.karlsruhe.de/oparl/bodies"
-        fixed = ou.fix_karlsruhe_url(url)
+        fixed = ou.rewrite_url(url, rules=_WEB1_RULE)
         assert fixed == "https://web1.karlsruhe.de/ris/oparl/bodies"
 
     def test_leaves_correct_url_untouched(self):
@@ -27,9 +35,18 @@ class TestFixKarlsruheUrl:
         url = "https://schema.oparl.org/1.1/Meeting"
         assert ou.fix_karlsruhe_url(url) == url
 
+    def test_web2_needs_no_ris_restore(self):
+        # change: oparl-endpoint-web2 — with the empty default rule list
+        # web2 URLs pass through unchanged
+        assert ou.rewrite_url("https://web2.karlsruhe.de/ris/oparl/bodies",
+                              rules=[]) == "https://web2.karlsruhe.de/ris/oparl/bodies"
+
 
 class TestUrlRewrites:
     """Instance-configured URL rewrites (change: instance-agnostic-config):
+    change: oparl-endpoint-web2 — the DEFAULT rule list is empty (web2
+    serves proper /ris/oparl paths); the web1 insert rule stays as a
+    legacy-mechanism test
     the Karlsruhe default reproduces fix_karlsruhe_url; an empty rule list
     disables rewriting."""
 
@@ -37,18 +54,25 @@ class TestUrlRewrites:
         url = "https://web1.karlsruhe.de/oparl/bodies"
         assert ou.rewrite_url(url, rules=[]) == url
 
-    def test_karlsruhe_default_from_config(self, monkeypatch):
+    def test_empty_default_and_legacy_config_rule(self, monkeypatch):
+        # change: oparl-endpoint-web2 — the DEFAULT rule list is empty
+        # (web2 needs no /ris restore); the web1 rule is instance-config
         import src.instanceConfig as ic
 
         monkeypatch.setenv("RISKI_INSTANCE_CONFIG", "/nonexistent")
         ic.clear_cache()
         try:
-            url = "https://web1.karlsruhe.de/oparl/bodies"
-            assert ou.rewrite_url(url) == "https://web1.karlsruhe.de/ris/oparl/bodies"
+            url = "https://web2.karlsruhe.de/ris/oparl/bodies"
+            assert ou.rewrite_url(url) == url          # default: pass-through
             assert ou.rewrite_url(
-                "https://web1.karlsruhe.de/ris/oparl/bodies") == \
-                "https://web1.karlsruhe.de/ris/oparl/bodies"
+                "https://web2.karlsruhe.de/ris/oparl/bodies") == \
+                "https://web2.karlsruhe.de/ris/oparl/bodies"
             assert ou.rewrite_url("https://example.org/x") == "https://example.org/x"
+            # a config-provided web1 rule still works (second instance /
+            # rollback: RISKI_OPARL__SYSTEM_URL back to web1 + this rule)
+            assert ou.rewrite_url(
+                "https://web1.karlsruhe.de/oparl/bodies", rules=_WEB1_RULE) == \
+                "https://web1.karlsruhe.de/ris/oparl/bodies"
         finally:
             ic.clear_cache()
 
@@ -183,10 +207,16 @@ class TestBodyEnumeration:
             "links": ["https://web1.karlsruhe.de/oparl/a", "https://other.example/x"],
             "nested": {"next": "https://web1.karlsruhe.de/oparl/b"},
         }
-        ou.fix_urls_in_data(data)
+        rule = {"pattern": r"(https?://web1\.karlsruhe\.de)(?!/ris(/|$))",
+                "replacement": r"\1/ris"}
+        ou.fix_urls_in_data(data, rules=_WEB1_RULE)
         assert data["links"][0] == "https://web1.karlsruhe.de/ris/oparl/a"
         assert data["links"][1] == "https://other.example/x"
         assert data["nested"]["next"] == "https://web1.karlsruhe.de/ris/oparl/b"
+        # defaults: rewrite_url applies no web1 rewrite anymore
+        untouched = {"links": ["https://web1.karlsruhe.de/oparl/a"]}
+        ou.fix_urls_in_data(untouched)
+        assert untouched["links"][0] == "https://web1.karlsruhe.de/oparl/a"
 
 
 # ---------------------------------------------------------------------------

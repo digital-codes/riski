@@ -51,6 +51,7 @@ from fastapi import FastAPI, HTTPException, Request
 from sqlalchemy import text
 from pydantic import BaseModel, Field
 
+from src.pgIntentRouter import _FORCE as ROUTER_FORCE  # change: request-thread-facets
 from src.apiTrace import (
     new_request_id, set_request_id, trace, trace_enabled,
 )
@@ -168,7 +169,8 @@ def _thread_chips(limit: int = 5) -> list[dict]:
     return chips
 
 
-def _thread_turn(session, query: str, req_thread: dict | None) -> dict:
+def _thread_turn(session, query: str, req_thread: dict | None,
+                 model_followup: bool | None = None) -> dict:
     """kg-app-integration D7: open the prior sealed thread, classify the
     turn (followup vs break), apply the 5-turn budget, and return
     {thread, effective_query, forced_break} (tasks 7.1–7.4)."""
@@ -207,27 +209,104 @@ def _thread_turn(session, query: str, req_thread: dict | None) -> dict:
                                recall_confident=True)
     used_query = query
     concatenated = False
-    if cls["action"] == "followup" and thread["turns"]:
+    # change: fix-followup-deixis — the topic_follow model decision (both
+    # queries in the slot question) overrides the lexicon when it answered
+    if model_followup is not None:
+        cls = dict(cls, action="followup" if model_followup else "break")
+    followup = cls["action"] == "followup"
+    if followup and thread["turns"]:
         used_query = effective_query(thread, query)
         concatenated = True
-        advance_thread(thread, query)
-    else:
-        advance_thread(thread, query)
+    advance_thread(thread, query)
     return {
         "thread": thread,
         "session_id": sid,
         "effective_query": used_query,
         "forced_break": forced_break,
+        "model_followup": model_followup,
         "concatenated": concatenated,
         "classification": cls,
     }
+
+
+_OPTION_SLOT_MARKER = "facet:gremium"
+
+
+def resolve_gremium_for_slot(session: Any, term: str,
+                             option: Optional[Dict[str, Any]]) -> Optional[dict]:
+    """Slot fill via the option machinery (change: request-thread-facets):
+    resolve the gremium term the user SELECTED, month/year from the option
+    hint may be absent — the meeting resolution targets the latest held
+    meeting with documents. Returns the resolved dict or None."""
+    try:
+        from src.pgIntentRouter import resolve_gremium, load_intents_config
+        cfg = load_intents_config()
+        gi = next((i for i in cfg["intents"]
+                   if "gremium" in (i.get("slots") or {})), None)
+        groups = (gi.get("groups") or {}).get("gremium", []) if gi else []
+        out = resolve_gremium(session, term, groups,
+                              month=(option or {}).get("month"),
+                              year=(option or {}).get("year"))
+        return out if out.get("meeting") else None
+    except Exception as exc:  # noqa: BLE001
+        _kg_log.warning("slot resolve failed: %s", exc)
+        return None
+
+
+def _option_turn(req: Any, query: str) -> Optional[Dict[str, Any]]:
+    """Deterministic thread turn for an OPTION selection (change:
+    fix-gremium-session-docs-thread): the backend offered the chip, so the
+    selection is follow-up by construction — no classify call. Opens the
+    sealed state (q0 + turns = the history), builds the effective query
+    (history + option topic), advances the thread."""
+    try:
+        from src.kg.kgFollowups import (
+            advance_thread, effective_query, maybe_new_thread, new_thread,
+            open_state,
+        )
+        req_thread = req.thread if isinstance(req.thread, dict) else None
+        prior: dict = {}
+        sid = uuid.uuid4().hex
+        if req_thread and req_thread.get("state") and req_thread.get("session_id"):
+            sid = str(req_thread["session_id"])[:64]
+            try:
+                prior = open_state(req_thread["state"], sid) or {}
+            except Exception as exc:  # expired/tampered → new thread
+                _kg_log.warning("option state rejected (%s) — new thread", exc)
+        thread = maybe_new_thread(prior) or new_thread(origin="chips")
+        topic_text = validate_user_query(str(req.option.get("topic")))
+        if thread.get("turns"):
+            effective = effective_query(thread, topic_text)
+        else:
+            effective = topic_text
+        thread = advance_thread(thread, topic_text)
+        # change: request-thread-facets — a gremium-facet option FILLS the
+        # slot: the thread keeps the history for concat, but the turn marks
+        # the slot so the /ask branch scopes by the organization filter
+        option_ctx = (getattr(req, "option", None) or {})
+        facet = option_ctx.get("facet") or option_ctx.get("slot")
+        return {
+            "thread": thread,
+            "session_id": sid,
+            "effective_query": effective if facet != "gremium" else topic_text,
+            "facet": facet,
+            "slot_term": topic_text,
+            "forced_break": False,
+            "concatenated": bool(prior.get("turns")) and facet != "gremium",
+            "classification": {"action": "followup", "source": "option",
+                               "facet": facet},
+        }
+    except Exception as exc:  # noqa: BLE001
+        _kg_log.warning("option turn failed: %s", exc)
+        return None
 
 
 def _apply_thread_to_result(turn: dict, result: dict, top_files: list | None) -> None:
     """Seal the advanced thread onto the response (normal mode, task 7.4)."""
     from src.kg.kgFollowups import seal_state_or_none
     thread = turn["thread"]
-    result["mode"] = "normal"
+    if not result.get("mode"):
+        result["mode"] = "normal"   # keep an options payload's own mode
     result["thread"] = {
         "thread_id": thread["thread_id"],
         "turn_count": thread["turn_count"],
@@ -338,6 +417,58 @@ def instance_config() -> Dict[str, Any]:
 
 
 
+def _carry_over_prior_docs(req: Any, turn: dict, result: dict) -> None:
+    """Facet amendment (change: request-thread-facets): the prior request's
+    selected documents (sealed context `top_docs`) persist in the answer:
+    ranked AFTER the new hits, capped at 5, marked
+    `via: "aus Ihrer vorherigen Anfrage"` — dedup by oparlKey. On an empty
+    new search the carry-over set alone remains the answer (no topic
+    jump)."""
+    prior_docs = []
+    try:
+        from src.kg.kgFollowups import open_state
+        rt = getattr(req, "thread", None)
+        if isinstance(rt, dict) and rt.get("state") and rt.get("session_id"):
+            prior = open_state(rt["state"], str(rt["session_id"])[:64]) or {}
+            prior_docs = (prior.get("top_docs") or [])[:5]
+    except Exception as exc:  # noqa: BLE001
+        _kg_log.warning("carry-over open_state failed: %s", exc)
+        return
+    if not prior_docs:
+        return
+    top = result.get("top_files") or []
+    present = {tf.get("oparlKey") for tf in top}
+    adds = [k for k in prior_docs if k and k not in present][:5]
+    if not adds:
+        return
+    missing_sids = {k: None for k in adds}
+    try:
+        from src.db import get_engine
+        import sqlalchemy as sa
+        with get_engine(readonly=True).connect() as c:
+            rows = c.execute(sa.text(
+                'SELECT sid, "oparlKey", name, filename, "oparlId", '
+                'downloadurl, date FROM "File" WHERE "oparlKey" = ANY(:ks)'),
+                {"ks": adds}).fetchall()
+            missing_sids = {r[1]: r for r in rows}
+    except Exception as exc:  # noqa: BLE001
+        _kg_log.warning("carry-over file lookup failed: %s", exc)
+        return
+    for k in adds:
+        r = missing_sids.get(k)
+        if not r:
+            continue
+        # change: fix-followup-deixis — the carried entries MUST carry sid
+        # (timeline_stage / graph build file_sids from top_files entries)
+        top.append({
+            "sid": r[0], "oparlKey": k, "name": r[2], "fileName": r[3],
+            "downloadurl": r[5] or r[4], "oparlId": r[4], "date": r[6],
+            "distance": None, "match": {},
+            "via": "aus Ihrer vorherigen Anfrage",
+        })
+    result["top_files"] = top
+
+
 def _kg_enrich(result: dict, query: str, session_id: str) -> None:
     """kg-app-integration: related documents + followups/clarification
     injected into a stage-1 result (used by /search and /ask)."""
@@ -408,13 +539,17 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
             summary_text = ((result.get("summary") or {}).get("text", "")
                             if isinstance(result.get("summary"), dict)
                             else (result.get("summary") or ""))
-            fu = generate_followups(summary_text, statements=None,
-                                    topics=list(dict.fromkeys(topics))[:5])
-            result["followups"] = fu.get("questions")
+            # change: fix-gremium-session-docs-thread — generate_followups
+            # is an LLM call (~3 s); it needs a summary to ground the
+            # questions. Meeting-scope answers (answer_mode list_topics)
+            # have none — skip the empty-context call so the /ask round
+            # trip stays fast (intent decode + graph build only)
+            if summary_text:
+                fu = generate_followups(summary_text, statements=None,
+                                        topics=list(dict.fromkeys(topics))[:5])
+                result["followups"] = fu.get("questions")
             token = seal_state_or_none(state_payload, session_id)
             if token and not result.get("state"):  # D7: thread token wins
-                result["state"] = token
-                result["state_session"] = session_id
                 result["state"] = token
                 result["state_session"] = session_id
     except Exception as exc:  # pragma: no cover
@@ -425,7 +560,7 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
 @app.get("/file-proxy/{oparl_key}")
 def file_proxy(oparl_key: str):
     """kg-app-integration: stream a RIS file through our server so the
-    browser never talks to web1.karlsruhe.de directly — the F5/BIG-IP
+    browser never talks to cal server (web1/web2) directly — the F5/BIG-IP
     session cookies (TS01ea880d etc.) the RIS sets belong to a foreign
     origin; proxying avoids them entirely.
 
@@ -495,6 +630,16 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         except Exception as exc:  # thread layer must never break search
             _kg_log.warning("thread turn failed: %s", exc)
 
+    # change: rework-search-result-cards — additive boolean for the UI's
+    # related-hints card: the topic focus (kg topic above the threshold)
+    # enables a topical summary, in which case the refinement-hints card
+    # is NOT rendered. Cheap query-side check on the /search path.
+    try:
+        from src.kg.kgQueries import topic_focus_for_query as _tfq
+        result_focus = _tfq(query)
+    except Exception:  # pragma: no cover
+        result_focus = None
+
     try:
         result = search_stage(
             session, query, top_k=req.top_k,
@@ -538,6 +683,7 @@ def search(req: SearchRequest) -> Dict[str, Any]:
         "stage_lock": threading.Lock(),
     }
     result["sessionId"] = session_id
+    result["topical_summary"] = result_focus is not None
     _trace_response("search", result)
     return result
 
@@ -549,6 +695,11 @@ class AskRequest(BaseModel):
     signals: Optional[Dict[str, bool]] = None
     summarize: bool = True
     thread: Optional[Dict[str, Any]] = None  # D7: {state, session_id|fresh}
+    # change: fix-gremium-session-docs-thread — chip picks are transmitted
+    # as OPTION SELECTION, not as text input: {topic, example?} resolved by
+    # the backend against the sealed thread (follow-up classification is
+    # deterministic here — the option WAS offered by the backend).
+    option: Optional[Dict[str, Any]] = None
 
 
 def _stage1_search_fn(session, query: str, top_k: int = 10,
@@ -585,33 +736,204 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     except Exception as exc:  # pragma: no cover - db down
         raise HTTPException(status_code=503, detail=f"database unavailable: {exc}")
 
-    # kg-app-integration D7: /ask also participates in query threads
+    # kg-app-integration D7: /ask also participates in query threads.
+    # change: fix-gremium-session-docs-thread — a gremium-session query is
+    # HEAD OF CHAIN: no thread turn (context history resets), no
+    # effective-query concatenation. Pre-check via the gremium slot
+    # vocabulary + session date frame ("letzte sitzung", month) — cheap DB
+    # scan, no model call.
     kg_on = app.state.kg_app_integration
     turn = None
-    if kg_on and getattr(req, "thread", None):
+    gremium_head = False
+    if kg_on:
         try:
-            turn = _thread_turn(session, query, req.thread)
-            query = turn["effective_query"]
+            from src.pgIntentRouter import is_gremium_session_query
+            gremium_head = is_gremium_session_query(query)
         except Exception as exc:
-            _kg_log.warning("thread turn (ask) failed: %s", exc)
+            _kg_log.warning("gremium precheck failed: %s", exc)
+    decoded_topic_follow = None
+    if kg_on and not gremium_head:
+        opt = getattr(req, "option", None)
+        if isinstance(req.thread, dict) and isinstance(opt, dict) and opt.get("topic"):
+            # change: fix-gremium-session-docs-thread — option selection =
+            # deterministic follow-up turn (backend offered the option → no
+            # classification call); helper seals the advanced thread
+            try:
+                turn = _option_turn(req, query)
+                if turn:
+                    if turn.get("facet") == "gremium" and turn.get("slot_term"):
+                        # change: request-thread-facets — slot fill: the
+                        # option selection resolved the body; the scoped
+                        # gremium request runs (resolve_gremium inside the
+                        # routed handler) with that slot term — no concat
+                        grem = resolve_gremium_for_slot(session,
+                                                        turn["slot_term"],
+                                                        req.option)
+                        if grem:
+                            req.__dict__["_slot_forced"] = grem
+                    query = turn["effective_query"]
+            except Exception as exc:
+                _kg_log.warning("option selection failed: %s", exc)
+        else:
+            # change: fix-followup-deixis — ONE decode round decides
+            # EVERYTHING: the /ask runs the decode FIRST (with the previous
+            # query activating the topic_follow slot question); the result
+            # is forced into the router (no second decode) and threads
+            # through the thread turn's classification (model decision
+            # wins over the lexicon)
+            prev_q = None
+            try:
+                from src.kg.kgFollowups import open_state as _open
+                if isinstance(req.thread, dict) and req.thread.get("state"):
+                    prior = _open(req.thread["state"],
+                                  str(req.thread.get("session_id") or "")[:64]) or {}
+                    turns = (prior.get("thread") or {}).get("turns") or []
+                    prev_q = (turns or [])[-1] if turns else None
+                    prev_q = prev_q if prev_q != query else None
+            except Exception:
+                prev_q = None
+            try:
+                from src.pgIntentRouter import IntentRouter
+                decoded_early = IntentRouter().decode(query, prev_query=prev_q)
+            except Exception as exc:  # thread layer must never break ask
+                _kg_log.warning("early decode failed: %s", exc)
+                decoded_early = None
+            # change: fix-followup-deixis — the topic_follow slot answer
+            # (nachfrage) overlays the deictic-lexicon classification
+            if decoded_early:
+                model_says = (((decoded_early.get("slots") or {})
+                               .get("topic_follow")) == "nachfrage")
+                # deictic lexicon stays as an OR-fallback: the model can
+                # answer "neues Thema" for a clear pronoun reference (live
+                # "wo wird es gebaut" — safety first)
+                from src.pgIntentRouter import _is_deictic as _deix
+                model_followup = model_says or _deix(query)
+                ROUTER_FORCE["ctx"] = {
+                    "forced_intent": decoded_early["intent"],
+                    "slots": decoded_early.get("slots") or {},
+                    "scores": decoded_early.get("scores") or {},
+                }
+            else:
+                model_followup = None
+            try:
+                turn = _thread_turn(session, query, req.thread,
+                                    model_followup=model_followup)
+                query = turn["effective_query"]
+            except Exception as exc:  # thread layer must never break ask
+                _kg_log.warning("thread turn (ask) failed: %s", exc)
 
-    try:
-        result = route_ask(
-            session, query, top_k=req.top_k,
-            signals=req.signals, summarize=req.summarize,
-            search_fn=_stage1_search_fn,
-        )
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-    finally:
-        session.close()
+    # change: request-thread-facets — the gremium SLOT FILL (option
+    # selection) forces the routed intent + slot: no decode, the option
+    # decided it
+    if turn is not None and turn.get("facet") == "gremium" and \
+            turn.get("slot_term"):
+        ROUTER_FORCE["ctx"] = {"forced_intent": "ask_gremium_recent",
+                         "slots": {"gremium": turn["slot_term"].lower()}}
+        try:
+            result = route_ask(
+                session, turn["slot_term"], top_k=req.top_k,
+                signals=req.signals, summarize=req.summarize,
+                search_fn=_stage1_search_fn)
+            result["slot_filled"] = True
+        finally:
+            ROUTER_FORCE["ctx"] = None
+            session.close()
+    else:
+        ROUTER_FORCE["ctx"] = None
+        # change: fix-followup-deixis — the previous query (the last sealed
+        # thread turn) activates the topic_follow slot question: the model
+        # decides nachfrage / neues Thema per request
+        prev_q = None
+        try:
+            from src.kg.kgFollowups import open_state as _open
+            if isinstance(req.thread, dict) and req.thread.get("state"):
+                prior = _open(req.thread["state"],
+                              str(req.thread.get("session_id") or "")[:64]) or {}
+                turns = (prior.get("thread") or {}).get("turns") or []
+                prev_q = (turns or [])[-1] if turns else None
+                prev_q = prev_q if prev_q != query else None
+        except Exception:
+            prev_q = None
+        try:
+            result = route_ask(
+                session, query, top_k=req.top_k,
+                signals=req.signals, summarize=req.summarize,
+                search_fn=_stage1_search_fn,
+                prev_query=prev_q,
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc))
+        finally:
+            session.close()
 
     session_id = req.session_id or uuid.uuid4().hex
     if kg_on and turn is not None:
         resolved_intent = result.get("intent") or "search_topic"
-        non_thematic = resolved_intent != "search_topic"
-        empty = not (result.get("top_files") or result.get("topics"))
-        if non_thematic or empty or turn["forced_break"]:
+        if result.get("slot_filled"):
+            # change: request-thread-facets — a slot-filled gremium request
+            # is a REAL scoped answer (meeting scope), never chips mode: the
+            # options resolved the slot, so the scope is complete
+            _apply_thread_to_result(turn, result, result.get("top_files"))
+            precomputed_graph = result.pop("graph", None)
+            _sessions[session_id] = {
+                "query": turn["slot_term"], "filters": [], "intent": resolved_intent,
+                "slots": {"gremium": turn["slot_term"].lower()},
+                "stage1": result, "timeline": None, "graph": precomputed_graph,
+                "result": result, "stage_lock": threading.Lock(),
+            }
+            result["sessionId"] = session_id
+            _trace_response("ask", result)
+            return result
+        # change: request-thread-facets — slot-filling OPTIONS when the
+        # intent is clear but a required slot is unresolvable: instead of
+        # an unscoped/guessed search the backend offers the known bodies
+        # (bounded: ≤ 12, primary bodies first)
+        from src.pgIntentRouter import gremium_slot_options
+        opts = gremium_slot_options(session, query, result)
+        _kg_log.info("ask options eval: opts=%s intent=%s", bool(opts), resolved_intent)
+        if opts:
+            # change: request-thread-facets — the OPTIONS response itself
+            # is not an option turn: the thread turn of THIS request
+            # (already the seeded history) continues as-is
+            turn2 = turn
+            result = {
+                "query": query, "intent": resolved_intent,
+                "mode": "options", "options": opts, "sessionId": session_id,
+                "thread": result.get("thread"),
+                "state": result.get("state"),
+                "state_session": result.get("state_session"),
+                "thread_reset": True,
+            }
+            _apply_thread_to_result(turn2, result, [])
+            _sessions[session_id] = {
+                "query": query, "filters": [], "intent": resolved_intent,
+                "slots": {}, "stage1": {"query": query, "top_files": []},
+                "timeline": None, "graph": None, "result": result,
+                "stage_lock": threading.Lock(),
+            }
+            _kg_log.info("ask options mode: intent=%s facet=gremium",
+                         resolved_intent)
+            _trace_response("ask", result)
+            return result
+        # change: request-thread-facets — chips mode back to the D7 weak-
+        # recall trigger only: a successful gremium scope (meeting view,
+        # slot fill) is a REAL answer, never chips; "non_thematic" alone is
+        # not a break condition (that regressed the gremium view: everything
+        # popped into a chips payload)
+        top_files = result.get("top_files") or []
+        entities = result.get("matched_entities") or []
+        max_entity = max(
+            (float(e.get("score") or 0.0) for e in entities), default=0.0)
+        # change: request-thread-facets — a successful gromium answer
+        # (meeting scope, answer_mode list_topics) is NEVER chips mode —
+        # even without matched entities (the gremium view carries no
+        # entity signals). weak is only for the topical path.
+        gremium_view = (resolved_intent == "ask_gremium_recent"
+                        and result.get("answer_mode") == "list_topics")
+        weak = ((not top_files or max_entity < KG_RECALL_FLOOR)
+                and not gremium_view)
+        empty = not (top_files or result.get("topics"))
+        if weak or turn["forced_break"] or (empty and not result.get("topics")):
             _apply_chips_mode(turn, result)
             if not turn["forced_break"]:
                 result.pop("thread_reset", None)
@@ -626,6 +948,12 @@ def ask(req: AskRequest) -> Dict[str, Any]:
             _trace_response("ask", result)
             return result
         _apply_thread_to_result(turn, result, result.get("top_files"))
+        if turn.get("classification", {}).get("action") == "followup":
+            # change: request-thread-facets — facet amendment: the prior
+            # request's selected documents persist (best-of carry-over),
+            # ranked after the new hits and marked "via"
+            _carry_over_prior_docs(req, turn, result)
+
     # meeting-centric answers (D10) build their graph synchronously in the
     # router — stash it as the precomputed graph stage instead of sending
     # it in the stage-1 response (change: progressive-frontend-rendering)
@@ -642,7 +970,13 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         "stage_lock": threading.Lock(),
     }
     session_id = session_id or uuid.uuid4().hex
-    _kg_enrich(result, query, session_id)
+    # change: fix-gremium-session-docs-thread (task 7.3) — a gremium
+    # session view (list_topics) gets NO enrichment: no related_documents,
+    # no chips, no followups — topics + session files only
+    if result.get("answer_mode") != "list_topics":
+        _kg_enrich(result, query, session_id)
+    else:
+        result["thread_reset"] = True   # head of chain: context cleared
     result["sessionId"] = session_id
     _trace_response("ask", result)
     return result

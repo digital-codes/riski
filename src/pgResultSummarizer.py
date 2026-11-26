@@ -62,6 +62,176 @@ _TEASER_MAX_WORDS = 500
 _REFINE_MAX_WORDS = 900
 
 
+# ------------------------------------------------------------------
+# PII guard (change: summary-pii-guard) — produced summaries SHALL NOT
+# contain person names (user privacy rule, 2026-11-25; live finding:
+# the model enumerated council members despite the prompt ban). Layers:
+#   1) hardened prompts (first rule) — non-authoritative,
+#   2) detection against the OParl Person vocabulary,
+#   3) repair chat call, 4) deterministic fallback redaction.
+# ------------------------------------------------------------------
+_PII_NAME_CACHE = {"ts": 0.0, "names": None}
+_PII_CACHE_TTL = 900.0
+_PII_VIOLATION_MARKER = "(Name entfernt)"
+
+
+def _person_names_rows():
+    from src.db import get_engine
+    with get_engine(readonly=True).connect() as c:
+        return [r[0] for r in c.execute(
+            text('SELECT name FROM "Person"')).all() if r[0]]
+
+
+def person_names() -> list[str]:
+    """OParl person names, cached (full names + surnames ≥ 4 chars,
+    titles excluded). Guard degradation: on DB failure the guard turns
+    pass-through (fail-open documented — full redaction unavailable)."""
+    import time as _time
+    now = _time.time()
+    if _PII_NAME_CACHE["names"] is not None and \
+            now - _PII_NAME_CACHE["ts"] < _PII_CACHE_TTL:
+        return _PII_NAME_CACHE["names"]
+    names: set[str] = set()
+    try:
+        rows = _person_names_rows()
+    except Exception as exc:  # pragma: no cover
+        log.warning("pii guard: person vocabulary unavailable (%s)", exc)
+        _PII_NAME_CACHE["names"] = []
+        _PII_NAME_CACHE["ts"] = now
+        return []
+    for full in rows:
+        full = full.strip()
+        if not full:
+            continue
+        # titled rows ("Dr. Martina Heynen", "Prof. Dr. X", "Dr.-Ing. Y",
+        # "Oberbürgermeister Z") → strip EVERY leading address/title token
+        # so the vocabulary carries clean names/surnames only
+        strip_re = re.compile(
+            r"^(?:\s*(?:[Dd][Rr]\.|[Pp]rof\.|[Dd]r\.|[Dd]ipl\.|"
+            r"[Dd]ipl\.?[Dd]-?Ing\.?|[Dd]r\.-Ing\.|[Ii]ng\.|"
+            r"[Oo]berbürgermeister|Bürgermeister|Stadtrat|Stadträtin|"
+            r"[Pp]räsident(?:in)?|[Mm]ayor|[Pp]rofessor))"
+            r"[. ]*\s*(?:[Dd][Rr]\.?[. ]*|-[\s.]*)*")
+        prev = None
+        while prev != full:
+            prev, full = full, (strip_re.sub("", full) or full)
+            # strip repeatedly: "Prof. Dr. X" / "Dr.-Ing. Y" prefixes
+        names.add(full)
+        for tok in re.split(r"\s+", full):
+            tok = tok.strip(".,")
+            if not tok or tok.startswith(("Dr.", "Prof.")):
+                continue
+            if len(tok) >= 4 and tok.istitle():
+                names.add(tok)
+    out = sorted(names, key=len, reverse=True)
+    _PII_NAME_CACHE["names"] = out
+    _PII_NAME_CACHE["ts"] = now
+    return out
+
+
+def find_pii_violations(summary: str) -> list[str]:
+    """Person-name matches in the summary text (word boundaries; full
+    names take precedence — sorted longest first by :func:`person_names`)."""
+    if not summary:
+        return []
+    low = summary.lower()
+    hit: set[str] = set()
+    for name in person_names():
+        if re.search(r"(?i)(?<![A-Za-zÄÖÜäöüß])" + re.escape(name) +
+                     r"(?![A-Za-zÄÖÜäöüß])", summary):
+            hit.add(name)
+            continue
+        low_hits = name.lower() in low
+        if low_hits and len(name) >= 8:
+            # fallback for hyphenated/titled embeddings, keep exact
+            hit.add(name)
+    return sorted(hit, key=len, reverse=True)
+
+
+def _redact_text(summary: str, violations: list[str]) -> str:
+    """Deterministic fallback (task 2.3): violated tokens become
+    "(Name entfernt)"; a line whose tokens are overwhelmingly person-name
+    references (bare member lists like the live finding 'Fahringer /
+    Dujmovic / Dr. Heynen…') collapses to that one marker."""
+    for name in violations:
+        summary = re.sub(
+            r"(?i)(?<![A-Za-zÄÖÜäöüß])" + re.escape(name) +
+            r"(?![A-Za-zÄÖÜäöüß])", _PII_VIOLATION_MARKER, summary)
+    out_lines = []
+    for line in summary.splitlines():
+        stripped = line.strip(" -•*0123456789. \t")
+        if not stripped:
+            out_lines.append(line)
+            continue
+        toks = [t for t in re.split(r"[^\wÄÖÜäöüß]+", stripped) if t]
+        nameish = sum(1 for t in toks
+                      if any(t.lower() in v.lower() or
+                             (len(t) >= 4 and t.lower() in v.lower())
+                             for v in violations))
+        if toks and nameish / max(1, len(toks)) >= 0.5:
+            out_lines.append("  - (Name entfernt)")
+        else:
+            out_lines.append(line)
+    return "\n".join(out_lines)
+
+
+TITLED_NAME_RE = re.compile(
+    r"(?i)(?<![A-Za-zÄÖÜäöüß])(?:(?:[Dd][Rr]|prof|ing)\.?\s*|-(?:\s*))?"
+    r"([A-ZÄÖÜ][A-Za-zÄÖÜäöüß\-]+(?:\s+[A-ZÄÖÜ][A-Za-zÄÖÜäöüß\-]+){0,3})")
+
+
+def _next_pseudonym(map_: dict[str, str], counter: list[int],
+                    name: str) -> str:
+    if name not in map_:
+        counter[0] += 1
+        map_[name] = f"[PERSON_{counter[0]}]"
+    return map_[name]
+
+
+class Sc:
+    pass
+
+
+def pii_guard(summary: str) -> str:
+    """Output verification layer (architectural design): detect person
+    names in the MODEL OUTPUT and redact deterministically (pseudonym or
+    "(Name entfernt)") — NO repair LLM call (mistral review: prompt/LLM
+    self-correction is not a reliable control; the guarantee must not
+    depend on an LLM). Clean summaries pass through untouched."""
+    violations = find_pii_violations(summary)
+    if not violations:
+        return summary
+    log.info("pii guard: %d person-name match(es) in output — redacting", len(violations))
+    return _redact_text(summary, violations)
+
+
+def scrub_names(text: str, seat=None) -> str:
+    """Context scrubbing BEFORE generation (architectural layer 1):
+    person names in the document context yield pseudonyms [PERSON_n]
+    (consistent per request via the summarizer's map); the model cannot
+    copy a name it never sees. `seat` request-pseudonym source."""
+    if not text:
+        return text
+    _map = seat._pii_pseudonyms
+    counter = [seat._pii_counter]
+    out = text
+    for name in person_names():
+        if name and re.search(r"(?i)(?<![A-Za-zÄÖÜäöüß])" + re.escape(name) +
+                              r"(?![A-Za-zÄÖÜäöüß])", out):
+            out = re.sub(
+                r"(?i)(?<![A-Za-zÄÖÜäöüß])(?:(?:[Dd][Rr]|prof|ing)\.?\s*)?"
+                + re.escape(name) + r"(?![A-Za-zÄÖÜäöüß])",
+                lambda m, n=name: _next_pseudonym(_map, counter, n),
+                out)
+    seat._pii_counter = counter[0]
+    return out
+
+
+TITLED_REFERENCE = re.compile(
+    r"(?i)(?<![A-Za-zÄÖÜäöüß])((?:(?:dr|prof|ing)\.?\s*)+)"
+    r"(?P<name>[A-Za-zÄÖÜäöüß\- ]{3,60})")
+
+
 class ResultSummarizer:
     """Add a query-guided German summary to a search result.
 
@@ -207,6 +377,13 @@ class ResultSummarizer:
         original ``top_files`` stay untouched in the session result.
         """
         self.full_content_chars = self.content_chars * _FULL_CONTENT_FACTOR
+        # PII scrubbing state (change: summary-pii-guard): consistent
+        # pseudonyms per request — same person ⇒ same [PERSON_n] across the
+        # whole prompt; unknown residual names in the OUTPUT are redacted
+        # with the "(Name entfernt)" marker (fallback; better: covered by
+        # the NER follow-up).
+        self._pii_pseudonyms: dict[str, str] = {}
+        self._pii_counter = 0
         self._last_refused = []
         all_files = list(result.get("top_files") or [])
         top_files = all_files
@@ -241,22 +418,54 @@ class ResultSummarizer:
         trace("summarizer", docs=len(top_files), grounded=n_grounded,
               layer=layer, full_content=use_full_content, query=query)
 
-        for file in top_files:
+        # change: summary-temporal-context — the CONTEXT presents the
+        # documents chronologically (oldest first; missing dates last) so
+        # the model weighs recency; the file NUMBERS stay bound to the
+        # user's relevance-ordered list (header carries them)
+        def _date_key(f):
+            return f.get("date") or "9999-12-31"
+        context_rows = sorted(top_files, key=_date_key)
+        for file in context_rows:
             # matched chunk from the search phase (change: content-chunking
             # + fix-result-summarizer): the refinement reads the piece of
             # the document that matched the query, not the stored head
             match = file.get("match") or {}
             text_, _url = self._file_text(file["oparlKey"], full=use_full_content,
                                           chunk_index=match.get("content_chunk"))
-            prompt += f"\nDatei {full_index[file['oparlKey']]}: {file['name']} ({file['fileName']})\n"
+            f_date = file.get("date")
+            f_date_str = ""
+            if f_date:
+                # top_files dates arrive as ISO strings (JSON) or datetimes
+                d_parsed = None
+                if isinstance(f_date, str):
+                    import datetime as _dt
+                    for fmt in ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"):
+                        try:
+                            d_parsed = _dt.datetime.strptime(
+                                f_date[:19], fmt)
+                            break
+                        except ValueError:
+                            continue
+                else:
+                    d_parsed = f_date
+                if d_parsed:
+                    f_date_str = (f" ({d_parsed.day:02d}.{d_parsed.month:02d}."
+                                  f"{d_parsed.year:04d})")
+                else:
+                    f_date_str = f" ({f_date})"
+            prompt += f"\nDatei {full_index[file['oparlKey']]}{f_date_str}: {file['name']} ({file['fileName']})\n"
             if text_:
                 cap = self.full_content_chars if use_full_content else self.content_chars
                 prompt += f"Inhalt: {text_[:cap]}\n"
             else:
                 prompt += "Inhalt: Not available\n"
+            # change: summary-pii-guard — SCRUB BEFORE GENERATION
+            # (architectural layer 1): person names in the context never
+            # reach the model
+            prompt = prompt if not text_ else scrub_names(prompt, self)
             block = grounding.get(file.get("oparlKey"))
             if block:
-                prompt += block
+                prompt += scrub_names(block, self)
 
         if grounding and any(grounding.values()):
             grounding_note = (
@@ -287,8 +496,9 @@ class ResultSummarizer:
             messages, model=self.model, temperature=self.temperature,
             prompt_id=prompt_id, call_id=call_id,
         )
-        summary = response.get("content", "")
-        if not summary or summary == "[dummy response]":
+        raw_content = response.get("content", "")
+        if not raw_content or raw_content == "[dummy response]":
+
             # LLM failure on a (re)finement run: the exclusion set was
             # already recorded server-side — rebuild the document list so
             # it matches the user's selection. Previous refusal verdicts
@@ -306,6 +516,10 @@ class ResultSummarizer:
             log.warning("Summary LLM call failed (dummy response) — "
                         "document list rebuilt from the exclusion set")
             return result
+        # change: summary-pii-guard — the produced summary never renders
+        # with person names: detect → deterministic fallback (architectural
+        # decision: no repair LLM)
+        summary = pii_guard(raw_content)
         if summary:
             # the summary must state the input query — prepended
             # deterministically, not left to the model

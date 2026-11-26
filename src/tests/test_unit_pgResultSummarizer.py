@@ -750,3 +750,60 @@ class TestLlmFailureRebuild:
         files = {f["oparlKey"]: f for f in result["summary_files"]}
         assert files["100"]["excluded"] is True
         assert files["101"]["excluded"] is False
+
+
+class TestTemporalContext:
+    """change: summary-temporal-context — dated headers, chronological
+    presentation, stable numbering."""
+
+    def _result_mixed_dates(self):
+        return {
+            "query": "test",
+            "top_files": [
+                {"oparlKey": "100", "name": "New decision", "fileName": "a.pdf",
+                 "date": "2026-03-14T00:00:00"},
+                {"oparlKey": "101", "name": "Old decision", "fileName": "b.pdf",
+                 "date": "2024-01-05T00:00:00"},
+                {"oparlKey": "102", "name": "No date file", "fileName": "c.pdf"},
+            ],
+        }
+
+    def test_header_carries_date(self, summarizer, monkeypatch):
+        seen = {}
+        def fake_chat(messages, **kwargs):
+            seen["prompt"] = messages[1]["content"]
+            return {"content": "Zusammenfassung."}
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        s = ResultSummarizer(FakeSession({}))
+        s.summarize(self._result_mixed_dates())
+        prompt = seen["prompt"]
+        assert "Datei 1 (14.03.2026): New decision" in prompt
+        assert "Datei 2 (05.01.2024): Old decision" in prompt
+
+    def test_chronological_order_numbering_stable(self, summarizer, monkeypatch):
+        seen = {}
+        def fake_chat(messages, **kwargs):
+            seen["prompt"] = messages[1]["content"]
+            return {"content": "Z."}
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        s = ResultSummarizer(FakeSession({}))
+        s.summarize(self._result_mixed_dates())
+        p = seen["prompt"]
+        i_old, i_new = p.find("Datei 2 (05.01.2024)"), p.find("Datei 1 (14.03.2026)")
+        assert i_old < i_new, "oldest first (2024 before 2026)"
+        # numbering = visible-list position (Datei 1 = the NEW decision)
+        assert "Datei 1 (14.03.2026): New decision" in p
+        assert "Datei 2 (05.01.2024): Old decision" in p
+
+    def test_refine_prompt_states_chronology(self, monkeypatch, result):
+        seen = {}
+        def fake_chat(messages, **kwargs):
+            seen["system"] = messages[0]["content"]
+            return {"content": "Z."}
+        monkeypatch.setattr(pc.remote, "chat", fake_chat)
+        s = ResultSummarizer(FakeSession({}))
+        s.summarize(result, force=True, use_full_content=True)
+        sys_text = seen["system"]
+        assert "CHRONOLOGISCH" in sys_text
+        assert "nach Relevanz sortiert" not in sys_text
+        assert "JETZT gültigen Stand" in sys_text

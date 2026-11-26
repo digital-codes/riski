@@ -1,7 +1,10 @@
 <template>
   <div class="search-results-container">
-    <!-- Card 1: Files (First 3 visible, rest collapsed) -->
-    <section class="card files-card">
+    <!-- Card 1: Files (First 3 visible, rest collapsed). change:
+         rework-search-result-cards — hidden via `show-files=false` for the
+         reworked search_topic view (top-10-files card dropped there);
+         other intents keep it. -->
+    <section v-if="showFiles" class="card files-card">
       <h3 class="card-title">Dateien ({{ files.length }})</h3>
 
       <!-- change: progressive-frontend-rendering — per-card loading state;
@@ -94,6 +97,10 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
 // are independent stages now, so both cards take their own props and can
 // be filled (and show their loading state) separately
 const props = defineProps({
+  showFiles: {
+    type: Boolean,
+    default: true,
+  },
   files: {
     type: Array,
     default: () => []

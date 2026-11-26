@@ -299,6 +299,171 @@ def filter_by_threshold(vectors_with_scores: list[tuple], threshold: float) -> l
     """Filter vectors above threshold"""
     return [(vec, score) for vec, score in vectors_with_scores if score <= threshold]
 
+
+def _listwise_config() -> Tuple[bool, int]:
+    """Instance config for the listwise chat rerank stage (change:
+    fix-hybrid-search-ranking, fragment B): ``(enabled, window)``.
+    Enabled by default — it fires only when RERANK_MODE is None (reranking
+    dropped, SystemOne decision model owns query understanding) — with
+    ``search.listwise_rerank: false`` / ``RISKI_SEARCH__LISTWISE_RERANK``
+    as kill switch and ``search.listwise_window`` (default 50) sizing the
+    single-call batch. 50 because moments like the minutes
+    "Protokoll GR 24.02.2026 TOP 3" fuse at rank 30–45 (name-vector ghost
+    matches saturate the top); still ONE chat call (~8k prompt tokens at
+    600-char snippets). Explained in docs/search-weights.md (sync rule)."""
+    try:
+        from src.instanceConfig import section as _sec
+        sc = _sec("search")
+        return (
+            bool(sc.get("listwise_rerank", True)),
+            int(sc.get("listwise_window", 25)),
+        )
+    except Exception:  # noqa: BLE001 - config failure keeps old behaviour
+        return (True, 50)
+
+
+# Truncate what we show the listwise model per candidate (the chunk itself
+# can be up to ~7000 chars — pgChunks CHUNK_TARGET/CHUNK_HARD; a few hundred
+# chars decide relevance without blowing the context window).
+_LISTWISE_SNIPPET_CHARS = 600
+
+
+def _listwise_snippet(text: str, query: str) -> str:
+    """Keyword-centered snippet for the listwise stage (change:
+    fix-hybrid-search-ranking). The naive first-600-chars window can leave
+    the decisive sentences out (minutes chunks start mid-context with
+    '## Abstimmungsergebnis …' and only mention the searched platform
+    some hundred chars later). When any query term (≥ 5 chars, lowercased)
+    occurs in the text, the window is centred on the first hit — otherwise
+    the naive head window applies."""
+    flat = " ".join(str(text).split())
+    if len(flat) <= _LISTWISE_SNIPPET_CHARS:
+        return flat
+    low = flat.lower()
+    hit = -1
+    hit_term = ""
+    for term in sorted({t.lower() for t in query.split() if len(t) >= 5},
+                       key=len, reverse=True):
+        # German compounds: "Bürgerbeteiligungsplattform" appears in the
+        # minutes as "Beteiligungsplattform" — walk progressively shorter
+        # suffixes of the term until a substring hit (or len < 6)
+        probe, term_hit = term, -1
+        while len(probe) >= 6:
+            term_hit = low.find(probe)
+            if term_hit >= 0:
+                break
+            probe = probe[1:]
+        if term_hit >= 0:
+            hit, hit_term = term_hit, probe
+            break
+    if hit < 0:
+        return flat[:_LISTWISE_SNIPPET_CHARS]
+    half = (_LISTWISE_SNIPPET_CHARS - len(hit_term)) // 2
+    start = max(0, hit - half)
+    return flat[start:start + _LISTWISE_SNIPPET_CHARS]
+# listwise stage: candidates the model did NOT mark relevant get this weak
+# rerank score (rejected by the gate unless the lexical override applies;
+# they still keep the clamped fallback ordering)
+_LISTWISE_NOT_RELEVANT_SCORE = 0.1
+
+
+def listwise_rerank(
+    query: str,
+    candidates: List[Tuple[str, Dict[str, Any]]],
+    chunks: Dict[str, Optional[int]],
+    snippet_lookup,
+) -> Dict[str, float]:
+    """Listwise chat rerank of fused candidates (change:
+    fix-hybrid-search-ranking, fragment B) — plus ONE chat call with the
+    numbered snippets (chunk text via ``snippet_lookup``; name as fallback)
+    and the query; returns ``{oparlKey: rerank_score}`` for candidates the
+    model marked relevant (order → decaying score), empty on any failure
+    (the caller then keeps the fused order).
+
+    Active only when ``RERANK_MODE is None`` (reranking dropped in favour
+    of the SystemOne decision model) and ``search.listwise_rerank`` is on;
+    uses SUMMARY_MDL (``src.remote.chat``) whose prompts live in
+    ``config/instruction_prompts.json`` (``rerank-listwise`` /
+    ``rerank-listwise-user``). Model output is strict JSON with numbered
+    german ids: {"relevant": [...]}; position bias is handled by presenting
+    candidates in fused order (small window)."""
+    if not candidates:
+        return {}
+    system = remote.get_prompt("rerank-listwise")
+    user_tmpl = remote.get_prompt("rerank-listwise-user")
+    lines = []
+    for i, (oparlKey, cand) in enumerate(candidates, start=1):
+        text = snippet_lookup(oparlKey, chunks.get(oparlKey)) or ""
+        if not text:
+            text = cand.get("name") or ""
+        snippet = _listwise_snippet(text, query)
+        lines.append(f"{i}. {snippet}")
+    user_msg = user_tmpl.format(query=query, candidates="\n".join(lines))
+    try:
+        resp = remote.chat(
+            [{"role": "system", "content": system},
+             {"role": "user", "content": user_msg}],
+            temperature=0.0,
+            prompt_id="rerank-listwise",
+            call_id="pgTimeline.listwise_rerank.1",
+        )
+        content = resp.get("content") or ""
+    except Exception as exc:  # noqa: BLE001 - rerank failure degrades to fused order
+        _ensure_log().warning("listwise rerank call failed: %s", exc)
+        return {}
+    import json as _json
+    import re as _re
+    m = _re.search(r"\{.*\}", content, _re.DOTALL)
+    if not m:
+        _ensure_log().warning("listwise rerank: no JSON in model answer")
+        return {}
+    try:
+        data = _json.loads(m.group(0))
+        relevant = data.get("relevant") or []
+        order = [int(x) for x in relevant if isinstance(x, int) and 1 <= x <= len(candidates)]
+    except Exception as exc:  # noqa: BLE001
+        _ensure_log().warning("listwise rerank: unparseable JSON (%s)", exc)
+        return {}
+    out: Dict[str, float] = {}
+    n = len(candidates)
+    for pos, idx in enumerate(order, start=1):
+        oparlKey = candidates[idx - 1][0]
+        out[oparlKey] = round(1.0 - 0.5 * (pos - 1) / max(1, n), 4)
+    return out
+
+
+def rerank_gate_decision(
+    oparlKey: str,
+    fusion_score: float,
+    rerank_score: Optional[float],
+    cutoff: float,
+    lexical_override: bool,
+    lexical_keys: set,
+) -> Optional[float]:
+    """Accept/keep/reject decision after reranking (search_stage).
+
+    Returns the score to keep the file with, or ``None`` to reject.
+
+    change: fix-hybrid-search-ranking — rerank acceptance is gated by
+    ``cutoff`` (instance config ``search.rerank_cutoff``). A File that is
+    lexically certain (oparlKey in ``lexical_keys``) survives a weak rerank
+    score with the merged rank ``fusion × min(rerank, cutoff)``, which is
+    strictly below every fully-accepted file, so lexical hits stay in
+    ``top_files`` (and remain available to the summarizer) without
+    displacing genuinely reranked results. Disable per instance with
+    ``search.lexical_rerank_override: false``. Documented in
+    ``docs/search-weights.md`` — keep both in sync in the same commit.
+    """
+    if rerank_score is None or not isinstance(rerank_score, (int, float)):
+        # invalid/no rerank score: previous batch-mode behaviour kept the
+        # file at its original fusion score (content-less documents)
+        return fusion_score
+    if rerank_score >= cutoff:
+        return fusion_score * rerank_score
+    if lexical_override and oparlKey in lexical_keys:
+        return fusion_score * min(rerank_score, cutoff)
+    return None
+
 @timed
 def query_vector_similarity(session, query_vector: list[float], top_k: int = 10) -> list[int]:
     """
@@ -1379,12 +1544,59 @@ def search_stage(
                   empty=True)
             return {"query": query, "top_files": [], "matched_entities": [], "facets": {}, "applied_filters": [], "message": "No files above similarity threshold"}
 
-    # run reranking on all files and append rerank score to file_score 
+    # run reranking on all files and append rerank score to file_score
     top_scores_with_rerank = []
+    # change: fix-hybrid-search-ranking — rerank gate config: the cutoff is
+    # configurable, and lexically-certain Files survive the cutoff (ranked
+    # below accepted files) when the lexical override is on. The logic
+    # (module-level :func:`rerank_gate_decision`) is covered by unit tests.
+    def _search_gate_config() -> Tuple[float, bool, int]:
+        try:
+            from src.instanceConfig import section as _sec
+            sc = _sec("search")
+            return (
+                float(sc.get("rerank_cutoff", 0.8)),
+                bool(sc.get("lexical_rerank_override", True)),
+                int(sc.get("rerank_max_candidates", 60)),
+            )
+        except Exception:  # noqa: BLE001 - config failure = today's behaviour
+            return (0.8, True, 60)
+    RERANK_CUTOFF, LEXICAL_OVERRIDE, RERANK_WINDOW = _search_gate_config()
+
+    # change: fix-hybrid-search-ranking, fragment B — listwise chat rerank:
+    # with the reranker dropped (RERANK_MODE None) ONE SUMMARY_MDL call ranks
+    # the fused-first candidates; scores then flow through
+    # rerank_gate_decision like classical rerank scores.
+    LISTWISE_ON, LISTWISE_WINDOW = _listwise_config()
+    listwise_scores: Dict[str, float] = {}
+    if RERANK_MODE is None and LISTWISE_ON and top_scores:
+        window_lw = top_scores[:LISTWISE_WINDOW]
+        cand = [(k, {"name": hybrid_match_info.get(k, {}).get("name")}) for k, _s in window_lw]
+        try:
+            listwise_scores = listwise_rerank(
+                query, cand, hybrid_chunks, lambda k, c: chunk_text(session, k, c)
+            )
+        except Exception as exc:  # noqa: BLE001 - degrade to fused order
+            _ensure_log().warning("listwise rerank stage failed: %s", exc)
+        _ensure_log().debug(f"Listwise rerank: {len(listwise_scores)} relevant of {len(window_lw)}")
+
+    def _lexical_keys() -> set:
+        return {
+            k for k, sig in hybrid_match_info.items()
+            if isinstance(sig, dict) and ("lexical" in sig)
+        }
+
     _ensure_log().debug(f"Running reranking on top {len(top_scores)} files")  # Debugging line
 
     if RERANK_MODE == "chat":
-        for oparlKey, score in top_scores:
+        for wi, (oparlKey, score) in enumerate(top_scores):
+            # change: fix-hybrid-search-ranking extension — only the first
+            # RERANK_WINDOW candidates (by fused score) get a real rerank
+            # call; the rest keep the clamped fallback (fusion * cutoff),
+            # which is at/below every reranked file's weakest accept score
+            if wi >= RERANK_WINDOW:
+                top_scores_with_rerank.append((oparlKey, score * min(1.0, RERANK_CUTOFF)))
+                continue
             _ensure_log().debug(f"Processing file {oparlKey} with initial score {score:.4f}")  # Debugging line
             # rerank input (change: content-chunking): the best-matching
             # chunk for chunked documents — more discriminative than the
@@ -1397,11 +1609,14 @@ def search_stage(
             if file_content:  # content exists and is not None
                 rerank_score = call_reranking_chat_model(query, file_content)
                 _ensure_log().debug(f"Reranking score for file {oparlKey}: {rerank_score:.4f}")  # Debugging line
-                if rerank_score is not None and isinstance(rerank_score, (int, float)) and rerank_score >= .8:
-                    top_scores_with_rerank.append((oparlKey, score))
-                    _ensure_log().debug(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+                kept = rerank_gate_decision(
+                    oparlKey, score, rerank_score, RERANK_CUTOFF,
+                    LEXICAL_OVERRIDE, _lexical_keys())
+                if kept is not None:
+                    top_scores_with_rerank.append((oparlKey, kept))
+                    _ensure_log().debug(f"Keep file {oparlKey}: score {score:.4f}, rerank {rerank_score}")  # Debugging line
                 else:
-                    _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score:.4f}")  # Debugging line
+                    _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rerank_score}")  # Debugging line
             else:
                 _ensure_log().debug(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
                 top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
@@ -1410,14 +1625,19 @@ def search_stage(
         # update top_scores_with_rerank with rerank scores
         # top_scores_with_rerank = [(top_scores[i][0], rerank_scores[i]) for i in range(len(top_scores))]
     else:
-        # we call the real reranker with the full list of documents and the query, and it will return a list of scores for each document
+        # change: fix-hybrid-search-ranking extension — rerank only the
+        # first RERANK_WINDOW candidates by fused score before the top_k
+        # cut; candidates beyond the window keep the clamped fallback
+        # (fusion * cutoff), at/below every accepted file. With a running
+        # listwise stage the model only saw LISTWISE_WINDOW candidates —
+        # the cross-encoder pass must cover exactly the same span, else
+        # unseen candidates would inherit a bogus "not relevant" verdict.
+        window = top_scores[:LISTWISE_WINDOW if listwise_scores else RERANK_WINDOW]
         documents = []
-        for oparlKey, score in top_scores:
+        for oparlKey, score in window:
             # rerank input (change: content-chunking): best chunk first
             file_content = chunk_text(session, oparlKey, hybrid_chunks.get(oparlKey))
             if file_content is None:
-                # change: unify-file-content-in-chunks — File_chunks is the
-                # single text store (chunk 0 = the complete small document)
                 file_content = document_text(session, oparlKey)
             if file_content:
                 documents.append(file_content)
@@ -1425,21 +1645,44 @@ def search_stage(
                 _ensure_log().debug(f"No content found for file {oparlKey}, skipping reranking")  # Debugging line
                 documents.append("")  # Append empty string to maintain order
         rerank_scores = call_reranking_model(query, documents, top_n=len(documents))
-        _ensure_log().debug(f"Reranking scores: {rerank_scores}")  # Debugging line
+        # fragment B: when reranking is dropped and the listwise stage ran,
+        # merge its verdicts: relevant candidates (decaying score, floored
+        # at the cutoff so they pass the gate), model-decided "not relevant"
+        # → weak score (rejected unless lexically overridden; fusion order
+        # is preserved by the gate's fallback), and candidates beyond the
+        # listwise window fall back to the cross-encoder's own (pass-through)
+        # score.
+        if RERANK_MODE is None and listwise_scores:
+            merged = []
+            for (oK, _s), rs in zip(window, rerank_scores):
+                if oK in listwise_scores:
+                    merged.append(max(listwise_scores[oK], RERANK_CUTOFF))
+                else:
+                    merged.append(_LISTWISE_NOT_RELEVANT_SCORE)
+            rerank_scores = merged
+        _ensure_log().debug(f"Reranking scores: {rerank_scores}")
         for i, rscore in enumerate(rerank_scores):
             oparlKey, score = top_scores[i]
-            if rscore is None or not isinstance(rscore, (int, float)):
-                _ensure_log().debug(f"Invalid rerank score received: {rscore}, keep old score")  # Debugging line
-                top_scores_with_rerank.append((oparlKey, score))  # No content, keep original score
-            elif rscore >= .8:
-                top_scores_with_rerank.append((oparlKey, score * rscore))
-                _ensure_log().debug(f"Accept reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
+            kept = rerank_gate_decision(
+                oparlKey, score, rscore, RERANK_CUTOFF,
+                LEXICAL_OVERRIDE, _lexical_keys())
+            if kept is not None:
+                top_scores_with_rerank.append((oparlKey, kept))
+                _ensure_log().debug(f"Keep file {oparlKey}: score {score:.4f}, rerank {rscore}")  # Debugging line
             else:
-                _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore:.4f}")  # Debugging line
+                _ensure_log().debug(f"Reject reranked file {oparlKey}: original score {score:.4f}, rerank score {rscore}")  # Debugging line
                 # reject reranked file. don't append
-        
+        # extension: files beyond the rerank window keep clamped fallback
+        rerank_covered = {k for k, _s in window}
+        for oparlKey, score in top_scores:
+            if oparlKey not in rerank_covered:
+                top_scores_with_rerank.append((oparlKey, score * min(1.0, RERANK_CUTOFF)))
 
+    # extension: honour rerank order via combined scoring (batch mode multiplies),
+    # then apply the top_k cut AFTER the gate — deep-but-relevant matches survive
     _ensure_log().debug(f"Top files after reranking: {top_scores_with_rerank}")  # Debugging line
+    top_scores_with_rerank = sorted(
+        top_scores_with_rerank, key=lambda ks: ks[1], reverse=True)[:top_k]
 
     # Get Keys of top files
     top_file_keys = [f[0] for f in top_scores_with_rerank]

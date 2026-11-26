@@ -39,18 +39,18 @@ ENV_NESTING_SEP = "__"
 # truth; an absent instance config reproduces current behavior exactly).
 DEFAULTS: Dict[str, Dict[str, Any]] = {
     "oparl": {
-        # OParl 1.1 system URL and crawl scope
-        "system_url": "https://web1.karlsruhe.de/ris/oparl",
+        # OParl 1.1 system URL and crawl scope (change: oparl-endpoint-web2
+        # — Karlsruhe moved web1.karlsruhe.de → web2.karlsruhe.de; web2
+        # serves proper /ris/oparl paths, so the former "/ris prefix
+        # restore" rewrite rule is gone; the rewrite MECHANISM stays for
+        # other instances / endpoint regressions, add rules via instance
+        # config)
+        "system_url": "https://web2.karlsruhe.de/ris/oparl",
         "bodies": [],  # empty = crawl every body the system reports
         "page_limit": 1000,
         "request_delay": 0.25,
-        # ordered regex rewrites applied to fetched URLs (Karlsruhe serves
-        # download links that need the /ris prefix restored — same effect
-        # as the former fix_karlsruhe_url)
-        "url_rewrites": [
-            {"pattern": r"(https?://web1\.karlsruhe\.de)(?!/ris(/|$))",
-             "replacement": r"\1/ris"},
-        ],
+        # ordered regex rewrites applied to fetched URLs (empty by default)
+        "url_rewrites": [],
     },
     "paths": {
         "json_dir": "/mnt_ai/data/odd26/ris/ko",
@@ -102,6 +102,50 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
         ],
         "org_classification_fallback": "Sonstiges",
     },
+    "search": {
+        # Hybrid recall fusion weights (change: fix-hybrid-search-ranking).
+        # Weighted-RRF: score(id) = Σ_s w_s / (k + rank_s). Signal order is
+        # always (lexical, name-vectors, content-vectors) — see
+        # docs/search-weights.md (must be updated in the same commit as any
+        # behavioural change here).
+        # fusion mode: "scores" = per-signal normalized score blending
+        # (change: fix-hybrid-search-ranking) — absolute calibration keeps
+        # within-signal strength (a cosine 0.35 chunk outranks a 0.47 one);
+        # "rrf" = original rank-only reciprocal-rank fusion (kill switch)
+        "fusion_mode": "scores",
+        "fusion_weights": {"lex": 1.5, "nv": 0.8, "vc": 1.2},
+        # calibration anchors for score blending (see docs/search-weights.md):
+        # lexical similarity below lex_floor scores 0, above 1.0 scores 1;
+        # cosine distance vec_near -> 1.0, vec_far -> 0.0 (linear between)
+        "fusion_score_calibration": {
+            # empirically calibrated on live queries (name-vector distances
+            # cluster at 0.26–0.45; lexical matches meaningful above ~0.35)
+            "lex_floor": 0.35, "vec_near": 0.20, "vec_far": 0.85,
+        },
+        # false falls back to plain RRF (all weights 1.0) — kill switch
+        "weighted_fusion": True,
+        # rerank acceptance cutoff (files need rerank score >= cutoff)
+        "rerank_cutoff": 0.8,
+        # a lexically-matching File is kept when its rerank score is below
+        # `rerank_cutoff`, ranked by fusion * min(rerank, cutoff)
+        "lexical_rerank_override": True,
+        # per-signal recall depth (change: fix-hybrid-search-ranking
+        # extension) — candidates collected per signal before fusion; the
+        # dominant cost is the content HNSW oversample (limit*6, cap 1000)
+        "per_signal": 100,
+        # rerank runs over the first N candidates by fused score BEFORE the
+        # top_k cut; candidates beyond the window keep the clamped fallback
+        # score fusion * rerank_cutoff. Batch reranker = one HTTP call for
+        # the whole window; chat reranker = N LLM calls (lower for chat)
+        "rerank_max_candidates": 60,
+        # listwise chat rerank (fragment B): fired only when the reranker
+        # is dropped (RERANK_MODE None); ONE SUMMARY_MDL call over the
+        # fused-first candidates. Window 50 because minutes protocols fuse
+        # at rank 30-45 behind name-vector ghost matches; each entry shows
+        # a 600-char snippet of the best chunk (~8k prompt tokens/call).
+        "listwise_rerank": True,
+        "listwise_window": 50,
+    },
     "web": {
         "cors_origins": [
             "http://localhost:5173", "http://localhost:4173",
@@ -117,7 +161,7 @@ DEFAULTS: Dict[str, Dict[str, Any]] = {
                    "… offene OParl-Daten der Stadt Karlsruhe"),
         "default_query": ("wo liegt die Governance für Digitalisierung "
                           "bei der Stadt Karlsruhe"),
-        "oparl_link": "https://web1.karlsruhe.de/ris/oparl",
+        "oparl_link": "https://web2.karlsruhe.de/ris/oparl",
         "imprint_url": "/#/impressum",
         "privacy_url": "/#/datenschutz",
         "data_sources": [

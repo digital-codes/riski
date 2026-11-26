@@ -28,8 +28,12 @@ export async function search(query, { topK = 10, filters, signals, summarize = f
 
 // change: intent-router — routed question answering; same result contract
 // as /search plus intent/slots/applied_filters/fallback_notes
-export async function ask(query, { sessionId, topK = 10, signals, summarize = false, thread } = {}) {
-	return post('/ask', { query, session_id: sessionId, top_k: topK, signals, summarize, thread });
+// change: fix-gremium-session-docs-thread — `option` transmits a chip
+// selection as structured data ({topic, example?}); intent routing treats
+// it as a deterministic follow-up (the backend offered the option). `query`
+// stays the raw user input text (may pair with option for the round trip).
+export async function ask(query, { sessionId, topK = 10, signals, summarize = false, thread, option } = {}) {
+	return post('/ask', { query, session_id: sessionId, top_k: topK, signals, summarize, thread, option });
 }
 
 export async function summarize(sessionId, { refine = false, exclude = [] } = {}) {
@@ -78,9 +82,14 @@ export async function getInstance() {
 	}
 }
 
+// change: fix-gremium-session-docs-thread — this used a stale duplicate
+// (`base`/`jsonHeaders`, undefined → "Follow-up fehlgeschlagen
+// (base is not defined)"); it now routes through the shared `post()`
 export async function followup(question, { state, sessionId, topK = 10 } = {}) {
-  const r = await fetch(`${base}/followup`, { method: "POST", headers: jsonHeaders(),
-    body: JSON.stringify({ question, state, session_id: sessionId, top_k: topK }) });
-  if (!r.ok) throw new Error(`followup failed: ${r.status}`);
-  return r.json();
+  return post('/followup', {
+    question,
+    state,
+    session_id: sessionId,
+    top_k: topK,
+  });
 }

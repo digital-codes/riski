@@ -24,7 +24,7 @@ except ImportError:
 import datetime
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
 import sqlalchemy as sa
@@ -163,12 +163,19 @@ class DecoderError(RuntimeError):
     pass
 
 
-def build_questions(cfg: Dict[str, Any], gremium_vocab: List[str]) -> Dict[str, Any]:
-    """One SystemOne payload section: one noul question per intent plus a
-    choice question for the gremium slot.
+def build_questions(cfg: Dict[str, Any], gremium_vocab: List[str],
+                    prev_query: Optional[str] = None) -> Dict[str, Any]:
+    """One SystemOne payload section: one noul question per intent plus
+    choice questions for configured slots.
 
     Note: score questions accept at most 10 criteria levels (SystemOne
-    protocol), so slots with larger vocabularies use choice."""
+    protocol), so slots with larger vocabularies use choice.
+
+    change: fix-followup-deixis — a configured slot with a
+    `question_prompt` (currently `topic_follow` on search_topic) gets its
+    question interpolated with BOTH queries (previous + current) and its
+    choices from the config; it runs only when a previous query exists
+    (first request = fresh by definition)."""
     questions: Dict[str, Any] = {}
     for intent in cfg["intents"]:
         questions[intent["name"]] = {
@@ -191,11 +198,27 @@ def build_questions(cfg: Dict[str, Any], gremium_vocab: List[str]) -> Dict[str, 
             ),
             "criteria": {v: f"Gremium {v}" for v in gremium_vocab},
         }
+    # change: fix-followup-deixis — the topic_follow slot question (per
+    # request with a thread history)
+    prev_norm = normalize_value(prev_query or "")
+    cur_norm = normalize_value("")  # the current query joins at the call site
+    for intent in cfg["intents"]:
+        slot = (intent.get("slots") or {}).get("topic_follow")
+        if not slot or not (prev_query or "").strip():
+            continue
+        prompt_id = slot.get("question_prompt") or "topic-follow-slot-question"
+        choices = slot.get("choices") or ["nachfrage", "neues Thema"]
+        questions["slot_topic_follow"] = {
+            "type": "choice",
+            "instructions": _registry_get_prompt(prompt_id),
+            "criteria": {v: v for v in choices},
+        }
     return questions
 
 
 def parse_answers(cfg: Dict[str, Any], answers: Dict[str, Any],
-                  gremium_vocab: List[str]) -> Dict[str, Any]:
+                  gremium_vocab: List[str],
+                  prev_query: Optional[str] = None) -> Dict[str, Any]:
     """Map SystemOne answers to {intent, scores, slots}.
 
     noul mode with per-intent thresholds; no intent at/above threshold
@@ -217,10 +240,19 @@ def parse_answers(cfg: Dict[str, Any], answers: Dict[str, Any],
             best_name, best_score = intent["name"], score
 
     fallback = cfg["fallback_intent"]
-    if best_name is None:
-        best_name = fallback
-
     slots: Dict[str, Any] = {}
+    # change: fix-followup-deixis — the topic_follow slot answer surfaces
+    # the model's follow-up decision ("nachfrage" = follow-up request)
+    if prev_query:
+        raw_tf = answers.get("slot_topic_follow", {})
+        tf_choice = raw_tf.get("choice") if isinstance(raw_tf, dict) else None
+        if tf_choice:
+            tf_norm = normalize_value(tf_choice)
+            if tf_norm == normalize_value("nachfrage"):
+                slots["topic_follow"] = "nachfrage"
+            elif tf_norm in (normalize_value("neues Thema"),
+                             normalize_value("neues thema")):
+                slots["topic_follow"] = "neues Thema"
     if gremium_vocab:
         raw = answers.get("slot_gremium", {})
         choice = raw.get("choice") if isinstance(raw, dict) else None
@@ -228,6 +260,26 @@ def parse_answers(cfg: Dict[str, Any], answers: Dict[str, Any],
             choice_norm = normalize_value(choice)
             if choice_norm in gremium_vocab:
                 slots["gremium"] = choice_norm
+
+    if best_name is None:
+        # change: request-thread-facets — SLOT-BASED INTENT RECOVERY: an
+        # answered slot question expresses the intent even when the noul
+        # score is below threshold (SystemOne scores are conventionally
+        # low); the owning intent wins over the fallback
+        max_score = max(scores.values(), default=0.0)
+        for intent in cfg["intents"]:
+            # recovery condition: the slot-owner intent must ALSO be the
+            # model's highest noul intent — otherwise the slot answer was a
+            # guess for a DIFFERENT question (live finding: "terrainkurweg"
+            # had ask_location top with a gremium slot guess → the wrong
+            # gremium scoping)
+            if intent["name"] != max(scores, key=scores.get):
+                continue
+            if any(slots.get(sn) for sn in (intent.get("slots") or {})):
+                best_name = intent["name"]
+                break
+        if best_name is None:
+            best_name = fallback
 
     return {"intent": best_name, "scores": scores, "slots": slots}
 
@@ -270,7 +322,8 @@ class SystemOneDecoder:
     def decode(self, query: str, cfg: Dict[str, Any],
                gremium_vocab: List[str],
                prompt_id: Optional[str] = None,
-               call_id: Optional[str] = None) -> Dict[str, Any]:
+               call_id: Optional[str] = None,
+               prev_query: Optional[str] = None) -> Dict[str, Any]:
         """One round-trip: intent (noul per intent) + slot questions.
 
         Uses an explicit client so the connection (and its pool) is closed
@@ -282,10 +335,23 @@ class SystemOneDecoder:
         prompt_id, call_id = validate_call_ids(
             prompt_id, call_id, context="pgIntentRouter.SystemOneDecoder.decode",
         )
+        # change: fix-followup-deixis — the CURRENT query is interpolated
+        # into the topic_follow slot question AT BUILD TIME (the current
+        # query is the function argument; the previous arrives via
+        # prev_query)
+        # change: fix-followup-deixis — build_questions receives prev_query
+        # so the topic_follow slot question is emitted with both queries
+        questions = build_questions(cfg, gremium_vocab, prev_query=prev_query)
+        slot_q = questions.get("slot_topic_follow")
+        if slot_q and prev_query:
+            instr = slot_q["instructions"]
+            instr = instr.replace("{current_query}", query)
+            instr = instr.replace("{prev_query}", prev_query)
+            slot_q["instructions"] = instr
         payload = {
             "model": self.model,
             "state": normalize_value(query),
-            "questions": build_questions(cfg, gremium_vocab),
+            "questions": questions,
         }
         headers = {"Authorization": f"Bearer {self.key}"} if self.key else {}
         timeout = httpx.Timeout(self.timeout, connect=min(15.0, self.timeout))
@@ -302,18 +368,23 @@ class SystemOneDecoder:
             prompt_id=prompt_id, call_id=call_id,
             duration_ms=round((_time.perf_counter() - t0) * 1000, 1),
         )
-        return parse_answers(cfg, answers, gremium_vocab)
+        return parse_answers(cfg, answers, gremium_vocab,
+                             prev_query=prev_query)
 
 
 # ----------------------------------------------------------------------
 # Gremium resolution (org groups + latest held meeting)
 # ----------------------------------------------------------------------
 def resolve_gremium(session, term: Optional[str],
-                    groups: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Resolve a gremium term to organizations and the latest held meeting.
+                    groups: List[Dict[str, Any]],
+                    month: Optional[int] = None,
+                    year: Optional[int] = None) -> Dict[str, Any]:
+    """Resolve a gremium term to organizations and the target meeting.
 
     Org groups (config) merge one-off sub-orgs into their parent at
-    resolve time. Returns {orgs: [names], meeting: {...}|None, note: str}.
+    resolve time. With ``month``/``year`` (change:
+    fix-gremium-session-docs-thread, task 2.2) the meeting is filtered to
+    that month/year. Returns {orgs, meeting, note, empty, months_with_docs?}.
     """
     out: Dict[str, Any] = {"orgs": [], "meeting": None, "note": ""}
     norm_term = normalize_value(term) if term else ""
@@ -366,33 +437,178 @@ def resolve_gremium(session, term: Optional[str],
         out["note"] = f"kein Gremium zu '{term}' gefunden"
         return out
 
-    # latest held meeting across the org group (future meetings never win)
+    meeting = _resolve_meeting(session, out["orgs"], month=month, year=year)
+    out.update(meeting)
+    return out
+
+
+# German months for the meeting-date filter (change:
+# fix-gremium-session-docs-thread, task 2.1): month name with optional
+# 4-digit year selects the target session; no year ⇒ current year.
+_MONTHS_DE = {
+    "januar": 1, "februar": 2, "märz": 3, "maerz": 3, "april": 4,
+    "mai": 5, "juni": 6, "juli": 7, "august": 8, "september": 9,
+    "oktober": 10, "november": 11, "dezember": 12,
+    "jan": 1, "mrz": 3, "feb": 2, "merz": 3, "okt": 10, "dez": 12,
+}
+_MONTH_RE = re.compile(
+    r"\b(" + "|".join(sorted(_MONTHS_DE, key=len, reverse=True)) +
+    r")\s*(\d{4})?\b", re.IGNORECASE)
+
+
+def extract_meeting_date(query: str) -> Tuple[Optional[int], Optional[int]]:
+    """(month, year) from the raw query, or (None, None). Month names with
+    an optional year ("im September 2025"); a month without a year defaults
+    to the CURRENT year (task 2.1). The first month mention wins."""
+    m = _MONTH_RE.search(query or "")
+    if not m:
+        return (None, None)
+    month = _MONTHS_DE[m.group(1).lower()]
+    year = int(m.group(2)) if m.group(2) else datetime.datetime.now().year
+    return (month, year)
+
+
+def gremium_meeting_extract(query: str,
+                            gremium_term: Optional[str] = None) -> Tuple[
+        Optional[int], Optional[int]]:
+    """LLM extraction of the meeting date frame (change:
+    fix-gremium-session-docs-thread, task 7.2): strict-JSON
+    `{gremium, relative, month, year}` via the SUMMARY chat client with the
+    `gremium-meeting-extract` prompts. Returns (month, year) like
+    :func:`extract_meeting_date` — that regex path is the FALLBACK on any
+    failure/unparseable answer/ambiguous `relative` (the decoder already
+    took care of the gremium kind; "letzte" needs no date). 0 fields mean
+    "not given" ⇒ None like the regex path."""
+    from src import remote as _remote
+    vocab = (gremium_term or "").strip() or "(Gremium im Text)"
+    try:
+        system = _remote.get_prompt("gremium-meeting-extract")
+        user = _remote.get_prompt("gremium-meeting-extract-user")
+        resp = _remote.chat(
+            [{"role": "system", "content": system},
+             {"role": "user", "content": user.replace(
+                 "{query}", query).replace("{vocabulary}", vocab)}],
+            temperature=0.0,
+            prompt_id="gremium-meeting-extract",
+            call_id="pgIntentRouter.gremium_meeting_extract.1",
+        )
+        import json as _json
+        import re as _re
+        content = resp.get("content") or ""
+        m = _re.search(r"\{.*\}", content, _re.DOTALL)
+        if not m:
+            return (None, None)
+        data = _json.loads(m.group(0))
+        rel = str(data.get("relative") or "").lower()
+        month = int(data.get("month") or 0)
+        year = int(data.get("year") or 0)
+        if rel == "letzte" or (month == 0 and year == 0):
+            return (None, None)
+        if not (1 <= month <= 12):
+            return (None, None)
+        return (month, year or datetime.datetime.now().year)
+    except Exception as exc:  # pragma: no cover
+        trace("gremium_extract", step="llm_failed", error=str(exc)[:120])
+        return (None, None)
+
+
+def _has_documents(session, meeting_sid) -> bool:
+    """True when a meeting row carries agenda items or meeting files."""
+    r = session.execute(
+        text(
+            "SELECT EXISTS (SELECT 1 FROM \"AgendaItem\" WHERE \"meetingSid\" = :s)"
+            " OR EXISTS (SELECT 1 FROM \"File__meeting__Meeting\""
+            "  WHERE \"tgtSid\" = :s OR \"srcSid\" = :s)"
+        ),
+        {"s": meeting_sid},
+    ).scalar()
+    return bool(r)
+
+
+# how many document-less held meeting rows to skip before giving up
+# (change: fix-gremium-session-docs-thread, task 1.1)
+MAX_EMPTY_SKIP = 3
+
+
+def _resolve_meeting(session, orgs: List[str], month: Optional[int] = None,
+                     year: Optional[int] = None) -> Dict[str, Any]:
+    """Pick the meeting for the gremium scope (tasks 1.1/2.2).
+
+    With month=None: the latest held meeting that carries documents — the
+    OParl backend publishes the meeting rows long before the documents, so
+    the empty latest rows are skipped (bounded by ``MAX_EMPTY_SKIP``; each
+    skipped date goes into the note). With month/year: the latest held
+    meeting with documents in that month — none found means an explicit
+    empty response (``empty=True``, months that DO have documents are
+    named) and never a silent fallback to another month.
+    """
+    out: Dict[str, Any] = {"meeting": None, "note": "", "empty": False}
+    meta = MetaData()
     meeting = Table("Meeting", meta, autoload_with=session.bind)
-    morg = Table("Meeting__organization__Organization", meta, autoload_with=session.bind)
-    row = session.execute(
-        select(
-            meeting.c.sid, meeting.c.name, meeting.c.start_date, meeting.c.oparlKey
-        )
-        .select_from(
-            morg.join(meeting, morg.c.srcSid == meeting.c.sid).join(
-                org, morg.c.tgtSid == org.c.sid
-            )
-        )
+    morg = Table("Meeting__organization__Organization", meta,
+                 autoload_with=session.bind)
+    org = Table("Organization", meta, autoload_with=session.bind)
+    now = datetime.datetime.now()
+
+    rows = session.execute(
+        select(meeting.c.sid, meeting.c.name, meeting.c.start_date,
+               meeting.c.oparlKey)
+        .select_from(morg.join(meeting, morg.c.srcSid == meeting.c.sid))
         .where(
-            org.c.name.in_(out["orgs"]),
-            meeting.c.start_date <= datetime.datetime.now(),
+            morg.c.tgtSid.in_(
+                select(org.c.sid).where(
+                    sa.func.lower(org.c.name).in_([o.lower() for o in orgs])
+                ).scalar_subquery()
+            ),
+            meeting.c.start_date <= now,
         )
         .order_by(meeting.c.start_date.desc())
-        .limit(1)
-    ).first()
-    if row:
-        out["meeting"] = {
-            "sid": row[0], "name": row[1], "start_date": row[2],
-            "oparlKey": row[3],
-        }
-    else:
-        out["note"] = "keine abgehaltene Sitzung des Gremiums gefunden"
+        .limit(400)
+    ).all()
+
+    if month is None:
+        skipped: List[str] = []
+        for sid_, name_, date_, key_ in rows:
+            if _has_documents(session, sid_):
+                out["meeting"] = {"sid": sid_, "name": name_,
+                                  "start_date": date_, "oparlKey": key_}
+                if skipped:
+                    fmt = ", ".join(d.strftime("%d.%m.%Y") for d in skipped)
+                    out["note"] = (
+                        "Dokumente für die Sitzung(en) am " + fmt +
+                        " sind noch nicht veröffentlicht — zuletzt mit "
+                        "Dokumenten: " + date_.strftime("%d.%m.%Y"))
+                return out
+            skipped.append(date_)
+            if len(skipped) > MAX_EMPTY_SKIP:
+                break
+        out["note"] = ("keine Sitzungsdokumente des Gremiums gefunden"
+                       + (" (letzte Sitzung: "
+                          + skipped[0].strftime("%d.%m.%Y") + ")"
+                          if skipped else ""))
+        return out
+
+    # month filter (task 2.2): meetings in that month/year only
+    mrows = [r for r in rows
+             if r[2].month == month and (year is None or r[2].year == year)]
+    for sid_, name_, date_, key_ in mrows:
+        if _has_documents(session, sid_):
+            out["meeting"] = {"sid": sid_, "name": name_,
+                              "start_date": date_, "oparlKey": key_}
+            return out
+    # explicit empty: state the months that DO have documents nearby
+    near = sorted({f"{r[2].month}/{r[2].year}" for r in rows
+                   if _has_documents(session, r[0])},
+                  key=lambda k: (-int(k.split('/')[1]), -int(k.split('/')[0])))
+    out["empty"] = True
+    out["note"] = (
+        f"Für {orgs[0] if orgs else 'das Gremium'} liegen für "
+        f"{month:d}/{year or 'die aktuelle Jahreszeit'} keine Sitzungs-"
+        "unterlagen vor")
+    if near:
+        out["note"] += " — Monate mit Dokumenten: " + ", ".join(near[:4])
     return out
+
 
 
 # ----------------------------------------------------------------------
@@ -574,141 +790,139 @@ def _is_tagesordnung(node: Dict[str, Any]) -> bool:
 def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
                          limit_per_relation: int = 50,
                          top_k: int = 10) -> Dict[str, Any]:
-    """Meeting-centric answer for gremium questions (design D10).
+    """Meeting-centric answer for gremium questions (design D10, rewritten
+    by change: fix-gremium-session-docs-thread task 8.1).
 
-    Forward traversal from the resolved meeting via the ADJACENCY map;
-    returns the meeting-centered graph, the agenda items as topics with
-    their files, and Tagesordnung + all session documents as top_files
-    (no top_k cut — the session IS the answer). No LLM summary, no map
+    Aggregates topics/files via DIRECT database queries (AgendaItem rows of
+    the resolved meeting + assoc tables) — NO graph build or expansion (a
+    gremium session view carries no graph). Tagesordnung + meeting files
+    first, then the TOPs' documents as top_files (no top_k cut — the
+    session IS the answer). No LLM summary, no map
     (answer_mode: list_topics)."""
-    from src.graphModel import expand_neighbors
-
     notes: List[str] = list(resolved.get("notes") or [])
     grem = resolved.get("gremium") or {}
     meeting = grem.get("meeting") or {}
-
     graph = {"nodes": [], "edges": []}
     top_files: List[Dict[str, Any]] = []
     topics: List[Dict[str, Any]] = []
 
-    meeting_key = meeting.get("oparlKey")
-    if not meeting_key:
-        notes.append("keine abgehaltene Sitzung gefunden; Suche ohne Sitzungs-Scope")
+    if not meeting.get("oparlKey"):
+        # resolution notes carry the precise cause (month filter empty /
+        # document-less meetings) — do not repeat it
+        if not any("Sitzung" in n for n in notes):
+            notes.append("keine abgehaltene Sitzung gefunden; Suche ohne Sitzungs-Scope")
         return {
             "query": query, "graph": graph, "top_files": top_files,
             "topics": topics, "answer_mode": "list_topics", "notes": notes,
             "empty": True,
         }
 
-    meeting_id = f"Meeting_{meeting_key}"
-    # depth 1: agenda items, Tagesordnung + aux files, organizations, then
-    # the agenda items' children (files, consultations -> papers -> files)
-    # change: disable-organisation-expansion — the accumulation stops at
-    # Organisation (no org hub from many consultations sharing one org):
-    # every partial is filtered through EXPANSION_SKIP_TYPES before merging
-    from src.graphModel import filter_skip_types
+    meeting_sid = meeting.get("sid")
+    import sqlalchemy as sa
 
-    partials: List[Dict[str, Any]] = [
-        filter_skip_types(expand_neighbors(session.bind, meeting_id, limit_per_relation))
-    ]
-    graph = _merge_graph_partials(partials)
-    for round_type in ("AgendaItem", "Consultation", "Paper"):
-        ids = [n["id"] for n in graph["nodes"] if n["type"] == round_type]
-        for nid in ids:
-            try:
-                partials.append(
-                    filter_skip_types(expand_neighbors(session.bind, nid, limit_per_relation))
-                )
-            except ValueError:
-                continue
-        graph = _merge_graph_partials(partials)
-    file_by_id = {n["id"]: n for n in graph["nodes"] if n["type"] == "File"}
-
-    # topics: agenda items with their files (direct + via consultation/paper)
-    consult_of_ai: Dict[str, str] = {}
-    paper_of_consult: Dict[str, str] = {}
-    files_of_paper: Dict[str, List[str]] = {}
-    for e in graph["edges"]:
-        src, tgt, rel = e["source"], e["target"], e["relation"]
-        if rel == "consultation" and src.startswith("AgendaItem_"):
-            consult_of_ai[src] = tgt
-        elif rel == "paper" and src.startswith("Consultation_"):
-            paper_of_consult[src] = tgt
-        elif rel in ("auxiliaryFile", "mainFile") and src.startswith("Paper_"):
-            files_of_paper.setdefault(src, []).append(tgt)
-
-    item_files: Dict[str, List[str]] = {}
-    for e in graph["edges"]:
-        if (e["relation"] == "auxiliaryFile"
-                and e["source"].startswith("AgendaItem_")
-                and e["target"].startswith("File_")):
-            item_files.setdefault(e["source"], []).append(e["target"])
-    for ai, consult in consult_of_ai.items():
-        paper = paper_of_consult.get(consult)
-        for fid in files_of_paper.get(paper, []) or []:
-            item_files.setdefault(ai, []).append(fid)
-
-    def _file_payload(fid: str) -> Dict[str, Any]:
-        f = file_by_id.get(fid, {})
+    def _file_row(r) -> Dict[str, Any]:
         return {
-            "id": fid,
-            "oparlKey": f.get("oparlKey"),
-            "name": f.get("name"),
-            "date": f.get("date"),
-            "downloadurl": (f.get("attrs") or {}).get("downloadurl")
-                           or f.get("oparlId"),
+            "id": f"File_{r.sid}", "oparlKey": r.oparlKey, "name": r.name,
+            "date": r.date, "downloadurl": r.downloadurl or r.oparlId,
+            "oparlId": r.oparlId,
         }
 
-    def _top_sort_key(n):
-        num = (n.get("attrs") or {}).get("number")
-        try:
-            # sub-items like "4.1" become decimals: 4 < 4.1 < 5
-            return (0, float(num), "")
-        except (TypeError, ValueError):
-            if num is None:
-                return (1, 0.0, "")
-            return (2, 0.0, str(num))
+    def _assoc_files(assoc: str, node_col: str, node_sid,
+                     file_col: str = "tgtSid") -> List[Any]:
+        """Files of an association row. The File side column is explicit
+        (no universal orientation): per graphModel.ADJACENCY, verified live
+        — aux assocs put the file on tgtSid, File__paper__Paper on srcSid."""
+        return session.execute(sa.text(
+            'SELECT f.sid, f."oparlKey", f.name, f.date, '
+            "f.data->>'downloadurl' AS downloadurl, f.\"oparlId\" "
+            f'FROM "{assoc}" x JOIN "File" f ON f.sid = x."{file_col}" '
+            f'WHERE x."{node_col}" = :k'), {"k": node_sid}).all()
 
-    for n in sorted(
-        (n for n in graph["nodes"] if n["type"] == "AgendaItem"),
-        key=_top_sort_key,
-    ):
-        fids = list(dict.fromkeys(item_files.get(n["id"], [])))
+    def _files_for_paper(paper_sid) -> List[Dict[str, Any]]:
+        # File__paper__Paper: src = File, tgt = Paper
+        return [_file_row(r) for r in _assoc_files(
+            "File__paper__Paper", "tgtSid", paper_sid, file_col="srcSid")]
+
+    def _files_ai(ai_sid, cons_sid) -> List[Dict[str, Any]]:
+        """Files of a TOP: direct aux files + consultation → paper →
+        main/aux files."""
+        out: List[Dict[str, Any]] = []
+        seen: set = set()
+
+        def _feed(fs):
+            for f in fs:
+                if f["id"] not in seen:
+                    seen.add(f["id"])
+                    out.append(f)
+        _feed([_file_row(r) for r in _assoc_files(
+            "AgendaItem__auxiliaryFile__File", "srcSid", ai_sid)])
+        if cons_sid:
+            paper_sids = session.execute(sa.text(
+                'SELECT "srcSid" FROM "Paper__consultation__Consultation" '
+                'WHERE "tgtSid" = :k'), {"k": cons_sid}).scalars().all()
+            for psid in paper_sids:
+                _feed(_files_for_paper(psid))
+                _feed([_file_row(r) for r in _assoc_files(
+                    "Paper__auxiliaryFile__File", "srcSid", psid)])
+        return out
+
+    agenda = session.execute(sa.text(
+        'SELECT sid, "oparlKey", name, number, result, "consultationSid" '
+        'FROM "AgendaItem" WHERE "meetingSid" = :sid ORDER BY number'),
+        {"sid": meeting_sid}).mappings().all()
+
+    agenda_file_ids: List[Dict[str, Any]] = []
+    seen_agenda_files: set = set()
+    for a in agenda:
+        files = _files_ai(a["sid"], a.get("consultationSid"))
         topics.append({
-            "id": n["id"],
-            "oparlKey": n.get("oparlKey"),
-            "number": (n.get("attrs") or {}).get("number"),
-            "name": n.get("name"),
-            "result": (n.get("attrs") or {}).get("result"),
-            "files": [_file_payload(fid) for fid in fids],
+            "id": f"AgendaItem_{a['oparlKey']}",
+            "oparlKey": a["oparlKey"], "number": a["number"],
+            "name": a["name"], "result": a["result"],
+            "date": meeting.get("start_date"),
+            "orgs": grem.get("orgs") or [],
+            "files": files,
         })
+        for f in files:
+            if f["id"] not in seen_agenda_files:
+                seen_agenda_files.add(f["id"])
+                agenda_file_ids.append(f)
 
-    # top_files: Tagesordnung first, then the session's other documents —
-    # meeting-linked files (TO/Protokoll/aux), falling back to the agenda
-    # items' documents when the session has none published yet
-    meeting_file_ids = {
-        e["target"] for e in graph["edges"]
-        if e["source"] == meeting_id and e["target"].startswith("File_")
-    }
-    agenda_file_ids = list(dict.fromkeys(
-        fid for fids in item_files.values() for fid in fids
-    ))
-    ordered_ids = sorted(
-        meeting_file_ids, key=lambda fid: not _is_tagesordnung(file_by_id.get(fid, {}))
-    ) + [fid for fid in agenda_file_ids if fid not in meeting_file_ids]
-    for fid in ordered_ids:
-        n = file_by_id.get(fid) or {}
-        attrs = n.get("attrs") or {}
-        top_files.append({
-            "oparlKey": n.get("oparlKey"),
-            "name": n.get("name"),
-            "fileName": attrs.get("fileName"),
-            "downloadurl": attrs.get("downloadurl"),
-            "oparlId": n.get("oparlId"),
-            "date": n.get("date"),
-            "distance": None,
-            "match": {},
-        })
+    # top_files: Tagesordnung first, then the other meeting files, then the
+    # TOPs' documents (dedup, agenda-first order)
+    meeting_files: List[Dict[str, Any]] = []
+    mf_seen: set = set()
+    for stmt, file_col in (
+        ('SELECT f.sid, f."oparlKey", f.name, f.date, '
+         "f.data->>'downloadurl' AS downloadurl, f.\"oparlId\" "
+         'FROM "File__meeting__Meeting" x JOIN "File" f ON f.sid = x."tgtSid" '
+         'WHERE x."srcSid" = :sid', "meeting"),
+    ):
+        for r in session.execute(sa.text(stmt), {"sid": meeting_sid}).all():
+            key = r.sid or r.oparlKey
+            if key in mf_seen:
+                continue
+            mf_seen.add(key)
+            meeting_files.append(_file_row(r))
+    meeting_files.sort(key=lambda f: not _is_tagesordnung({"name": f["name"] or ""}))
+
+    ordered: List[Dict[str, Any]] = list(meeting_files)
+    ordered_ids = {f["id"] for f in ordered}
+    for f in agenda_file_ids:
+        if f["id"] in ordered_ids:
+            continue
+        ordered_ids.add(f["id"])
+        ordered.append(f)
+
+    top_files = [
+        {
+            "oparlKey": f.get("oparlKey"), "name": f.get("name"),
+            "fileName": None, "downloadurl": f.get("downloadurl"),
+            "oparlId": f.get("oparlId"), "date": f.get("date"),
+            "distance": None, "match": {},
+        }
+        for f in ordered
+    ]
 
     if not top_files:
         notes.append("keine Sitzungsdokumente gefunden")
@@ -717,6 +931,7 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
         "topics": topics, "answer_mode": "list_topics", "notes": notes,
         "empty": not (top_files or topics),
     }
+
 
 
 # ----------------------------------------------------------------------
@@ -737,23 +952,23 @@ PROFORM_TOKENS = {"das", "dem", "es", "dort", "damit", "dabei", "dazu",
 
 
 def _is_deictic(raw_query: str) -> bool:
-    """Anaphora evidence on the RAW query (task 7.2): a proform counts
-    when it is either (a) the last word of the query — "…hat das" — or
-    (b) followed by a lowercase continuation word (usually the verb),
-    NOT by a Capitalized noun ("das Forum" = determiner, not proform)."""
+    """Anaphora evidence on the RAW query (task 7.2, REVISITED change:
+    fix-followup-deixis). The original mid-sentence rule relied on German
+    capitalization ("das Forum" = determiner vs. "das wird" = pronoun) —
+    but user queries arrive lowercase, so EVERY "das/e die + word" matched
+    (live finding: "was ist das forum recht" classified deictic → thread
+    misfires). Kept: only the UNAMBIGUOUS positions —
+      (a) proform as the LAST word ("…hat das"),
+      (b) proform as the FIRST word ("das ist teuer").
+    Mid-sentence proforms ("wo wird es gebaut") go to the topic_follow
+    model decision (both queries in context) — the model judges
+    semantically where capitalization is lost."""
     words = raw_query.strip().split()
     if not words:
         return False
     if words[-1].lower().rstrip(",.!?:;") in PROFORM_TOKENS:
         return True
-    for i, w in enumerate(words[:-1]):
-        if w.lower().rstrip(",.!?:;") in PROFORM_TOKENS:
-            nxt = words[i + 1]
-            # determiner+noun continues ". …das Forum…"; proform continues
-            # with a verb/proform continuation ("dem zugestimmt")
-            if nxt[0].islower():
-                return True
-    return False
+    return words[0].lower().rstrip(",.!?:;") in PROFORM_TOKENS
 
 
 def classify_thread_turn(query: str, intent_name: str,
@@ -815,9 +1030,13 @@ class IntentRouter:
             self._decoder = SystemOneDecoder()
         return self._decoder
 
-    def decode(self, query: str, engine=None) -> Dict[str, Any]:
+    def decode(self, query: str, engine=None,
+               prev_query: Optional[str] = None) -> Dict[str, Any]:
         """Decode a query: intent + slots. Falls back to search_topic (with
-        an error note) whenever the decision model is unreachable."""
+        an error note) whenever the decision model is unreachable.
+
+        change: fix-followup-deixis — ``prev_query`` activates the
+        topic_follow slot question (follow-up vs fresh topic)."""
         engine = engine or get_engine(readonly=True)
         with engine.connect() as conn:
             gremium_intent = None
@@ -834,6 +1053,7 @@ class IntentRouter:
                 query, self.cfg, gremium_vocab,
                 prompt_id="intent-decision-question",
                 call_id="pgIntentRouter.IntentRouter.decode.1",
+                prev_query=prev_query,
             )
             decoded["error"] = None
         except Exception as exc:  # noqa: BLE001 - degrade to plain search
@@ -843,6 +1063,17 @@ class IntentRouter:
                 "slots": {},
                 "error": f"decision model unreachable: {exc}",
             }
+        # change: fix-gremium-session-docs-thread — deterministic intent
+        # override: a query that names a gremium AND a meeting date ("themen
+        # der gemeinderatssitzung im April 2026") is a session question even
+        # when the decision model scored themensuche higher — the model
+        # matches on topic words and under-scores the date frame. Override
+        # (no model change) with the vocab-matched gremium term.
+        try:
+            decoded = self._apply_gremium_date_override(decoded, query,
+                                                        gremium_vocab)
+        except Exception as exc:  # noqa: BLE001
+            trace("intent_override", step="gremium_date", error=str(exc))
         # api-debug-logging: the intent decision with its reasons
         scores = decoded.get("scores") or {}
         trace("intent_route", intent=decoded["intent"],
@@ -854,6 +1085,44 @@ class IntentRouter:
             trace("intent_fallback", step="decoder_unreachable",
                   reason="decision model unreachable — fallback intent",
                   intent=decoded["intent"])
+        return decoded
+
+    def _apply_gremium_date_override(
+            self, decoded: Dict[str, Any], query: str,
+            gremium_vocab: List[str]) -> Dict[str, Any]:
+        """Session-question override on a themensuche decode (change:
+        fix-gremium-session-docs-thread).
+
+        Fires when the decoded intent is the fallback/topic search but the
+        raw query names both a gremium term (from the slot vocabulary) and
+        a meeting date (German month, or "letzte sitzung"). Those queries
+        are session questions; the decision model tends to under-score the
+        date frame ("gemeinderat im April 2026" scored themensuche in live
+        routing). The override pins the vocab-matched gremium term into the
+        slot so resolve() scopes the meeting. No-op when the session
+        machinery is not the decoded intent family."""
+        if decoded.get("intent") not in (None, "", "search_topic"):
+            return decoded
+        month, year = extract_meeting_date(query)
+        names_last = re.search(r"\bletzten?\b", query or "", re.IGNORECASE)
+        norm_q = normalize_value(query)
+        grem_term = None
+        for term in gremium_vocab or []:
+            if term and re.search(r"\b" + re.escape(normalize_value(term)) + r"\b",
+                                  norm_q):
+                grem_term = term
+                break
+        if grem_term is None or (month is None and names_last is None):
+            return decoded
+        # locate the gremium intent name from the vocab source
+        for intent in self.cfg["intents"]:
+            if "gremium" in (intent.get("slots") or {}):
+                decoded["intent"] = intent["name"]
+                break
+        decoded.setdefault("slots", {})["gremium"] = grem_term
+        decoded["override"] = "gremium_date"
+        trace("intent_override", step="gremium_date", intent=decoded["intent"],
+              slot=grem_term, month=month, year=year)
         return decoded
 
     def resolve(self, intent_name: str, slots: Dict[str, Any],
@@ -877,8 +1146,20 @@ class IntentRouter:
         if "gremium" in (intent.get("slots") or {}):
             groups = (intent.get("groups") or {}).get("gremium", [])
             term = slots.get("gremium")
-            grem = resolve_gremium(session, term, groups)
+            # change: fix-gremium-session-docs-thread — the raw query may
+            # name a month ("themen der gemeinderatssitzung im september"):
+            # LLM-based extraction (fallback: the regex path) feeds the
+            # meeting resolution
+            m_month, m_year = gremium_meeting_extract(query, term)
+            if m_month is None:
+                m_month, m_year = extract_meeting_date(query)
+            grem = resolve_gremium(session, term, groups,
+                                   month=m_month, year=m_year)
             resolved["gremium"] = grem
+            if grem.get("empty") and grem.get("note"):
+                # change: fix-gremium-session-docs-thread — month filter
+                # without documents: state the real cause in the notes
+                resolved["notes"].append(grem["note"])
             if grem["orgs"]:
                 resolved["filters"] = resolved["filters"] + [
                     {"facet": "organization", "op": "in", "values": grem["orgs"]}
@@ -937,8 +1218,13 @@ class IntentRouter:
                 "answer_mode": "list_topics",
             }
             if mres.get("empty"):
+                # change: fix-gremium-session-docs-thread — the empty
+                # message carries the resolution note (month filter /
+                # document-less skip) so the UI shows the real cause
                 result["empty_response"] = {
-                    "message": "Für diese Sitzung wurden keine Dokumente gefunden.",
+                    "message": (resolved["notes"][-1]
+                                if resolved["notes"] else
+                                "Für diese Sitzung wurden keine Dokumente gefunden."),
                     "intent": resolved["intent"],
                     "filters_tried": filters,
                     "gremium": resolved.get("gremium"),
@@ -1026,11 +1312,140 @@ class IntentRouter:
         return result
 
 
+def _gremium_vocab() -> list:
+    try:
+        from src.db import get_engine
+        cfg = load_intents_config()
+        gi = next((i for i in cfg["intents"]
+                   if "gremium" in (i.get("slots") or {})), None)
+        if not gi:
+            return []
+        with get_engine(readonly=True).connect() as c:
+            return build_slot_vocab(c, gi, "gremium")
+    except Exception:  # noqa: BLE001
+        return []
+
+
+def _explicit_gremium_named(query: str) -> bool:
+    norm_q = normalize_value(query)
+    for name in ("gemeinderat", "ortschaftsrat", "ausschuss"):
+        if re.search(r"\b" + name + r"\b", norm_q):
+            return True
+    return False
+
+
+def gremium_slot_options(session, query: str,
+                         result: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Slot-filling options (change: request-thread-facets): the request
+    decoded as ask_gremium_recent but the gremium slot is EMPTY/ambiguous —
+    offer the known bodies (bounded: <= 12, latest-held first) with their
+    latest held meeting date as the option example. Returns None whenever
+    the request was scoped properly (a body resolved) — options are the
+    tool ONLY under clear intent + under-specification (bounded spaces)."""
+    if result.get("intent") not in ("ask_gremium_recent",):
+        return None
+    # change: request-thread-facets — a model-IMPLIED body (slot guessed for
+    # "letzte sitzung" without naming one) does NOT count: options fire
+    # unless the user's raw query names a gremium term
+    norm_q = normalize_value(query)
+    for term in _gremium_vocab():
+        # substring containment (NOT word-boundary): bodies are inside
+        # German compounds ("gemeinderat" ⊂ "gemeinderatssitzung")
+        if term and normalize_value(term) in norm_q:
+            return None   # explicit body — the scoped search is correct
+    grem = result.get("gremium") or {}
+    if grem.get("meeting") and _explicit_gremium_named(query):
+        return None   # body + meeting resolved — the scoped search ran
+    try:
+        from src.db import get_engine
+        from sqlalchemy import text as _t
+        with get_engine(readonly=True).connect() as c:
+            rows = c.execute(_t(
+                'SELECT o.name, (SELECT max(m."start_date") '
+                '  FROM "Meeting__organization__Organization" x '
+                '  JOIN "Meeting" m ON m.sid = x."srcSid" '
+                '  WHERE x."tgtSid" = o.sid AND m."start_date" <= now() '
+                ') AS last_held '
+                'FROM "Organization" o '
+                'WHERE (o."enddate" IS NULL OR o."enddate" > now()) '
+                "  AND (o.\"name\" ILIKE :p1 OR o.\"name\" ILIKE :p2 "
+                '       OR o."name" ILIKE :p3) '
+                'ORDER BY last_held DESC NULLS LAST, o.name'),
+                {"p1": "%rat%", "p2": "%ausschuss%",
+                 "p3": "%gemeinderat%"}).mappings().all()
+        options = []
+        for r in rows:
+            d = r["last_held"]
+            options.append({
+                "topic": r["name"],
+                "example": (f"letzte Sitzung am {d:%d.%m.%Y}" if d else ""),
+            })
+            if len(options) >= 12:
+                break
+        if len(options) < 2:
+            return None
+        return {"facet": "gremium", "entries": options,
+                "hint": "Welches Gremium meinen Sie?"}
+    except Exception as exc:  # noqa: BLE001 - options never break the search
+        trace("gremium_options", step="failed", error=str(exc)[:120])
+        return None
+
+
+def is_gremium_session_query(query: str,
+                             cfg: Optional[Dict[str, Any]] = None) -> bool:
+    """Head-of-chain pre-check for /ask (change:
+    fix-gremium-session-docs-thread, task 7.3): the query names a gremium
+    (from the slot vocabulary) AND a session date frame ("letzte(ten)
+    Sitzung", month expression). Cheap DB-scan + regex — no model call.
+    Used to skip the thread turn entirely (a gremium session query resets
+    the conversation)."""
+    from src.db import get_engine
+    norm_q = normalize_value(query)
+    if not norm_q:
+        return False
+    month, year = extract_meeting_date(query)
+    names_last = re.search(r"\bletzten?\b", query or "", re.IGNORECASE)
+    if month is None and not names_last:
+        return False
+    try:
+        cfg = cfg or load_intents_config()
+        gremium_intent = next(
+            i for i in cfg["intents"]
+            if "gremium" in (i.get("slots") or {}))
+    except Exception:
+        return False
+    groups = (gremium_intent.get("groups") or {}).get("gremium", [])
+    names = [g.get("primary", "") for g in groups] + [
+        m for g in groups for m in (g.get("merged") or [])]
+    for name in names:
+        if name and re.search(
+                r"\b" + re.escape(normalize_value(name)) + r"\b", norm_q):
+            return True
+    # aliases live in the slot vocabulary (e.g. "gr" for Gemeinderat) —
+    # DB-scan once; the same query the decode uses via build_slot_vocab
+    try:
+        from src.db import get_engine
+        vocab = build_slot_vocab(get_engine(readonly=True).connect(), gremium_intent, "gremium")
+        for term in vocab:
+            if term and re.search(
+                    r"\b" + re.escape(normalize_value(term)) + r"\b", norm_q):
+                return True
+    except Exception:  # pragma: no cover - vocab failure → config-only path
+        pass
+    return False
+
+
+# slot-filling option fill: the /ask branch forces the intent + slot for the
+# option-selected request (change: request-thread-facets)
+_FORCE: Dict[str, Any] = {}
+
+
 def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
         router: Optional[IntentRouter] = None, top_k: int = 10,
         signals: Optional[Dict[str, bool]] = None,
         summarize: bool = True,
-        search_fn: Optional[callable] = None) -> Dict[str, Any]:
+        search_fn: Optional[callable] = None,
+        prev_query: Optional[str] = None) -> Dict[str, Any]:
     """Convenience entry point for the /ask endpoint: decode + resolve +
     execute in one call.
 
@@ -1054,7 +1469,18 @@ def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
         except Exception:  # noqa: BLE001 - pre-warm is best-effort
             prewarm = None
 
-    decoded = router.decode(query)
+    # change: request-thread-facets — a FORCED slot (slot-filling option
+    # selection) bypasses the decode: intent + slot are already decided by
+    # the option turn
+    forced_intent = (router_ctx.get("forced_intent")
+                     if isinstance(router_ctx := _FORCE.get("ctx"), dict)
+                     else None)
+    if forced_intent:
+        decoded = {"intent": forced_intent,
+                   "slots": router_ctx.get("slots") or {},
+                   "scores": router_ctx.get("scores") or {}, "error": None}
+    else:
+        decoded = router.decode(query, prev_query=prev_query)
 
     if prewarm is not None:
         try:
@@ -1074,6 +1500,7 @@ def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
         ]
     result["slots"] = decoded.get("slots") or {}
     return result
+
 
 
 def _parallel_enabled() -> bool:

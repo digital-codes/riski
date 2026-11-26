@@ -13,7 +13,7 @@ const DEFAULTS = {
 	heading: 'Das Karlsruher Ratsinformationssystem — erklärt.',
 	footer: 'riski — das Karlsruher Ratsinformationssystem erklären. Prototyp; Datenbasis: offene OParl-Daten der Stadt Karlsruhe.',
 	defaultQuery: 'wo liegt die Governance für Digitalisierung bei der Stadt Karlsruhe',
-	oparlLink: 'https://web1.karlsruhe.de/ris/oparl',
+	oparlLink: 'https://web2.karlsruhe.de/ris/oparl',
 	imprintUrl: '/#/impressum',
 	privacyUrl: '/#/datenschutz',
 	aiDisclaimer: 'KI-generierte Inhalte! Keine Gewähr für Richtigkeit.',

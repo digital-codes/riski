@@ -122,17 +122,28 @@ def seeded_files(engine, file_tbl, tmp_path):
 
 class TestRunContentLoading:
     def test_updates_matched_and_reports_unmatched(self, engine, file_tbl, seeded_files):
+        # change: fix-stale-test-fixtures — File_chunks/file sids are a
+        # GLOBAL test-DB store shared across suite runs; clear the three
+        # seeded sids once so assertions are about THIS run
+        with engine.begin() as conn:
+            conn.execute(text(
+                'DELETE FROM "File_chunks" WHERE file_sid IN (1, 2, 3)'))
         md_map = iter_md_files(seeded_files, seeded_files)
         with engine.begin() as conn:
             run_summaries(conn, file_tbl, md_map, embeddings=False, dry_run=False)
 
+        # change: fix-stale-test-fixtures — the unified File_chunks store
+        # is the single text store: small documents load as chunk 0 and
+        # File.content stays retired (None)
         with engine.connect() as conn:
-            contents = dict(conn.execute(
-                __import__("sqlalchemy").select(file_tbl.c.sid, file_tbl.c.content)
-            ).fetchall())
-        assert contents[1] and "Bericht eins" in contents[1]
-        assert contents[2] is None  # no matching md
-        assert contents[3] is None  # no filename
+            chunks = dict(conn.execute(
+                __import__("sqlalchemy").text(
+                    'SELECT file_sid, text FROM "File_chunks" '
+                    'WHERE chunk_index = 0 AND file_sid IN (1, 2, 3)'
+                )).fetchall())
+        assert chunks.get(1) and "Bericht eins" in chunks[1]
+        assert 2 not in chunks  # no matching md
+        assert 3 not in chunks  # no filename
 
     def test_dry_run_does_not_write(self, engine, file_tbl, seeded_files):
         md_map = iter_md_files(seeded_files, seeded_files)
@@ -163,11 +174,18 @@ class TestRunContentLoading:
             run_summaries(conn, file_tbl, md_map, embeddings=False, dry_run=False,
                           sums_dir=sums, full_dir=full)
 
+        # change: fix-stale-test-fixtures — contentKind lives in
+        # File_chunks metadata side: provenance via which md won the match;
+        # assert on the chunk text source instead of the retired column
         with engine.connect() as conn:
-            from sqlalchemy import select as sel
-            kinds = dict(conn.execute(sel(file_tbl.c.sid, file_tbl.c.contentKind)).fetchall())
-        assert kinds[10] == "summary"
-        assert kinds[11] == "fulltext"
+            texts = dict(conn.execute(
+                __import__("sqlalchemy").text(
+                    'SELECT fc.file_sid, fc.text FROM "File_chunks" fc '
+                    'JOIN "File" f ON f.sid = fc.file_sid '
+                    'WHERE fc.chunk_index = 0')
+            ).fetchall())
+        assert texts.get(10, "").startswith("summary")
+        assert texts.get(11, "").startswith("full")
 
 
 class TestRunEmbeddings:

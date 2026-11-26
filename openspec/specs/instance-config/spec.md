@@ -36,6 +36,31 @@ behavior.
 - **WHEN** no instance config file exists and no overrides are set
 - **THEN** the pipeline behaves exactly as the current Karlsruhe deployment
 
+### Requirement: OParl endpoint defaults (web2)
+
+The Karlsruhe DEFAULTS in `src/instanceConfig.py` and `config/instance.yaml`
+point `oparl.system_url` and `frontend.oparl_link` at the CURRENT OParl
+endpoint (`https://web2.karlsruhe.de/ris/oparl`, change `oparl-endpoint-web2`).
+The default `oparl.url_rewrites` list is EMPTY: the web2 endpoint serves
+proper `/ris/oparl` paths, so the legacy "/ris prefix restore" rule is not
+needed; the rewrites MECHANISM stays for other instances or endpoint
+regressions (env override `RISKI_OPARL__URL_REWRITES` / config file). The
+stored data was migrated once with `scripts/upgrade_oparl_urls.py`
+(idempotent rewrite of the `oparlId` columns and `data` payloads; 111,763
+rows).
+
+#### Scenario: Karlsruhe defaults point at web2
+
+- **WHEN** no instance config overrides are set
+- **THEN** the crawler, file proxies and frontend oparl links use
+  `https://web2.karlsruhe.de/ris/oparl` and no `/ris`-prefix rewrite runs
+
+#### Scenario: Legacy endpoint via override
+
+- **WHEN** an instance override points the system URL back at web1
+- **THEN** the crawler honours the override and an instance-config
+  `url_rewrites` entry can restore the `/ris` prefix without code changes
+
 ### Requirement: OParl bodies are enumerated from the system object
 
 The crawler SHALL discover the body IDs to crawl from the OParl `system`

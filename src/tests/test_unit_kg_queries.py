@@ -55,24 +55,27 @@ class TestStatements:
 
 class TestRelated:
     def test_related_excludes_top_files(self):
-        rows = [(300, 2, 4.0, ["Culture", "Sports"])]
+        # change: fix-stale-test-fixtures — 5-tuple File shape (oparlKey,
+        # name, filename, date, teaser) matching the unified-content store
+        rows = [("F300", 2, 4.0, ["Culture", "Sports"], ())]
         eng = _Eng(rows)
         with patch("src.kg.kgQueries.get_engine", return_value=eng):
             got = related_by_tags([("10127", 1.0)], min_shared=2)
         assert got[0]["shared_tags"] == ["Culture", "Sports"]
 
     def test_name_resolution(self):
-        # helper resolves display names in a second query (names query
-        # hits the same mock rows)
-        rows = [(300, 2, 4.0, ["Culture"])]
-        got_res = _Res(rows)
-        ctx = _Ctx(rows)
-        # second context returns names rows; simulate by patching twice
+        # helper resolves display names in a second query (names query hits
+        # the same mock rows); 5-tuple: oparlKey/name/filename/date/teaser
+        rows = [("F300", 2, 4.0, ["Culture"], ())]
         eng = MagicMock()
-        eng.connect.side_effect = [_Ctx(rows), _Ctx([(300, "Nur Kultur", "300.pdf")])]
+        eng.connect.side_effect = [_Ctx(rows), _Ctx(
+            [("F300", "Nur Kultur", "300.pdf", "2024-03-01", "Ein Kultur-Teaser.")])]
         with patch("src.kg.kgQueries.get_engine", return_value=eng):
             got = related_by_tags([("10127", 1.0)])
         assert got and got[0]["name"] == "Nur Kultur"
+        assert got[0]["year"] == "2024"
+        assert got[0]["teaser"] == "Ein Kultur-Teaser."
+        assert got[0]["downloadurl"] == "/file-proxy/F300"
 
 
 class TestJSON:

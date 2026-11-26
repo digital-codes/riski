@@ -25,16 +25,10 @@
     <p v-if="snapshotMode && !error" class="snapshot-hint">
       Gespeicherter Beispielsatz für die Startseite — suchen Sie für aktuelle Ergebnisse.
     </p>
-    <!-- kg-app-integration D7: chips sheet when the server proposes tag
-         candidates (app load / weak recall) - no cards rendered then -->
-    <div v-if="threadChips && threadChips.length" class="thread-chips-sheet">
-      <p class="thread-hint">{{ threadHint || 'Hinweis: Bitte präzisieren Sie Ihre Anfrage.' }}</p>
-      <button v-for="(chip, i) in threadChips" :key="i" type="button"
-              class="thread-chip" :disabled="loading"
-              @click="applyThreadChip(chip, $event)">
-        {{ chip.topic }}<small v-if="chip.example"> — {{ chip.example }}</small>
-      </button>
-    </div>
+    <!-- change: fix-gremium-session-docs-thread — the D7 chips sheet was a
+         bare floating div (chips + hint without card); both chip flows
+         (D7 weak-recall chips and clarification chips) now go through the
+         styled RelatedHintsCard below -->
     <button v-if="threadTurn >= 2 || threadReset" type="button"
             class="thread-new" :disabled="loading"
             title="Unterhaltung zurücksetzen und neu starten"
@@ -61,23 +55,11 @@
       </p>
     </div>
   </div>
-  <div class="wrapper">
-    <!-- change: progressive-frontend-rendering — the network view mounts
-         only when the graph stage has delivered; until then it shows a
-         loading card so the pane sequence (files → timeline → graph) is
-         visible -->
-    <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph"
-      :active-file-keys="activeFileKeys"
-      :rejected-file-keys="rejectedFileKeys"
-      :active-item-keys="activeItemKeys"
-      :can-reset="graph !== baseGraph"
-      :scope="graphScope" @toggle-scope="onToggleScope"
-      @select="onSelect" @reset="onResetGraph" />
-    <div v-else-if="loadingGraph" class="pane-loading-card">
-      <span class="pane-spinner"></span>
-      <span>Netzwerk wird aufgebaut…</span>
-    </div>
-  </div>
+  <!-- change: rework-search-result-cards — card order for search_topic:
+       summary → related hints (only without topic focus) → map → timeline
+       → network graph (moved from the former first position). The
+       top-10-files card and the unstyled tags/related-documents paragraph
+       are dropped. -->
   <DetailPanel
     :selection="selection"
     :graph="graph"
@@ -94,9 +76,16 @@
       :topics="topics"
       @select="onSelect"
     />
-    <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="hasGeo" :files="summaryFiles" :refining="refining" :refined="summaryRefined" :kgChips="kgChips" :kgRelated="kgRelated" @pick="onKgChipPick" @refine="onRefine" @toggle-file="onToggleFile" />
+    <SummaryCard v-else-if="summary || summaryLoading" :summary="summary" :loading="summaryLoading && !summary" :mapAvailable="hasGeo" :files="summaryFiles" :refining="refining" :refined="summaryRefined" @refine="onRefine" @toggle-file="onToggleFile" />
+    <!-- change: fix-gremium-session-docs-thread — the card is HIDDEN when
+         the themensuche delivered at least one file: a real hit list
+         leaves no room for "Verfeinerung & verwandte Dokumente"; the card
+         is for the nebulous case (no files, weak recall, clarification
+         chips). -->
+    <RelatedHintsCard v-if="!topicalSummary && !((files && files.length) || (summaryFiles && summaryFiles.length)) && ((kgChips && kgChips.length) || (threadChips && threadChips.length) || (relatedDocs && relatedDocs.length))"
+      :chips="kgChips && kgChips.length ? kgChips : (threadChips || [])" :hint="threadHint" :related="relatedDocs || []"
+      @pick="kgChips && kgChips.length ? onKgChipPick($event) : applyThreadChip($event)" />
     <FollowupChips v-if="followups && followups.length" :questions="followups" :state="stateToken" :sessionId="stateSession" @pick="onFollowupPick" />
-    <RelatedDocsList v-if="relatedDocs && relatedDocs.length" :docs="relatedDocs" />
   </div>
   <div class="wrapper">
     <!-- change: geo-gating (map scope = selected documents) — the pane and
@@ -105,16 +94,32 @@
          (agenda/aux links) and no longer decides visibility -->
     <GeoMap v-if="hasGeo" :feature-collection="geoFC" :summary-files="summaryFiles" />
   </div>
-  <!-- change: progressive-frontend-rendering — the file list and timeline
-       cards fill in as their stages arrive; the wrapper is visible during
-       the search so the loading states are shown immediately -->
+  <!-- change: progressive-frontend-rendering — the timeline card fills in
+       as its stages arrive; the files card is dropped for search_topic
+       (show-files=false) -->
   <div class="wrapper" v-if="answerMode !== 'list_topics' && (rawData || loadingFiles || loadingTimeline)">
     <TimeLine
+      :show-files="false"
       :files="files"
       :files-loading="loadingFiles"
       :timeline="timeline"
       :timeline-loading="loadingTimeline"
     />
+  </div>
+  <div class="wrapper">
+    <!-- change: rework-search-result-cards — the network view moved after
+         the timeline card; it mounts when the graph stage has delivered -->
+    <NetworkView v-if="graph && graph.nodes && graph.nodes.length" :graph="graph"
+      :active-file-keys="activeFileKeys"
+      :rejected-file-keys="rejectedFileKeys"
+      :active-item-keys="activeItemKeys"
+      :can-reset="graph !== baseGraph"
+      :scope="graphScope" @toggle-scope="onToggleScope"
+      @select="onSelect" @reset="onResetGraph" />
+    <div v-else-if="loadingGraph" class="pane-loading-card">
+      <span class="pane-spinner"></span>
+      <span>Netzwerk wird aufgebaut…</span>
+    </div>
   </div>
 </template>
 
@@ -122,7 +127,9 @@
 import { ref, computed, onMounted, onUnmounted, defineAsyncComponent } from 'vue';
 import TimeLine from './TimeLine.vue';
 import SummaryCard from './SummaryCard.vue';
-import RelatedDocsList from './RelatedDocsList.vue';
+import RelatedHintsCard from './RelatedHintsCard.vue';
+// change: rework-search-result-cards — the bare RelatedDocsList wrapper was
+// dropped from this view; RelatedHintsCard hosts the related documents now
 import FollowupChips from './FollowupChips.vue';
 import DetailPanel from './DetailPanel.vue';
 import RouteInfo from './RouteInfo.vue';
@@ -170,7 +177,11 @@ const threadReset = ref(false);
 const threadChips = ref([]);   // chips-mode payload (5 tag proposals)
 const threadHint = ref(null);
 const kgChips = ref(null);
-const kgRelated = ref(null);
+// change: rework-search-result-cards — topic focus above the threshold
+// enables a topical summary; the related-hints card is shown ONLY without it
+const topicalSummary = ref(false);
+// kg-app-integration kg-related cards are unified in `relatedDocs` below
+
 const stateToken = ref(null);
 const stateSession = ref(null);
 const relatedDocs = ref(null);
@@ -269,17 +280,30 @@ async function onFollowupPick(question) {
   }
 }
 async function onKgChipPick(chipOrTopic) {
-  const topic = (chipOrTopic && typeof chipOrTopic === 'object') ? chipOrTopic.topic : chipOrTopic;
+  // change: fix-gremium-session-docs-thread — chip picks are transmitted
+  // as OPTION SELECTIONS (structured `option` field), not as text input:
+  // the backend offered the option, so routing treats the request as a
+  // deterministic follow-up on the sealed thread. The query field shows
+  // the selected topic for transparency only.
+  const chip = (chipOrTopic && typeof chipOrTopic === 'object') ? chipOrTopic : null;
+  const topic = chipOrTopic && chipOrTopic.topic ? chipOrTopic.topic
+    : (typeof chipOrTopic === 'string' ? chipOrTopic : null);
   if (!topic) return;
   query.value = topic;
-  await runSearch();
+  await runSearch({ option: { topic, example: chip?.example || null,
+                              facet: chip?.facet || null } });
 }
 // kg-app-integration D7: thread plumbing -------------------------------------------------
 function _threadPayload() {
+  // change: fix-gremium-session-docs-thread — follow-up vs fresh topic is
+  // decided by INTENT ROUTING on the server (classify_thread_turn) for
+  // every request; the UI always carries the sealed thread state when one
+  // exists. `{fresh:true}` only when the UI genuinely has none (app load,
+  // after "Neues Thema ⟲", first request of a tab).
   if (threadState.value && threadSession.value) {
     return { state: threadState.value, session_id: threadSession.value };
   }
-  return { fresh: true };  // app load / after "Neues Thema"
+  return { fresh: true };
 }
 function _consumeThreadState(result) {
   threadState.value = result.state || null;
@@ -291,23 +315,31 @@ function _consumeThreadState(result) {
       topic: c.topic, example: c.example || '', question: c.topic,
     }));
     threadHint.value = result.hint || null;
-    kgRelated.value = null;
   } else {
     threadChips.value = [];
     threadHint.value = null;
   }
+  // change: request-thread-facets — SLOT-FILLING options: backend-offered
+  // options (facet kind, e.g. gremium bodies) render via the same options
+  // card; the selection travels as an `option` (structured slot fill).
+  if (result.mode === 'options' && (result.options && result.options.entries)) {
+    kgChips.value = (result.options.entries || []).map(o => ({
+      topic: o.topic, example: o.example || '',
+      facet: result.options.facet || null,
+    }));
+    threadHint.value = result.options.hint
+      || (result.options.facet === 'gremium' ? 'Welches Gremium?' : null);
+  } else if (result.mode === 'options') {
+    kgChips.value = [];
+  }
 }
 async function applyThreadChip(chip) {
-  // chip pick: amend the original request with the chip description and
-  // start a normal search (chips disappear), thread stays fresh
-  const amend = [chip.topic, chip.example].filter(Boolean).join(', ');
-  query.value = `${query.value || ''} ${amend}`.trim().slice(0, 250);
-  threadState.value = null;
-  threadSession.value = null;
-  threadTurn.value = 0;
+  // change: fix-gremium-session-docs-thread — D7 chips are backend
+  // options too: transmitted as option selection
+  query.value = chip.topic || '';
   threadChips.value = [];
   threadHint.value = null;
-  await runSearch();
+  await runSearch({ option: { topic: chip.topic, example: chip.example || null } });
 }
 async function resetThread() {
   threadState.value = null;
@@ -318,7 +350,11 @@ async function resetThread() {
   threadHint.value = null;
 }
 
-async function runSearch() {
+async function runSearch({ option = null } = {}) {
+  // change: fix-gremium-session-docs-thread — follow-up vs fresh is
+  // decided by intent routing server-side (classify_thread_turn) with the
+  // thread state carried on every request; options are OPTIONAL (only
+  // chip picks transmit one).
   const q = query.value.trim();
   if (!q || loading.value) return;
   // change: sanitize-queries-and-initial-response — "Suchen" always runs
@@ -340,6 +376,7 @@ async function runSearch() {
   summary.value = null;
   summaryLoading.value = false;
   summaryFiles.value = [];
+  topicalSummary.value = false;
   refining.value = false;
   summaryRefined.value = false;
   summaryExclude.value = [];
@@ -347,6 +384,18 @@ async function runSearch() {
   geoAvailable.value = false;
   geoFC.value = null;
   selection.value = null;
+  // change: fix-gremium-session-docs-thread — chip/related cards are
+  // cleared with the panes: stale chips from the previous topic otherwise
+  // linger below a newer view (user finding: dangling chips under the
+  // gremium topic card). Rule: chips are ALWAYS inside a card.
+  followups.value = null;
+  kgChips.value = null;
+  relatedDocs.value = null;
+  threadChips.value = [];
+  threadHint.value = null;
+  // Thread state is NOT touched here — intent routing decides
+  // follow-up vs a fresh topic; only response consumption
+  // (_consumeThreadState / user's "Neues Thema") clears history
   intent.value = null;
   appliedFilters.value = [];
   gremium.value = null;
@@ -361,7 +410,24 @@ async function runSearch() {
     // follow via the staged endpoints (change: progressive-frontend-
     // rendering)
     const result = await apiAsk(q, { sessionId: sessionId.value, topK: 10, summarize: false,
-                                     thread: _threadPayload() });
+                                     thread: _threadPayload(), option });
+    // change: request-thread-facets — slot-filling OPTIONS: render the
+    // backend-offered options in the related-hints card and skip the
+    // staged follow-ups (no run until a selection is made)
+    if (result.mode === 'options' && result.options && result.options.entries) {
+      _consumeThreadState(result);
+      if (token !== searchToken) return;
+      kgChips.value = (result.options.entries || []).map(o => ({
+        topic: o.topic, example: o.example || '',
+        facet: result.options.facet || null,
+      }));
+      threadHint.value = result.options.hint || '';
+      loadingFiles.value = false; loadingTimeline.value = false; loadingGraph.value = false;
+      loading.value = false;
+      rawData.value = { query: result.query || query.value };
+      intent.value = result.intent || null;
+      return;
+    }
     if (result.clarification) {
       // clarification chips (kg-app-integration D4b): cluster-picker instead of blanked followups
       followups.value = result.followups;
@@ -373,12 +439,16 @@ async function runSearch() {
       stateSession.value = result.state_session || result.sessionId;
     }
     if (result.related_documents) relatedDocs.value = result.related_documents;
+    // change: fix-followup-deixis — HYDRATE the thread state after every
+    // stage-1 /ask: the followup decision rides the sealed state; without
+    // this the second request sends {fresh:true} and the routing never
+    // sees the history ("thread follow-up found nothing in the browser")
+    _consumeThreadState(result);
     if (result.clarification && result.clarification.options) {
       kgChips.value = result.clarification.options.map(o => ({
         topic: o.topic, example: o.example || "", question: o.topic, state: null, sessionId: null,
       }));
     }
-    if (result.related_documents) kgRelated.value = result.related_documents;
     
     if (token !== searchToken) return;  // superseded by a newer search
     applyStage1(result);
@@ -408,10 +478,14 @@ async function runSearch() {
         .finally(() => { summaryLoading.value = false; });
     }
     loading.value = false;
-    // stage 2: timeline. Meeting-centric answers hide the timeline card —
-    // skip the fetch entirely.
+    // stage 2: timeline. change: fix-gremium-session-docs-thread (task
+    // 7.4) — a gremium session view (list_topics) shows ONLY the topic
+    // list: no timeline fetch, no graph fetch (and thus no map/related
+    // cards beyond this view)
     if (answerMode.value === 'list_topics') {
       loadingTimeline.value = false;
+      loadingGraph.value = false;
+      graph.value = null;
     } else {
       fetchTimeline(result.sessionId, token);
     }
@@ -574,6 +648,9 @@ const onToggleFile = ({ oparlKey, excluded }) => {
 function applyStage1(result) {
   rawData.value = result;
   summary.value = result.summary || null;
+  // change: rework-search-result-cards — topical flag decides whether the
+  // related-hints card (chips + related docs) is rendered
+  topicalSummary.value = !!result.topical_summary;
   files.value = result.top_files || [];
   sessionId.value = result.sessionId || sessionId.value;
   // change: intent-router — routing fields (absent on plain /search)
@@ -730,12 +807,6 @@ onUnmounted(() => {
 
 <style>
 /* kg-app-integration D7: thread chips sheet + reset */
-.thread-chips-sheet { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .4rem 0 0; }
-.thread-hint { flex-basis: 100%; margin: 0 0 .2rem; color: var(--muted, #667); font-size: .85rem; }
-.thread-chip { border: 1px solid rgba(125,125,150,.4); background: rgba(125,125,150,.08);
-  border-radius: 999px; padding: .3rem .85rem; cursor: pointer; font-size: .85rem; }
-.thread-chip:hover { background: rgba(125,125,150,.18); }
-.thread-chip small { opacity: .75; margin-left: .3rem; }
 .thread-new { margin: .4rem .5rem 0 0; border: none; background: none; color: var(--muted, #889);
   cursor: pointer; font-size: .8rem; padding: .25rem .5rem; }
 .thread-new:hover { color: var(--fg, inherit); text-decoration: underline; }

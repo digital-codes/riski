@@ -28,7 +28,7 @@ def stub_decoder():
         def __init__(self):
             self.last_query = None
 
-        def decode(self, query, cfg, gremium_vocab):
+        def decode(self, query, cfg, gremium_vocab, *a, **k):
             self.last_query = query
             q = query.lower()
             scores = {i["name"]: 0.1 for i in cfg["intents"]}
@@ -51,7 +51,7 @@ def stub_decoder():
     stub = StubDecoder()
     original = ir.IntentRouter.decode
 
-    def decode(self, query, engine=None):
+    def decode(self, query, engine=None, *a, **k):
         from src.db import get_engine
         from src.pgIntentRouter import build_slot_vocab
 
@@ -93,8 +93,22 @@ class TestSearch:
         assert body["top_files"]
         assert "timeline" not in body
         assert "graph" not in body
+        # change: rework-search-result-cards — additive topical flag
+        assert isinstance(body.get("topical_summary"), bool)
+
+    def test_search_topical_flag_varies_with_query(self, client):
+        # a clearly topical query vs. one without a kg-topic hit
+        r1 = client.post("/search", json={"query": "Öffentlichkeitsbeteiligung", "top_k": 3})
+        r2 = client.post("/search", json={"query": "qwertyui xzz blorb", "top_k": 3})
+        assert r1.status_code == 200 and r2.status_code == 200
+        assert r1.json().get("topical_summary") is True
+        assert r2.json().get("topical_summary") is False
+
+    def test_session_persists_query(self, client):
         # session was created
-        r2 = client.get(f"/sessions/{body['sessionId']}")
+        r = client.post("/search", json={"query": "Digitalstrategie der Stadt Karlsruhe", "top_k": 3})
+        session_id = r.json()["sessionId"]
+        r2 = client.get(f"/sessions/{session_id}")
         assert r2.status_code == 200
         assert r2.json()["query"].startswith("Digitalstrategie")
 
@@ -165,14 +179,38 @@ class TestAsk:
         assert any(f["facet"] == "organization" for f in body["applied_filters"])
         assert body["gremium"]["orgs"] == ["Ortschaftsrat Neureut"]
         assert body["gremium"]["meeting"] is not None
-        # staged contract: no graph in the stage-1 response — the
-        # meeting-mode graph is precomputed and served by POST /graph
+        # staged contract: no graph in the stage-1 response. change:
+        # fix-gremium-session-docs-thread (task 8.1) — the gremium session
+        # view is a NO-GRAPH view: no graph is built at all, the UI shows
+        # topics + files only
         assert "graph" not in body
         for key in ("top_files", "sessionId", "fallback_notes"):
             assert key in body
-        rg = client.post("/graph", json={"session_id": body["sessionId"]})
-        assert rg.status_code == 200
-        assert rg.json()["graph"]["nodes"]
+        # per-task 8.4 the UI renders topics + files; the session has no
+        # precomputed graph for the follow-up /graph request
+        rsess = client.get(f"/sessions/{body['sessionId']}")
+        assert rsess.status_code == 200
+
+    def test_gremium_documentless_skipped(self, client, stub_decoder):
+        # change: fix-gremium-session-docs-thread — the latest held GR
+        # meeting may be a document-less placeholder (24.11.2026 rows import
+        # before their documents); resolution must scope to the most recent
+        # meeting WITH documents and note the skip
+        r = client.post("/ask", json={
+            "query": "themen der letzten gemeinderatssitzung",
+            "top_k": 5, "summarize": False,
+        })
+        assert r.status_code == 200
+        body = r.json()
+        assert body["gremium"]["meeting"] is not None
+        m = body["gremium"]["meeting"]
+        sd = str(m["start_date"])  # ISO string over JSON
+        assert sd[:4] == "2026" and sd[5:7] <= "10", (
+            "must not scope to an empty placeholder meeting")
+        notes = " ".join(body.get("fallback_notes") or [])
+        assert body["top_files"], "documents for the scoped meeting exist"
+        if "veröffentlicht" in notes:
+            assert "24.11" in notes or "Sitzung(en)" in notes
 
     def test_decision_routed_query(self, client, stub_decoder):
         r = client.post("/ask", json={
@@ -214,13 +252,13 @@ class TestAsk:
         assert r.status_code == 422
 
 
-class TestAskDegraded:
+
     def test_unreachable_decision_model_degrades_to_search(self, client, monkeypatch):
         import src.pgIntentRouter as ir
 
         monkeypatch.setattr(
             ir.IntentRouter, "decode",
-            lambda self, query, engine=None: {
+            lambda self, query, engine=None, *a, **k: {
                 "intent": "search_topic", "scores": {}, "slots": {},
                 "error": "decision model unreachable: connection refused",
             },
