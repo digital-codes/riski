@@ -82,6 +82,52 @@ def find_missing(pdf_dir: Path, md_dir: Path) -> list[Path]:
     )
 
 
+# ------------------------------------------------------------------
+# PDF validity check (unified-update-pipeline, OCR poison handling):
+# before retrying a failing document, determine whether the PDF itself
+# is broken — invalid/empty PDFs are classified as terminal (empty)
+# instead of failing every run. pdfinfo is preferred; the `file` command
+# is the fallback (it is present where pdfinfo is not, e.g. the Ubuntu
+# 22 deployment). A missing tool yields "unknown" — the failure then
+# keeps its retry semantics.
+# ------------------------------------------------------------------
+
+def pdf_status(pdf_path: Path) -> str:
+    """'ok' | 'invalid' | 'unknown' for a PDF file.
+
+    - pdfinfo (preferred): rc != 0 → invalid; "Pages: 0" → invalid.
+    - file (fallback): "empty"/"data"/no "PDF document" marker → invalid;
+      "with 0 pages" → invalid.
+    - neither tool installed → "unknown".
+    """
+    import shutil
+    import subprocess
+
+    pdfinfo = shutil.which("pdfinfo")
+    if pdfinfo:
+        res = subprocess.run([pdfinfo, str(pdf_path)],
+                             capture_output=True, text=True, timeout=30)
+        if res.returncode != 0:
+            return "invalid"
+        for line in res.stdout.splitlines():
+            if line.startswith("Pages:"):
+                return "ok" if line.split(":", 1)[1].strip() not in ("", "0")                     else "invalid"
+        return "unknown"
+
+    file_cmd = shutil.which("file")
+    if file_cmd:
+        res = subprocess.run([file_cmd, "-b", str(pdf_path)],
+                             capture_output=True, text=True, timeout=30)
+        if res.returncode != 0:
+            return "unknown"
+        out = res.stdout.lower()
+        if "empty" in out or "0 pages" in out or "pdf document" not in out:
+            return "invalid"
+        return "ok"
+
+    return "unknown"
+
+
 def run(pdf_dir: Path, md_dir: Path, limit: int | None = None,
         dry_run: bool = False, out_dir: Path | None = None,
         max_pages: int | None = 12) -> dict:

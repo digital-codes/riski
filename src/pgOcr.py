@@ -11,6 +11,7 @@ from src.update.pgOcr import (  # noqa: F401
     pdf_page_count,
     ocr_pdf_to_markdown,
     find_missing,
+    pdf_status,
     run,
     main,
 )

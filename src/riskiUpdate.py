@@ -195,8 +195,11 @@ def _phase_sync(ctx: RunContext, last_date: Optional[str]) -> Dict[str, Any]:
 
 
 def _ocr_stats_with_keys(ctx: RunContext) -> Dict[str, Any]:
-    """pgOcr with per-item outcome keys (stage-ledger recording)."""
-    from src.update.pgOcr import find_missing, ocr_pdf_to_markdown
+    """pgOcr with per-item outcome keys (stage-ledger recording). A failed
+    OCR attempt first checks the PDF itself: invalid/empty PDFs
+    (pdfinfo where available, else `file`; missing tools → unknown) are
+    terminal, not retryable failures."""
+    from src.update.pgOcr import find_missing, ocr_pdf_to_markdown, pdf_status
 
     stats = {"missing": 0, "ocr_ok": 0, "ocr_failed": 0, "empty": 0,
              "ok_keys": [], "failed_keys": [], "empty_keys": []}
@@ -207,8 +210,15 @@ def _ocr_stats_with_keys(ctx: RunContext) -> Dict[str, Any]:
         try:
             markdown = ocr_pdf_to_markdown(pdf_path)
         except Exception as exc:  # noqa: BLE001 - item failure: keep going
+            reason = str(exc)[:300]
+            if pdf_status(pdf_path) == "invalid":
+                stats["empty"] += 1
+                stats["empty_keys"].append(pdf_path.stem)
+                print(f"  [ocr] {pdf_path.name}: invalid/empty PDF — "
+                      "classified terminal (no retry)")
+                continue
             stats["ocr_failed"] += 1
-            stats["failed_keys"].append((pdf_path.stem, str(exc)[:300]))
+            stats["failed_keys"].append((pdf_path.stem, reason))
             continue
         if not markdown:
             stats["empty"] += 1

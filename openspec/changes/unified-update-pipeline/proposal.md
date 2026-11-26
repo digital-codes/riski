@@ -45,7 +45,12 @@ key) and coerces empty strings to NULL for non-textual columns, and
 decorators `pgAddSummaries`/`pgAddNameVectors` guard their SIGINT handler
 registration to the main thread so phase adapters can call them in-process.
 The restore helper works in place on this deployment (pg_hba.conf admits
-the app role only to the app database; see design D3).
+the app role only to the app database; see design D3). OCR poison handling
+(ops finding 2026-11-26, both reports closed): failed OCR attempts check
+the PDF itself first — invalid/empty PDFs via `pdfinfo` (fallback: the
+`file` command, present on the Ubuntu 22 deployment; a missing tool yields
+"unknown" and keeps retry semantics) are classified terminal `empty` in
+the stage ledger instead of failing every run.
 
 ## What Changes
 
