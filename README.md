@@ -119,9 +119,62 @@ python -m src.pgVecSearch
 
 ## Data update workflow
 
-The full pipeline for bringing the database from "last run" to "now".
-Every step is **idempotent and resumable** — re-running never duplicates
-rows and skips already-processed items.
+### One command
+
+`python src/riskiUpdate.py` (or `python -m src.riskiUpdate`) runs the
+complete update as a cron-safe phase sequence:
+
+```
+snapshot → sync → ocr → summaries → content → teasers → geo → tags
+```
+
+- **Criticality**: `snapshot` and `sync` are critical — on failure the run
+  stops (the sync baseline stays put, so the next run re-fetches the
+  window). All enrichment phases are best-effort: a failure (e.g. OCR
+  backend down) is recorded and the remaining phases still run.
+- **Retry-on-next-run**: every phase is idempotent; failed items are
+  tracked in the per-File stage ledger (`fileStageStatus`: per stage
+  `done`/`failed`/`empty` with reason + attempts) and picked up again on
+  the next run — the snapshot is a *manual recovery point*, never an
+  automatic rollback.
+- **Report**: a markdown report is written to the snapshot directory and
+  re-rendered after every phase (an interrupted run still leaves a usable
+  report): per-phase durations/statuses, sync counters, per-stage
+  done/failed/empty counts, poison items (≥3 consecutive failures), row
+  deltas for the main tables incl. `File_chunks`.
+- **Exit codes**: `0` = all executed stages done/empty, `1` = critical
+  failure, `2` = partial (recorded stage failures).
+- **Flags**: `--phases sync,enrich`, `--skip teasers`, `--last-date ISO`
+  (override the tracked baseline once), `--phase-timeout SECONDS` (default
+  7200 via `RISKI_PHASE_TIMEOUT`), `--poison-threshold N`.
+
+```bash
+# nightly invocation (exclusive lock; a second overlapping run exits 0)
+0 3 * * * flock -n /tmp/riski-update.lock \
+    /usr/bin/python3 /srv/riski/src/riskiUpdate.py >> /var/log/riski-update.log 2>&1
+```
+
+**Raw-text guarantee (PII/geo interplay):** nothing in the update
+pipeline applies the PII guard — stored pipeline text (`File.content`,
+`File_chunks`, teasers, summaries) is never masked, because geo
+inference reads raw street/district names (e.g. "Marie-Alexandra-Straße").
+PII redaction is a request-path control only
+(`src.search.pgResultSummarizer`),
+and even there street/district compounds derived from person names are
+exempt — bare person mentions stay protected.
+
+**Snapshot/restore:** the snapshot phase dumps with `pg_dump -Fc` into
+`/mnt_ai/data/riski/snapshots/` and verifies the dump before anything is
+written. For disaster recovery the operator invokes
+`src.db.db_snapshot.restore_snapshot(dump_path, db_name)` — it restores
+into a fresh verified database and only then swaps (the replaced database
+is kept, not dropped).
+
+### Manual per-script flow (appendix — what the phases run)
+
+The phases above are thin adapters over these commands; they remain usable
+individually. Every step is **idempotent and resumable** — re-running
+never duplicates rows and skips already-processed items.
 
 ```bash
 # 0) Snapshot (hard prerequisite — do not skip)
@@ -211,10 +264,11 @@ outputs, `pgAddFileGeoRefs`/street/district refs preload existing pairs,
 `oparlKey`. A crash mid-run is recovered by simply re-running the step.
 
 **Notes:**
-- The canonical data dirs (`/mnt_ai/data/odd26/ris/ko*`) are owned by the
-  `kugel` user; steps 2–3 write markdown there and must run as that user
-  (or with `--out-dir`/`--dst-dir` pointed at a writable mirror that is
-  copied back afterwards), e.g. when running as `agent`:
+- The orchestrator writes markdown into the canonical data dirs; the
+  canonical data dirs (`/mnt_ai/data/odd26/ris/ko*`) are owned by the
+  `kugel` user and steps ocr/summaries write there — run `riskiUpdate` as
+  that user (or mirror+copy per the commands below), e.g. when running as
+  `agent`:
 
   ```bash
   # steps 2–3 with a writable mirror
@@ -768,7 +822,7 @@ source of truth, see the archived change `track-oparl-update-runs`).
 | `?modified_since=`/`?created_since=` queries | ✅ Every collection (all 9 Karlsruhe types incl. files/memberships/organizations/locations) is requested with `modified_since` first (captures modified-after-creation entities); `created_since` is the fallback. NOTE: the parameters must use the underscore spelling from the OParl 1.1 spec — the API **silently ignores** the camelCase variant (`modifiedSince`), which an earlier version of this crawler used. Page size `limit=1000` cuts pagination requests ~100×. |
 | Endpoint-capability detection and fallback | ✅ When an endpoint provably ignores a filter (older resources returned) or rejects it (HTTP error), the crawler falls back — first to the other parameter, then to a full fetch with a warning. Fallback usage is visible in the run row (`oparlUpdateRuns.full_fetches`). |
 | Cover *modified* records, not only created ones | ✅ Via `modified_since`-first (see above). |
-| One-command synchronisation | ✅ `src/syncIncremental.py` runs the incremental crawl and then `pgGen`'s import against the crawl output. The run row is finalised (and the baseline advanced) only after a successful import; on failure the baseline is reset to the pre-crawl window. |
+| One-command synchronisation | ✅ `src/riskiUpdate.py` orchestrates snapshot → sync → enrich → report (criticality classes, stage ledger, report — see "Data update workflow"); `src/syncIncremental.py` runs the incremental crawl and then `pgGen`'s import against the crawl output. The run row is finalised (and the baseline advanced) only after a successful import; on failure the baseline is reset to the pre-crawl window. |
 | Idempotent upsert (`ON CONFLICT DO UPDATE`) | ✅ `pgGen.insert_all` upserts on `oparlId`, updating only when the incoming `modified` timestamp is newer. |
 | Graceful shutdown / cursor persistence | ✅ `SIGINT` is caught; the run is recorded with `success=false` and the items collected so far are persisted. |
 | Unit tests (timestamps, shutdown) + mocked integration tests | ✅ `src/tests/test_unit_oparlUpdate.py`, `src/tests/test_unit_oparlRunLog.py`, `src/tests/test_unit_syncIncremental.py`, `src/tests/test_integration_oparlRunLog.py`, `src/tests/test_integration_syncIncremental.py` (rollback-only DB writes). |

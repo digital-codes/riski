@@ -14,8 +14,8 @@ import os
 import pytest
 from sqlalchemy import text
 
-from src import pgAddSummaries as pas
-from src import pgChunks as pc
+from src.update import pgAddSummaries as pas
+from src.update import pgChunks as pc
 from src.db import get_engine
 
 pytestmark = pytest.mark.integration

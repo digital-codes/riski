@@ -1,93 +1,15 @@
-from __future__ import annotations
-
-# Dual-mode import support: allow running this file directly as a script
-# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+"""Backward-compatibility shim — implementation moved to src.update.pgAddDistricts (change: unified-update-pipeline, task 4.2)."""
+# Dual-mode import support (shim): puts the repo root on sys.path when
+# run directly as a script (python src/<name>.py).
 try:
-    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+    import _bootstrap  # noqa: F401
 except ImportError:
     pass
 
-from datetime import datetime, timezone
-from typing import List, Optional, Tuple
-
-from sqlalchemy import Table, MetaData, select, Column, Integer, String, DateTime, LargeBinary, inspect
-from sqlalchemy import func
-
-# Import helper to create DB engine
-from sqlalchemy import create_engine  # needed for openDb
-
-import geopandas as gp
-
-def openDb():
-    """Create and return a SQLAlchemy engine based on the shared DB layer.
-
-    Connection settings are resolved by ``src.db`` (``private.py`` ->
-    environment variables -> safe defaults).
-    """
-    from src.db import get_engine
-
-    return get_engine()
-
-
-
-def main():
-    import argparse
-    parser = argparse.ArgumentParser(description="Query the database for recent entries.")
-    parser.add_argument("-i","--input_file", help="Path to districts geojson file", default=None)
-    args = parser.parse_args()
-
-    if not args.input_file:
-        print("Please provide an input file with districts geojson using -i or --input_file")
-        return
-
-    engine = openDb()
-    metadata = MetaData()
-
-    # Check if District table exists, create if not
-    inspector = inspect(engine)
-    if "District" not in inspector.get_table_names():
-        district_table = Table(
-            "District",
-            metadata,
-            Column("id", Integer, primary_key=True),
-            Column("name", String(255), nullable=False, unique=True),
-            Column("number", Integer, nullable=True),
-            Column("timestamp", DateTime, default=lambda: datetime.now(timezone.utc)),
-            Column("geo", LargeBinary, nullable=True),
-        )
-        metadata.create_all(engine)
-    else:
-        district_table = Table("District", metadata, autoload_with=engine)
-
-    df = gp.read_file(args.input_file)
-
-    # attribute column names from the instance config (geo.district_columns,
-    # change: instance-agnostic-config) — source GeoJSON schemas differ
-    # between cities
-    from src.instanceConfig import section
-
-    cols = section("geo").get("district_columns") or {}
-    name_col = cols.get("name", "NAME")
-    number_col = cols.get("number", "NUMMER")
-    for col in (name_col, number_col):
-        if col not in df.columns:
-            raise SystemExit(
-                f"districts GeoJSON {args.input_file} has no attribute "
-                f"column {col!r} (instance config geo.district_columns); "
-                f"available: {list(df.columns)}")
-
-    with engine.connect() as conn:
-        for n in list(df[name_col].values):
-            g = df[df[name_col] == n]
-            stmt = district_table.insert().values(
-                name=n,
-                number=g[number_col].iloc[0],
-                geo=g.to_json().encode("utf-8"),
-                timestamp=datetime.now(timezone.utc)
-            )
-            conn.execute(stmt)
-        conn.commit()
-
+from src.update.pgAddDistricts import (  # noqa: F401
+    openDb,
+    main,
+)
 
 if __name__ == "__main__":
-    main()  
+    raise SystemExit(main())

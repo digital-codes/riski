@@ -11,8 +11,8 @@ import os
 import pytest
 from sqlalchemy import select
 
-from src import db, oparlRunLog as orl, syncIncremental as si
-
+from src import db
+from src.update import oparlRunLog as orl, syncIncremental as si
 pytestmark = pytest.mark.integration
 
 

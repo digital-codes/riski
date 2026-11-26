@@ -5,7 +5,7 @@ The backend API runs as a FastAPI app served by uvicorn. Apache proxies `/api/` 
 ## Current Setup
 
 - **Host/Port**: `127.0.0.1:11384`
-- **App**: `src.apiServer:app`
+- **App**: `src/search/apiServer.py:app`
 - **Working Directory**: `/home/okl/projects/riski`
 - **Apache Config**: `/etc/apache2/sites-available/riski.conf` (proxies `/api/` → `http://localhost:11384/`)
 
@@ -20,7 +20,7 @@ After making code changes, restart with:
 ```
 
 The script will:
-1. Kill any existing uvicorn process for `src.apiServer:app` on port 11384
+1. Kill any existing uvicorn process for `src/search/apiServer.py:app` on port 11384
 2. Start a new instance in the background with `setsid`
 3. Log to `apiServer.log` in the repo root
 4. Check health at `/health`
@@ -28,9 +28,9 @@ The script will:
 ### Manual restart
 
 ```bash
-pkill -f "uvicorn src.apiServer:app.*11384"
+pkill -f "uvicorn src/search/apiServer.py:app.*11384"
 cd /home/okl/projects/riski
-setsid /usr/bin/python3 -m uvicorn src.apiServer:app --host 127.0.0.1 --port 11384 </dev/null > apiServer.log 2>&1 &
+setsid /usr/bin/python3 -m uvicorn src/search/apiServer.py:app --host 127.0.0.1 --port 11384 </dev/null > apiServer.log 2>&1 &
 sleep 2 && curl http://127.0.0.1:11384/health
 ```
 
@@ -39,9 +39,9 @@ sleep 2 && curl http://127.0.0.1:11384/health
 For active development, use `--reload` to automatically restart on file changes:
 
 ```bash
-pkill -f "uvicorn src.apiServer:app.*11384"
+pkill -f "uvicorn src/search/apiServer.py:app.*11384"
 cd /home/okl/projects/riski
-setsid /usr/bin/python3 -m uvicorn src.apiServer:app --host 127.0.0.1 --port 11384 --reload </dev/null > apiServer.log 2>&1 &
+setsid /usr/bin/python3 -m uvicorn src/search/apiServer.py:app --host 127.0.0.1 --port 11384 --reload </dev/null > apiServer.log 2>&1 &
 ```
 
 ## Monitoring
@@ -60,7 +60,7 @@ response sent to the frontend, correlated by request id. Off by default
 - **Activate**: set `RISKI_API_TRACE=1` when starting the service:
 
   ```bash
-  RISKI_API_TRACE=1 /usr/bin/python3 -m uvicorn src.apiServer:app --host 127.0.0.1 --port 11384
+  RISKI_API_TRACE=1 /usr/bin/python3 -m uvicorn src/search/apiServer.py:app --host 127.0.0.1 --port 11384
   ```
 
 - **Log file**: `log/api_debug.log` at the repo root (gitignored; grows

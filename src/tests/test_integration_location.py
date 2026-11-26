@@ -14,7 +14,7 @@ from src.pgIntentRouter import (
     load_intents_config,
     resolve_location,
 )
-from src.pgLocationSearch import (
+from src.search.pgLocationSearch import (
     candidate_agenda_items,
     candidate_files,
     location_search_stage,
@@ -32,7 +32,7 @@ def _street_id(session, name):
 
 @pytest.fixture(scope="module")
 def session():
-    from src.pgTimeline import get_db_session
+    from src.search.pgTimeline import get_db_session
 
     session = get_db_session()
     yield session
@@ -192,8 +192,8 @@ class TestLocationSearchStage:
     def test_stage1_contract_and_map_scope(self, session, monkeypatch):
         """Response shape equals a search answer; with no reranker
         configured (RERANK_MODE None) all capped candidates are kept."""
-        import src.pgLocationSearch as locmod
-        from src.pgTimeline import RERANK_MODE
+        import src.search.pgLocationSearch as locmod
+        from src.search.pgTimeline import RERANK_MODE
 
         if RERANK_MODE is not None:
             pytest.skip("reranker configured — acceptance depends on model")
@@ -242,8 +242,7 @@ class TestAskEndpointLocation:
     def client(self):
         from fastapi.testclient import TestClient
 
-        from src import apiServer
-
+        from src.search import apiServer
         with TestClient(apiServer.app) as c:
             yield c
 
@@ -255,7 +254,7 @@ class TestAskEndpointLocation:
 
         monkeypatch.setattr(
             IntentRouter, "decode",
-            lambda self, query, engine=None: {
+            lambda self, query, engine=None, prev_query=None: {
                 "intent": "ask_location", "scores": {"ask_location": 1.0},
                 "slots": {}, "error": None,
             },

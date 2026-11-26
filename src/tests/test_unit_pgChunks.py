@@ -4,8 +4,7 @@
 import pytest
 from sqlalchemy import create_engine, text
 
-from src import pgChunks as pc
-
+from src.update import pgChunks as pc
 pytestmark = pytest.mark.unit
 
 

@@ -12,8 +12,7 @@ pytestmark = pytest.mark.integration
 def client():
     from fastapi.testclient import TestClient
 
-    from src import apiServer
-
+    from src.search import apiServer
     with TestClient(apiServer.app) as c:
         yield c
 

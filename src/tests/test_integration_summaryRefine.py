@@ -8,7 +8,7 @@ call). Skips when the live DB or a real File row is unavailable.
 import pytest
 from fastapi.testclient import TestClient
 
-import src.apiServer as api
+import src.search.apiServer as api
 import src.remote as remote_mod
 
 pytestmark = pytest.mark.integration

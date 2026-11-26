@@ -85,7 +85,7 @@ crawling a wrong body.
 Page size, request delay and URL-rewrite rules SHALL come from the instance
 configuration (defaults preserving today's Karlsruhe values: page size 1000,
 delay 0.25 s). URL rewrites SHALL be an ordered list of regex/replacement
-pairs applied to fetched URLs; the current Karlsruhe `web1.karlsruhe.de`
+pairs applied to fetched URLs; the legacy Karlsruhe `web1.karlsruhe.de`
 rewriter SHALL be expressible as one such entry, and an empty list SHALL
 mean no rewriting.
 

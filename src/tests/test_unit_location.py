@@ -96,8 +96,8 @@ class TestLocationRunSearch:
         }
 
     def test_location_handler_bypasses_search_fn(self, cfg, monkeypatch):
-        import src.pgLocationSearch as locmod
-        import src.pgTimeline as tl
+        import src.search.pgLocationSearch as locmod
+        import src.search.pgTimeline as tl
 
         def boom(*a, **kw):
             raise AssertionError("search_fn called despite resolved location")
@@ -124,7 +124,7 @@ class TestLocationRunSearch:
         assert out["location"]["locations"]
 
     def test_empty_scope_retries_unscoped(self, cfg, monkeypatch):
-        import src.pgLocationSearch as locmod
+        import src.search.pgLocationSearch as locmod
 
         def fake_stage(session, query, locations, top_k=10, summarize=True):
             return {"query": query, "top_files": [], "matched_entities": [],
@@ -139,7 +139,7 @@ class TestLocationRunSearch:
             return {"query": query, "top_files": [{"oparlKey": "f2"}],
                     "matched_entities": [], "applied_filters": filters}
 
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         monkeypatch.setattr(tl, "search_and_summarize", fake_search)
         router = IntentRouter(cfg=cfg)
@@ -152,7 +152,7 @@ class TestLocationRunSearch:
         assert any("ortsscope" in n.lower() for n in out["fallback_notes"])
 
     def test_unresolved_location_falls_through_to_search(self, cfg, monkeypatch):
-        import src.pgLocationSearch as locmod
+        import src.search.pgLocationSearch as locmod
 
         def boom(*a, **kw):
             raise AssertionError("location stage called without locations")
@@ -166,7 +166,7 @@ class TestLocationRunSearch:
             return {"query": query, "top_files": [{"oparlKey": "f3"}],
                     "matched_entities": [], "applied_filters": filters}
 
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         monkeypatch.setattr(tl, "search_and_summarize", fake_search)
         router = IntentRouter(cfg=cfg)

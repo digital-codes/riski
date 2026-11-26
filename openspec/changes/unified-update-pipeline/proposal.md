@@ -36,6 +36,17 @@ street/district name compounds — only the compound stays visible
 The `src/kg/` layer is explicitly excluded and is a candidate for replacement
 by another mechanism.
 
+Amended 2026-11-26 (apply-session findings, ops incidents): third-party
+payloads remain inconsistent — the web2 API still emits `web1.karlsruhe.de`
+URLs for historical entities, and deleted-stub entities carry empty strings
+for timestamp fields; pgGen therefore normalizes URL hosts at ingest
+(web1→web2, preventing duplicate-entity forks through the `oparlId` unique
+key) and coerces empty strings to NULL for non-textual columns, and
+decorators `pgAddSummaries`/`pgAddNameVectors` guard their SIGINT handler
+registration to the main thread so phase adapters can call them in-process.
+The restore helper works in place on this deployment (pg_hba.conf admits
+the app role only to the app database; see design D3).
+
 ## What Changes
 
 - **One command, `python src/riskiUpdate.py` (or `python -m src.riskiUpdate`)**,
@@ -151,7 +162,7 @@ orchestrator only composes existing, already-specified behaviour)
   (per-File stage status table + accessors); existing scripts gain nothing
   more than being moved into `src/update/` (re-export shims at their old
   paths); the PII-guard street/district exemption touches
-  `src/pgResultSummarizer.py` only. Reuses the current entry points:
+  `src/search/pgResultSummarizer.py` only. Reuses the current entry points:
   `syncIncremental.sync()`, `pgOcr.run()`, `pgSummarize._run_summarizer()`,
   `pgAddSummaries.main()` (SystemExit on bad dirs), `pgTeasers.main()` (argv
   via `parse_args()`), `pgAddFileGeoRefs.main(["--prune"])` (GeoGate-gated;

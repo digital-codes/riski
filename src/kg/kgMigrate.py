@@ -577,7 +577,7 @@ def import_tags(pg, store: KgStore, counts: dict, versions: dict) -> None:
     Uses the TagManager single write path (pgTagMgr._VALID_SOURCES
     extended with kg sources — the migrator depends on that amendment).
     """
-    from src.pgTagMgr import TagManager
+    from src.update.pgTagMgr import TagManager
 
     tm = TagManager(item_table="File")
     entries = store.conn.execute(

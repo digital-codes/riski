@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.graphModel import ADJACENCY, build_graph, node_id
+from src.search.graphModel import ADJACENCY, build_graph, node_id
 
 
 class TestAdjacencyMap:
@@ -163,7 +163,7 @@ class TestFindRelatedObjectsEdgeLog:
     pytestmark = pytest.mark.integration
 
     def test_edges_reference_existing_nodes(self):
-        from src.pgTimeline import find_related_objects, get_db_session
+        from src.search.pgTimeline import find_related_objects, get_db_session
 
         session = get_db_session()
         try:
@@ -174,7 +174,7 @@ class TestFindRelatedObjectsEdgeLog:
             assert edges, "expected at least one logged edge"
 
             # every edge endpoint must exist as a node (via oparlKey per type)
-            from src.graphModel import node_id
+            from src.search.graphModel import node_id
             node_keys = set()
             for t, objs in related.items():
                 for o in objs:
@@ -205,14 +205,14 @@ class TestExpansionControl:
     EXPANSION_SKIP_TYPES; /expand on a disabled type is a defined outcome."""
 
     def test_expandable_types_exclude_disabled_and_leaf_types(self):
-        from src.graphModel import expandable_types
+        from src.search.graphModel import expandable_types
         exp = set(expandable_types())
         assert {"Paper", "File", "Meeting", "AgendaItem", "Consultation"} <= exp
         assert "Organization" not in exp  # explicitly disabled
         assert "Person" not in exp        # no adjacency
 
     def test_filter_skip_types_drops_nodes_and_touching_edges(self, monkeypatch):
-        import src.graphModel as gm
+        import src.search.graphModel as gm
         monkeypatch.setattr(gm, "EXPANSION_SKIP_TYPES", {"Organization"})
         graph = {
             "nodes": [
@@ -232,7 +232,7 @@ class TestExpansionControl:
             ("Consultation_1", "Meeting_7")]
 
     def test_filter_skip_types_honours_registry(self, monkeypatch):
-        import src.graphModel as gm
+        import src.search.graphModel as gm
         monkeypatch.setattr(gm, "EXPANSION_SKIP_TYPES", set())
         graph = {"nodes": [{"id": "Organization_5", "type": "Organization"}], "edges": []}
         out = gm.filter_skip_types(graph)
@@ -241,6 +241,6 @@ class TestExpansionControl:
     def test_expand_neighbors_disabled_type_is_graceful(self):
         """Defined outcome instead of ValueError — no engine access needed
         (the check precedes any DB work)."""
-        from src.graphModel import expand_neighbors
+        from src.search.graphModel import expand_neighbors
         out = expand_neighbors(engine=None, node_id_str="Organization_32130")
         assert out == {"nodes": [], "edges": [], "expandable": False}

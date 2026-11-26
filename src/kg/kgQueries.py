@@ -21,7 +21,7 @@ from typing import Any
 
 from sqlalchemy import text
 
-from src.apiTrace import trace
+from src.search.apiTrace import trace
 from src.db import get_engine
 
 

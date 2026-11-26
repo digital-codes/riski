@@ -13,8 +13,8 @@ from sqlalchemy import Column, Integer, MetaData, String, Table, Text, UniqueCon
 from sqlalchemy.orm import declarative_base
 
 from src import db, remote
-from src.pgAddSummaries import iter_md_files, normalize_file_basename, run as run_summaries
-from src.pgAddNameVectors import run as run_vectors
+from src.update.pgAddSummaries import iter_md_files, normalize_file_basename, run as run_summaries
+from src.update.pgAddNameVectors import run as run_vectors
 
 pytestmark = pytest.mark.integration
 
@@ -212,7 +212,7 @@ class TestRunEmbeddings:
             v = np.ones(4, dtype=np.float64) * calls["n"]
             return v / np.linalg.norm(v)
 
-        monkeypatch.setattr("src.pgAddNameVectors.remote.embed", fake_embed)
+        monkeypatch.setattr("src.update.pgAddNameVectors.remote.embed", fake_embed)
 
         md_map = iter_md_files(seeded_files, seeded_files)
         with engine.begin() as conn:
@@ -249,7 +249,7 @@ class TestEmbedWrapper:
             return np.array([1.0, 0.0])
 
         monkeypatch.setattr(remote, "embed", fake_embed)
-        from src.pgAddSummaries import embed as s_embed
+        from src.update.pgAddSummaries import embed as s_embed
 
         vec = s_embed("hello")
         assert captured["t"] == "hello"
@@ -261,8 +261,7 @@ class TestPgAddVecsRebuild:
         import numpy as np
         from pgvector.sqlalchemy import Vector as V
 
-        from src import pgAddVecs
-
+        from src.update import pgAddVecs
         Base_v = declarative_base()
 
         class TestVecs(Base_v):

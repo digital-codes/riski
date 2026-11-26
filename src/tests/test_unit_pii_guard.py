@@ -6,7 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from src.pgResultSummarizer import (  # noqa: E402
+from src.search.pgResultSummarizer import (  # noqa: E402
     _PII_VIOLATION_MARKER,
     _redact_text,
     find_pii_violations,
@@ -18,7 +18,7 @@ from src.pgResultSummarizer import (  # noqa: E402
 class TestDetection:
     def test_full_name_bare_surname_detected(self, monkeypatch):
         monkeypatch.setattr(
-            "src.pgResultSummarizer.person_names",
+            "src.search.pgResultSummarizer.person_names",
             lambda: ["Martina Heynen", "Heynen", "Fahringer", "Bauer"])  # the real loader ALSO carries surnames (title-stripped)
         text = ("Die Mitglieder sind: Dr. Heynen\n"
                 "  - Fahringer\n"
@@ -29,26 +29,26 @@ class TestDetection:
 
     def test_clean_text_no_matches(self, monkeypatch):
         monkeypatch.setattr(
-            "src.pgResultSummarizer.person_names",
+            "src.search.pgResultSummarizer.person_names",
             lambda: ["Martina Heynen", "Heynen", "Fahringer"])
         # no name substrings (word-boundary guard: 'Heinrich' ≠ Heynen)
         assert find_pii_violations(
             "Die Fraktion (Datei 5) und das Amt regeln den Antrag (Datei 7).") == []
 
     def test_common_word_still_flagged_over_redaction_side(self, monkeypatch):
-        monkeypatch.setattr("src.pgResultSummarizer.person_names",
+        monkeypatch.setattr("src.search.pgResultSummarizer.person_names",
                             lambda: ["Bauer"])
         # PII-first: a surname that doubles as a noun IS a violation (design decision 2)
         assert find_pii_violations("Der Bauer stellt den Antrag (Datei 3).")
 
     def test_empty(self, monkeypatch):
-        monkeypatch.setattr("src.pgResultSummarizer.person_names", lambda: [])
+        monkeypatch.setattr("src.search.pgResultSummarizer.person_names", lambda: [])
         assert find_pii_violations("x") == []
 
 
 class TestFallbackRedaction:
     def test_inline_occurrences_replaced(self, monkeypatch):
-        monkeypatch.setattr("src.pgResultSummarizer.person_names",
+        monkeypatch.setattr("src.search.pgResultSummarizer.person_names",
                             lambda: ["Fahringer"])
         out = _redact_text("Fahringer und die Fraktion (Datei 3).", ["Fahringer"])
         assert "Fahringer" not in out
@@ -56,7 +56,7 @@ class TestFallbackRedaction:
 
     def test_bare_name_list_collapses(self, monkeypatch):
         monkeypatch.setattr(
-            "src.pgResultSummarizer.person_names",
+            "src.search.pgResultSummarizer.person_names",
             lambda: ["Fahringer", "Dujmovic", "Heynen"])
         text = "Die Mitglieder:\n    Fahringer\n    Dujmovic\n    Dr. Heynen"
         out = _redact_text(text, ["Fahringer", "Dujmovic", "Heynen"])
@@ -66,7 +66,7 @@ class TestFallbackRedaction:
 
 class TestGuardFlow:
     def _dup(self):
-        import src.pgResultSummarizer as mod
+        import src.search.pgResultSummarizer as mod
         return mod
 
     def test_clean_summary_no_repair_call(self, monkeypatch):
@@ -144,3 +144,111 @@ class TestGuardFlow:
                 # change: fix-stale-test-fixtures — assert titled FORMS absent
         assert not any(n.startswith(("Dr.", "Prof.", "Dipl.-Ing.", "Oberbürgermeister",
                                      "Bürgermeister", "Stadtrat")) for n in names)
+
+
+class TestGeoExemption:
+    """Street/district compound exemption (change: unified-update-pipeline,
+    PII/geo interplay D12): person-name occurrences inside an actual
+    street/district compound stay visible — only the compound, never the
+    bare person mention."""
+
+    @pytest.fixture(autouse=True)
+    def vocab(self, monkeypatch):
+        from src.search.pgResultSummarizer import _norm_geo
+        monkeypatch.setattr(
+            "src.search.pgResultSummarizer.person_names",
+            lambda: ["Alexandra", "Karoline", "Bauer"])
+        monkeypatch.setattr(
+            "src.search.pgResultSummarizer.geo_names",
+            lambda: [_norm_geo("Marie-Alexandra-Straße"),
+                     _norm_geo("Karolinenstraße"),
+                     _norm_geo("Bauerstraße"),
+                     _norm_geo("Mühlburg")])
+
+    def test_hyphenated_compound_kept(self, monkeypatch):
+        from src.search.pgResultSummarizer import pii_guard
+        out = pii_guard("Bauprojekte in der Marie-Alexandra-Straße "
+                        "wurden vorgestellt (Datei 3).")
+        assert "Marie-Alexandra-Straße" in out
+        assert "(Name entfernt)" not in out
+
+    def test_simple_compound_kept(self):
+        from src.search.pgResultSummarizer import pii_guard
+        out = pii_guard("Die Sitzung tagte in der Karolinenstraße 12.")
+        assert "Karolinenstraße" in out
+
+    def test_bare_person_redacted_alongside_compound(self):
+        from src.search.pgResultSummarizer import pii_guard
+        out = pii_guard(
+            "Alexandra sprach gegen das Projekt; die Anlieger der "
+            "Marie-Alexandra-Straße wurden gehört (Datei 5).")
+        assert "Marie-Alexandra-Straße" in out       # compound exempt
+        assert "Alexandra sprach" not in out          # bare mention redacted
+        assert "(Name entfernt)" in out
+
+    def test_common_word_compound_vs_bare(self):
+        from src.search.pgResultSummarizer import pii_guard
+        out = pii_guard("Der Bauer wohnt in der Bauerstraße.")
+        assert "Bauerstraße" in out                   # compound survives
+        assert "Der Bauer wohnt" not in out           # bare surname redacted
+
+    def test_redaction_of_failure_marker_format(self):
+        from src.search.pgResultSummarizer import find_pii_violations
+        assert find_pii_violations(
+            "Anliegen an Frau Bauer (Datei 2).") == ["Bauer"]
+
+    def test_scrub_names_keeps_compound_pseudonymizes_bare(self):
+        from src.search.pgResultSummarizer import scrub_names
+        seat = type("Seat", (), {"_pii_pseudonyms": {},
+                                 "_pii_counter": 0})()
+        out = scrub_names(
+            "Antrag der Frau Alexandra; Bericht: Marie-Alexandra-Straße "
+            "Parkplätze.", seat)
+        assert "PERSON_0" not in out
+        assert "PERSON_1" in out                      # bare → pseudonym
+        assert "Marie-Alexandra-Straße" in out        # compound untouched
+
+    def test_geo_vocabulary_unavailable_fails_closed(self, monkeypatch):
+        from src.search.pgResultSummarizer import pii_guard
+        monkeypatch.setattr(
+            "src.search.pgResultSummarizer.geo_names", lambda: [])
+        out = pii_guard("Anlieger der Marie-Alexandra-Straße.")
+        assert "Marie-Alexandra-Straße" not in out    # redacted (fail-closed)
+
+    def test_suffix_attach_honoured(self):
+        from src.search.pgResultSummarizer import pii_guard
+        out = pii_guard("Das Projekt an der Mühlburg-Weg Kreuzung.")
+        assert "Mühlburg-Weg" in out
+
+    def test_line_collapse_preserves_compound(self):
+        from src.search.pgResultSummarizer import pii_guard
+        out = pii_guard("Alexandra, Alexandra und Alexandra")
+        assert out.strip().endswith("(Name entfernt)")
+        mixed = pii_guard("Marie-Alexandra-Straße 7: Antrag (Datei 9)")
+        assert mixed == "Marie-Alexandra-Straße 7: Antrag (Datei 9)"
+
+
+class TestPipelinePurity:
+    """Raw-text ordering guarantee (unified-update-pipeline D11): PII
+    masking is request-path only — the update pipeline never applies it,
+    and geo phases consume raw File_chunks text."""
+
+    def test_update_path_never_applies_pii_guard(self):
+        import pathlib
+        import src
+
+        root = pathlib.Path(src.__file__).resolve().parent / "update"
+        for f in sorted(root.glob("*.py")):
+            src_text = f.read_text(encoding="utf-8")
+            assert "pii_guard" not in src_text, f
+            assert "scrub_names" not in src_text, f
+            assert "find_pii_violations" not in src_text, f
+
+    def test_geo_phase_input_is_raw_chunks(self):
+        import pathlib
+        import src
+
+        root = pathlib.Path(src.__file__).resolve().parent / "update"
+        geo_src = (root / "pgAddFileGeoRefs.py").read_text(encoding="utf-8")
+        # geo matching assembles per-file text from File_chunks (raw)
+        assert "File_chunks" in geo_src

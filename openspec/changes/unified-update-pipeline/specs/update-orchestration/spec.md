@@ -70,9 +70,12 @@ failure is retry-on-next-run via idempotent phases.
 
 #### Scenario: Operator-initiated restore
 - **WHEN** the operator invokes the restore helper with a snapshot
-- **THEN** the snapshot is restored into a fresh, verified database before
-  the current one is renamed aside, and the replaced database is kept (not
-  dropped)
+- **THEN** the snapshot's table of contents is verified (extension
+  statements filtered), other client sessions are terminated, the dump is
+  replayed into the live database (in place on this deployment —
+  pg_hba.conf only admits the app role to the app database), the main
+  tables are verified afterwards, and the snapshot file is kept as the
+  rollback artifact (never dropped by the pipeline)
 
 ### Requirement: Run report
 

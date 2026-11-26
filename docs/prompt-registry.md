@@ -101,7 +101,7 @@ jq -r 'select(.error != null) | [.ts, .error] | @tsv' log/llm_debug.log  # flagg
 ```
 
 This stream is deliberately separate from the API flow trace
-(`src/apiTrace.py` → `log/api_debug.log`), which keeps truncated,
+(`src/search/apiTrace.py` → `log/api_debug.log`), which keeps truncated,
 size-capped entries for the HTTP request path.
 
 ## Adding a new LLM call site

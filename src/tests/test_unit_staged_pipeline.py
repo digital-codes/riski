@@ -4,8 +4,7 @@ progressive-frontend-rendering): recall (search_stage), timeline
 
 import pytest
 
-from src import pgTimeline as tl
-
+from src.search import pgTimeline as tl
 pytestmark = pytest.mark.unit
 
 

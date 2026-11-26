@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from src.apiServer import app
+from src.search.apiServer import app
 
 pytestmark = pytest.mark.integration
 
@@ -313,8 +313,7 @@ class TestDebugTrace:
     def test_search_request_flow_traced(self, client, monkeypatch):
         import json
 
-        from src import apiTrace
-
+        from src.search import apiTrace
         monkeypatch.setenv("RISKI_API_TRACE", "1")
         apiTrace._reset()
         try:

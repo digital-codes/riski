@@ -13,20 +13,20 @@
 - **Option selection** — a chip pick transmitted as a structured `option`
   field (`{topic, example?}`), never as typed text: routing treats it as a
   deterministic follow-up (the backend offered the option) via
-  `_option_turn` (`src/apiServer.py`) — documented rule.
+  `_option_turn` (`src/search/apiServer.py`) — documented rule.
 
 ## Components
 
 | Component | File | Role |
 |---|---|---|
-| Thread turn | `src/apiServer.py _thread_turn` | decodes the turn (followup vs new topic), effective query concat, thread bookkeeping |
+| Thread turn | `src/search/apiServer.py _thread_turn` | decodes the turn (followup vs new topic), effective query concat, thread bookkeeping |
 | Thread classifier | `src/pgIntentRouter.classify_thread_turn` | deictic-marker + intent-model based classification of (followup | new topic | clarification) |
 | Thread/turn bookkeeping | `src/kg/kgFollowups.py` | `new_thread`, `advance_thread`, `effective_query`, `THREAD_MAX_TURNS=5` |
 | Sealed state token | `src/kg/kgFollowups.seal_state/open_state` | HMAC-style sealed `{q0, thread, top_docs}` blob per `session_id` (`STATE_TOKEN_SECRET`) |
 | Chips mode | `apiServer._apply_chips_mode` | weak recall (no hybrid matches or max entity score < `KG_RECALL_FLOOR`) → only chips + hint in payload; card data suppressed |
 | Clarification mode | `apiServer._kg_enrich` | short query (≤ 3 words) + multi kg-topic-cluster → `result.clarification.options` (cluster picker chips) + sealed state |
 | Followups | `kgFollowups.generate_followups` | 3–5 follow-up questions from the answer summary |
-| `/followup` endpoint | `src/apiServer.py` | sealed-state follow-up turn: scoped search + summary + fresh follow-ups + fresh token |
+| `/followup` endpoint | `src/search/apiServer.py` | sealed-state follow-up turn: scoped search + summary + fresh follow-ups + fresh token |
 | UI | `app/src/components/WorkPage.vue`, `FollowupChips.vue`, `RelatedHintsCard.vue` | body of chip pick / followup pick handlers; `_consumeThreadState` hydrates the state refs |
 
 ## Current state machine

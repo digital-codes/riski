@@ -7,9 +7,7 @@ from datetime import datetime
 
 import pytest
 
-from src import pgTimeline as tl
-
-
+from src.search import pgTimeline as tl
 # ---------------------------------------------------------------------------
 # Pure helpers
 # ---------------------------------------------------------------------------
@@ -241,7 +239,7 @@ class TestParityWithLegacy:
             def get_bind(self):
                 raise RuntimeError("should not touch db")
 
-        import src.pgTimeline as mod
+        import src.search.pgTimeline as mod
 
         monkey = pytest.MonkeyPatch()
         monkey.setattr(mod, "call_embedding_model", lambda *a, **k: [0.0])
@@ -317,7 +315,7 @@ class TestListwiseRerank:
     """Listwise chat rerank (change: fix-hybrid-search-ranking, fragment B)."""
 
     def _mk_resp(self, orders):
-        import src.pgTimeline as mod
+        import src.search.pgTimeline as mod
         if orders is None:
             monkey = pytest.MonkeyPatch()
             monkey.setattr(mod.remote, "get_prompt", lambda pid: "sys" if pid.endswith("-listwise") else "Q {query}")
@@ -359,7 +357,7 @@ class TestListwiseRerank:
             monkey.undo()
 
     def test_unparseable_json_returns_empty(self):
-        import src.pgTimeline as mod
+        import src.search.pgTimeline as mod
         monkey = pytest.MonkeyPatch()
         monkey.setattr(mod.remote, "get_prompt", lambda pid: "x")
         monkey.setattr(mod.remote, "chat", lambda *a, **k: {"content": "no json here"})
@@ -370,7 +368,7 @@ class TestListwiseRerank:
             monkey.undo()
 
     def test_out_of_range_indices_ignored(self):
-        import src.pgTimeline as mod
+        import src.search.pgTimeline as mod
         import json as _json
         monkey = pytest.MonkeyPatch()
         monkey.setattr(mod.remote, "get_prompt", lambda pid: "x")
@@ -456,7 +454,7 @@ class TestSearchWeightsConfigTimeline:
             clear_cache()
 
     def test_gate_config_env_override(self, monkeypatch):
-        import src.pgTimeline as mod
+        import src.search.pgTimeline as mod
         # re-execute the inner _search_gate_config by patching config
         monkeypatch.setenv("RISKI_SEARCH__RERANK_CUTOFF", "0.55")
         from src.instanceConfig import clear_cache

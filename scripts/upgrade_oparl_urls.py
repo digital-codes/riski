@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """OParl URL upgrade: web1.karlsruhe.de → web2.karlsruhe.de (change:
-oparl-endpoint-web2).
+oparl-endpoint-web2; scope-extended per ops review 2026-11-26).
 
-All relevant URL columns are named `oparlId` (plus the JSONB `data`
-payloads, which also hold OParl URLs). This migration rewrites the URL
-*strings* in `oparlId` and — optionally — `data`; identifier keys
-(oparlKey, sids, links) stay untouched, so it is structural and
-idempotent.
+Scope: ALL tables of the OParl reconstruction — every table whose name
+starts with an uppercase letter and contains no underscore (i.e. every
+entity table, not the association tables) — in ALL their textual columns
+(TEXT / VARCHAR / JSONB), including `oparlId` and the JSONB `data`
+payloads with the original JSON. Identifier keys (oparlKey, sids, *_id
+FKs) stay untouched, so the migration is structural and idempotent.
 
 Usage:
     python scripts/upgrade_oparl_urls.py              # dry run (counts)
@@ -19,19 +20,43 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 OLD_HOST = "web1.karlsruhe.de"
 NEW_HOST = "web2.karlsruhe.de"
-URL_COLS = ("oparlId", "data")   # all relevant accessor names are oparlId
+
+# textual SQLAlchemy type classes eligible for rewriting
+_TEXT_TYPES = "TEXT", "VARCHAR", "CHAR", "STRING", "JSONB", "JSON"
 
 
-def _affected_tables(inspector):
-    """(table, [cols]) pairs for every oparl data table with web1 URLs."""
+def _eligible_table(name: str) -> bool:
+    """OParl entity tables: uppercase first letter, no underscore;
+    test_* tables are never touched."""
+    if name.startswith("test_"):
+        return False
+    return name[:1].isupper() and "_" not in name
+
+
+def _scan_tables(engine):
+    """[(table, [(col, is_json, count), …]), …] for eligible tables that
+    still contain web1 URLs."""
+    import sqlalchemy as sa
+    inspector = sa.inspect(engine)
     out = []
-    for t in inspector.get_table_names():
-        if t.startswith("test_"):
-            continue
-        cols = {c["name"] for c in inspector.get_columns(t)}
-        use = sorted(cols & set(URL_COLS))
-        if use:
-            out.append((t, use))
+    with engine.connect() as conn:
+        for t in inspector.get_table_names():
+            if not _eligible_table(t):
+                continue
+            hits = []
+            for col in inspector.get_columns(t):
+                tname = str(col["type"]).upper()
+                if not any(tname.startswith(p) for p in _TEXT_TYPES):
+                    continue
+                is_json = tname.startswith("JSON")
+                n = conn.execute(sa.text(
+                    f'SELECT count(*) FROM "{t}" '
+                    f'WHERE "{col["name"]}"::text LIKE :pat'),
+                    {"pat": f"%{OLD_HOST}%"}).scalar()
+                if n:
+                    hits.append((col["name"], is_json, n))
+            if hits:
+                out.append((t, hits))
     return out
 
 
@@ -50,47 +75,47 @@ def main():
         parser.error("--apply and --dry-run are mutually exclusive")
 
     engine = get_engine()  # RW side: a write migration
-    inspector = sa.inspect(engine)
+    touched = _scan_tables(engine)
 
-    print("Tables with oparlId/data (affected rows):")
-    touched = []
-    for table, use in _affected_tables(inspector):
-        where = " OR ".join(
-            '"%s"::text LIKE %s' % (c, "CONCAT('%', :pat, '%')")
-            for c in use)
-        with engine.connect() as conn:
-            n = conn.execute(
-                sa.text(f'SELECT count(*) FROM "{table}" WHERE {where}'),
-                {"pat": f"%{OLD_HOST}%"}).scalar()
-        if n:
-            touched.append((table, use, n))
-            print(f"  {table}: {n}")
-
-    total = sum(n for _t, _u, n in touched)
-    print(f"TOTAL affected rows: {total}")
+    n_cols = sum(len(cols) for _t, cols in touched)
+    n_rows = sum(c for _t, cols in touched for _n, _j, c in cols)
+    print(f"OParl entity tables (uppercase, no underscore) with "
+          f"{OLD_HOST} URLs:")
+    for t, cols in touched:
+        for col, _is_json, cnt in cols:
+            print(f"  {t}.{col}: {cnt}")
+    print(f"TOTAL tables: {len(touched)}, columns: {n_cols}, "
+          f"affected rows: {n_rows}")
 
     if not touched:
         print("nothing to do — no web1 URLs in the store.")
         return
-    if args.apply:
-        print("Applying UPDATEs…")
-        with engine.begin() as conn:
-            for table, use, _n in touched:
-                sets = ", ".join(
-                    (f'"{c}" = replace("{c}"::text, :oldhost, '
-                     f"'{NEW_HOST}')::jsonb" if c == "data" else
-                     f'"{c}" = replace("{c}", :oldhost, \'{NEW_HOST}\')')
-                    for c in use)
-                where = " OR ".join(
-                    '"%s"::text LIKE %s' % (c, "CONCAT('%', :pat, '%')")
-                    for c in use)
-                res = conn.execute(
-                    sa.text(f'UPDATE "{table}" SET {sets} WHERE {where}'),
-                    {"pat": f"%{OLD_HOST}%", "oldhost": OLD_HOST})
-                print(f"  {table}: updated {res.rowcount}")
-        print("done.")
-    else:
+    if not args.apply:
         print("dry run only — pass --apply to perform the migration.")
+        return
+
+    print("Applying UPDATEs…")
+    updated = 0
+    with engine.begin() as conn:
+        for t, cols in touched:
+            for col, is_json, _cnt in cols:
+                cast = "::jsonb" if is_json else ""
+                res = conn.execute(sa.text(
+                    f'UPDATE "{t}" SET "{col}" = '
+                    f'replace("{col}"::text, :oldhost, :newhost){cast} '
+                    f'WHERE "{col}"::text LIKE :pat'),
+                    {"oldhost": OLD_HOST, "newhost": NEW_HOST,
+                     "pat": f"%{OLD_HOST}%"})
+                print(f"  {t}.{col}: updated {res.rowcount}")
+                updated += res.rowcount
+    print(f"done — {updated} row updates.")
+
+    # verification: nothing left behind
+    left = _scan_tables(engine)
+    leftover = sum(c for _t, cols in left for _n, _j, c in cols)
+    print(f"verification: {leftover} rows still readable with "
+          f"{OLD_HOST}" if leftover else
+          f"verification: clean — no {OLD_HOST} URLs remain.")
 
 
 if __name__ == "__main__":

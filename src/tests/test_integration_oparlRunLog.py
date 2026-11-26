@@ -10,8 +10,8 @@ import os
 import pytest
 from sqlalchemy import select, text
 
-from src import db, oparlRunLog as orl
-
+from src import db
+from src.update import oparlRunLog as orl
 pytestmark = pytest.mark.integration
 
 

@@ -14,7 +14,7 @@ import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from src import apiTrace  # noqa: E402
+from src.search import apiTrace  # noqa: E402
 
 pytestmark = pytest.mark.unit
 
@@ -302,7 +302,7 @@ class TestClarificationTrace:
             "src.kg.kgFollowups.generate_followups",
             lambda *a, **k: {"questions": ["q1", "q2"]})
 
-        from src.apiServer import _kg_enrich
+        from src.search.apiServer import _kg_enrich
         result = {"top_files": [{"oparlKey": "f1"}], "summary": None}
         _kg_enrich(result, "wohnen", "sid-1")  # 1 word → short-fuzzy
         assert result.get("clarification")
@@ -317,8 +317,7 @@ class TestMiddlewareTrace:
     def test_request_response_share_req_id(self, monkeypatch):
         _enable(monkeypatch)
         from fastapi.testclient import TestClient
-        from src import apiServer
-
+        from src.search import apiServer
         def _no_db():
             raise RuntimeError("no DB in unit context")
 
@@ -340,7 +339,7 @@ class TestMiddlewareTrace:
 class TestSummarizerTrace:
     def test_summarizer_event(self, monkeypatch):
         _enable(monkeypatch)
-        import src.pgResultSummarizer as pc
+        import src.search.pgResultSummarizer as pc
         from src.tests.test_unit_pgResultSummarizer import (
             FakeSession, make_result,
         )
@@ -362,7 +361,7 @@ class TestRecallTrace:
         """The recall entry event fires at stage entry — even if the
         heavy pipeline behind it fails (no embedding endpoint here)."""
         _enable(monkeypatch)
-        import src.pgTimeline as pt
+        import src.search.pgTimeline as pt
 
         def boom(text, *a, **k):
             raise RuntimeError("embed endpoint down")

@@ -41,9 +41,9 @@ def main() -> None:
              or "wo liegt die Governance für Digitalisierung bei der Stadt Karlsruhe")
     print(f"capturing snapshot for default query: {query!r}")
 
-    from src.pgResultSummarizer import ResultSummarizer
-    from src.pgTimeline import get_db_session, timeline_stage, graph_stage
-    from src.apiServer import _stage1_search_fn
+    from src.search.pgResultSummarizer import ResultSummarizer
+    from src.search.pgTimeline import get_db_session, timeline_stage, graph_stage
+    from src.search.apiServer import _stage1_search_fn
 
     session = get_db_session()
     try:
@@ -71,7 +71,7 @@ def main() -> None:
     finally:
         session.close()
 
-    from src.graphModel import expandable_types
+    from src.search.graphModel import expandable_types
 
     snapshot = {
         "query": query,

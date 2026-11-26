@@ -185,6 +185,32 @@ class Entity:
 # ----------------------------
 # PASS 1: COLLECT ENTITIES (including embedded)
 # ----------------------------
+OPARL_URL_HOSTS = {
+    "web1.karlsruhe.de": "web2.karlsruhe.de",
+}
+
+
+def normalize_host(obj: Any) -> Any:
+    """Replace known legacy OParl hosts with the current one inside any
+    string (URLs) of *obj* (recursively, dict/list containers updated in
+    place, strings return values at the top level). Only URLs change —
+    ingest-side consistency against third-party host drift."""
+    if isinstance(obj, dict):
+        for k in list(obj):
+            obj[k] = normalize_host(obj[k])
+        return obj
+    if isinstance(obj, list):
+        for i, v in enumerate(obj):
+            obj[i] = normalize_host(v)
+        return obj
+    if isinstance(obj, str):
+        for old, new in OPARL_URL_HOSTS.items():
+            if old in obj:
+                obj = obj.replace(old, new)
+        return obj
+    return obj
+
+
 def collect_entities_from_obj(
     obj: Any,
     entities: Dict[EntityKey, Entity],
@@ -248,6 +274,12 @@ def pass1_collect(directory: str) -> Tuple[Dict[EntityKey, Entity], Dict[str, En
     def parse_file(path: str):
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
+        # third-party host consistency: the OParl API still emits
+        # web1.karlsruhe.de URLs inside payloads for historical entities
+        # (seen 2026-11-26) — normalizing ingest-side prevents those
+        # entities from forking into duplicate rows (oparlId would else
+        # differ by host only). URL hosts only — content fields untouched.
+        data = normalize_host(data)
         local_entities: Dict[EntityKey, Entity] = {}
         local_url_to_key: Dict[str, EntityKey] = {}
         collect_entities_from_obj(data, local_entities, local_url_to_key,
@@ -447,7 +479,7 @@ def ensure_project_schema(engine) -> None:
     md = MetaData()
 
     # OParl crawl run tracking tables (additive; see src/oparlRunLog.py).
-    from src.oparlRunLog import ensure_tables as ensure_run_log_tables
+    from src.update.oparlRunLog import ensure_tables as ensure_run_log_tables
 
     ensure_run_log_tables(engine)
 
@@ -604,6 +636,7 @@ def build_base_row(
     ent: Entity,
     scalar_types: Dict[str, Dict[str, Any]],
     scalar_colnames: Dict[str, Dict[str, str]],
+    non_text_db_cols: Optional[Dict[str, set]] = None,
 ) -> Dict[str, Any]:
     raw = ent.raw
     oparl_key = ent.key.oparl_key
@@ -623,11 +656,42 @@ def build_base_row(
         v = ent.raw.get(orig_key)
         if v is None:
             row[colname] = None
+        elif isinstance(v, str) and not v.strip() and non_text_db_cols and \
+                colname in non_text_db_cols.get(t, ()):
+            # OParl deleted-stub entities carry "" for structured fields
+            # (e.g. meetings with start/end = ""). Binding "" into a
+            # non-textual DB column (timestamp/int/bool/float, per
+            # information_schema — the declared type can drift) is a hard
+            # failure; such empties mean ABSENT, bind NULL. Textual
+            # columns keep "" verbatim (raw reconstruction principle).
+            row[colname] = None
         elif sa_type is DateTime and isinstance(v, str):
             row[colname] = parse_datetime_maybe(v)
         else:
             row[colname] = v
     return row
+
+
+def _non_text_db_columns(engine, table_name: str) -> set:
+    """Column names whose DB data type is NOT textual (per
+    information_schema — the declared inference type can drift from the
+    physically existing column, so the DB is the source of truth)."""
+    cache = _non_text_db_columns._cache or {}
+    if table_name not in cache:
+        from sqlalchemy import text as _t
+        with engine.connect() as conn:
+            rows = conn.execute(_t(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = 'public' AND table_name = :t "
+                "AND data_type NOT LIKE 'char%' AND data_type NOT LIKE 'text%' "
+                "AND data_type NOT LIKE 'json%'"),
+                {"t": table_name}).scalars().all()
+        cache[table_name] = set(rows)
+    _non_text_db_columns._cache = cache
+    return cache[table_name]
+
+
+_non_text_db_columns._cache = {}
 
 
 def insert_all(
@@ -644,6 +708,10 @@ def insert_all(
     Session = sessionmaker(bind=engine)
     session = Session()
     total = len(entities)
+    # DB ground truth per table: which scalar columns are non-textual
+    # (information_schema — used to coerce OParl "" stubs to NULL)
+    non_text_db_cols = {tn: _non_text_db_columns(engine, tn)
+                        for tn in main_tables}
 
     progress_lock = threading.Lock()
     progress_count = [0]
@@ -662,7 +730,9 @@ def insert_all(
         try:
             for _, ent in partition:
                 t = main_tables[ent.key.table]
-                row = build_base_row(ent, scalar_types, scalar_colnames)
+                row = build_base_row(
+                    ent, scalar_types, scalar_colnames,
+                    non_text_db_cols=non_text_db_cols)
                 stmt = insert(t).values(**row)
                 # On conflict on oparlId, update when incoming modified is newer
                 stmt = stmt.on_conflict_do_update(

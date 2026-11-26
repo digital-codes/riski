@@ -70,7 +70,7 @@ def seal_state(state: dict[str, Any], session_id: str, *,
     token = base64.urlsafe_b64encode(blob).decode("ascii").rstrip("=")
     full = f"v1.{token}"
     try:  # api-debug-logging: token prefix only (tokens are opaque)
-        from src.apiTrace import trace
+        from src.search.apiTrace import trace
         thread = payload.get("thread") or {}
         trace("kg_thread", mode="seal", token=full[:8],
               turn_count=thread.get("turn_count"),
@@ -97,7 +97,7 @@ def open_state(token: str, session_id: str, *,
         if int(time.time()) - ts > STATE_TOKEN_MAX_AGE:
             raise ValueError("State token expired")
     try:  # api-debug-logging
-        from src.apiTrace import trace
+        from src.search.apiTrace import trace
         trace("kg_thread", mode="open", token=token[:8], turns=len(data))
     except Exception:  # pragma: no cover
         pass
@@ -161,7 +161,7 @@ def advance_thread(thread: dict[str, Any], query: str) -> dict[str, Any]:
 def effective_query(thread: dict[str, Any], new_query: str) -> str:
     """Concatenated query for followup turns (D7): turns[-3:] + new,
     dot-separated, capped after sanitization (task 7.3)."""
-    from src.apiServer import validate_user_query  # single sanitizer source
+    from src.search.apiServer import validate_user_query  # single sanitizer source
     parts = [validate_user_query(t) for t in (thread.get("turns") or [new_query])]
     parts.append(validate_user_query(new_query))
     concat = " · ".join(p for p in parts if p)
@@ -212,7 +212,7 @@ def generate_followups(answer_summary: str, statements: list[dict] | None,
         data = json.loads(m.group(0))
     questions = [q for q in (data.get("questions") or []) if q][:FOLLOWUP_MAX]
     try:  # api-debug-logging
-        from src.apiTrace import trace
+        from src.search.apiTrace import trace
         trace("kg_followups", questions=len(questions), topics=topics or [])
     except Exception:  # pragma: no cover
         pass

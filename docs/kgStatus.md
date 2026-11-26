@@ -231,7 +231,7 @@ scenario, budget at 5):
   → 400, chips mode, concat lengths).
 - Files: `src/kg/kgFollowups.py` (new_thread/maybe_new_thread/
   advance_thread/effective_query), `src/pgIntentRouter.py`
-  (classify_thread_turn/_is_deictic), `src/apiServer.py`
+  (classify_thread_turn/_is_deictic), `src/search/apiServer.py`
   (_thread_turn/_apply_thread_to_result/_apply_chips_mode/
   _thread_chips; SearchRequest+AskRequest gain `thread`),
   `app/src/components/WorkPage.vue` (thread state, chips sheet,

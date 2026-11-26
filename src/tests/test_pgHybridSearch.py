@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.pgHybridSearch import (
+from src.search.pgHybridSearch import (
     FilterError,
     _strip_terms_py,
     load_stop_terms,
@@ -113,7 +113,7 @@ class TestSearchWeightsConfig:
         monkeypatch.delenv("RISKI_SEARCH__FUSION_WEIGHTS__LEX", raising=False)
         monkeypatch.delenv("RISKI_INSTANCE_CONFIG", raising=False)
         self._clear()
-        from src.pgHybridSearch import _search_weights
+        from src.search.pgHybridSearch import _search_weights
         w = _search_weights()
         assert w == [1.5, 0.8, 1.2]  # live-tuned defaults (design, extension B)
 
@@ -121,14 +121,14 @@ class TestSearchWeightsConfig:
         monkeypatch.setenv("RISKI_SEARCH__FUSION_WEIGHTS__LEX", "2.25")
         monkeypatch.delenv("RISKI_INSTANCE_CONFIG", raising=False)
         self._clear()
-        from src.pgHybridSearch import _search_weights
+        from src.search.pgHybridSearch import _search_weights
         assert _search_weights()[0] == 2.25
 
     def test_kill_switch_plain_rrf(self, monkeypatch):
         monkeypatch.setenv("RISKI_SEARCH__WEIGHTED_FUSION", "false")
         monkeypatch.delenv("RISKI_INSTANCE_CONFIG", raising=False)
         self._clear()
-        from src.pgHybridSearch import _search_weights
+        from src.search.pgHybridSearch import _search_weights
         assert _search_weights() is None
         # with the switch off, fusion degenerates to plain RRF
         scores = rrf_fuse([["a"]], weights=None)
@@ -156,23 +156,23 @@ class TestNormCalibration:
     CAL = {"lex_floor": 0.4, "vec_near": 0.30, "vec_far": 0.90}
 
     def test_norm_lex_bounds(self):
-        from src.pgHybridSearch import _norm_lex
+        from src.search.pgHybridSearch import _norm_lex
         assert _norm_lex(0.4, self.CAL) == 0.0
         assert _norm_lex(1.0, self.CAL) == pytest.approx(1.0)
         assert _norm_lex(0.7, self.CAL) == pytest.approx((0.7 - 0.4) / 0.6)
 
     def test_norm_lex_below_floor_clamped(self):
-        from src.pgHybridSearch import _norm_lex
+        from src.search.pgHybridSearch import _norm_lex
         assert _norm_lex(0.1, self.CAL) == 0.0
 
     def test_norm_vec_bounds(self):
-        from src.pgHybridSearch import _norm_vec
+        from src.search.pgHybridSearch import _norm_vec
         assert _norm_vec(0.30, self.CAL) == pytest.approx(1.0)
         assert _norm_vec(0.90, self.CAL) == pytest.approx(0.0)
         assert _norm_vec(0.60, self.CAL) == pytest.approx(0.5)
 
     def test_norm_vec_outlying_distances_clamped(self):
-        from src.pgHybridSearch import _norm_vec
+        from src.search.pgHybridSearch import _norm_vec
         assert _norm_vec(0.10, self.CAL) == pytest.approx(1.0)
         assert _norm_vec(1.20, self.CAL) == pytest.approx(0.0)
 
@@ -184,7 +184,7 @@ class TestScoreFusion:
         from src.instanceConfig import clear_cache
         clear_cache()
         try:
-            from src.pgHybridSearch import _fusion_mode
+            from src.search.pgHybridSearch import _fusion_mode
             assert _fusion_mode() == "rrf"
         finally:
             clear_cache()
@@ -195,7 +195,7 @@ class TestScoreFusion:
         from src.instanceConfig import clear_cache
         clear_cache()
         try:
-            from src.pgHybridSearch import _fusion_mode
+            from src.search.pgHybridSearch import _fusion_mode
             assert _fusion_mode() == "scores"
         finally:
             clear_cache()
@@ -204,7 +204,7 @@ class TestScoreFusion:
         # score blending separates within-signal strength: a cosine-0.35
         # content hit beats a cosine-0.47 one (RRF gives both equal rank
         # points if adjacent)
-        from src.pgHybridSearch import _norm_vec, _norm_lex
+        from src.search.pgHybridSearch import _norm_vec, _norm_lex
         strong, weak = _norm_vec(0.35, TestNormCalibration.CAL), \
             _norm_vec(0.47, TestNormCalibration.CAL)
         assert strong > weak
@@ -274,7 +274,7 @@ class TestHybridCandidatesIntegration:
             yield c
 
     def test_lexical_recall_excludes_stop_term_only_matches(self, conn):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
 
         # fake vector: name_vecs absent/empty → lexical does the work
         hyb = hybrid_candidates(
@@ -287,7 +287,7 @@ class TestHybridCandidatesIntegration:
         assert not any("inklusionspreis" in n or "linke-kitas" in n for n in names)
 
     def test_lexical_recall_finds_exact_name(self, conn):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
 
         fake = [0.01] * 1024  # name_vecs tables absent; lexical does the work
         hyb = hybrid_candidates(conn, "Digitalstrategie", fake, top_k=10)
@@ -296,7 +296,7 @@ class TestHybridCandidatesIntegration:
         assert hyb["file_candidates"]
 
     def test_papertype_filter_constrains_papers(self, conn):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
         from sqlalchemy import text
 
         hyb = hybrid_candidates(
@@ -312,7 +312,7 @@ class TestHybridCandidatesIntegration:
         assert not rows
 
     def test_signals_can_be_disabled(self, conn):
-        from src.pgHybridSearch import hybrid_candidates
+        from src.search.pgHybridSearch import hybrid_candidates
 
         hyb = hybrid_candidates(
             conn, "Digitalstrategie", [0.01] * 1024, top_k=10,
@@ -322,7 +322,7 @@ class TestHybridCandidatesIntegration:
         assert hyb["file_candidates"] == []
 
     def test_facets_listing(self, conn):
-        from src.pgHybridSearch import facets
+        from src.search.pgHybridSearch import facets
 
         f = facets(conn)
         assert "Beschlussvorlage" in f["paperType"]

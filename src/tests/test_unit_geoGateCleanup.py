@@ -3,7 +3,7 @@ vs LLM fallback, per-document batching (change: geo-gating)."""
 
 import pytest
 
-from src.pgGeoGateCleanup import (
+from src.update.pgGeoGateCleanup import (
     _address_regex,
     regex_all_addresses,
 )

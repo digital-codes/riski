@@ -36,7 +36,7 @@ Note: we cannot expect consistent wording in any of the columns to derive catego
 All documents are German language.
 
 ## identify relevant documents
-Once we understand the current data model, we can try to identify Files which are requests and responses. We need to find the related papers, agendaItems, consultations (if available) and meetings (assume organization is always Gemeinderat). We also get the dates of the meeting. Check src/pgTimeline.py for an example of a database traversal.
+Once we understand the current data model, we can try to identify Files which are requests and responses. We need to find the related papers, agendaItems, consultations (if available) and meetings (assume organization is always Gemeinderat). We also get the dates of the meeting. Check src/search/pgTimeline.py for an example of a database traversal.
 
 The hope is, we can identify those documents from the database structure alone.
 We have embedding vectors for all chunks using BGE-M3 type model. Vector similarities can be used, if helpful. For endpoint see below. We might also use files teasers and the decision model to verify identification. Use LLM only as last resort.

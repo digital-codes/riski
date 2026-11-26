@@ -12,7 +12,7 @@ import pytest
 from sqlalchemy import MetaData, Table, select, text
 
 from src import db
-from src.pgFileQuery import (
+from src.search.pgFileQuery import (
     find_unreferenced_files,
     get_related_ids_for_agenda_item,
     get_related_ids_for_file,

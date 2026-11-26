@@ -6,11 +6,11 @@ from __future__ import annotations
 
 import pytest
 
-import src.geoGate as gg
+import src.update.geoGate as gg
 import src.pgAddOrgClassification as oc
-import src.pgCategorise as cat
+import src.update.pgCategorise as cat
 from src.instanceConfig import clear_cache
-from src.pgAddFileGeoRefs import strip_venue_noise
+from src.update.pgAddFileGeoRefs import strip_venue_noise
 
 pytestmark = pytest.mark.unit
 

@@ -283,3 +283,78 @@ class TestVerifyPreservation:
             verify_preservation(before, {"generated": {}})
 
 pytestmark = pytest.mark.unit
+
+
+def test_deleted_stub_empty_strings_coerced_to_null(monkeypatch):
+    """OParl deleted-stub entities carry "" for structured fields; binding
+    "" into non-textual DB columns must become NULL (live failure 2026-11-
+    26: Meeting 10628 start/end="" against timestamp columns)."""
+    from src.pgGen import _non_text_db_columns
+    import src.db as sdb
+
+    class FakeResult:
+        def scalars(self):
+            class _S:
+                def all(self):
+                    return ["id", "oparlKey", "oparlId", "type", "created",
+                            "modified", "data", "date", "start_date",
+                            "end_date"]
+            return _S()
+
+    class FakeConn:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
+
+        def execute(self, stmt, params=None):
+            return FakeResult()
+
+    class FakeEngine:
+        def connect(self):
+            return FakeConn()
+
+    monkeypatch.setattr(_non_text_db_columns, "_cache", {})
+    cols = _non_text_db_columns(FakeEngine(), "Meeting")
+    assert "start_date" in cols and "name" not in cols
+
+    from src.pgGen import Entity, EntityKey, DateTime
+    ent = Entity(
+        key=EntityKey(table="Meeting",
+                      oparl_id="https://x/meetings/10628",
+                      oparl_key="10628"),
+        raw={"id": "https://x/meetings/10628", "type": "Meeting",
+             "name": "", "start": "", "end": "", "deleted": True,
+             "modified": "2026-11-12T14:34:52+01:00"},
+        sources=set(), first_path="$")
+    scalar_types = {"Meeting": {"name": type("S", (), {})(),  # non-DateTime
+                                "start": DateTime(),
+                                "end": DateTime()}}
+    scalar_colnames = {"Meeting": {"name": "name", "start": "start_date",
+                                   "end": "end_date"}}
+    row = build_base_row(ent, scalar_types, scalar_colnames,
+                         non_text_db_cols={"Meeting": cols})
+    assert row["start_date"] is None and row["end_date"] is None
+    # unknown DB types (no knowledge passed): "" keeps verbatim semantics
+    stringish = type("FakeString", (), {})()
+    row2 = build_base_row(ent, {"Meeting": {"start": stringish}},
+                          {"Meeting": {"start": "start_date"}},
+                          non_text_db_cols={})
+    assert row2["start_date"] == ""  # no knowledge → unchanged
+
+
+def test_normalize_host_rewrites_urls_recursively():
+    from src.pgGen import normalize_host
+    data = {
+        "id": "https://web1.karlsruhe.de/ris/oparl/bodies/0001/files/1004",
+        "meta": {"b": ["https://web1.karlsruhe.de/x", "keep"]},
+        "text": "Der Antrag (web1.karlsruhe.de in einem Satz)",
+    }
+    out = normalize_host(data)
+    assert out["id"].startswith("https://web2.karlsruhe.de/")
+    assert out["meta"]["b"][0].startswith("https://web2.karlsruhe.de/")
+    assert out["meta"]["b"][1] == "keep"
+    assert "web2.karlsruhe.de in einem Satz" in out["text"]
+    data2 = {"unchanged": ["https://web2.karlsruhe.de/ris/oparl", 5, None, True]}
+    assert normalize_host(data2) == data2

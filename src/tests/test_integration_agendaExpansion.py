@@ -7,7 +7,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from src.apiServer import app
+from src.search.apiServer import app
 
 pytestmark = pytest.mark.integration
 

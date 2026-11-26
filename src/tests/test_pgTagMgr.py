@@ -17,7 +17,7 @@ from sqlalchemy.orm import sessionmaker
 
 import os
 
-from src.pgTagMgr import TagManager
+from src.update.pgTagMgr import TagManager
 from src import db
 
 pytestmark = pytest.mark.integration

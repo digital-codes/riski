@@ -2,7 +2,7 @@
 
 *Review diagram, 2026-11-20. Points at the open issues from the current run.*
 *Related files: `app/src/components/WorkPage.vue` (UI), `app/src/components/SummaryCard.vue`,
-`FollowupChips.vue`, `RelatedDocsList.vue`, `src/apiServer.py` (endpoints), `src/kg/*`, `scripts/test_kg_api.py`.*
+`FollowupChips.vue`, `RelatedDocsList.vue`, `src/search/apiServer.py` (endpoints), `src/kg/*`, `scripts/test_kg_api.py`.*
 
 ## 1. Interaction diagram (mermaid)
 
@@ -144,7 +144,7 @@ test suite 9/9)*
 
 ## 4. Test coverage via `scripts/test_kg_api.py`
 
-Run: `uvicorn src.apiServer:app --port 8000` then `/home/agent/bin/python3.14 scripts/test_kg_api.py`
+Run: `uvicorn src/search/apiServer.py:app --port 8000` then `/home/agent/bin/python3.14 scripts/test_kg_api.py`
 (`--base` for alternate host). Live output on the current build:
 
 ```

@@ -1,5 +1,5 @@
 """
-Tests for the refactored NameVecs (src.pgNameVecs).
+Tests for the refactored NameVecs (src.update.pgNameVecs).
 
 Unit part: embeddings are mocked (no network, no live endpoint needed).
 Integration part: runs against the live DB and embedding endpoint, only
@@ -17,7 +17,7 @@ from sqlalchemy import Column, MetaData, String, Table, text
 from sqlalchemy.orm import sessionmaker
 
 from src import db
-from src.pgNameVecs import NameVecs
+from src.update.pgNameVecs import NameVecs
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -67,7 +67,7 @@ def item_table(engine):
 
 
 def _fake_embed(monkeypatch, dim=1024, seed=0):
-    """Patch src.pgNameVecs.embed with a deterministic pseudo-embedding."""
+    """Patch src.update.pgNameVecs.embed with a deterministic pseudo-embedding."""
     import hashlib
 
     def _embed(text: str, **kwargs):
@@ -76,7 +76,7 @@ def _fake_embed(monkeypatch, dim=1024, seed=0):
         vec = vec.astype(np.float64) / 255.0
         return vec / (np.linalg.norm(vec) + 1e-9)
 
-    monkeypatch.setattr("src.pgNameVecs.embed", _embed)
+    monkeypatch.setattr("src.update.pgNameVecs.embed", _embed)
     return _embed
 
 

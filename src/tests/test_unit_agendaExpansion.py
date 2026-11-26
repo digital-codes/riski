@@ -1,7 +1,7 @@
 """Unit tests for agenda-block answer expansion (change:
 agenda-sibling-documents) — pure logic, no DB."""
 
-from src.pgTimeline import (
+from src.search.pgTimeline import (
     _block_prefix,
     _block_reference,
     expand_top_files_by_agenda_block,

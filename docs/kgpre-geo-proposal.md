@@ -3,7 +3,7 @@
 *Proposal — 2026-11-18. Extends the KG-Pre pipeline proposal
 (`docs/kgpre-pipeline-proposal.md`, stage 4 "classify" / stage 5
 "ground") and supersedes the current write-time heuristic gate
-(`src/geoGate.py` boilerplate/content split), which already proved the
+(`src/update/geoGate.py` boilerplate/content split), which already proved the
 need: 44,918 links gated, 2,765 boilerplate verdicts — but the
 *target-vs-reference* confusion was never addressed.*
 
@@ -149,10 +149,10 @@ The current geo layer lives in `src/` and would be touched as follows:
 
 | file | today | change under this proposal |
 |---|---|---|
-| `src/pgGeo.py`, `src/local_geo_matching.py` | gazetteer loading + matching | role-aware candidate hints attached at match time (position, binding window) |
-| `src/pgAddFileGeoRefs.py`, `pgAddStreetRefs.py`, `pgAddDistrictRefs.py` | write assoc rows on name scan | write spans + candidate hints alongside; verdicts move to the kg pre layer |
-| `src/geoGate.py` + `pgGeoGateCleanup.py` | binary boilerplate/content write-time gate (2-layer: regex heuristic + LLM) | gateway becomes the role classifier (target/reference/context/boilerplate) — same 4 assoc tables, richer verdict column |
-| `src/pgAddStreets.py`, `pgAddDistricts.py` | GML/GDAL loaders of the WFS/GeoJSON geometries | unchanged |
+| `src/pgGeo.py`, `src/search/local_geo_matching.py` | gazetteer loading + matching | role-aware candidate hints attached at match time (position, binding window) |
+| `src/update/pgAddFileGeoRefs.py`, `pgAddStreetRefs.py`, `pgAddDistrictRefs.py` | write assoc rows on name scan | write spans + candidate hints alongside; verdicts move to the kg pre layer |
+| `src/update/geoGate.py` + `pgGeoGateCleanup.py` | binary boilerplate/content write-time gate (2-layer: regex heuristic + LLM) | gateway becomes the role classifier (target/reference/context/boilerplate) — same 4 assoc tables, richer verdict column |
+| `src/update/pgAddStreets.py`, `pgAddDistricts.py` | GML/GDAL loaders of the WFS/GeoJSON geometries | unchanged |
 | API/frontend (`/geo/{session}`, `GeoMap.vue`) | layers filtered on `gate_status` | filter additionally on `role_verdict` (target/context only) |
 
 Scope decision 2026-11-18: the role classifier and review queue

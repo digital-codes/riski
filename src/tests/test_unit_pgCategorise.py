@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.pgCategorise import (
+from src.update.pgCategorise import (
     SOURCE_CONFIDENCE,
     SOURCE_PRECEDENCE,
     canonicalize_document_type,

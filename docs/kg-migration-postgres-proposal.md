@@ -251,8 +251,8 @@ the regular workflow:
 
 ```bash
 # the established riski data-update workflow gains a kg step:
-python src/syncIncremental.py                     # as today (PG grows)
-python src/pgOcr.py … && python src/pgAddSummaries.py …   # as today
+python src/update/syncIncremental.py                     # as today (PG grows)
+python src/update/pgOcr.py … && python src/update/pgAddSummaries.py …   # as today
 python -m src.kg.kgDryRun   # (replaced by) kgMigrate.py --apply  ← kg layer
 python -m src.kg.kgStatements --endpoint olc …           # statements for the NEW pairs only
 ```

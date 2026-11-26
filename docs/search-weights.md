@@ -3,7 +3,7 @@
 How hybrid search weights its recall signals (change: `fix-hybrid-search-ranking`).
 
 > **Sync rule.** This document and the module docstring of
-> `src/pgHybridSearch.py` (plus `rrf_fuse`) document the same behaviour.
+> `src/search/pgHybridSearch.py` (plus `rrf_fuse`) document the same behaviour.
 > The code is the source of truth; any behavioural change to the weights,
 > the fusion or the rerank gating **must update both in the same commit**.
 > Config values live in `config/instance.yaml` (`search` section) and
@@ -77,7 +77,7 @@ head-titled documents only mediocre (the body text dominates), and the old
 hard rerank cutoff then dropped them entirely. So:
 
 1. lexical 1.5 > nv 1.2 > vc 1.0 keeps exact-name hits near the top,
-2. the rerank gate in `src/pgTimeline.search_stage` keeps lexically-certain
+2. the rerank gate in `src/search/pgTimeline.py.search_stage` keeps lexically-certain
    files (see below) instead of discarding them.
 
 ## Configuration
@@ -104,7 +104,7 @@ defaults (`src/instanceConfig.DEFAULTS["search"]`).
 
 ## Rerank gating
 
-After reranking (`src/pgTimeline.search_stage`), files scoring below
+After reranking (`src/search/pgTimeline.py.search_stage`), files scoring below
 `rerank_cutoff` are normally dropped. With
 `search.lexical_rerank_override: true` a File whose recall provenance
 includes `lexical` (i.e. `lexical_sim` above the similarity threshold —

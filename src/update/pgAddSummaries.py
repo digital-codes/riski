@@ -1,0 +1,301 @@
+
+# Dual-mode import support: allow running this file directly as a script
+# (``python src/<name>.py``) as well as importing it as ``src.<name>``.
+try:
+    import _bootstrap  # noqa: F401  (script mode: puts repo root on sys.path)
+except ImportError:
+    pass
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""Utility to update the `content` (plaintext) column of the `File` table
+by reading corresponding markdown files.
+
+Migrated to src: the database connection comes from the shared ``src.db``
+layer and embeddings are generated via the shared ``src.remote`` client
+instead of a hand-rolled requests call against ``private.py`` URLs.
+"""
+
+import argparse
+import os
+import signal
+import threading
+from pathlib import Path
+from typing import List, Optional
+
+from sqlalchemy import MetaData, Table, select, update, Column, Integer, String, UniqueConstraint, inspect, text
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import declarative_base, sessionmaker
+from pgvector.sqlalchemy import Vector
+
+# ----------------------------------------------------------------------
+# Shared layers
+# ----------------------------------------------------------------------
+from src.db import get_engine
+from src import remote
+from src.update.pgChunks import SIZE_CUTOFF, chunk_markdown, ensure_tables, store_chunks
+
+# Define the embedding table (own metadata, as in the original script)
+Base = declarative_base()
+
+
+class Embedding(Base):
+    __tablename__ = "contentEmbeddings"
+    id = Column(Integer, primary_key=True)
+    oparlKey = Column(String)
+    value = Column(Vector(1024))  # 1024-dimensional vector
+    # change: content-chunking — 0 = single/head vector (small documents),
+    # 1..n = chunk vectors of oversized documents
+    chunk_index = Column(Integer, nullable=False, default=0)
+    __table_args__ = (UniqueConstraint(
+        'oparlKey', 'chunk_index', name='uq_embedding_key_chunk'),)
+
+
+def iter_md_files(sums_dir: Path, full_dir: Path) -> dict[str, Path]:
+    """Recursively find markdown files and map their stems to the best match.
+
+    If a matching file exists in ``full_dir`` and is smaller than the one in
+    ``sums_dir`` (but still under 3000 bytes and less than twice the size), it
+    is preferred. Otherwise the file from ``sums_dir`` is used.
+    """
+    md_map: dict[str, Path] = {}
+    for p in sums_dir.rglob("*.md"):
+        if p.is_file():
+            full_path = full_dir / p.name
+            if full_path.is_file():
+                sums_size = p.stat().st_size
+                full_size = full_path.stat().st_size
+                if (full_size < 3000) and (full_size < 2 * sums_size):
+                    md_map[p.stem] = full_path
+                else:
+                    md_map[p.stem] = p
+            else:
+                md_map[p.stem] = p
+            print(f"Using file: {md_map[p.stem]}, size: {md_map[p.stem].stat().st_size} bytes")
+    return md_map
+
+
+def normalize_file_basename(file_name: str | None) -> str | None:
+    if not file_name:
+        return None
+    base = os.path.basename(file_name)
+    stem, _ = os.path.splitext(base)
+    return stem or None
+
+
+# ###############
+def embed(text: str):
+    """Generate a normalised embedding for *text* via the shared remote client."""
+    return remote.embed(text)
+
+
+def ensure_embedding_unique_constraint(engine) -> None:
+    """Migrate the embedding schema for chunked content (change:
+    content-chunking): uniqueness moves from ``oparlKey``-only to
+    ``(oparlKey, chunk_index)``, and the chunk tables/columns are ensured.
+    Delegates to :func:`src.pgChunks.ensure_tables` (idempotent)."""
+    ensure_tables(engine)
+    print("Embedding schema ensured for chunked content "
+          "(unique (oparlKey, chunk_index))")
+
+
+def run(
+    conn,
+    file_tbl,
+    md_map,
+    embeddings: bool = False,
+    dry_run: bool = False,
+    sums_dir: Path | None = None,
+    full_dir: Path | None = None,
+    embed_missing_only: bool = False,
+) -> None:
+    stmt_files = select(file_tbl.c.sid, file_tbl.c.oparlKey, file_tbl.c.filename)
+
+    matched = updated = 0
+    chunked = 0
+    skipped_no_md = skipped_no_filename = 0
+    # --embed-missing: embed only files that have no contentEmbeddings row
+    # yet (targeted incremental pass instead of re-embedding everything).
+    existing_embeddings: set[str] | None = None
+    if embeddings and embed_missing_only:
+        emb_tbl = Table("contentEmbeddings", MetaData(), autoload_with=conn)
+        existing_embeddings = {
+            key for (key,) in conn.execute(select(emb_tbl.c.oparlKey))
+        }
+        print(f"--embed-missing: {len(existing_embeddings)} embeddings already present")
+
+    def signal_handler(signum, frame):
+        print(f"\n\nInterrupt received. Committing progress to database...")
+        print(f"Current progress: {matched} matched, {updated} updated")
+        if not dry_run:
+            conn.commit()
+            print("Progress saved to database.")
+        raise KeyboardInterrupt("Graceful shutdown")
+
+    # only the main thread may install signal handlers (in-process
+    # orchestrator phase adapters run in worker threads)
+    if threading.current_thread() is threading.main_thread():
+        signal.signal(signal.SIGINT, signal_handler)
+
+    for file_sid, oparlKey, file_name in conn.execute(stmt_files):
+        if matched % 1000 == 0 and matched > 0:
+            print(f"Progress: {matched} items processed...", flush=True)
+
+        base = normalize_file_basename(file_name)
+        if not base:
+            skipped_no_filename += 1
+            continue
+
+        md_path = md_map.get(base)
+        if not md_path:
+            skipped_no_md += 1
+            continue
+
+        matched += 1
+
+        # change: content-chunking — oversized documents (OCR markdown above
+        # the cutoff) are chunked and embedded per chunk; NO LLM summary is
+        # generated. Source of truth is the full ko_extracted markdown, not
+        # the ko_sums copy. File.content carries the document head for
+        # backward compatibility (teasers, offline fallback).
+        full_md = full_dir / (base + ".md") if full_dir else None
+        if full_md is not None and full_md.is_file() \
+                and full_md.stat().st_size > SIZE_CUTOFF and not dry_run:
+            text_full = full_md.read_text(encoding="utf-8", errors="replace")
+            chunks = chunk_markdown(text_full)
+            # change: unify-file-content-in-chunks — chunks are the text
+            # store; File.content (head for backward compat) is retired
+            store_chunks(conn, file_sid, chunks)
+            updated += 1
+            chunked += 1
+
+            if embeddings:
+                # per-chunk resume: embed only chunk indexes without a vector
+                existing_idx = {
+                    r[0] for r in conn.execute(
+                        select(Embedding.chunk_index)
+                        .where(Embedding.oparlKey == oparlKey))
+                }
+                all_embedded = True
+                for c in chunks:
+                    if c["chunk_index"] in existing_idx:
+                        continue
+                    try:
+                        vec = embed(c["text"])
+                        with conn.begin_nested():
+                            conn.execute(
+                                pg_insert(Embedding)
+                                .values(oparlKey=oparlKey, value=vec,
+                                        chunk_index=c["chunk_index"])
+                                .on_conflict_do_update(
+                                    index_elements=["oparlKey", "chunk_index"],
+                                    set_={"value": vec})
+                            )
+                    except Exception as e:
+                        print(f"Error embedding chunk {c['chunk_index']} "
+                              f"of {oparlKey}: {e}")
+                        all_embedded = False
+                        continue
+                if all_embedded and chunks:
+                    # chunk vectors replace the superseded legacy single
+                    # vector (embedded from the lossy summary/clipped text)
+                    conn.execute(text(
+                        'DELETE FROM "contentEmbeddings" '
+                        'WHERE "oparlKey" = :k AND chunk_index = 0'),
+                        {"k": oparlKey})
+            continue
+
+        print(f"Reading from file: {md_path} for File.sid={file_sid}, fileName={file_name}")
+        md_text = md_path.read_text(encoding="utf-8", errors="replace")
+
+        if not dry_run:
+            # change: unify-file-content-in-chunks — the text goes into
+            # File_chunks (chunk 0 = the complete small document);
+            # File.content is retired and no longer written
+            conn.execute(text(
+                'INSERT INTO "File_chunks" (file_sid, chunk_index, char_start, char_end, text) '
+                'VALUES (:s, 0, 0, :e, :t) '
+                'ON CONFLICT (file_sid, chunk_index) DO UPDATE SET text = :t, char_end = :e'),
+                {"s": file_sid, "e": len(md_text), "t": md_text})
+            updated += 1
+
+            if embeddings and not (
+                embed_missing_only and oparlKey in existing_embeddings
+            ):
+                try:
+                    vec = embed(md_text)
+                    print(f"Generated embedding for {oparlKey}, vector length: {len(vec)}")
+                    with conn.begin_nested():
+                        conn.execute(
+                            pg_insert(Embedding)
+                            .values(oparlKey=oparlKey, value=vec, chunk_index=0)
+                            .on_conflict_do_update(
+                                index_elements=["oparlKey", "chunk_index"],
+                                set_={"value": vec})
+                        )
+                except Exception as e:
+                    print(f"Error embedding content for {oparlKey}: {e}")
+                    continue
+
+    print("\nSummary")
+    print(f"  matched md/files   : {matched}")
+    print(f"  updated            : {updated}")
+    print(f"  chunked (>cutoff)  : {chunked}")
+    print(f"  skipped no fileName: {skipped_no_filename}")
+    print(f"  skipped no md      : {skipped_no_md}")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description="Fill File.content from markdown files.")
+    ap.add_argument("-s", "--sums_dir", required=True, help='Directory containing markdown files like "00123456.md"')
+    ap.add_argument("-f", "--full_dir", required=True, help='Directory containing original files like "00123456.md"')
+    ap.add_argument("-e", "--embeddings", action="store_true", help='Add embedding vectors')
+    ap.add_argument(
+        "--embed-missing", action="store_true",
+        help="Embed only files without a contentEmbeddings row (targeted incremental pass)",
+    )
+    ap.add_argument("--dry-run", action="store_true", help="Do not write to DB; just report actions.")
+    args = ap.parse_args()
+
+    sums_dir = Path(args.sums_dir).expanduser().resolve()
+    if not sums_dir.is_dir():
+        raise SystemExit(f"sums_dir is not a directory: {sums_dir}")
+
+    full_dir = Path(args.full_dir).expanduser().resolve()
+    if not full_dir.is_dir():
+        raise SystemExit(f"full_dir is not a directory: {full_dir}")
+
+    # Shared engine from the centralised DB layer (private.py / env)
+    engine = get_engine()
+
+    if args.embeddings or args.embed_missing:
+        # Ensure the embedding table + its unique constraint exist (upsert
+        # via ON CONFLICT requires the constraint).
+        Base.metadata.create_all(engine)
+        ensure_embedding_unique_constraint(engine)
+
+    md_map = iter_md_files(sums_dir, full_dir)
+    print(f"Found {len(md_map)} markdown files under: {sums_dir}")
+
+    metadata = MetaData()
+    file_tbl = Table("File", metadata, autoload_with=engine)
+
+    if args.dry_run:
+        with engine.connect() as conn:
+            run(conn, file_tbl, md_map, embeddings=False, dry_run=True)
+    else:
+        with engine.begin() as conn:
+            run(
+                conn,
+                file_tbl,
+                md_map,
+                embeddings=args.embeddings or args.embed_missing,
+                dry_run=False,
+                sums_dir=sums_dir,
+                full_dir=full_dir,
+                embed_missing_only=args.embed_missing,
+            )
+
+
+if __name__ == "__main__":
+    main()

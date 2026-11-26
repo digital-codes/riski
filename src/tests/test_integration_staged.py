@@ -9,7 +9,7 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from src.apiServer import app
+from src.search.apiServer import app
 
 pytestmark = pytest.mark.integration
 
@@ -58,7 +58,7 @@ class TestStagedFlow:
         """search → timeline → graph → summarize → geo: the staged
         pipeline produces the same graph/timeline as the composed
         monolith, and /summarize + /geo work off the staged payload."""
-        from src.pgTimeline import get_db_session, search_and_build_timeline
+        from src.search.pgTimeline import get_db_session, search_and_build_timeline
 
         rs = client.post("/search", json={
             "query": "Digitalstrategie der Stadt Karlsruhe", "top_k": 5,

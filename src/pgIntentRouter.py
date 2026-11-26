@@ -31,7 +31,7 @@ import sqlalchemy as sa
 import yaml
 from sqlalchemy import MetaData, Table, select, text
 
-from src.apiTrace import trace
+from src.search.apiTrace import trace
 from src.db import get_engine
 # prompt registry helpers (change: centralize-llm-instruction-prompts)
 from src.remote import get_prompt as _registry_get_prompt
@@ -128,7 +128,7 @@ def _db_source_values(conn, src: Dict[str, Any]) -> List[str]:
     for (raw,) in conn.execute(stmt):
         norm = spec.get("normalize")
         if norm == "canonical_document_type":
-            from src.pgCategorise import canonicalize_document_type
+            from src.update.pgCategorise import canonicalize_document_type
 
             raw, _code = canonicalize_document_type(raw)
         if raw:
@@ -1188,7 +1188,7 @@ class IntentRouter:
         progressive-frontend-rendering): the default is the monolithic
         ``search_and_summarize``; the /ask endpoint injects a stage-1-only
         (recall) callable so the response carries no timeline/graph."""
-        from src.pgTimeline import search_and_summarize
+        from src.search.pgTimeline import search_and_summarize
 
         if search_fn is None:
             search_fn = search_and_summarize
@@ -1244,7 +1244,7 @@ class IntentRouter:
         # unscoped search path below
         if (resolved.get("handler") == "location_scoped_search"
                 and (resolved.get("location") or {}).get("locations")):
-            from src.pgLocationSearch import location_search_stage
+            from src.search.pgLocationSearch import location_search_stage
 
             result = location_search_stage(
                 session, query, resolved["location"]["locations"],
@@ -1462,8 +1462,8 @@ def ask(session, query: str, cfg: Optional[Dict[str, Any]] = None,
     prewarm = None
     if _parallel_enabled():
         try:
-            from src.pgHybridSearch import _hybrid_executor
-            from src.pgTimeline import call_embedding_model
+            from src.search.pgHybridSearch import _hybrid_executor
+            from src.search.pgTimeline import call_embedding_model
 
             prewarm = _hybrid_executor().submit(call_embedding_model, query)
         except Exception:  # noqa: BLE001 - pre-warm is best-effort

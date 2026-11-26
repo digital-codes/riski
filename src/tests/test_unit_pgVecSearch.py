@@ -3,9 +3,7 @@
 import numpy as np
 import pytest
 
-from src import pgVecSearch as vs
-
-
+from src.search import pgVecSearch as vs
 @pytest.fixture()
 def mock_embed(monkeypatch):
     """Deterministic embeddings: 'cat' vector orthogonal to 'dog'/'dog house'."""

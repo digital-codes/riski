@@ -60,12 +60,21 @@ live in `src/db/db_snapshot.py` (build_url from `src.db`); snapshot name
 `riski_agentic_<date>[_<HHMM>].dump`. Alternative: SQL-level backups — rejected
 (pg_dump is the operational standard already in use).
 
-**D3 — Restore is two-step and defensive.** `pg_restore` into a NEW database
-(`<name>_restore_<ts>`), run `pg_restore --list` verification against it,
-then swap: terminate connections, `ALTER DATABASE ... RENAME` current →
-`<name>_pre_restore_<ts>`, rename restore target → live name. The old
-database is kept (not dropped) so a bad restore is itself reversible.
-Alternative: drop-and-restore in place — rejected (unrecoverable on failure).
+**D3 — Restore is defensive.** (Implementation amendment 2026-11-26: this
+instance's pg_hba.conf admits the app role ONLY to the app database itself —
+a shadow-restore database is not connectable, and the current database
+cannot be renamed by its own session, so the two-step fresh-target swap of
+the original design is impossible here.) The reversible-restore guarantee
+therefore comes from the kept dump file, never a pre-rename clone:
+`restore_snapshot` verifies the dump's TOC (extension statements filtered,
+pgvector 0.8.x is not a trusted extension), terminates other client
+sessions, then replays the dump with `pg_restore --clean --if-exists
+--no-owner --no-privileges` (in practice: truncate the dump's tables +
+data-only restore, because the schema's FK graph defeats `--clean`'s
+non-cascading drops) and verifies the main tables afterwards. Alternative:
+drop-and-restore in place without TOC filtering — rejected (extension
+statements fail for the non-superuser role). Operator-invoked only; the
+snapshot file is never removed automatically.
 
 **D4 — Snapshot is a manual recovery point, not an auto-rollback.**
 (Amended 2026-10-25.) The pipeline heals by retrying: all steps are

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-import src.pgResultSummarizer as pc
-from src.pgResultSummarizer import ResultSummarizer
+import src.search.pgResultSummarizer as pc
+from src.search.pgResultSummarizer import ResultSummarizer
 
 
 class FakeSession:
@@ -334,7 +334,7 @@ class TestProvenanceFooter:
 
 class TestSearchAndSummarizeWrapper:
     def test_wrapper_runs_both_steps(self, monkeypatch):
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         called = {"search": 0, "summary": 0}
 
@@ -352,13 +352,13 @@ class TestSearchAndSummarizeWrapper:
                 result["summary"] = "S"
 
         monkeypatch.setattr(tl, "search_and_build_timeline", fake_search)
-        monkeypatch.setattr("src.pgResultSummarizer.ResultSummarizer", FakeSum)
+        monkeypatch.setattr("src.search.pgResultSummarizer.ResultSummarizer", FakeSum)
         res = tl.search_and_summarize(None, "q", top_k=3)
         assert called == {"search": 1, "summary": 1}
         assert res["summary"] == "S"
 
     def test_wrapper_can_skip_summary(self, monkeypatch):
-        import src.pgTimeline as tl
+        import src.search.pgTimeline as tl
 
         monkeypatch.setattr(
             tl, "search_and_build_timeline",

@@ -3,7 +3,7 @@ network, no DB (change: teasers-cli-parity)."""
 
 import pytest
 
-from src import pgTeasers as pt
+from src.update import pgTeasers as pt
 from src import remote
 
 

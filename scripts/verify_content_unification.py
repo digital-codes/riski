@@ -39,7 +39,7 @@ QUERIES = [
 
 
 def dump(session) -> dict:
-    from src.pgTimeline import search_and_build_timeline
+    from src.search.pgTimeline import search_and_build_timeline
 
     out = {}
     for q in QUERIES:
@@ -91,7 +91,7 @@ def compare(ref: dict, fresh: dict, tol: float = 0.02) -> list:
 
 def main() -> None:
     mode, path = sys.argv[1], Path(sys.argv[2])
-    from src.pgTimeline import get_db_session
+    from src.search.pgTimeline import get_db_session
 
     session = get_db_session()
     try:

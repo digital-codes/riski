@@ -4,7 +4,7 @@ scratch SQLite tables; no live LLM/database required."""
 import pytest
 from sqlalchemy import create_engine, text
 
-from src.geoGate import GeoGate
+from src.update.geoGate import GeoGate
 
 pytestmark = pytest.mark.unit
 
