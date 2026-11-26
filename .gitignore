@@ -383,3 +383,6 @@ docs/geo-gate-*.md
 results/
 results/*.sqlite-shm
 results/*.sqlite-wal
+tmp/
+last-oc.txt
+updateRiski_db.txt
