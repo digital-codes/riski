@@ -58,9 +58,15 @@ def coverage(engine, item_tables=ITEM_TABLES) -> dict:
                 entry["layers"]["teaser"] = {"count": n, "pct": round(n / total * 100, 1) if total else 0.0}
 
             if "contentEmbeddings" in tables and t == "File":
+                # embeddings are per CHUNK (one row per File_chunks chunk):
+                # the percentage basis is the chunk store, not the File
+                # table (fix 2026-11-26 — the former file-based basis
+                # reported >100% for chunked documents)
                 n = _scalar(conn, 'SELECT count(*) FROM "contentEmbeddings"') or 0
+                n_chunks = _scalar(conn, 'SELECT count(*) FROM "File_chunks"') or 0
                 entry["layers"]["contentEmbeddings"] = {
-                    "count": n, "pct": round(n / total * 100, 1) if total else 0.0
+                    "count": n, "denominator": n_chunks,
+                    "pct": round(n / n_chunks * 100, 1) if n_chunks else 0.0,
                 }
 
             nvt = f"{t}_name_vecs"
@@ -100,7 +106,11 @@ def _print(report: dict) -> None:
         print("-" * 48)
         for layer, data in entry["layers"].items():
             if isinstance(data, dict) and "count" in data:
-                print(f"  {layer:20s} {data['count']:>8}  ({data['pct']}%)")
+                suffix = ""
+                if data.get("denominator") is not None:
+                    suffix = f" of {data['denominator']} chunks"
+                print(f"  {layer:20s} {data['count']:>8}  "
+                      f"({data['pct']}%{suffix})")
             elif layer == "tags":
                 print(f"  {'tags':20s} {data['tagged_items']:>8}  ({data['pct']}%)")
                 for scheme, n in data.get("by_scheme", {}).items():
