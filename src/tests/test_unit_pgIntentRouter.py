@@ -702,3 +702,31 @@ class TestDecoderTimeout:
         out = router.decode("x")
         assert out["intent"] == "search_topic"
         assert "timed out" in out["error"]
+
+
+class TestFileRow:
+    """change: agendaitem-files-use-download-url — session file-list entries
+    carry the stored File.downloadurl; the OParL entry URL is never
+    substituted as a download link."""
+
+    @staticmethod
+    def _row(downloadurl):
+        import types
+        return types.SimpleNamespace(
+            sid=1, oparlKey="680643", name="Anlage",
+            date="2024-05-01", downloadurl=downloadurl,
+            oparlId="https://web2.karlsruhe.de/ris/oparl/bodies/0001/files/680643",
+        )
+
+    def test_downloaded_url_carried(self):
+        row = self._row("https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/647355.pdf")
+        out = ir._file_row(row)
+        assert out["downloadurl"] == "https://web1.karlsruhe.de/ris/oparl/bodies/0001/downloadfiles/647355.pdf"
+        assert out["oparlId"] == "https://web2.karlsruhe.de/ris/oparl/bodies/0001/files/680643"
+        assert out["id"] == "File_1"
+        assert out["oparlKey"] == "680643"
+
+    def test_missing_downloadurl_stays_none(self):
+        out = ir._file_row(self._row(None))
+        assert out["downloadurl"] is None
+        assert out["oparlId"] == "https://web2.karlsruhe.de/ris/oparl/bodies/0001/files/680643"

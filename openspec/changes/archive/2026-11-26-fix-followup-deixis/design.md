@@ -61,3 +61,22 @@ follow-up specification — the single `search_topic` intent carries it all.
 ## Open Questions
 
 None.
+
+## Follow-through decisions (session 2026-11-26)
+
+4. **Follow-up questions only for follow-up turns** (`_kg_enrich` gate):
+   the followup-vs-fresh decision already exists per request; the chips
+   honor it — generation rides `turn["concatenated"]` (option/nachfrage
+   with history). A fresh request seals state only. Alternative (generate
+   always, hide in UI) rejected: costs a ~3 s LLM call per search and
+   leaked chips next to real hit lists.
+5. **Follow-up keeps the search type**: the routing intent of a
+   concatenated turn is the sealed thread's origin intent (default
+   `search_topic`) forced into ROUTER_FORCE before `route_ask` —
+   the follow-up text's own decode decides only followup-vs-fresh (design
+   1); it may not flip the search type (live defect: topic search →
+   gremien options). Facet OPTIONS stay available within the pinned type.
+6. **Grounding degrade**: malformed LLM JSON parses via brace-region
+   fallback then deterministic question salvage, else empty; the sealed
+   token is set before/independently of generation so the chain survives
+   LLM outages (both /search and /followup).

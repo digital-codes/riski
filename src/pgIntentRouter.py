@@ -787,6 +787,17 @@ def _is_tagesordnung(node: Dict[str, Any]) -> bool:
     return "tagesordnung" in name
 
 
+def _file_row(r) -> Dict[str, Any]:
+    # change: agendaitem-files-use-download-url — carry the stored
+    # File.downloadurl as-is (never substitute the OParL entry URL);
+    # entries without one render as plain text in the frontend
+    return {
+        "id": f"File_{r.sid}", "oparlKey": r.oparlKey, "name": r.name,
+        "date": r.date, "downloadurl": r.downloadurl,
+        "oparlId": r.oparlId,
+    }
+
+
 def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
                          limit_per_relation: int = 50,
                          top_k: int = 10) -> Dict[str, Any]:
@@ -797,7 +808,9 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
     the resolved meeting + assoc tables) — NO graph build or expansion (a
     gremium session view carries no graph). Tagesordnung + meeting files
     first, then the TOPs' documents as top_files (no top_k cut — the
-    session IS the answer). No LLM summary, no map
+    session IS the answer). File links carry the File row's stored
+    downloadurl (change: agendaitem-files-use-download-url) — never the
+    file's OParL entry URL. No LLM summary, no map
     (answer_mode: list_topics)."""
     notes: List[str] = list(resolved.get("notes") or [])
     grem = resolved.get("gremium") or {}
@@ -820,13 +833,6 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
     meeting_sid = meeting.get("sid")
     import sqlalchemy as sa
 
-    def _file_row(r) -> Dict[str, Any]:
-        return {
-            "id": f"File_{r.sid}", "oparlKey": r.oparlKey, "name": r.name,
-            "date": r.date, "downloadurl": r.downloadurl or r.oparlId,
-            "oparlId": r.oparlId,
-        }
-
     def _assoc_files(assoc: str, node_col: str, node_sid,
                      file_col: str = "tgtSid") -> List[Any]:
         """Files of an association row. The File side column is explicit
@@ -834,7 +840,7 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
         — aux assocs put the file on tgtSid, File__paper__Paper on srcSid."""
         return session.execute(sa.text(
             'SELECT f.sid, f."oparlKey", f.name, f.date, '
-            "f.data->>'downloadurl' AS downloadurl, f.\"oparlId\" "
+            'f."downloadurl" AS downloadurl, f."oparlId" '
             f'FROM "{assoc}" x JOIN "File" f ON f.sid = x."{file_col}" '
             f'WHERE x."{node_col}" = :k'), {"k": node_sid}).all()
 
@@ -894,7 +900,7 @@ def meeting_scope_result(session, query: str, resolved: Dict[str, Any],
     mf_seen: set = set()
     for stmt, file_col in (
         ('SELECT f.sid, f."oparlKey", f.name, f.date, '
-         "f.data->>'downloadurl' AS downloadurl, f.\"oparlId\" "
+         'f."downloadurl" AS downloadurl, f."oparlId" '
          'FROM "File__meeting__Meeting" x JOIN "File" f ON f.sid = x."tgtSid" '
          'WHERE x."srcSid" = :sid', "meeting"),
     ):

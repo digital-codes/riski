@@ -25,6 +25,7 @@ import hashlib
 import hmac
 import json
 import os
+import re
 import time
 import uuid
 from typing import Any
@@ -180,11 +181,48 @@ FOLLOWUP_PROMPT_ID = "kg-followup-questions"
 FOLLOWUP_MAX = 5
 FOLLOWUP_MIN = 3
 
+# quote-delimited strings ending in "?" (German quotes included) — the
+# deterministic salvage source when the model returns malformed JSON
+_QUESTION_RX = re.compile(r'[„"“”]([^„"“”\n]{10,250}\?)[„"“”]')
+
+
+def _llm_json(raw: str) -> Any | None:
+    """Parse an LLM JSON payload with one brace-region fallback; None when
+    unparseable (caller degrades instead of failing the turn)."""
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+    m = re.search(r"\{.*\}", raw, re.DOTALL)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(0))
+    except json.JSONDecodeError:
+        return None
+
+
+def _salvage_questions(raw: str) -> list[str]:
+    """Recover question strings from a malformed JSON answer."""
+    out: list[str] = []
+    for m in _QUESTION_RX.finditer(raw or ""):
+        q = m.group(1).strip()
+        if q and q not in out:
+            out.append(q)
+        if len(out) >= FOLLOWUP_MAX:
+            break
+    return out
+
 
 def generate_followups(answer_summary: str, statements: list[dict] | None,
                        topics: list[str] | None, *, model: str | None = None,
                        remote: Any = None) -> dict[str, Any]:
-    """LLM-generate follow-ups; returns {questions, topics, generation}. """
+    """LLM-generate follow-ups; returns {questions, topics, generation}.
+
+    change: followup-grounding-degrade — a malformed LLM JSON payload never
+    raises: the brace-region fallback is tried, then quote-delimited
+    questions are salvaged deterministically, else an empty list is
+    returned (callers keep the sealed-state chain intact either way)."""
     from src.remote import get_prompt
     stmt_bits = json.dumps(statements or [], ensure_ascii=False)[:2000]
     topics_bits = ", ".join(topics or [])
@@ -202,15 +240,17 @@ def generate_followups(answer_summary: str, statements: list[dict] | None,
                       model=model or "glm-5.3-flash:cloud",
                       prompt_id=FOLLOWUP_PROMPT_ID,
                       call_id="kgFollowups.generate_followups.1")
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError:
-        import re
-        m = re.search(r"\{.*\}", raw, re.DOTALL)
-        if not m:
-            raise
-        data = json.loads(m.group(0))
-    questions = [q for q in (data.get("questions") or []) if q][:FOLLOWUP_MAX]
+    # change: followup-grounding-degrade — malformed LLM JSON must not
+    # break the follow-up turn (it also skipped the state sealing in the
+    # callers, breaking the token chain): salvage what is parseable
+    data = _llm_json(raw)
+    if isinstance(data, list):
+        data = {"questions": data}
+    if isinstance(data, dict):
+        questions = [q for q in (data.get("questions") or []) if q]
+    else:
+        questions = _salvage_questions(raw)
+    questions = questions[:FOLLOWUP_MAX]
     try:  # api-debug-logging
         from src.search.apiTrace import trace
         trace("kg_followups", questions=len(questions), topics=topics or [])

@@ -69,7 +69,8 @@ sequenceDiagram
     alt weak recall (no matches / max entity < floor)
         AX->>AX: _apply_chips_mode → {mode:"chips", chips, hint, state}
     else
-        AX->>KG: related_documents + clarification?/followups, seal state
+        AX->>KG: related_documents + clarification?, seal state
+        note over KG: followup questions ONLY for follow-up turns<br/>(concatenated request — fix-followup-deixis<br/>principle: a fresh request cannot have follow-ups)
     end
     AX-->>U: stage1 (oparl docs / chips)
     U->>U: _consumeThreadState(result) + render cards
@@ -115,6 +116,18 @@ turn is skipped entirely and the response resets the context
 - `app/src/api.js followup()` used an undefined `base` (ReferenceError on
   first chip pick: "Follow-up fehlgeschlagen (base is not defined)") — now
   routed through the shared `post()` helper.
+- **Follow-up never changes the search type** (change
+  `followup-keeps-search-type`, user rule 2026-11-26): when the turn amends
+  a prior query (`turn.concatenated`), the routed intent is pinned to the
+  thread's ORIGIN intent (sealed in the state token, default
+  `search_topic`) — route_ask does not re-decode the type, even when the
+  follow-up text alone decodes to another intent (live case:
+  "sanierung staatstheater" → "wer hat das beschlossen" flipped the flow
+  to the gremien intent and offered all bodies; now it stays topic search
+  with the concatenated query; facet slot OPTIONS are still offered
+  within that search type). A fresh request decodes freely; the chips
+  card ("Mögliche Vertiefungen") additionally only renders for follow-up
+  turns and never next to a summary with selected files.
 - `ask_gremium_recent` scope skips document-less meetings (data artifact:
   OParl meeting rows import before their documents) and interprets German
   month filters with current-year default.

@@ -316,7 +316,10 @@ def _apply_thread_to_result(turn: dict, result: dict, top_files: list | None) ->
         result["thread_reset"] = True
     token = seal_state_or_none(
         {"q0": turn["effective_query"], "thread": thread,
-         "top_docs": [tf.get("oparlKey") for tf in (top_files or [])][:8]},
+         "top_docs": [tf.get("oparlKey") for tf in (top_files or [])][:8],
+         # change: followup-keeps-search-type — the origin intent rides the
+         # sealed state so a follow-up turn pins the search type
+         "intent": result.get("intent")},
         turn["session_id"],
     )
     if token:
@@ -354,9 +357,17 @@ def _apply_chips_mode(turn: dict, result: dict) -> None:
 # ----------------------------------------------------------------------
 MAX_QUERY_CHARS = 250
 # allow-list: Unicode letters (covers German umlauts/ß), digits, whitespace,
-# and common punctuation. Everything else (control characters, zero-width
-# characters, emoji, angle brackets / markup) is rejected.
-_QUERY_ALLOWED_PUNCT = set(".,;:!?()[]{}„“«»\"'’`-–—/&%+*#@=_|~°§$€")
+# and a minimal set of harmless punctuation. Everything else (control
+# characters, zero-width characters, emoji, angle brackets / HTML-XML markup,
+# quotes, backticks, semicolons, backslashes, wildcards, template/placeholder
+# and mention markers) is rejected, so payloads for prompt injection, SQL
+# injection, HTML/script injection and broken quoting cannot pass through.
+# Blocked per character: < > \ ; " ' ` „ “ « » { } [ ] $ % * # @ = + _ | ~ &
+_QUERY_ALLOWED_PUNCT = set(".,:!?()-–—/°§€")
+# character sequences that must never occur even when built from allowed
+# characters (SQL line/block comments); all other dangerous sequences are
+# already impossible because their characters are rejected individually.
+_QUERY_FORBIDDEN_SEQUENCES = ("--", "/*", "*/")
 
 
 def validate_user_query(query: str) -> str:
@@ -371,6 +382,13 @@ def validate_user_query(query: str) -> str:
             status_code=400,
             detail=f"Die Suchanfrage ist zu lang (maximal {MAX_QUERY_CHARS} Zeichen). "
                    "Bitte kürzen Sie die Anfrage.")
+    lowered = q.lower()
+    for seq in _QUERY_FORBIDDEN_SEQUENCES:
+        if seq in lowered:
+            raise HTTPException(
+                status_code=400,
+                detail="Die Suchanfrage enthält unzulässige Zeichenfolgen. "
+                       "Bitte formulieren Sie die Anfrage neu.")
     for ch in q:
         if ch.isspace():
             continue
@@ -469,9 +487,15 @@ def _carry_over_prior_docs(req: Any, turn: dict, result: dict) -> None:
     result["top_files"] = top
 
 
-def _kg_enrich(result: dict, query: str, session_id: str) -> None:
+def _kg_enrich(result: dict, query: str, session_id: str,
+               followup: bool = False) -> None:
     """kg-app-integration: related documents + followups/clarification
-    injected into a stage-1 result (used by /search and /ask)."""
+    injected into a stage-1 result (used by /search and /ask).
+
+    change: fix-followup-deixis principle applied to the chips — follow-up
+    questions exist only for follow-up turns (a request that amends a prior
+    query). A fresh request seals its state (thread hydration) but carries
+    no followup questions; the clarification mode (D4b) stays fresh-only."""
     try:
         from src.kg.kgQueries import related_by_tags
         top = [(tf["oparlKey"], tf.get("distance") or 0.0)
@@ -493,6 +517,9 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
             "q0": query,
             "top_docs": [tf.get("oparlKey") for tf in result.get("top_files", [])][:8],
             "stmt_refs": [],
+            # change: followup-keeps-search-type — the origin intent rides
+            # the sealed state so a follow-up turn pins the search type
+            "intent": result.get("intent"),
         }
         is_short_fuzzy = len(query.split()) <= 3
         is_multi_cluster = topic_clusters >= 3
@@ -544,10 +571,19 @@ def _kg_enrich(result: dict, query: str, session_id: str) -> None:
             # questions. Meeting-scope answers (answer_mode list_topics)
             # have none — skip the empty-context call so the /ask round
             # trip stays fast (intent decode + graph build only)
-            if summary_text:
-                fu = generate_followups(summary_text, statements=None,
-                                        topics=list(dict.fromkeys(topics))[:5])
-                result["followups"] = fu.get("questions")
+            # change: fix-followup-deixis principle — follow-up questions
+            # only for follow-up turns (concatenated request); a fresh
+            # request cannot have any. The state seal below stays
+            # unconditional so a later turn can still open the thread.
+            if followup and summary_text:
+                # change: followup-grounding-degrade — generation failure
+                # must not skip the token seal below (thread chain)
+                try:
+                    fu = generate_followups(summary_text, statements=None,
+                                            topics=list(dict.fromkeys(topics))[:5])
+                    result["followups"] = fu.get("questions")
+                except Exception as exc:  # pragma: no cover
+                    _kg_log.warning("followup question generation failed: %s", exc)
             token = seal_state_or_none(state_payload, session_id)
             if token and not result.get("state"):  # D7: thread token wins
                 result["state"] = token
@@ -670,9 +706,12 @@ def search(req: SearchRequest) -> Dict[str, Any]:
             _apply_chips_mode(turn, result)
         else:
             _apply_thread_to_result(turn, result, top_files)
-            _kg_enrich(result, query, session_id)   # after session_id exists
+            # followup questions only when this turn amends a prior query
+            _kg_enrich(result, query, session_id,
+                       followup=bool(turn.get("concatenated")))
     elif app.state.kg_app_integration:
-        _kg_enrich(result, query, session_id)   # kg-app-integration: after session_id exists
+        # no thread turn (fresh request) → no followup questions
+        _kg_enrich(result, query, session_id, followup=False)
     _sessions[session_id] = {
         "query": query,
         "filters": req.filters or [],
@@ -844,6 +883,9 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         # thread turn) activates the topic_follow slot question: the model
         # decides nachfrage / neues Thema per request
         prev_q = None
+        # change: followup-keeps-search-type — the thread's origin intent
+        # rides the sealed state so a follow-up turn can pin it
+        prior_intent = None
         try:
             from src.kg.kgFollowups import open_state as _open
             if isinstance(req.thread, dict) and req.thread.get("state"):
@@ -852,8 +894,20 @@ def ask(req: AskRequest) -> Dict[str, Any]:
                 turns = (prior.get("thread") or {}).get("turns") or []
                 prev_q = (turns or [])[-1] if turns else None
                 prev_q = prev_q if prev_q != query else None
+                prior_intent = prior.get("intent") or None
         except Exception:
             prev_q = None
+        # change: followup-keeps-search-type — a follow-up can never change
+        # the search type (user rule, 2026-11-26): when this turn amends a
+        # prior query, route_ask must not re-decode the type — the origin
+        # intent is forced (default topic search; facet slot OPTIONS are
+        # still offered within that search type). A fresh request decodes
+        # freely: only follow-up turns are pinned.
+        if turn is not None and turn.get("concatenated"):
+            ROUTER_FORCE["ctx"] = {
+                "forced_intent": prior_intent or "search_topic",
+                "slots": {}, "scores": {},
+            }
         try:
             result = route_ask(
                 session, query, top_k=req.top_k,
@@ -864,6 +918,7 @@ def ask(req: AskRequest) -> Dict[str, Any]:
         except Exception as exc:
             raise HTTPException(status_code=500, detail=str(exc))
         finally:
+            ROUTER_FORCE["ctx"] = None
             session.close()
 
     session_id = req.session_id or uuid.uuid4().hex
@@ -974,7 +1029,11 @@ def ask(req: AskRequest) -> Dict[str, Any]:
     # session view (list_topics) gets NO enrichment: no related_documents,
     # no chips, no followups — topics + session files only
     if result.get("answer_mode") != "list_topics":
-        _kg_enrich(result, query, session_id)
+        # change: fix-followup-deixis principle — follow-up questions only
+        # for follow-up turns (the request amends a prior query: option
+        # selection or nachfrage classification with history)
+        _kg_enrich(result, query, session_id,
+                   followup=bool(turn is not None and turn.get("concatenated")))
     else:
         result["thread_reset"] = True   # head of chain: context cleared
     result["sessionId"] = session_id
@@ -1055,20 +1114,30 @@ def followup(req: FollowupRequest) -> Dict[str, Any]:
                 pairs = statements_for_papers(
                     [v for v in sids.values() if v])
                 faketopics = list(state.get("topics") or [])[:5]
-                fu = generate_followups(
-                    query, statements=list(pairs.values())[:2],
-                    topics=faketopics,
-                )
-                # questions rendered as a scoped response, alto the token chain
+                # change: followup-grounding-degrade — seal the fresh token
+                # BEFORE question generation: an LLM failure must not break
+                # the token chain (next followup would 400)
                 state_payload = {
                     "q0": state.get("q0") or query,
                     "top_docs": [tf.get("oparlKey") for tf in (result.get("top_files") or [])][:8],
                     "stmt_refs": [v.get("pair_id") for v in pairs.values()][:6],
                     "topics": faketopics,
+                    # change: followup-keeps-search-type — keep the origin
+                    # intent chained through followup turns
+                    "intent": state.get("intent"),
                 }
                 token = seal_state_or_none(state_payload, req.session_id)
+                try:
+                    fu = generate_followups(
+                        query, statements=list(pairs.values())[:2],
+                        topics=faketopics,
+                    )
+                    followups = fu.get("questions")
+                except Exception as exc:  # pragma: no cover
+                    _kg_log.warning("followup question generation failed: %s", exc)
+                    followups = []
                 if token:
-                    result["followups"] = fu.get("questions")
+                    result["followups"] = followups
                     result["state"] = token
                     result["state_session"] = req.session_id
                     if req.state != token:

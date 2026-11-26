@@ -398,6 +398,13 @@ with a German message (change: sanitize-queries-and-initial-response).
   prompt `topic-follow-slot-question`): the model receives BOTH queries and
   answers "nachfrage"/"neues Thema"; the deictic lexicon stays as an OR
   fallback. A follow-up amends the topic (concat + carry-over — below).
+  A follow-up never changes the search type: the routed intent is pinned
+  to the thread's origin intent (default topic search) even when the
+  follow-up text alone decodes to another intent, and follow-up question
+  chips ("Mögliche Vertiefungen") are generated ONLY for follow-up turns —
+  an initial query carries none, and their generation degrades to empty
+  instead of failing when the LLM returns malformed JSON (the sealed
+  state token is always set, so the chain survives).
 - **Slot-filling options** resolve under-specification: a clear intent
   with an unresolvable slot („wann war die letzte sitzung" → which
   Gremium?) answers an OPTIONS payload (`mode: "options"`, ≤ 12 bodies
@@ -532,7 +539,8 @@ protocol, `src/pgIntentRouter.py`) against the intent definitions in
   documents and no follow-ups (a gremium session query is head-of-chain:
   the thread context is reset). The UI shows the topic list; each topic has
   a popup with the topic info (TOP, result, meeting date, gremium) and the
-  document URLs. The dangling chip sheet (chips + hint without card) is
+  document links — each file's stored download URL (the direct PDF link,
+  never the OParL entry URL). The dangling chip sheet (chips + hint without card) is
   folded into the styled related-hints card. The thread/followup/chips state machinery is
   documented in `docs/request-thread.md` (state machine + sequence
   diagram).

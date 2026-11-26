@@ -32,3 +32,11 @@
 ## Workflow follow-up
 
 - `/opsx-archive` after apply.
+
+## 5. Shipped follow-through (session 2026-11-26 — grounding, gating, pinning)
+
+- [x] 5.1 Grounding degrade: `kgFollowups.generate_followups` never raises on malformed LLM JSON (brace-region fallback + deterministic question salvage); `/followup` seals the fresh token BEFORE generation and `/search`'s `_kg_enrich` seals independently — an LLM outage no longer breaks the token chain. Verified by `test_unit_kgFollowups.py` (salvage, degrade-empty, bare-list, seal continuity for both endpoints).
+- [x] 5.2 Fresh requests have no follow-ups (fix-followup-deixis principle applied to the chips): `_kg_enrich(..., followup=)` gates generation on `turn["concatenated"]` in /search and /ask; a fresh request seals its state only. Verified by `TestFreshRequestNoFollowups` (fresh → no followups, generation not called; followup turn → questions).
+- [x] 5.3 Follow-up keeps the search type: /ask forces the thread's ORIGIN intent (sealed `intent`, default `search_topic`) for concatenated turns — the follow-up text's decode can no longer flip topic search into the gremien flow; fresh requests decode freely. Verified by `TestFollowupKeepsSearchType` (live case "sanierung staatstheater" → "wer hat das beschlossen" stays topic search; fresh → decode decides).
+- [x] 5.4 UI: "Mögliche Vertiefungen" card suppressed next to a real hit list / summary with selected files (same guard as the related-hints card, `app/src/components/WorkPage.vue`). Verified: `npm run build` passes.
+- [x] 5.5 Docs synced: `docs/request-thread.md` (sequence note: followups only for follow-up turns; the keeps-search-type rule), `README.md` (session popup links the stored download URL), module docstrings (`kgFollowups.generate_followups`, `apiServer._kg_enrich`, `pgIntentRouter.meeting_scope_result`).

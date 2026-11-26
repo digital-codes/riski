@@ -85,7 +85,11 @@
     <RelatedHintsCard v-if="!topicalSummary && !((files && files.length) || (summaryFiles && summaryFiles.length)) && ((kgChips && kgChips.length) || (threadChips && threadChips.length) || (relatedDocs && relatedDocs.length))"
       :chips="kgChips && kgChips.length ? kgChips : (threadChips || [])" :hint="threadHint" :related="relatedDocs || []"
       @pick="kgChips && kgChips.length ? onKgChipPick($event) : applyThreadChip($event)" />
-    <FollowupChips v-if="followups && followups.length" :questions="followups" :state="stateToken" :sessionId="stateSession" @pick="onFollowupPick" />
+    <!-- change: hide-followup-chips-with-summary — "Mögliche Vertiefungen"
+         follows the same rule (user rule, 2026-11-26): with a summary over
+         selected files (or a plain hit list) no refinement chips render -->
+    <FollowupChips v-if="(followups && followups.length) && !((files && files.length) || (summaryFiles && summaryFiles.length))"
+      :questions="followups" :state="stateToken" :sessionId="stateSession" @pick="onFollowupPick" />
   </div>
   <div class="wrapper">
     <!-- change: geo-gating (map scope = selected documents) — the pane and
