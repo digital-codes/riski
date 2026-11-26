@@ -210,7 +210,12 @@ python src/syncIncremental.py
 # 2) OCR: for every PDF in ko_pdf without ko_extracted/<stem>.md, run
 #    Mistral OCR (keys in src/private.py: OCR_URL/OCR_KEY). Large
 #    documents are OCR'd only up to the first 12 pages (--max-pages 0
-#    disables the cap). Skips existing outputs; failures are logged.
+#    disables the cap). Skips existing outputs; failures are logged and
+#    do not abort the run. If OCR fails, the PDF itself is checked
+#    before any retry (pdf_status(): pdfinfo preferred, `file` fallback
+#    detecting "empty"/"0 pages"/non-PDF; a missing tool keeps retry
+#    semantics) — invalid/empty PDFs are classified terminal `empty` in
+#    the stage ledger and are never retried.
 python src/pgOcr.py
 
 # 2b) Chunk + embed oversized documents (> 8.000 bytes): heading-aware
