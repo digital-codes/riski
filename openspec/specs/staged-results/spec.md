@@ -39,6 +39,22 @@ SHOULD trigger that stage's computation for the session. Calling them out of
 order SHALL be safe: requesting the graph SHALL also make earlier stage
 results available for subsequent requests.
 
+#### Scenario: Single-stage follow-up results
+- **WHEN** the timeline or the graph follow-up endpoint is called with a
+  sessionId
+- **THEN** the response contains exactly that stage's results
+
+#### Scenario: On-demand stage computation
+- **WHEN** a follow-up endpoint is called for a stage that has not been
+  built for the session
+- **THEN** that stage's computation is triggered and its results are
+  returned
+
+#### Scenario: Out-of-order requests are safe
+- **WHEN** the graph is requested before the timeline was fetched
+- **THEN** the graph response is produced and the earlier stage results
+  are available for subsequent requests
+
 ### Requirement: Search result card layout (search_topic)
 
 The interactive client SHALL render the `search_topic` result view with the
